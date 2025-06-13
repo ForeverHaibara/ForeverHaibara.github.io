@@ -7,7 +7,7 @@
  * For local development, it might be 'http://127.0.0.1:7860/'.
  * If deploying to Hugging Face Spaces, it would be 'your-hf-username/your-space-name'.
  */
-export const GRADIO_TRIPLES_URL = 'https://app-y563g3k1j9t5n0gd.aistudio-app.com/'; // IMPORTANT: Update this URL
+export const GRADIO_TRIPLES_URL = 'https://foreverhaibara-ternary-inequality-prover.hf.space/'; // IMPORTANT: Update this URL
 
 /**
  * The specific API endpoint for the sum_of_squares function in your Gradio app.
