@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      base: '/', // Set the base URL to the root directory of your project
     };
 });
