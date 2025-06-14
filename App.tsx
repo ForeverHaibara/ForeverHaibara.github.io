@@ -7,7 +7,10 @@ import HomePage from './pages/HomePage.tsx';
 import AboutPage from './pages/AboutPage.tsx';
 import TriplesLayout from './pages/triples/TriplesLayout.tsx';
 import TriplesSolverPage from './pages/triples/TriplesSolverPage.tsx';
-import TriplesDocumentationPage from './pages/triples/TriplesDocumentationPage.tsx';
+// Updated imports for new documentation structure
+import DocumentationLayout from './pages/triples/documentation/DocumentationLayout.tsx';
+import TriplesDocumentationIndexPage from './pages/triples/documentation/TriplesDocumentationIndexPage.tsx';
+import DynamicDocPage from './pages/triples/documentation/DynamicDocPage.tsx';
 
 const AppLayout: React.FC = () => {
   return (
@@ -29,7 +32,10 @@ const App: React.FC = () => {
         <Route path="about" element={<AboutPage />} />
         <Route path="triples" element={<TriplesLayout />}>
           <Route index element={<TriplesSolverPage />} />
-          <Route path="documentation" element={<TriplesDocumentationPage />} />
+          <Route path="documentation" element={<DocumentationLayout />}>
+            <Route index element={<TriplesDocumentationIndexPage />} />
+            <Route path="*" element={<DynamicDocPage />} />
+          </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
