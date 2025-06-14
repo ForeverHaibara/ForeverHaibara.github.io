@@ -12,6 +12,11 @@ const docNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
 const documentationSections = [
   { name: 'Overview', path: '/triples/documentation', end: true },
   { name: 'Getting Started', path: '/triples/documentation/getting-started' },
+  { name: 'Applications', path: '/triples/documentation/applications',
+    subLinks: [
+      { name: 'Limitations', path: '/triples/documentation/applications/limitations' },
+    ]
+  },
   { 
     name: 'API Reference', 
     path: '/triples/documentation/api-reference',

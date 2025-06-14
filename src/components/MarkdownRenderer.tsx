@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -36,6 +36,32 @@ interface MathRendererCmpProps {
 }
 
 
+const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
+  const [copyStatus, setCopyStatus] = useState('Copy');
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopyStatus('Copied!');
+      setTimeout(() => setCopyStatus('Copy'), 2000);
+    }).catch(err => {
+      console.error('Failed to copy text:', err);
+      setCopyStatus('Failed');
+      setTimeout(() => setCopyStatus('Copy'), 2000);
+    });
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="absolute top-2 right-2 px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 opacity-0 group-hover:opacity-100 focus:opacity-100"
+      aria-label="Copy code to clipboard"
+    >
+      {copyStatus}
+    </button>
+  );
+};
+
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, className }) => {
   // console.log('[MarkdownRenderer] Initializing. Markdown content length:', markdownContent.length);
 
@@ -46,7 +72,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     h1: ({node, ...props}) => <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 mt-8 mb-4 pb-2" {...props} />,
     h2: ({node, ...props}) => <h2 className="text-2xl font-semibold text-blue-700 mt-6 mb-3 border-b border-blue-200 pb-2" {...props} />,
     h3: ({node, ...props}) => <h3 className="text-xl font-semibold text-blue-600 mt-4 mb-2" {...props} />,
-    h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-slate-700 mt-3 mb-1" {...props} />,
+    h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-black mt-3 mb-1" {...props} />,
     
     p: ({ node, children, ...props }) => {
       const childrenArray = React.Children.toArray(children);
@@ -72,12 +98,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
         return <div className="mb-4" {...props}>{children}</div>;
       }
       
-      return <p className="text-slate-700 leading-relaxed mb-4" {...props}>{children}</p>;
+      return <p className="text-black leading-relaxed mb-4" {...props}>{children}</p>;
     },
 
     a: ({node, ...props}) => <a className="text-blue-600 hover:text-blue-800 hover:underline" {...props} />,
-    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 pl-4 text-slate-700" {...props} />,
-    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 pl-4 text-slate-700" {...props} />,
+    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 pl-4 text-black" {...props} />,
+    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 pl-4 text-black" {...props} />,
     li: ({node, ...props}) => <li className="mb-1" {...props} />,
     
     code: ({ node, inline: isReactMarkdownInline, className: langClassNameFromMarkdown, children, ...htmlProps }: CustomCodeComponentProps) => {
@@ -124,12 +150,27 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
       
       return (
         <code className={combinedClassName} {...restHtmlProps}>
-          {children}
+        {children}
         </code>
+        // <div className="relative group markdown-code-block-wrapper" {...restHtmlProps}>
+        //   {children}
+        //   <CopyButton textToCopy={rawContent} />
+        // </div>
       );
     },
 
     pre: ({ node, children, ...props }) => {
+      const childArray = React.Children.toArray(children);
+      // Check if the direct child is what our 'code' component produces for highlighted code or math.
+      // These children (KatexDisplay or the SyntaxHighlighter wrapper div) handle their own styling.
+      if (childArray.length === 1) {
+        const child = childArray[0] as React.ReactElement;
+        if (child && child.props && (child.props.className?.includes('language-math') || child.type === KatexDisplay)) {
+          // Pass through: styling is handled by the child.
+          // Add margin that <pre> would typically have.
+          return <div className="my-4">{children}</div>;
+        }
+      }
       return (
         <pre className="bg-slate-100 p-4 rounded-md shadow-sm overflow-x-auto text-sm my-4 border border-slate-200" {...props}>
           {children}
@@ -142,8 +183,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     thead: ({node, ...props}) => <thead className="bg-slate-50" {...props} />,
     th: ({node, ...props}) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" {...props} />,
     tbody: ({node, ...props}) => <tbody className="bg-white divide-y divide-slate-200" {...props} />,
-    td: ({node, ...props}) => <td className="px-4 py-3 text-slate-700 align-top" {...props} />,
-    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 text-slate-700 italic" {...props} />,
+    td: ({node, ...props}) => <td className="px-4 py-3 text-black align-top" {...props} />,
+    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 text-black italic" {...props} />,
     hr: ({node, ...props}) => <hr className="my-6 border-slate-300" {...props} />,
     dt: ({node, ...props}) => <dt className="font-semibold text-slate-800 mt-3" {...props} />,
     dd: ({node, ...props}) => <dd className="ml-4 text-slate-600 mb-2" {...props} />,

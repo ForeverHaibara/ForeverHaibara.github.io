@@ -1,12 +1,8 @@
 
-# `sum_of_squares` Function Documentation
+# Sum of Squares
+ 
 
-Detailed documentation for the main function of the 'triples' library.
-
-The `sum_of_squares` function is the core utility for performing sum of squares decomposition on a given polynomial, potentially with constraints.
-
-This function can also render math like $a^2 + b^2 = c^2$ and block math:
-$$  \sum_{i=1}^{n} i = \frac{n(n+1)}{2}  $$
+The `sum_of_squares` function is the core utility for performing sum of squares decomposition on a given polynomial, potentially with constraints. 
 
 ## Function Signature
 
