@@ -18,6 +18,59 @@ interface Constraint {
 // Helper to generate unique IDs
 const generateId = () => `constraint_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+
+// Types for Examples Section
+interface ExampleConstraint {
+  expression: string;
+  alias?: string;
+  type: 'ineq' | 'eq';
+}
+
+interface TriplesExample {
+  id: string; // For React keys
+  name: string;
+  description?: string;
+  expression: string;
+  displayExpressionLatex?: string; // For KatexDisplay
+  constraints: ExampleConstraint[];
+}
+
+const examplesData: TriplesExample[] = [
+  {
+    id: 'motzkin',
+    name: "Motzkin's Form",
+    description: "A classic example of a non-negative polynomial that is not a sum of squares of polynomials (without constraints).",
+    expression: '(x^2+y^2-3*z^2)*x^2*y^2 + z^6',
+    displayExpressionLatex: "(x^2+y^2-3z^2)x^2y^2 + z^6 \\ge 0",
+    constraints: [],
+  },
+  {
+    id: 'schur3',
+    name: "Schur's Inequality (r=1, degree 3)",
+    description: "Schur's inequality for r=1. Non-negative for non-negative variables.",
+    expression: 'a*(a-b)*(a-c)+b*(b-c)*(b-a)+c*(c-a)*(c-b)',
+    displayExpressionLatex: "a(a-b)(a-c)+b(b-c)(b-a)+c(c-a)(c-b) \\ge 0",
+    constraints: [
+      { expression: 'a', alias: 'a', type: 'ineq' },
+      { expression: 'b', alias: 'b', type: 'ineq' },
+      { expression: 'c', alias: 'c', type: 'ineq' },
+    ],
+  },
+   {
+    id: 'nesbitt',
+    name: "Nesbitt's Inequality",
+    description: "A well-known inequality in three variables.",
+    expression: 'a/(b+c) + b/(c+a) + c/(a+b) - 3/2',
+    displayExpressionLatex: "\\frac{a}{b+c} + \\frac{b}{c+a} + \\frac{c}{a+b} - \\frac{3}{2} \\ge 0",
+    constraints: [
+      { expression: 'a', alias: 'a', type: 'ineq' }, // Assuming a, b, c > 0, so a >= 0 is used.
+      { expression: 'b', alias: 'b', type: 'ineq' },
+      { expression: 'c', alias: 'c', type: 'ineq' },
+    ],
+  },
+];
+
+
 const TriplesSolverPage: React.FC = () => {
   const [expression, setExpression] = useState<string>('');
   const [constraints, setConstraints] = useState<Constraint[]>([]);
@@ -32,6 +85,7 @@ const TriplesSolverPage: React.FC = () => {
   });
 
   const constraintInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const formRef = useRef<HTMLFormElement>(null); 
 
   const handleAddConstraint = (type: 'ineq' | 'eq') => {
     const newId = generateId();
@@ -130,6 +184,22 @@ const TriplesSolverPage: React.FC = () => {
     });
   }, []);
 
+  const handleLoadExample = useCallback((example: TriplesExample) => {
+    setExpression(example.expression);
+    const newConstraints: Constraint[] = example.constraints.map(ec => ({
+      id: generateId(),
+      expression: ec.expression,
+      alias: '', //ec.alias || '',
+      type: ec.type,
+    }));
+    setConstraints(newConstraints);
+    setApiResult(null); 
+    setError(null);    
+    setActiveTab('solution');
+    setCopyStatus({ solution: 'Copy', latex: 'Copy', latex_aligned: 'Copy' });
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   const proofData = apiResult?.apiSuccess ? apiResult.data : null;
 
   return (
@@ -161,7 +231,7 @@ const TriplesSolverPage: React.FC = () => {
 
         {/* Constraints Section */}
         <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h2 className="text-xl font-semibold text-slate-700">Constraints</h2>
+          <h2 className="text-sm font-semibold text-slate-700">Constraints</h2>
           {constraints.length === 0 && (
             <p className="text-sm text-slate-500">No constraints added. Click buttons below to add.</p>
           )}
@@ -284,16 +354,16 @@ const TriplesSolverPage: React.FC = () => {
         </div>
       )}
 
-      {proofData && !proofData.success && proofData.error && (
+      {proofData && !proofData.success && (
         <div className="mt-6">
-          <AlertMessage type="warning" message={`Proof attempt failed: ${proofData.error}`} onClose={() => setApiResult(null)} />
+          <AlertMessage type="error" message={`Proof attempt failed: ${proofData.error}`} onClose={() => setApiResult(null)} />
         </div>
       )}
       
       {proofData && proofData.success && (
         <div className="mt-8 pt-6 border-t border-slate-200 space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-700 mb-3 text-center">Formatted Proof (KaTeX)</h2>
+            <h2 className="text-2xl font-semibold text-slate-700 mb-3 text-center">Proof</h2>
             <div className="bg-slate-50 p-4 rounded-md shadow-inner overflow-x-auto text-center">
               <KatexDisplay latex={proofData.latex_aligned} className="text-lg" />
             </div>
@@ -336,7 +406,78 @@ const TriplesSolverPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      
+      {/* Tutorials */}
+      <div className="h-8"></div>
+      <div className="space-y-4 pt-4 border-t border-slate-200">
+        <h3 className="text-2xl font-semibold text-slate-700 mb-3">Tutorial</h3>
+        <p className="text-slate-600 mt-2 text-sm sm:text-base">
+          Inputs are parsed by SymPy's "sympify" function and should follow Python syntax.
+        </p>
+        <ul className="text-slate-600 text-sm sm:text-base list-disc list-inside ml-4 space-y-1">
+          <li>Both "**" and "^" are allowed for exponents. Multiplication symbols ("*") must not be omitted.</li>
+          <li>Do not use comparison symbols such as "&gt;", "&lt;", "=", "≥", or "≤".</li>
+          <li>Brackets should be "(" or ")", and other brackets are not allowed.</li>
+        </ul>
+      </div> 
+
+      
+      {/* Examples Section */}
+      <div className="mt-12 pt-8 border-t border-slate-300">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-center">
+          Try these Examples
+        </h2>
+        {examplesData.length === 0 && (
+            <p className="text-slate-600 text-center">No examples available at the moment.</p>
+        )}
+        <div className="grid md:grid-cols-2 gap-6">
+          {examplesData.map((example) => (
+            <div key={example.id} className="bg-slate-50 p-5 rounded-lg shadow-lg border border-slate-200 flex flex-col justify-between hover:shadow-xl transition-shadow">
+              <div className="flex-grow">
+                <h3 className="text-xl font-semibold text-blue-700 mb-2">{example.name}</h3>
+                {example.displayExpressionLatex && (
+                  <div className="mb-3 p-3 bg-white rounded border border-slate-200 shadow-sm overflow-x-auto">
+                     <KatexDisplay latex={example.displayExpressionLatex} />
+                  </div>
+                )}
+                {!example.displayExpressionLatex && example.expression && (
+                   <p className="text-sm text-slate-700 mb-2 bg-white p-3 rounded border border-slate-200 font-mono break-all">
+                      <code>{example.expression}</code>
+                   </p>
+                )}
+                {example.description && (
+                  <p className="text-sm text-slate-600 mb-3">{example.description}</p>
+                )}
+                {example.constraints.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Constraints:</h4>
+                    <ul className="list-disc list-inside pl-1 text-sm text-slate-600 space-y-0.5">
+                      {example.constraints.map((c, index) => (
+                        <li key={index}>
+                          <code className="text-xs bg-slate-200 p-0.5 rounded">{c.expression} {c.type === 'ineq' ? '≥ 0' : '= 0'}</code>
+                          {c.alias && c.alias !== c.expression && <span className="text-xs text-slate-500"> (as {c.alias})</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => handleLoadExample(example)}
+                className="mt-auto w-full bg-sky-500 text-white font-medium py-2 px-4 rounded-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors text-sm shadow hover:shadow-md"
+                aria-label={`Load example: ${example.name}`}
+              >
+                Load this Example
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
+
+
+    
   );
 };
 

@@ -6,11 +6,11 @@ const HomePage: React.FC = () => {
   return (
     <div className="bg-white p-8 rounded-xl shadow-xl animate-fadeIn">
       <header className="text-center mb-12">
-        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-400 mb-4">
-          Welcome to My Digital Space
+        <h1 className="space-y-8 text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-sky-400 mb-4">
+          Welcome to My GitHub Page
         </h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-          I'm ForeverHaibara. This is my personal corner on the web where I share my projects, thoughts, and explorations.
+        <p className="space-y-8 text-xl text-slate-600 max-w-2xl mx-auto">
+          I'm ForeverHaibara.
         </p>
       </header>
 
@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
         <div className="bg-slate-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
           <h2 className="text-2xl font-semibold text-blue-700 mb-3">Triples Inequality Solver</h2>
           <p className="text-slate-600 mb-4">
-            Try out my 'triples' library! It's an inequality proof tool that uses the sum of squares method to automatically prove non-negativity for mathematical expressions.
+            A Python library for proving algebraic inequalities via sum-of-squares.
           </p>
           <Link
             to="/triples"
@@ -44,8 +44,9 @@ const HomePage: React.FC = () => {
       <section className="text-center">
         <h2 className="text-3xl font-semibold text-slate-700 mb-6">Explore Further</h2>
         <p className="text-slate-600 max-w-xl mx-auto">
-          Feel free to navigate through the sections and discover what I've been working on.
-          More content (like blog posts or project showcases) will be added here.
+          This is written by Gemini.
+          {/* Feel free to navigate through the sections and discover what I've been working on.
+          More content (like blog posts or project showcases) will be added here. */}
         </p>
       </section>
       <style>

@@ -4,7 +4,7 @@ There are things that the triples library can do and things it cannot.
 
 ## Nonalgebraic Inequalities
 
-Inequalities is a very large concept in mathematics. Below lists some types of inequalities that the `sum_of_squares` function cannot handle. A few of them might be supported in the future, but not now.
+Inequalities are a very large concept in mathematics. Below lists some types of inequalities that the `sum_of_squares` function cannot handle. A few of them might be supported in the future, but not now.
 
 * Infinite-term inequalities: $\frac{1}{n}\sum_{i=1}^n a_i^2\geq \sqrt[n]{\prod_{i=1}^n a_i^2}$.
 * Functional inequalities: $\int_0^1 f'^2(x)dx\geq \frac{\pi^2}{4}\int_0^1f^2(x)dx$, $f(0)=0$.

@@ -7,11 +7,11 @@ const AboutPage: React.FC = () => {
       <h1 className="text-4xl font-bold text-blue-700 mb-6 border-b-2 border-blue-200 pb-3">About Me</h1>
       
       <div className="space-y-6 text-slate-700 text-lg leading-relaxed">
-        <p>
+        {/* <p>
           Hello! I'm ForeverHaibara. Welcome to my personal website. This platform serves as a canvas for my thoughts, projects, and explorations in the world of technology and beyond.
-        </p>
+        </p> */}
         <p>
-          This is written by Gemini!
+          Hello! This is written by Gemini!
         </p>
         {/* <p>
           I have a passion for software development, particularly in creating elegant and efficient solutions to complex problems. My interests span across various domains, including mathematical algorithms, web development, and machine learning.

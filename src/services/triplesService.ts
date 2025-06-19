@@ -8,11 +8,12 @@ import type { GradioServiceCallResult, GradioRawPrediction, TriplesOutput } from
 function isTriplesOutput(data: any): data is TriplesOutput {
   return (
     data &&
-    typeof data.success === 'boolean' &&
-    typeof data.solution === 'string' &&
-    typeof data.latex === 'string' &&
-    typeof data.latex_aligned === 'string' &&
-    (typeof data.error === 'string' || data.error === null)
+    typeof data.success === 'boolean' 
+    // &&
+    // typeof data.solution === 'string' &&
+    // typeof data.latex === 'string' &&
+    // typeof data.latex_aligned === 'string' &&
+    // (typeof data.error === 'string' || data.error === null)
   );
 }
 

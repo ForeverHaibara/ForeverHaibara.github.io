@@ -11,8 +11,6 @@ def sum_of_squares(
     poly: Union[sp.Poly, sp.Expr],
     ineq_constraints: Union[List[Expr], Dict[Expr, Expr]] = {},
     eq_constraints: Union[List[Expr], Dict[Expr, Expr]] = {},
-    method_order: Optional[List[str]] = METHOD_ORDER,
-    configs: Optional[Dict[str, Dict]] = DEFAULT_CONFIGS
 ) -> Optional[Solution]:
 ```
 
@@ -103,12 +101,7 @@ x*(Σ(2*a + 13))/6 + Σa*(b - c)**2 + (Σa*b*(c - 1)**2)/6 + 5*(Σ(a - 1)**2)/6 
     If a list `[h1, h2, ...]` is provided, it's assumed $h_1 = 0, h_2 = 0, \dots$. These are typically incorporated into an ideal.
     If a dictionary `{h1: lambda1, h2: lambda2, ...}` is provided, $\lambda_1, \lambda_2, \dots$ are Lagrange-like multipliers.
   </dd>
-  
-  <dt><code>method_order: Optional[List[str]]</code> (optional, default: <code>METHOD_ORDER</code>)</dt>
-  <dd>A list of strings specifying the order of internal methods or strategies to try for decomposition. This allows prioritizing faster or more specialized methods.</dd>
-  
-  <dt><code>configs: Optional[Dict[str, Dict]]</code> (optional, default: <code>DEFAULT_CONFIGS</code>)</dt>
-  <dd>A dictionary providing specific configurations for different SOS methods or sub-algorithms used internally.</dd>
+   
 </dl>
 
 ## Returns
@@ -117,9 +110,9 @@ x*(Σ(2*a + 13))/6 + Σa*(b - c)**2 + (Σa*b*(c - 1)**2)/6 + 5*(Σ(a - 1)**2)/6 
 
 Returns a `Solution` object if a sum of squares decomposition is found. The `Solution` object typically contains:
 - `solution`: The SymPy expression for the SOS form.
-- `latex`: A LaTeX representation of the solution.
+<!-- - `latex`: A LaTeX representation of the solutio
 - `latex_aligned`: An aligned LaTeX representation.
 - `success`: Boolean, `True` if successful.
-- `error`: An error message string if applicable (e.g., if a method fails internally but doesn't mean a proof is impossible).
+- `error`: An error message string if applicable (e.g., if a method fails internally but doesn't mean a proof is impossible). -->
 
 If no solution is found by any of the attempted methods, the function returns `None`.
