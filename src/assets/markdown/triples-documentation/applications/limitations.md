@@ -11,7 +11,9 @@ Inequalities are a very large concept in mathematics. Below lists some types of 
 * Transcendental inequalities: $e^x - x-1\geq 0$.
 * Comparison of constants: $\pi < 22/7$.
 * Algebra beyond real numbers: $\text{tr}(ABB^\top A^\top)\geq 0$.
-* Number theory or combinatorics:  $\text{liminf}\ (p_{n+1}-p_n)<7\times 10^7$.
+* Number theory or combinatorics: $\text{liminf}\ (p_{n+1}-p_n)<7\times 10^7$.
+
+<br>
 
 ## Limitations of Sum-of-Squares
 
@@ -78,3 +80,13 @@ $(a,b)=(-1,0)$ is a counterexample to the problem.
 
 In some cases the `sum_of_squares` function outputs such
 sum-of-squares expressions, but its nonnegativity should be more carefully examined. Other tools such as CAD (cylindrical algebraic decomposition) may be more suitable for such cases.
+
+<br>
+
+## Limitations of Symbolic Computations
+
+The triples library is based on symbolic computations and aims to provide
+exact certificates of nonnegativity. However, symbolic computations could
+be expensive, and could be slow for large-scale problems. It is recommended
+to try out other numerical solvers if exact arithmetic is not needed, e.g.,
+numerical optimization.

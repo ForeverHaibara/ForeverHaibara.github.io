@@ -203,7 +203,7 @@ const TriplesSolverPage: React.FC = () => {
   const proofData = apiResult?.apiSuccess ? apiResult.data : null;
 
   return (
-    <div className="bg-white p-6 sm:p-8 rounded-xl shadow-xl max-w-4xl mx-auto">
+    <div className="bg-white p-6 sm:p-8 rounded-xl shadow-xl container mx-auto">
       <header className="mb-8 text-center">
         <h1 className="text-3xl sm:text-4xl font-bold text-blue-700">Triples Inequality Prover</h1>
         <p className="text-slate-600 mt-2 text-sm sm:text-base">

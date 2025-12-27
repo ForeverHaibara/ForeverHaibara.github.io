@@ -22,6 +22,7 @@ const documentationSections = [
     path: '/triples/documentation/api-reference',
     subLinks: [
       { name: 'Sum of Squares', path: '/triples/documentation/api-reference/sum-of-squares' },
+      { name: 'SymPy', path: '/triples/documentation/api-reference/sympy' },
       // Add more API sub-links here
     ]
   },

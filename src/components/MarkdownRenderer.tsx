@@ -69,7 +69,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     math?: (props: MathRendererCmpProps) => JSX.Element;
     inlineMath?: (props: MathRendererCmpProps) => JSX.Element;
   } = {
-    h1: ({node, ...props}) => <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 mt-8 mb-4 pb-2" {...props} />,
+    h1: ({node, ...props}) => <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 mt-1 mb-4 pb-2" {...props} />,
     h2: ({node, ...props}) => <h2 className="text-2xl font-semibold text-blue-700 mt-6 mb-3 border-b border-blue-200 pb-2" {...props} />,
     h3: ({node, ...props}) => <h3 className="text-xl font-semibold text-blue-600 mt-4 mb-2" {...props} />,
     h4: ({node, ...props}) => <h4 className="text-lg font-semibold text-black mt-3 mb-1" {...props} />,
