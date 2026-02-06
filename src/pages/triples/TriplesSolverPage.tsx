@@ -56,7 +56,7 @@ const examplesData: TriplesExample[] = [
       { expression: 'c', alias: 'c', type: 'ineq' },
     ],
   },
-   {
+  {
     id: 'nesbitt',
     name: "Nesbitt's Inequality",
     description: "A well-known inequality in three variables.",
@@ -68,6 +68,28 @@ const examplesData: TriplesExample[] = [
       { expression: 'c', alias: 'c', type: 'ineq' },
     ],
   },
+  {
+    id: 'lax-lax',
+    name: "Lax-Lax's Form",
+    description: "A quaternary quartic form that is not sum-of-squares, but nonnegative over reals.",
+    expression: 'a*(a-b)*(a-c)*(a-d)+b*(b-c)*(b-d)*(b-a)+c*(c-d)*(c-a)*(c-b)+d*(d-a)*(d-b)*(d-c)+a*b*c*d',
+    displayExpressionLatex: "\\sum_{\\text{cyc}}a(a-b)(a-c)(a-d) +abcd \\ge 0",
+    constraints: [
+    ],
+  },
+  {
+    id: 'imo2000',
+    name: "IMO-2000",
+    description: "Prove (a-1+1/b)(b-1+1/c)(c+1/a) <= 1 given a,b,c>0 and abc=1.",
+    expression: '1 - (a-1+1/b)*(b-1+1/c)*(c-1+1/a)',
+    displayExpressionLatex: "1\\geq \\prod_{\\text{cyc}}\\left(a-1+\\frac {1}{b}\\right)",
+    constraints: [
+      { expression: 'a', alias: 'a', type: 'ineq' }, // Assuming a, b, c > 0, so a >= 0 is used.
+      { expression: 'b', alias: 'b', type: 'ineq' },
+      { expression: 'c', alias: 'c', type: 'ineq' },
+      { expression: 'a*b*c-1', alias: '', type: 'eq' },
+    ]
+  }
 ];
 
 

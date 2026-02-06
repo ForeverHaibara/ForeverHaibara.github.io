@@ -2,6 +2,8 @@
 
 This is the source code for the personal website of ForeverHaibara, built with React, TypeScript, Tailwind CSS, and featuring an interactive demo for the 'triples' inequality proof library using a Gradio backend.
 
+Homepage: [https://foreverhaibara.github.io/](https://foreverhaibara.github.io/)
+
 ## Features
 
 -   Clean, modern, responsive design with a blue/white color scheme.

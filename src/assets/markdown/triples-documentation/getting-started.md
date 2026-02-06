@@ -2,19 +2,32 @@
 
 This guide will help you set up the Triples library and perform your first non-negativity proof.
 
+GitHub:
+[https://github.com/ForeverHaibara/Triple-SOS](https://github.com/ForeverHaibara/Triple-SOS)
+
 ## Prerequisites
 
-- Python 3
-- SymPy>=1.10
-- NumPy
-- SciPy
-- Clarabel
+These prerequisites will be automatically installed when you install the triples library using pip.
+
+- Python>=3.6
+- [SymPy](https://sympy.org/)>=1.9
+- [NumPy](http://numpy.org/)
+- [SciPy](https://scipy.org/)
+- [Clarabel](https://clarabel.org/)
+
+Tips:
+
+* If clarabel cannot be installed, replace it with other SDP solvers, e.g., [CVXOPT](https://cvxopt.org/).
+* Install "[python-flint](https://python-flint.readthedocs.io/en/latest/)" to accelerate some computations.
+* Currently, newer SymPy versions are preferred. Update SymPy if possible!
 
 ## Installation
 
-The Triples library is currently unpublished on PyPI. To install, use the source code from GitHub:
+The triples library can now be installed using pip:
 
-[https://github.com/ForeverHaibara/Triple-SOS](https://github.com/ForeverHaibara/Triple-SOS)
+```bash
+pip install triples
+```
 
 <!-- The Triples library is typically used as a Python package. If it were published on PyPI, you would install it using pip:
 
@@ -29,7 +42,7 @@ All you need to do is to define a sympy expression and call the `sum_of_squares`
 
 ```
 import sympy as sp
-from triples.core import sum_of_squares 
+from triples import sum_of_squares
 x, y = sp.symbols("x y")
 result = sum_of_squares(x**2 - 2*x*y + y**2)
 if result is not None:
