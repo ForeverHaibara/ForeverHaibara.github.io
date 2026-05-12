@@ -2,6 +2,9 @@
 
 There are things that the triples library can do and things it cannot.
 
+<font color="red">It should always be noted that
+the solver could **FAIL** even if the problem is correct.</font>   
+
 ## Nonalgebraic Inequalities
 
 Inequalities are a very large concept in mathematics. Below lists some types of inequalities that the `sum_of_squares` function cannot handle. A few of them might be supported in the future, but not now.
@@ -17,7 +20,7 @@ Inequalities are a very large concept in mathematics. Below lists some types of 
 
 ## Limitations of Sum-of-Squares
 
-Not every nonnegative multivariate polynomial can be represented as sum of squares of polynomials. The most renowned example is perhaps the Motzkin form:
+Not every nonnegative multivariate polynomial can be represented as sum of squares of polynomials. The most renowned example is perhaps the Motzkin's form:
 
 $$
 x^4y^2+x^2y^4+z^6-3x^2y^2z^2\geq 0.
@@ -64,7 +67,7 @@ $$
 -1 = -10(y+x^2+2)+2(x-y^2+3) + \frac{1}{10}(10x-1)^2+\frac{1}{2} (2y + 5)^2+\frac{2}{5}\geq 0.
 $$
 
-However, this is incorrect because the set $\{x-y^2+3\geq 0,\ y+x^2+2=0\}$ is empty. In fact, the above
+However, the conclusion $-1\geq 0$ is incorrect because the set $\{x-y^2+3\geq 0,\ y+x^2+2=0\}$ is empty. In fact, the above
 equation is a proof that the set is empty. This is related to the Hilbert's Nullstellensatz.
 
 <br>
@@ -83,10 +86,92 @@ sum-of-squares expressions, but its nonnegativity should be more carefully exami
 
 <br>
 
+### No Simplification Assumptions
+
+Consider the Schur inequality $a,b,c\in\R_+\implies \sum_{\text{cyc}}a(a-b)(a-c)\geq 0$. As shown 
+above, the polynomial must be lifted to degree 4 to obtain a sum-of-squares proof:
+$$
+\sum_{\text{cyc}} a(a-b)(a-c)
+=\frac{ \sum_{\text{cyc}} [(b-c)^2(b+c-a)^2+2 bc(b-c)^2]}{2\sum_{\text{cyc}} a}\geq 0.
+$$
+However, if we assume $a\geq b\geq c\geq 0$ by symmetry, there is no need to lift the degree:
+$$
+\sum_{\mathrm{cyc}} a \left(a - b\right) \left(a - c\right) = \frac{3 c \left(b - c\right)^{2}}{4} + \frac{c \left(2 a - b - c\right)^{2}}{4} + \left(a - b\right)^{3} + 2 \left(a - b\right)^{2} \left(b - c\right)\geq 0.
+$$
+
+Some algorithms introduce order assumptions to simplify the problem, e.g., the branch-and-bound and the successive difference substitution (SDS) algorithms. However, the triples solver does not introduce such extra assumptions by default, and it always tries to find a direct sum-of-squares proof unless the assumptions are provided as constraints.  Moreover,
+inequalities that are not proved via direct sum-of-squares are banned,
+e.g., Karamata's inequality.  This could increase the complexity of the computation as well as the output. 
+
+<br>
+
+### Limited to Rational Numbers
+
+The triples library will try to find a solution with coefficients in the rational number field $\mathbb Q$ if the given problem is entirely in $\mathbb Q$. Considering the polynomial $\sum_{\mathrm{cyc}}  a^2(a^2+2b^2-3bc-4ab+4ac )$ over $a,b,c\in\mathbb R_+$, it is a sum of squares but not a rational sum of squares.
+Since the solver tries to obtain solutions with rational coefficients by default,
+it has to lift the degree to 5:
+$$
+\sum_{\mathrm{cyc}}  a^2(a^2+2b^2-3bc-4ab+4ac ) = \frac{7 \prod_{\mathrm{cyc}} a \sum_{\mathrm{cyc}} \left(a - b\right)^{2} + 2 \sum_{\mathrm{cyc}} a \left(- a^{2} + 2 a b - 2 a c + b^{2} - b c + c^{2}\right)^{2}}{2 \sum_{\mathrm{cyc}} a}.
+$$
+
+An irrational sum-of-squares without degree lifting is given by
+$$
+\frac{1}{2}\sum_{\mathrm{cyc}} (a^2-b^2-(\sqrt 2-1)(ab-ac)+(\sqrt 2+1)(bc-ab))^2
++(\sqrt 2- 1)\sum_{\mathrm{cyc}} bc(b-a-(\sqrt 2+1)(c-a))^2.
+$$
+Another example is Scheiderer's form, which can be found in Macaulay2's documentation.
+
+<br>
+
+### Limited to Rational Functions
+
+
+The current solver tries to find a solution using only rational functions if
+the given problem is entirely on the rational function field. However, sometimes
+irrational or transcendental operators are useful when proving polynomial inequalities.
+
+**Example 3** The Motzkin polynomial is a sum-of-squares if cubic roots are allowed,
+
+$$
+x^4y^2+x^2y^4+z^6-3x^2y^2z^2
+=\frac{1}{2}(x^{\frac{4}{3}}y^{\frac{2}{3}}+x^{\frac{2}{3}}y^{\frac{4}{3}}+z^2)
+((x^{\frac{4}{3}}y^{\frac{2}{3}}-x^{\frac{2}{3}}y^{\frac{4}{3}})^2+(x^{\frac{4}{3}}y^{\frac{2}{3}}-z^2)^2
++(x^{\frac{2}{3}}y^{\frac{4}{3}}-z^2)^2),
+$$
+which is in fact a direct corollary of $a^3+b^3+c^3 -3abc=(a+b+c)((a-b)^2+(b-c)^2+(c-a)^2)/2$.
+
+<br>
+
+**Example 4** Consider proving $\sum_{i=1}^n\sum_{j=1}^n(|a_i+a_j|-|a_i-a_j|)\geq 0$. Noting that
+$\int_0^{\infty}\frac{\sin (at)\sin (bt)}{t^2}dt = \frac{\pi}{4}(|a+b|-|a-b|)$, a direct solution is given
+by
+$$
+\sum_{i=1}^n\sum_{j=1}^n(|a_i+a_j|-|a_i-a_j|)
+=\frac{4}{\pi}\int_0^\infty\frac{1}{t^2}\left(\sum_{i=1}^n \sin( a_i t)\right)^2dt\geq 0.
+$$
+The elegant proof uses a sum-of-squares expression with trigonometric functions and integrals,
+which is out of the scope of the current solver.
+
+<br>
+
 ## Limitations of Symbolic Computations
+
+
+
+### Slowness
 
 The triples library is based on symbolic computations and aims to provide
 exact certificates of nonnegativity. However, symbolic computations could
 be expensive, and could be slow for large-scale problems. It is recommended
-to try out other numerical solvers if exact arithmetic is not needed, e.g.,
-numerical optimization.
+to try out other solvers for specific problems. E.g.,
+* For large-scale polynomial optimization, numerical solvers might be more suitable. 
+* If a readable sum-of-squares proof is not needed, CAD or SAT solvers might be more suitable.
+
+<br>
+
+### Inexactness
+
+The triples library employs numerical solvers for optimization and then round
+them to exact rational numbers. However, the rounding procedure could be
+difficult, and might fail. The triples library might not output an exact
+proof even if a numerical solution is detected.

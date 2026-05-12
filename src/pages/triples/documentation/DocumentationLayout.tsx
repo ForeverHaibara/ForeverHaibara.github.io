@@ -26,6 +26,13 @@ const documentationSections = [
       // Add more API sub-links here
     ]
   },
+  {
+    name: 'Semidefinite Programming',
+    path: '/triples/documentation/semidefinite-programming',
+    subLinks: [
+      { name: 'SDPSOS', path: '/triples/documentation/semidefinite-programming/sdpsos' },
+    ]
+  },
   // Add more top-level sections here
 ];
 

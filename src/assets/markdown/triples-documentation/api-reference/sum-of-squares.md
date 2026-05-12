@@ -6,14 +6,17 @@ The `sum_of_squares` function is the core utility for performing sum of squares 
 
 ```python
 def sum_of_squares(
-    expr: Expr,
-    ineq_constraints: Union[List[Expr], Dict[Expr, Expr]] = {},
-    eq_constraints: Union[List[Expr], Dict[Expr, Expr]] = {},
+    expr: 'Expr',
+    ineq_constraints: Union[List['Expr'], Dict['Expr', 'Expr']] = {},
+    eq_constraints: Union[List['Expr'], Dict['Expr', 'Expr']] = {},
     *,
-    roots: Optional[List[Union[Tuple[Expr, ...], Dict[Symbol, Expr]]]] = None,
+    roots: Optional[List[Union[Tuple['Expr', ...], Dict['Symbol', 'Expr']]]] = None,
     verbose: bool = False,
     time_limit: float = 3600.,
-    configs: dict = {},
+    methods: Optional[List[str]] = None,
+    configs: Dict[str, Dict] = {},
+    mode: str = "fast",
+    method_order: Optional[List[str]] = None, # deprecated
 ) -> Optional[Solution]:
 ```
 

@@ -496,10 +496,30 @@ const TriplesSolverPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      
+
+      {/* Install Section */}
+      <div className="mt-12 pt-8 border-t border-slate-300">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-center">
+          Use it in Python!
+        </h2>
+        <div className="flex justify-center">
+          <pre className="bg-slate-50 p-4 rounded-md shadow-sm border border-slate-200 overflow-x-auto">
+            <code className="text-sm text-slate-800 font-mono">pip install triples</code>
+          </pre>
+        </div>
+      </div>
+
+
+      {/* <div className="mt-12 pt-8 border-t border-slate-300">
+      <br></br>
+      </div>
+      <br></br>
+      <br></br>
+      <br></br> */}
     </div>
 
-
-    
   );
 };
 
