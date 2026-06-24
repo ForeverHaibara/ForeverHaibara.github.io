@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -29,31 +29,6 @@ interface MathRendererCmpProps {
   children?: React.ReactNode;
   [key: string]: any;
 }
-
-const CopyButton: React.FC<{ textToCopy: string }> = ({ textToCopy }) => {
-  const [copyStatus, setCopyStatus] = useState('Copy');
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopyStatus('Copied!');
-      setTimeout(() => setCopyStatus('Copy'), 2000);
-    }).catch(err => {
-      console.error('Failed to copy text:', err);
-      setCopyStatus('Failed');
-      setTimeout(() => setCopyStatus('Copy'), 2000);
-    });
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute right-3 top-3 rounded-full bg-slate-700 px-3 py-1 text-xs text-white transition-colors focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-500 group-hover:opacity-100"
-      aria-label="Copy code to clipboard"
-    >
-      {copyStatus}
-    </button>
-  );
-};
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, className }) => {
   const customComponents: Components & {
@@ -96,7 +71,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
       const combinedClassName = [langClassNameFromMarkdown, additionalClassNameFromAttrs].filter(Boolean).join(' ');
       const rawContent = String(children);
       const trimmedContent = rawContent.trim();
-
       const isMath = combinedClassName?.includes('language-math');
 
       if (isMath) {
@@ -104,32 +78,25 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
 
         if (typeof isReactMarkdownInline === 'boolean') {
           determinedIsBlockMode = !isReactMarkdownInline;
+        } else if (rawContent.length > 0 && rawContent !== trimmedContent && rawContent.startsWith(' ') && rawContent.endsWith(' ')) {
+          determinedIsBlockMode = true;
         } else {
-          if (rawContent.length > 0 && rawContent !== trimmedContent && rawContent.startsWith(' ') && rawContent.endsWith(' ')) {
-            determinedIsBlockMode = true;
-          } else {
-            const isDisplayClass = combinedClassName.includes('math-display');
-            determinedIsBlockMode = isDisplayClass;
-
-            if (combinedClassName.includes('math-inline') && !isDisplayClass) {
-              determinedIsBlockMode = false;
-            }
+          const isDisplayClass = combinedClassName.includes('math-display');
+          determinedIsBlockMode = isDisplayClass;
+          if (combinedClassName.includes('math-inline') && !isDisplayClass) {
+            determinedIsBlockMode = false;
           }
         }
+
         return <KatexDisplay latex={trimmedContent} isBlockMode={determinedIsBlockMode} />;
       }
 
       if (isReactMarkdownInline) {
         const baseInlineClasses = ['rounded-full', 'bg-sky-50', 'px-2', 'py-1', 'text-sm', 'font-mono', 'text-sky-900', 'mx-0.5', 'break-words'];
-        const finalClassName = [...baseInlineClasses, combinedClassName].filter(Boolean).join(' ');
-        return <code className={finalClassName} {...restHtmlProps}>{children}</code>;
+        return <code className={[...baseInlineClasses, combinedClassName].filter(Boolean).join(' ')} {...restHtmlProps}>{children}</code>;
       }
 
-      return (
-        <code className={combinedClassName} {...restHtmlProps}>
-          {children}
-        </code>
-      );
+      return <code className={combinedClassName} {...restHtmlProps}>{children}</code>;
     },
 
     pre: ({ node, children, ...props }) => {
@@ -141,7 +108,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
         }
       }
       return (
-        <pre className="my-4 overflow-x-auto rounded-[24px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(239,246,255,0.65))] p-4 text-sm shadow-[0_12px_28px_rgba(148,163,184,0.1)]" {...props}>
+        <pre className="my-4 overflow-x-auto rounded-[24px] border border-white/80 bg-white/78 p-4 text-sm shadow-[0_12px_28px_rgba(148,163,184,0.1)]" {...props}>
           {children}
         </pre>
       );
@@ -158,32 +125,25 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     dt: ({node, ...props}) => <dt className="mt-3 font-semibold text-slate-900" {...props} />,
     dd: ({node, ...props}) => <dd className="mb-2 ml-4 text-slate-600" {...props} />,
 
-    math: ({ node, children, ...props }: MathRendererCmpProps) => {
-        const latexValue = node?.value || String(children || '').trim();
-        if (typeof latexValue !== 'string' || latexValue.length === 0) {
-          return <span className="text-red-500">[Error rendering math block: Invalid Node or empty value]</span>;
-        }
-        return <KatexDisplay latex={latexValue} isBlockMode={true} className="my-2" />;
+    math: ({ node, children }: MathRendererCmpProps) => {
+      const latexValue = node?.value || String(children || '').trim();
+      if (typeof latexValue !== 'string' || latexValue.length === 0) {
+        return <span className="text-red-500">[Error rendering math block: Invalid Node or empty value]</span>;
+      }
+      return <KatexDisplay latex={latexValue} isBlockMode={true} className="my-2" />;
     },
-    inlineMath: ({ node, children, ...props }: MathRendererCmpProps) => {
-        const latexValue = node?.value || String(children || '').trim();
-        if (typeof latexValue !== 'string' || latexValue.length === 0) {
-          return <span className="text-red-500">[Error rendering inline math: Invalid Node or empty value]</span>;
-        }
-        return <KatexDisplay latex={latexValue} isBlockMode={false} />;
+    inlineMath: ({ node, children }: MathRendererCmpProps) => {
+      const latexValue = node?.value || String(children || '').trim();
+      if (typeof latexValue !== 'string' || latexValue.length === 0) {
+        return <span className="text-red-500">[Error rendering inline math: Invalid Node or empty value]</span>;
+      }
+      return <KatexDisplay latex={latexValue} isBlockMode={false} />;
     },
   };
 
-  const remarkPlugins = [remarkGfm, remarkMath];
-  const rehypePlugins = [rehypeRaw];
-
   return (
-    <div className={`prose max-w-none ${className}`}>
-      <ReactMarkdown
-        remarkPlugins={remarkPlugins}
-        rehypePlugins={rehypePlugins}
-        components={customComponents}
-      >
+    <div className={`prose max-w-none text-[1.02rem] prose-headings:max-w-none prose-p:max-w-none ${className}`}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw]} components={customComponents}>
         {markdownContent}
       </ReactMarkdown>
     </div>
@@ -191,4 +151,3 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
 };
 
 export default MarkdownRenderer;
-
