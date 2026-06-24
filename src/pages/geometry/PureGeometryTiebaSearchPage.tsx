@@ -155,10 +155,10 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
           style={{ background: 'linear-gradient(90deg, rgba(125,211,252,0.2), rgba(191,219,254,0.12), rgba(255,255,255,0))' }}
         />
         <div className="relative max-w-4xl">
-          <span className="inline-flex rounded-full border border-white/80 bg-white/72 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          {/* <span className="inline-flex rounded-full border border-white/80 bg-white/72 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
             Geometry
-          </span>
-          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl">
+          </span> */}
+          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl">
             Pure Geometry Tieba Search
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">

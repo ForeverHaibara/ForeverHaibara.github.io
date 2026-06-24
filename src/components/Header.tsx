@@ -11,7 +11,7 @@ const navigationItems = [
 const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-white/40 bg-[rgba(244,249,255,0.72)] text-slate-800 shadow-[0_10px_30px_rgba(148,163,184,0.12)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between px-4 py-4 sm:flex-row sm:px-6 lg:px-8">
+      <div className="flex max-w-6xl flex-col items-start justify-between px-4 py-4 sm:flex-row sm:items-center sm:px-6 lg:px-8">
         <NavLink
           to="/"
           className="text-3xl font-semibold tracking-[-0.04em] text-slate-800 transition-all duration-300 hover:text-sky-700"

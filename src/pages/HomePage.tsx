@@ -62,7 +62,7 @@ const HomePage: React.FC = () => {
           <div className="mx-auto max-w-3xl rounded-[28px] border border-white/70 bg-white/42 px-6 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
             <h2 className="mb-4 text-3xl font-semibold text-slate-700">Explore Further</h2>
             <p className="mx-auto max-w-xl text-slate-600">
-              This is written by Gemini.
+             
             </p>
           </div>
         </section>
