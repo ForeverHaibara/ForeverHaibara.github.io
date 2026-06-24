@@ -24,11 +24,37 @@ function isTriplesOutput(data: any): data is TriplesOutput {
  * @param eqConstraintsStr Optional string of equality constraints.
  * @returns A promise that resolves to the API result.
  */
+
+const patchGradioFetch = () => {
+  if (typeof window !== 'undefined' && !(window as any)._gradioFetchPatched) {
+    const originalFetch = window.fetch;
+    
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      let url = '';
+      if (typeof input === 'string') url = input;
+      else if (input instanceof URL) url = input.href;
+      else if (input instanceof Request) url = input.url;
+
+      // 只要是发往 Hugging Face Space 的请求，强制禁止携带凭证
+      if (url.includes('.hf.space')) {
+        if (!init) init = {};
+        init.credentials = 'omit';  // 解决问题的核心：放弃 include 凭证
+      }
+      
+      return originalFetch(input, init);
+    };
+    
+    (window as any)._gradioFetchPatched = true;
+  }
+};
+
 export const callTriplesGradioApi = async (
   expression: string,
   ineqConstraintsStr?: string,
   eqConstraintsStr?: string
 ): Promise<GradioServiceCallResult> => {
+  
+  patchGradioFetch();
   try {
     const app = await Client.connect(GRADIO_TRIPLES_URL, {});
     
