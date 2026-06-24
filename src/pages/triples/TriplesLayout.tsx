@@ -1,35 +1,31 @@
-
-import React from 'react';
+﻿import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const TriplesLayout: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+    `rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
       isActive
-        ? 'bg-blue-600 text-white shadow-md'
-        : 'text-slate-700 hover:bg-blue-100 hover:text-blue-700'
+        ? 'bg-[linear-gradient(135deg,#dbeafe_0%,#eff6ff_100%)] text-sky-800 shadow-[0_10px_24px_rgba(96,165,250,0.18)]'
+        : 'text-slate-600 hover:bg-white/90 hover:text-sky-700'
     }`;
 
   return (
     <div className="space-y-6">
-      <nav className="bg-white p-3 rounded-lg shadow-md">
-        <ul className="flex space-x-2 sm:space-x-4">
+      <nav className="rounded-[26px] border border-white/70 bg-white/58 p-3 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl">
+        <ul className="flex flex-wrap gap-2">
           <li>
             <NavLink to="/triples" end className={navLinkClasses}>
               Solver
             </NavLink>
           </li>
           <li>
-            {/* This NavLink correctly points to the documentation index.
-                It will remain active for sub-documentation pages due to not having 'end'. */}
             <NavLink to="/triples/documentation" className={navLinkClasses}>
               Documentation
             </NavLink>
           </li>
         </ul>
       </nav>
-      {/* The Outlet here will render TriplesSolverPage or DocumentationLayout */}
-      <div className="bg-slate-50 p-1 rounded-xl shadow-sm"> {/* Adjusted shadow for less intensity */}
+      <div className="rounded-[30px] border border-white/65 bg-white/42 p-1 shadow-[0_22px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl">
         <Outlet />
       </div>
     </div>

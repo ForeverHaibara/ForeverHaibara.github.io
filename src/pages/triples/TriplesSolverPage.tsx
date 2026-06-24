@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { GRADIO_TRIPLES_URL } from '../../constants.ts'; // GRADIO_SUM_OF_SQUARES_ENDPOINT is used in service
+﻿import React, { useState, useCallback, useRef } from 'react';
+import { GRADIO_TRIPLES_URL } from '../../constants.ts';
 import { callTriplesGradioApi } from '../../services/triplesService.ts';
-import type { GradioServiceCallResult, TriplesOutput } from '../../types.ts';
+import type { GradioServiceCallResult } from '../../types.ts';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
 import AlertMessage from '../../components/AlertMessage.tsx';
 import KatexDisplay from '../../components/KatexDisplay.tsx';
@@ -15,11 +15,8 @@ interface Constraint {
   type: 'ineq' | 'eq';
 }
 
-// Helper to generate unique IDs
 const generateId = () => `constraint_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-
-// Types for Examples Section
 interface ExampleConstraint {
   expression: string;
   alias?: string;
@@ -27,11 +24,11 @@ interface ExampleConstraint {
 }
 
 interface TriplesExample {
-  id: string; // For React keys
+  id: string;
   name: string;
   description?: string;
   expression: string;
-  displayExpressionLatex?: string; // For KatexDisplay
+  displayExpressionLatex?: string;
   constraints: ExampleConstraint[];
 }
 
@@ -39,9 +36,9 @@ const examplesData: TriplesExample[] = [
   {
     id: 'motzkin',
     name: "Motzkin's Form",
-    description: "A classic example of a non-negative polynomial that is not a sum of squares of polynomials (without constraints).",
+    description: 'A classic example of a non-negative polynomial that is not a sum of squares of polynomials (without constraints).',
     expression: '(x^2+y^2-3*z^2)*x^2*y^2 + z^6',
-    displayExpressionLatex: "(x^2+y^2-3z^2)x^2y^2 + z^6 \\ge 0",
+    displayExpressionLatex: '(x^2+y^2-3z^2)x^2y^2 + z^6 \\ge 0',
     constraints: [],
   },
   {
@@ -49,7 +46,7 @@ const examplesData: TriplesExample[] = [
     name: "Schur's Inequality (r=1, degree 3)",
     description: "Schur's inequality for r=1. Non-negative for non-negative variables.",
     expression: 'a*(a-b)*(a-c)+b*(b-c)*(b-a)+c*(c-a)*(c-b)',
-    displayExpressionLatex: "a(a-b)(a-c)+b(b-c)(b-a)+c(c-a)(c-b) \\ge 0",
+    displayExpressionLatex: 'a(a-b)(a-c)+b(b-c)(b-a)+c(c-a)(c-b) \\ge 0',
     constraints: [
       { expression: 'a', alias: 'a', type: 'ineq' },
       { expression: 'b', alias: 'b', type: 'ineq' },
@@ -59,11 +56,11 @@ const examplesData: TriplesExample[] = [
   {
     id: 'nesbitt',
     name: "Nesbitt's Inequality",
-    description: "A well-known inequality in three variables.",
+    description: 'A well-known inequality in three variables.',
     expression: 'a/(b+c) + b/(c+a) + c/(a+b) - 3/2',
-    displayExpressionLatex: "\\frac{a}{b+c} + \\frac{b}{c+a} + \\frac{c}{a+b} - \\frac{3}{2} \\ge 0",
+    displayExpressionLatex: '\\frac{a}{b+c} + \\frac{b}{c+a} + \\frac{c}{a+b} - \\frac{3}{2} \\ge 0',
     constraints: [
-      { expression: 'a', alias: 'a', type: 'ineq' }, // Assuming a, b, c > 0, so a >= 0 is used.
+      { expression: 'a', alias: 'a', type: 'ineq' },
       { expression: 'b', alias: 'b', type: 'ineq' },
       { expression: 'c', alias: 'c', type: 'ineq' },
     ],
@@ -71,20 +68,19 @@ const examplesData: TriplesExample[] = [
   {
     id: 'lax-lax',
     name: "Lax-Lax's Form",
-    description: "A quaternary quartic form that is not sum-of-squares, but nonnegative over reals.",
+    description: 'A quaternary quartic form that is not sum-of-squares, but nonnegative over reals.',
     expression: 'a*(a-b)*(a-c)*(a-d)+b*(b-c)*(b-d)*(b-a)+c*(c-d)*(c-a)*(c-b)+d*(d-a)*(d-b)*(d-c)+a*b*c*d',
-    displayExpressionLatex: "\\sum_{\\text{cyc}}a(a-b)(a-c)(a-d) +abcd \\ge 0",
-    constraints: [
-    ],
+    displayExpressionLatex: '\\sum_{\\text{cyc}}a(a-b)(a-c)(a-d) +abcd \\ge 0',
+    constraints: [],
   },
   {
     id: 'imo2000',
-    name: "IMO-2000",
-    description: "Prove (a-1+1/b)(b-1+1/c)(c+1/a) <= 1 given a,b,c>0 and abc=1.",
+    name: 'IMO-2000',
+    description: 'Prove (a-1+1/b)(b-1+1/c)(c+1/a) <= 1 given a,b,c>0 and abc=1.',
     expression: '1 - (a-1+1/b)*(b-1+1/c)*(c-1+1/a)',
-    displayExpressionLatex: "1\\geq \\prod_{\\text{cyc}}\\left(a-1+\\frac {1}{b}\\right)",
+    displayExpressionLatex: '1\\geq \\prod_{\\text{cyc}}\\left(a-1+\\frac {1}{b}\\right)',
     constraints: [
-      { expression: 'a', alias: 'a', type: 'ineq' }, // Assuming a, b, c > 0, so a >= 0 is used.
+      { expression: 'a', alias: 'a', type: 'ineq' },
       { expression: 'b', alias: 'b', type: 'ineq' },
       { expression: 'c', alias: 'c', type: 'ineq' },
       { expression: 'a*b*c-1', alias: '', type: 'eq' },
@@ -92,13 +88,12 @@ const examplesData: TriplesExample[] = [
   }
 ];
 
-
 const TriplesSolverPage: React.FC = () => {
   const [expression, setExpression] = useState<string>('');
   const [constraints, setConstraints] = useState<Constraint[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiResult, setApiResult] = useState<GradioServiceCallResult | null>(null);
-  const [error, setError] = useState<string | null>(null); // For form validation or client-side issues
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('solution');
   const [copyStatus, setCopyStatus] = useState<Record<TabKey, string>>({
     solution: 'Copy',
@@ -107,7 +102,7 @@ const TriplesSolverPage: React.FC = () => {
   });
 
   const constraintInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const formRef = useRef<HTMLFormElement>(null); 
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleAddConstraint = (type: 'ineq' | 'eq') => {
     const newId = generateId();
@@ -118,9 +113,8 @@ const TriplesSolverPage: React.FC = () => {
       type,
     };
     setConstraints(prev => [...prev, newConstraint]);
-    // Focus on the new input field after a short delay to allow DOM update
     setTimeout(() => {
-        constraintInputRefs.current?.[`${newId}_expression`]?.focus();
+      constraintInputRefs.current?.[`${newId}_expression`]?.focus();
     }, 0);
   };
 
@@ -200,7 +194,7 @@ const TriplesSolverPage: React.FC = () => {
     }).catch(err => {
       console.error('Failed to copy text: ', err);
       setCopyStatus(prev => ({ ...prev, [tabKey]: 'Failed' }));
-       setTimeout(() => {
+      setTimeout(() => {
         setCopyStatus(prev => ({ ...prev, [tabKey]: 'Copy' }));
       }, 2000);
     });
@@ -211,12 +205,12 @@ const TriplesSolverPage: React.FC = () => {
     const newConstraints: Constraint[] = example.constraints.map(ec => ({
       id: generateId(),
       expression: ec.expression,
-      alias: '', //ec.alias || '',
+      alias: '',
       type: ec.type,
     }));
     setConstraints(newConstraints);
-    setApiResult(null); 
-    setError(null);    
+    setApiResult(null);
+    setError(null);
     setActiveTab('solution');
     setCopyStatus({ solution: 'Copy', latex: 'Copy', latex_aligned: 'Copy' });
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -225,18 +219,18 @@ const TriplesSolverPage: React.FC = () => {
   const proofData = apiResult?.apiSuccess ? apiResult.data : null;
 
   return (
-    <div className="bg-white p-6 sm:p-8 rounded-xl shadow-xl container mx-auto">
+    <div className="mx-auto rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(248,250,252,0.72))] p-6 shadow-[0_22px_56px_rgba(148,163,184,0.16)] backdrop-blur-xl sm:p-8">
       <header className="mb-8 text-center">
-        <h1 className="text-3xl sm:text-4xl font-bold text-blue-700">Triples Inequality Prover</h1>
-        <p className="text-slate-600 mt-2 text-sm sm:text-base">
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl">Triples Inequality Prover</h1>
+        <p className="mt-2 text-sm text-slate-600 sm:text-base">
           Enter a mathematical expression and optional constraints to attempt a proof of its non-negativity.
-          This tool connects to a Gradio backend at <code className="bg-slate-200 p-1 rounded text-sm">{GRADIO_TRIPLES_URL}</code>.
+          This tool connects to a Gradio backend at <code className="rounded-full bg-white/80 px-2 py-1 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">{GRADIO_TRIPLES_URL}</code>.
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="expression" className="block text-sm font-medium text-slate-700 mb-1">
+          <label htmlFor="expression" className="mb-1 block text-sm font-medium text-slate-700">
             Mathematical Expression
           </label>
           <textarea
@@ -245,63 +239,62 @@ const TriplesSolverPage: React.FC = () => {
             onChange={(e) => setExpression(e.target.value)}
             placeholder="e.g., x^2 - 2*x*y + y^2"
             rows={3}
-            className="w-full p-3 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-colors text-slate-800"
+            className="w-full rounded-2xl border border-sky-100 bg-white/80 p-3 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-colors focus:border-sky-300 focus:ring-sky-200"
             disabled={isLoading}
             aria-label="Mathematical Expression Input"
           />
         </div>
 
-        {/* Constraints Section */}
-        <div className="space-y-4 pt-4 border-t border-slate-200">
+        <div className="space-y-4 border-t border-sky-100 pt-4">
           <h2 className="text-sm font-semibold text-slate-700">Constraints</h2>
           {constraints.length === 0 && (
             <p className="text-sm text-slate-500">No constraints added. Click buttons below to add.</p>
           )}
           {constraints.length > 0 && (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-md shadow-sm">
-                <thead className="bg-slate-50">
+              <table className="min-w-full overflow-hidden rounded-2xl border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
+                <thead className="bg-[rgba(239,246,255,0.72)]">
                   <tr>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-2/5">Constraint Expression</th>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-2/5">Alias (Optional)</th>
-                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-1/5">Type</th>
-                    <th scope="col" className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wider">Action</th>
+                    <th scope="col" className="w-2/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Constraint Expression</th>
+                    <th scope="col" className="w-2/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Alias (Optional)</th>
+                    <th scope="col" className="w-1/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Type</th>
+                    <th scope="col" className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-slate-500">Action</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
+                <tbody className="divide-y divide-sky-100 bg-white/80">
                   {constraints.map((constraint) => (
-                    <tr key={constraint.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-4 py-2 whitespace-nowrap">
+                    <tr key={constraint.id} className="group transition-colors hover:bg-slate-50/80">
+                      <td className="whitespace-nowrap px-4 py-2">
                         <input
                           ref={el => { constraintInputRefs.current[`${constraint.id}_expression`] = el; }}
                           type="text"
                           value={constraint.expression}
                           onChange={(e) => handleConstraintInputChange(constraint.id, 'expression', e.target.value)}
                           placeholder="e.g., a*b*c-1"
-                          className="w-full p-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          className="w-full rounded-xl border border-sky-100 bg-white/80 p-2 text-sm focus:border-sky-300 focus:ring-sky-200"
                           disabled={isLoading}
                           aria-label={`Constraint expression for row ${constraint.id}`}
                         />
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-4 py-2">
                         <input
                           type="text"
                           value={constraint.alias}
                           onChange={(e) => handleConstraintInputChange(constraint.id, 'alias', e.target.value)}
                           placeholder="e.g., F(a,b,c) (defaults to expression)"
-                          className="w-full p-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          className="w-full rounded-xl border border-sky-100 bg-white/80 p-2 text-sm focus:border-sky-300 focus:ring-sky-200"
                           disabled={isLoading}
                           aria-label={`Alias for constraint row ${constraint.id}`}
                         />
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
-                        {constraint.type === 'ineq' ? '≥ 0' : '= 0'}
+                      <td className="whitespace-nowrap px-4 py-2 text-sm text-slate-600">
+                        {constraint.type === 'ineq' ? '>= 0' : '= 0'}
                       </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-center">
+                      <td className="whitespace-nowrap px-4 py-2 text-center">
                         <button
                           type="button"
                           onClick={() => handleRemoveConstraint(constraint.id)}
-                          className="text-red-500 hover:text-red-700 opacity-50 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-100"
+                          className="rounded-full p-1 text-red-500 opacity-50 transition-opacity hover:bg-red-100 hover:text-red-700 group-hover:opacity-100"
                           title="Remove constraint"
                           disabled={isLoading}
                           aria-label={`Remove constraint row ${constraint.id}`}
@@ -317,20 +310,20 @@ const TriplesSolverPage: React.FC = () => {
               </table>
             </div>
           )}
-          <div className="flex space-x-3 pt-2">
+          <div className="flex flex-wrap gap-3 pt-2">
             <button
               type="button"
               onClick={() => handleAddConstraint('ineq')}
               disabled={isLoading}
-              className="px-3 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+              className="rounded-full bg-emerald-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-50"
             >
-              + Add Inequality (≥0)
+              + Add Inequality (&gt;=0)
             </button>
             <button
               type="button"
               onClick={() => handleAddConstraint('eq')}
               disabled={isLoading}
-              className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+              className="rounded-full bg-amber-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(245,158,11,0.24)] transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-50"
             >
               + Add Equality (=0)
             </button>
@@ -339,7 +332,7 @@ const TriplesSolverPage: React.FC = () => {
                 type="button"
                 onClick={handleClearAllConstraints}
                 disabled={isLoading}
-                className="px-3 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 ml-auto"
+                className="rounded-full bg-rose-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(244,63,94,0.2)] transition-colors hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:opacity-50 sm:ml-auto"
               >
                 Clear All Constraints
               </button>
@@ -347,11 +340,10 @@ const TriplesSolverPage: React.FC = () => {
           </div>
         </div>
 
-
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="flex w-full items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1d4ed8_0%,#38bdf8_100%)] px-4 py-3 font-semibold text-white shadow-[0_18px_34px_rgba(59,130,246,0.24)] transition-all hover:shadow-[0_22px_42px_rgba(59,130,246,0.3)] focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? (
             <>
@@ -369,10 +361,10 @@ const TriplesSolverPage: React.FC = () => {
           <AlertMessage type="error" message={error} onClose={handleClearError} />
         </div>
       )}
-      
+
       {!error && apiResult && !apiResult.apiSuccess && (
          <div className="mt-6">
-          <AlertMessage type="error" message={apiResult.errorMessage || "An unknown API error occurred."} onClose={() => setApiResult(null)} />
+          <AlertMessage type="error" message={apiResult.errorMessage || 'An unknown API error occurred.'} onClose={() => setApiResult(null)} />
         </div>
       )}
 
@@ -381,46 +373,43 @@ const TriplesSolverPage: React.FC = () => {
           <AlertMessage type="error" message={`Proof attempt failed: ${proofData.error}`} onClose={() => setApiResult(null)} />
         </div>
       )}
-      
+
       {proofData && proofData.success && (
-        <div className="mt-8 pt-6 border-t border-slate-200 space-y-6">
+        <div className="mt-8 space-y-6 border-t border-sky-100 pt-6">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-700 mb-3 text-center">Proof</h2>
-            <div className="bg-slate-50 p-4 rounded-md shadow-inner overflow-x-auto text-center">
+            <h2 className="mb-3 text-center text-2xl font-semibold text-slate-700">Proof</h2>
+            <div className="overflow-x-auto rounded-[24px] border border-white/70 bg-white/70 p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]">
               <KatexDisplay latex={proofData.latex_aligned} className="text-lg" />
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold text-slate-700 mb-4 text-center">Result Details</h2>
-            <div className="border border-slate-200 rounded-lg shadow-sm">
-              <div className="flex border-b border-slate-200">
+            <h2 className="mb-4 text-center text-2xl font-semibold text-slate-700">Result Details</h2>
+            <div className="overflow-hidden rounded-[24px] border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
+              <div className="flex border-b border-sky-100 bg-[rgba(248,250,252,0.76)]">
                 {(['solution', 'latex', 'latex_aligned'] as TabKey[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2 px-4 text-sm font-medium transition-colors focus:outline-none
-                      ${activeTab === tab 
-                        ? 'bg-blue-500 text-white border-b-2 border-blue-700' 
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                      }
-                      ${tab === 'solution' ? 'rounded-tl-md' : ''}
-                      ${tab === 'latex_aligned' ? 'rounded-tr-md' : ''}
-                    `}
+                    className={`flex-1 px-4 py-2 text-sm font-medium transition-colors focus:outline-none ${
+                      activeTab === tab
+                        ? 'bg-[linear-gradient(135deg,#bfdbfe_0%,#dbeafe_100%)] text-sky-800'
+                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-800'
+                    }`}
                   >
                     {tab.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </button>
                 ))}
               </div>
-              <div className="p-4 bg-slate-50 rounded-b-lg relative">
+              <div className="relative bg-white/72 p-4">
                 <button
                   onClick={() => handleCopy(proofData[activeTab], activeTab)}
-                  className="absolute top-3 right-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium py-1 px-2 rounded transition-colors"
+                  className="absolute right-3 top-3 rounded-full bg-slate-200/90 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-300"
                   aria-label={`Copy ${activeTab.replace('_', ' ')}`}
                 >
                   {copyStatus[activeTab]}
                 </button>
-                <pre className="whitespace-pre-wrap break-all text-slate-800 text-sm leading-relaxed max-h-60 overflow-y-auto pr-16">
+                <pre className="max-h-60 overflow-y-auto whitespace-pre-wrap break-all pr-16 text-sm leading-relaxed text-slate-800">
                   {proofData[activeTab]}
                 </pre>
               </div>
@@ -429,55 +418,51 @@ const TriplesSolverPage: React.FC = () => {
         </div>
       )}
 
-      
-      {/* Tutorials */}
       <div className="h-8"></div>
-      <div className="space-y-4 pt-4 border-t border-slate-200">
-        <h3 className="text-2xl font-semibold text-slate-700 mb-3">Tutorial</h3>
-        <p className="text-slate-600 mt-2 text-sm sm:text-base">
+      <div className="space-y-4 border-t border-sky-100 pt-4">
+        <h3 className="mb-3 text-2xl font-semibold text-slate-700">Tutorial</h3>
+        <p className="mt-2 text-sm text-slate-600 sm:text-base">
           Inputs are parsed by SymPy's "sympify" function and should follow Python syntax.
         </p>
-        <ul className="text-slate-600 text-sm sm:text-base list-disc list-inside ml-4 space-y-1">
+        <ul className="ml-4 list-inside list-disc space-y-1 text-sm text-slate-600 sm:text-base">
           <li>Both "**" and "^" are allowed for exponents. Multiplication symbols ("*") must not be omitted.</li>
-          <li>Do not use comparison symbols such as "&gt;", "&lt;", "=", "≥", or "≤".</li>
+          <li>Do not use comparison symbols such as "&gt;", "&lt;", "=", "&gt;=", or "&lt;=".</li>
           <li>Brackets should be "(" or ")", and other brackets are not allowed.</li>
         </ul>
-      </div> 
+      </div>
 
-      
-      {/* Examples Section */}
-      <div className="mt-12 pt-8 border-t border-slate-300">
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-center">
+      <div className="mt-12 border-t border-sky-100 pt-8">
+        <h2 className="mb-6 text-center text-2xl font-semibold text-slate-800 sm:text-3xl">
           Try these Examples
         </h2>
         {examplesData.length === 0 && (
-            <p className="text-slate-600 text-center">No examples available at the moment.</p>
+          <p className="text-center text-slate-600">No examples available at the moment.</p>
         )}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
           {examplesData.map((example) => (
-            <div key={example.id} className="bg-slate-50 p-5 rounded-lg shadow-lg border border-slate-200 flex flex-col justify-between hover:shadow-xl transition-shadow">
+            <div key={example.id} className="flex flex-col justify-between rounded-[26px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8),rgba(239,246,255,0.72))] p-5 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_46px_rgba(96,165,250,0.16)]">
               <div className="flex-grow">
-                <h3 className="text-xl font-semibold text-blue-700 mb-2">{example.name}</h3>
+                <h3 className="mb-2 text-xl font-semibold text-sky-800">{example.name}</h3>
                 {example.displayExpressionLatex && (
-                  <div className="mb-3 p-3 bg-white rounded border border-slate-200 shadow-sm overflow-x-auto">
-                     <KatexDisplay latex={example.displayExpressionLatex} />
+                  <div className="mb-3 overflow-x-auto rounded-2xl border border-white/80 bg-white/82 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                    <KatexDisplay latex={example.displayExpressionLatex} />
                   </div>
                 )}
                 {!example.displayExpressionLatex && example.expression && (
-                   <p className="text-sm text-slate-700 mb-2 bg-white p-3 rounded border border-slate-200 font-mono break-all">
-                      <code>{example.expression}</code>
-                   </p>
+                  <p className="mb-2 break-all rounded-2xl border border-white/80 bg-white/82 p-3 font-mono text-sm text-slate-700">
+                    <code>{example.expression}</code>
+                  </p>
                 )}
                 {example.description && (
-                  <p className="text-sm text-slate-600 mb-3">{example.description}</p>
+                  <p className="mb-3 text-sm text-slate-600">{example.description}</p>
                 )}
                 {example.constraints.length > 0 && (
                   <div className="mb-4">
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Constraints:</h4>
-                    <ul className="list-disc list-inside pl-1 text-sm text-slate-600 space-y-0.5">
+                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Constraints:</h4>
+                    <ul className="list-inside list-disc space-y-0.5 pl-1 text-sm text-slate-600">
                       {example.constraints.map((c, index) => (
                         <li key={index}>
-                          <code className="text-xs bg-slate-200 p-0.5 rounded">{c.expression} {c.type === 'ineq' ? '≥ 0' : '= 0'}</code>
+                          <code className="rounded-full bg-slate-200 px-2 py-0.5 text-xs">{c.expression} {c.type === 'ineq' ? '>= 0' : '= 0'}</code>
                           {c.alias && c.alias !== c.expression && <span className="text-xs text-slate-500"> (as {c.alias})</span>}
                         </li>
                       ))}
@@ -487,7 +472,7 @@ const TriplesSolverPage: React.FC = () => {
               </div>
               <button
                 onClick={() => handleLoadExample(example)}
-                className="mt-auto w-full bg-sky-500 text-white font-medium py-2 px-4 rounded-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors text-sm shadow hover:shadow-md"
+                className="mt-auto w-full rounded-full bg-[linear-gradient(135deg,#0ea5e9_0%,#38bdf8_100%)] px-4 py-2 text-sm font-medium text-white shadow-[0_12px_26px_rgba(14,165,233,0.24)] transition-all hover:shadow-[0_16px_34px_rgba(14,165,233,0.3)] focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
                 aria-label={`Load example: ${example.name}`}
               >
                 Load this Example
@@ -497,30 +482,20 @@ const TriplesSolverPage: React.FC = () => {
         </div>
       </div>
 
-      
-
-      {/* Install Section */}
-      <div className="mt-12 pt-8 border-t border-slate-300">
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-center">
+      <div className="mt-12 border-t border-sky-100 pt-8">
+        <h2 className="mb-6 text-center text-2xl font-semibold text-slate-800 sm:text-3xl">
           Use it in Python!
         </h2>
         <div className="flex justify-center">
-          <pre className="bg-slate-50 p-4 rounded-md shadow-sm border border-slate-200 overflow-x-auto">
-            <code className="text-sm text-slate-800 font-mono">pip install triples</code>
+          <pre className="overflow-x-auto rounded-full border border-white/80 bg-white/78 px-6 py-4 shadow-[0_12px_28px_rgba(148,163,184,0.1)]">
+            <code className="font-mono text-sm text-slate-800">pip install triples</code>
           </pre>
         </div>
       </div>
-
-
-      {/* <div className="mt-12 pt-8 border-t border-slate-300">
-      <br></br>
-      </div>
-      <br></br>
-      <br></br>
-      <br></br> */}
     </div>
-
   );
 };
 
 export default TriplesSolverPage;
+
+

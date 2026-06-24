@@ -1,30 +1,33 @@
-
-import React from 'react';
+﻿import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Home', path: '/' },
-  { name: 'Triples', path: '/triples' }, // Updated text and path
+  { name: 'Triples', path: '/triples' },
   { name: 'About', path: '/about' },
-  // Add more links as needed e.g. Blog, Projects
 ];
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
-        <NavLink to="/" className="text-3xl font-bold tracking-tight hover:opacity-90 transition-opacity">
+    <header className="sticky top-0 z-50 border-b border-white/40 bg-[rgba(244,249,255,0.72)] text-slate-800 shadow-[0_10px_30px_rgba(148,163,184,0.12)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between px-4 py-4 sm:flex-row sm:px-6 lg:px-8">
+        <NavLink
+          to="/"
+          className="text-3xl font-semibold tracking-[-0.04em] text-slate-800 transition-all duration-300 hover:text-sky-700"
+        >
           ForeverHaibara
         </NavLink>
         <nav className="mt-4 sm:mt-0">
-          <ul className="flex space-x-4 sm:space-x-6">
+          <ul className="flex items-center gap-2 rounded-full border border-white/60 bg-white/55 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
             {navigationItems.map((item) => (
               <li key={item.name}>
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `text-base font-medium transition-colors hover:text-blue-200 ${
-                      isActive ? 'text-blue-100 underline underline-offset-4 decoration-2 decoration-blue-300' : 'text-white'
+                    `rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
+                      isActive
+                        ? 'bg-[linear-gradient(135deg,#dbeafe_0%,#eff6ff_100%)] text-sky-800 shadow-[0_8px_20px_rgba(96,165,250,0.18)]'
+                        : 'text-slate-600 hover:bg-white/80 hover:text-sky-700'
                     }`
                   }
                 >

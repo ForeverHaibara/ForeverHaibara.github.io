@@ -1,12 +1,11 @@
-
-import React from 'react';
+﻿import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const docNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
-  `block px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+  `block whitespace-nowrap rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-300 ${
     isActive
-      ? 'bg-blue-100 text-blue-700 font-semibold'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+      ? 'bg-[linear-gradient(135deg,#dbeafe_0%,#eff6ff_100%)] text-sky-800 shadow-[0_8px_20px_rgba(96,165,250,0.14)]'
+      : 'text-slate-600 hover:bg-white/70 hover:text-sky-700'
   }`;
 
 const documentationSections = [
@@ -17,13 +16,12 @@ const documentationSections = [
       { name: 'Limitations', path: '/triples/documentation/applications/limitations' },
     ]
   },
-  { 
-    name: 'API Reference', 
+  {
+    name: 'API Reference',
     path: '/triples/documentation/api-reference',
     subLinks: [
       { name: 'Sum of Squares', path: '/triples/documentation/api-reference/sum-of-squares' },
       { name: 'SymPy', path: '/triples/documentation/api-reference/sympy' },
-      // Add more API sub-links here
     ]
   },
   {
@@ -33,14 +31,13 @@ const documentationSections = [
       { name: 'SDPSOS', path: '/triples/documentation/semidefinite-programming/sdpsos' },
     ]
   },
-  // Add more top-level sections here
 ];
 
 const DocumentationLayout: React.FC = () => {
   return (
-    <div className="flex flex-col md:flex-row bg-white rounded-xl shadow-xl overflow-hidden">
-      <aside className="w-full md:w-64 bg-slate-50 p-4 border-b md:border-b-0 md:border-r border-slate-200 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Documentation Menu</h2>
+    <div className="flex flex-col overflow-hidden rounded-[30px] border border-white/70 bg-white/56 shadow-[0_20px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl md:flex-row">
+      <aside className="w-full flex-shrink-0 border-b border-white/60 bg-[linear-gradient(180deg,rgba(248,252,255,0.92),rgba(239,246,255,0.7))] p-4 md:w-72 md:border-b-0 md:border-r md:border-white/60">
+        <h2 className="mb-4 text-lg font-semibold text-slate-800">Documentation Menu</h2>
         <nav className="space-y-1">
           {documentationSections.map((section) => (
             <div key={section.name}>
@@ -52,7 +49,7 @@ const DocumentationLayout: React.FC = () => {
                 {section.name}
               </NavLink>
               {section.subLinks && (
-                <div className="pl-4 mt-1 space-y-1 border-l border-slate-300 ml-3">
+                <div className="ml-4 mt-2 space-y-1 border-l border-sky-100 pl-4">
                   {section.subLinks.map(subLink => (
                      <NavLink
                         key={subLink.name}
@@ -68,7 +65,7 @@ const DocumentationLayout: React.FC = () => {
           ))}
         </nav>
       </aside>
-      <main className="flex-grow p-6 sm:p-8 overflow-y-auto">
+      <main className="flex-grow overflow-y-auto p-6 sm:p-8">
         <Outlet />
       </main>
     </div>
