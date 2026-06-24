@@ -11,6 +11,7 @@ interface ColumnConfig {
   key: SortKey;
   label: string;
   align?: 'left' | 'right';
+  width?: string;
 }
 
 const searchFields: (keyof Pick<GeometryTiebaPost, 'title' | 'author' | 'text'>)[] = ['title', 'author', 'text'];
@@ -18,9 +19,9 @@ const searchFields: (keyof Pick<GeometryTiebaPost, 'title' | 'author' | 'text'>)
 const columns: ColumnConfig[] = [
   { key: 'title', label: 'Post Title' },
   { key: 'author', label: 'Author' },
-  { key: 'createTime', label: 'Created' },
-  { key: 'replyNum', label: 'Replies', align: 'right' },
-  { key: 'tid', label: 'Thread ID' },
+  { key: 'createTime', label: 'Created', width: '100px' },
+  { key: 'replyNum', label: 'Replies', align: 'right', width: '70px' },
+  { key: 'tid', label: 'TID', width: '120px' },
 ];
 
 const PAGE_SIZE = 50;
@@ -40,7 +41,7 @@ const matchesQuery = (post: GeometryTiebaPost, queryTerms: string[], keys: reado
   }
 
   return queryTerms.every((term) =>
-    keys.some((key) => String(post[key] ?? '').includes(term))
+    keys.some((key) => String(post[key] ?? '').toLowerCase().includes(term.toLowerCase()))
   );
 };
 
@@ -248,6 +249,7 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
                           <th
                             key={column.key}
                             scope="col"
+                            style={column.width ? { width: column.width, minWidth: column.width } : {}}
                             className={`px-4 py-3 ${column.align === 'right' ? 'text-right' : 'text-left'} text-xs font-medium uppercase tracking-wider text-slate-500`}
                           >
                             <button
