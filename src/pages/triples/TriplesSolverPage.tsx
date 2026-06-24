@@ -89,6 +89,7 @@ const examplesData: TriplesExample[] = [
 ];
 
 const sectionCardClass = 'rounded-[28px] border border-white/70 bg-white/60 p-5 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:p-6';
+const primaryCardClass = 'rounded-[30px] border border-white/70 bg-white/62 p-5 shadow-[0_20px_44px_rgba(148,163,184,0.14)] backdrop-blur-xl sm:p-6 lg:p-7';
 
 const TriplesSolverPage: React.FC = () => {
   const [expression, setExpression] = useState<string>('');
@@ -210,6 +211,7 @@ const TriplesSolverPage: React.FC = () => {
     <div className="space-y-6">
       <section className="rounded-[30px] border border-white/70 bg-white/48 px-5 py-6 shadow-[0_18px_42px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8">
         <header className="max-w-4xl">
+        {/* <header className="mx-auto max-w-4xl">text-center xl:text-left" */}
           <h1 className="text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl">Triples Inequality Prover</h1>
           <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
             Enter a mathematical expression and optional constraints to attempt a proof of its non-negativity.
@@ -218,8 +220,10 @@ const TriplesSolverPage: React.FC = () => {
         </header>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
-        <section className={sectionCardClass}>
+      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(720px,960px)_320px_minmax(0,1fr)] xl:gap-6">
+        <div className="hidden xl:block" aria-hidden="true" />
+
+        <section className={primaryCardClass}>
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="expression" className="mb-1 block text-sm font-medium text-slate-700">Mathematical Expression</label>
@@ -309,7 +313,7 @@ const TriplesSolverPage: React.FC = () => {
           </form>
         </section>
 
-        <section className={`${sectionCardClass} xl:sticky xl:top-24 xl:self-start`}>
+        <section className={`${sectionCardClass} mt-6 xl:mt-0 xl:self-start xl:sticky xl:top-24`}>
           <h2 className="text-2xl font-semibold text-slate-700">Tutorial</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">Inputs are parsed by SymPy's "sympify" function and should follow Python syntax.</p>
           <ul className="mt-3 ml-4 list-inside list-disc space-y-2 text-sm text-slate-600 sm:text-base">
@@ -318,6 +322,8 @@ const TriplesSolverPage: React.FC = () => {
             <li>Brackets should be "(" or ")", and other brackets are not allowed.</li>
           </ul>
         </section>
+
+        <div className="hidden xl:block" aria-hidden="true" />
       </div>
 
       {(error || (!error && apiResult && !apiResult.apiSuccess) || (proofData && !proofData.success)) && (
@@ -327,6 +333,7 @@ const TriplesSolverPage: React.FC = () => {
           {proofData && !proofData.success && <AlertMessage type="error" message={`Proof attempt failed: ${proofData.error}`} onClose={() => setApiResult(null)} />}
         </section>
       )}
+
       {proofData && proofData.success && (
         <section className={sectionCardClass}>
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.95fr)]">
