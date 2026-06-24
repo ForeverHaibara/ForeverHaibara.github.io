@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom';
 import Header from './components/Header.tsx';
 import Footer from './components/Footer.tsx';
@@ -9,6 +9,8 @@ import TriplesSolverPage from './pages/triples/TriplesSolverPage.tsx';
 import DocumentationLayout from './pages/triples/documentation/DocumentationLayout.tsx';
 import TriplesDocumentationIndexPage from './pages/triples/documentation/TriplesDocumentationIndexPage.tsx';
 import DynamicDocPage from './pages/triples/documentation/DynamicDocPage.tsx';
+import GeometryLayout from './pages/geometry/GeometryLayout.tsx';
+import PureGeometryTiebaSearchPage from './pages/geometry/PureGeometryTiebaSearchPage.tsx';
 
 const AppLayout: React.FC = () => {
   return (
@@ -47,6 +49,9 @@ const App: React.FC = () => {
             <Route index element={<TriplesDocumentationIndexPage />} />
             <Route path="*" element={<DynamicDocPage />} />
           </Route>
+        </Route>
+        <Route path="geometry" element={<GeometryLayout />}>
+          <Route index element={<PureGeometryTiebaSearchPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

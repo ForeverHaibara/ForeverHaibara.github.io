@@ -1,9 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Home', path: '/' },
   { name: 'Triples', path: '/triples' },
+  { name: 'Geometry', path: '/geometry' },
   { name: 'About', path: '/about' },
 ];
 

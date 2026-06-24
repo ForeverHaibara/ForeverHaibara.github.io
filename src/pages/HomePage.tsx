@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
@@ -19,7 +19,7 @@ const HomePage: React.FC = () => {
           </p>
         </header>
 
-        <section className="relative mb-12 grid gap-6 md:grid-cols-2">
+        <section className="relative mb-12 grid gap-6 md:grid-cols-3">
           <div className="group rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(239,246,255,0.72))] p-7 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(96,165,250,0.16)]">
             <h2 className="mb-3 text-2xl font-semibold text-sky-900">Triples Inequality Solver</h2>
             <p className="mb-5 text-slate-600">
@@ -30,6 +30,18 @@ const HomePage: React.FC = () => {
               className="inline-flex items-center rounded-full bg-[linear-gradient(135deg,#1d4ed8_0%,#38bdf8_100%)] px-5 py-2.5 text-sm font-medium text-white shadow-[0_12px_24px_rgba(59,130,246,0.24)] transition-all duration-300 hover:translate-x-1 hover:shadow-[0_16px_30px_rgba(59,130,246,0.28)]"
             >
               Try Triples Solver
+            </Link>
+          </div>
+          <div className="group rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(224,242,254,0.68))] p-7 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(56,189,248,0.18)]">
+            <h2 className="mb-3 text-2xl font-semibold text-sky-900">Geometry Archive</h2>
+            <p className="mb-5 text-slate-600">
+              Search pure geometry Tieba threads instantly with in-page filtering, sorting, and pagination.
+            </p>
+            <Link
+              to="/geometry"
+              className="inline-flex items-center rounded-full bg-[linear-gradient(135deg,#0284c7_0%,#38bdf8_100%)] px-5 py-2.5 text-sm font-medium text-white shadow-[0_12px_24px_rgba(14,165,233,0.22)] transition-all duration-300 hover:translate-x-1 hover:shadow-[0_16px_30px_rgba(14,165,233,0.26)]"
+            >
+              Open Geometry Search
             </Link>
           </div>
           <div className="group rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8),rgba(248,250,252,0.72))] p-7 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(125,211,252,0.18)]">
