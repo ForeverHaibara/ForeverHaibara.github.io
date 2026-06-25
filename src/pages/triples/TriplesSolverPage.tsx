@@ -336,38 +336,42 @@ const TriplesSolverPage: React.FC = () => {
 
       {proofData && proofData.success && (
         <section className={sectionCardClass}>
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.95fr)]">
-            <div>
-              <h2 className="mb-3 text-2xl font-semibold text-slate-700">Proof</h2>
-              <div className="overflow-x-auto rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]">
-                <KatexDisplay latex={proofData.latex_aligned} className="text-lg" />
-              </div>
-            </div>
-            <div>
-              <h2 className="mb-3 text-2xl font-semibold text-slate-700">Result Details</h2>
-              <div className="overflow-hidden rounded-[24px] border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
-                <div className="flex border-b border-sky-100 bg-[rgba(248,250,252,0.76)]">
-                  {(['solution', 'latex', 'latex_aligned'] as TabKey[]).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex-1 px-4 py-2 text-sm font-medium transition-colors focus:outline-none ${activeTab === tab ? 'bg-[linear-gradient(135deg,#bfdbfe_0%,#dbeafe_100%)] text-sky-800' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800'}`}
-                    >
-                      {tab.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </button>
-                  ))}
+          <div className="overflow-x-auto">
+            <div className="min-w-full grid gap-6 sm:min-w-[640px] xl:min-w-full xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.95fr)]">
+              <div className="min-w-[300px] sm:min-w-[400px] xl:min-w-0">
+                <h2 className="mb-3 text-2xl font-semibold text-slate-700">Proof</h2>
+                <div className="overflow-x-auto rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]">
+                  <div className="min-w-max">
+                    <KatexDisplay latex={proofData.latex_aligned} className="text-base sm:text-lg" />
+                  </div>
                 </div>
-                <div className="relative bg-white/72 p-4">
-                  <button
-                    onClick={() => handleCopy(proofData[activeTab], activeTab)}
-                    className="absolute right-3 top-3 rounded-full bg-slate-200/90 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-300"
-                    aria-label={`Copy ${activeTab.replace('_', ' ')}`}
-                  >
-                    {copyStatus[activeTab]}
-                  </button>
-                  <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap break-all pr-16 text-sm leading-relaxed text-slate-800">
-                    {proofData[activeTab]}
-                  </pre>
+              </div>
+              <div className="min-w-[300px] sm:min-w-[360px] xl:min-w-0">
+                <h2 className="mb-3 text-2xl font-semibold text-slate-700">Result Details</h2>
+                <div className="overflow-hidden rounded-[24px] border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
+                  <div className="flex border-b border-sky-100 bg-[rgba(248,250,252,0.76)]">
+                    {(['solution', 'latex', 'latex_aligned'] as TabKey[]).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 px-3 py-2 text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-300 ${activeTab === tab ? 'bg-[linear-gradient(135deg,#bfdbfe_0%,#dbeafe_100%)] text-sky-800' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800'}`}
+                      >
+                        {tab.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative bg-white/72 p-3 sm:p-4">
+                    <button
+                      onClick={() => handleCopy(proofData[activeTab], activeTab)}
+                      className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 rounded-full border border-white/70 bg-slate-200/90 px-2 sm:px-3 py-1 text-xs font-medium text-slate-700 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:bg-slate-700 hover:text-white hover:shadow-xl hover:shadow-black/30 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                      aria-label={`Copy ${activeTab.replace('_', ' ')}`}
+                    >
+                      {copyStatus[activeTab]}
+                    </button>
+                    <pre className="max-h-64 sm:max-h-72 overflow-y-auto whitespace-pre-wrap break-all text-xs sm:text-sm leading-relaxed text-slate-800">
+                      {proofData[activeTab]}
+                    </pre>
+                  </div>
                 </div>
               </div>
             </div>
