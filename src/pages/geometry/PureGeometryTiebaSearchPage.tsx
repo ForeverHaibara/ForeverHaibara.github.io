@@ -244,7 +244,7 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
                     <tr>
                       {columns.map((column) => {
                         const isActive = column.key === sortKey;
-                        const indicator = isActive ? (sortDirection === 'asc' ? 'ASC' : 'DESC') : 'SORT';
+                        const indicator = isActive ? (sortDirection === 'asc' ? 'ASC ' : 'DESC') : 'SORT';
                         return (
                           <th
                             key={column.key}
