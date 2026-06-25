@@ -17,11 +17,11 @@ interface ColumnConfig {
 const searchFields: (keyof Pick<GeometryTiebaPost, 'title' | 'author' | 'text'>)[] = ['title', 'author', 'text'];
 
 const columns: ColumnConfig[] = [
-  { key: 'title', label: 'Post Title' },
-  { key: 'author', label: 'Author' },
-  { key: 'createTime', label: 'Created', width: '100px' },
-  { key: 'replyNum', label: 'Replies', align: 'right', width: '70px' },
-  { key: 'tid', label: 'TID', width: '120px' },
+  { key: 'title', label: 'Post Title', width: '46%' },
+  { key: 'author', label: 'Author', width: '20%' },
+  { key: 'createTime', label: 'Created', width: '12%' },
+  { key: 'replyNum', label: 'Replies', align: 'right', width: '12%' },
+  { key: 'tid', label: 'TID', width: '10%' },
 ];
 
 const PAGE_SIZE = 50;
@@ -239,7 +239,7 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
 
             <div className="overflow-hidden rounded-[26px] border border-sky-100 shadow-[0_18px_40px_rgba(148,163,184,0.1)]">
               <div className="overflow-x-auto">
-                <table className="min-w-full bg-white/82">
+                <table className="min-w-full bg-white/82" style={{ tableLayout: 'fixed' }}>
                   <thead className="bg-[rgba(239,246,255,0.85)]">
                     <tr>
                       {columns.map((column) => {
