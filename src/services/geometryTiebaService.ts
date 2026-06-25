@@ -79,8 +79,8 @@ export const fetchGeometryTiebaPosts = async (): Promise<GeometryTiebaPost[]> =>
   }
 
   const [githubUrl, giteeUrl] = GEOMETRY_TIEBA_DATA_URLS;
-  const FAST_TIMEOUT = 10000;
-  const FALLBACK_TIMEOUT = 60000;
+  const FAST_TIMEOUT = 20000;
+  const FALLBACK_TIMEOUT = 600000;
 
   let lastError: Error | null = null;
 
