@@ -29,7 +29,7 @@ const KatexDisplay: React.FC<KatexDisplayProps> = ({ latex, className = '', isBl
   }, [latex, isBlockMode]);
 
   if (isBlockMode) {
-    return <span ref={containerRef as React.RefObject<HTMLDivElement>} className={`katex-render-container ${className}`} aria-live="polite">{latex}</span>;
+    return <div ref={containerRef as React.RefObject<HTMLDivElement>} className={`katex-render-container overflow-x-auto ${className}`} aria-live="polite">{latex}</div>;
   } else {
     return <span ref={containerRef as React.RefObject<HTMLSpanElement>} className={`katex-render-container ${className}`} aria-live="polite">{latex}</span>;
   }
