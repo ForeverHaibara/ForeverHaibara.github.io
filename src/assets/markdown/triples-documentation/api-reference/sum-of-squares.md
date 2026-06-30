@@ -73,7 +73,7 @@ x*(Σ(2*a + 13))/6 + Σa*(b - c)**2 + (Σa*b*(c - 1)**2)/6 + 5*(Σ(a - 1)**2)/6 
 Σ(x - y)**2*G(z)
 ```
 
-### Assumptions
+### Assumptions (newly added in 0.2.0.dev)
 
 Currently, all SymPy symbol assumptions are ignored by default and symbols are treated as real variables. To claim nonnegativity of symbols, just add them to `ineq_constraints`. Another option is to set `assumptions=True` to use the assumptions of SymPy symbols.
 

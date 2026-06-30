@@ -27,6 +27,15 @@ const documentationSections = [
     ]
   },
   {
+    name: 'Solvers',
+    path: '/triples/documentation/solvers',
+    subLinks: [
+      { name: 'StructuralSOS', path: '/triples/documentation/solvers/structsos' },
+      { name: 'LinearSOS', path: '/triples/documentation/solvers/linsos' },
+      { name: 'SDPSOS', path: '/triples/documentation/solvers/sdpsos' },
+    ]
+  },
+  {
     name: 'Semidefinite Programming',
     path: '/triples/documentation/semidefinite-programming',
     subLinks: [

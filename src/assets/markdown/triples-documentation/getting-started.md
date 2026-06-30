@@ -57,6 +57,6 @@ solution = (x - y)**2
 
 ## Next Steps
 
-- Explore the [API Reference](./api-reference) to understand more functions and options.
-- Try proving more complex inequalities, possibly with [constraints](./api-reference/sum-of-squares#with-constraints).
+- Explore the [API Reference](./api-reference#/triples/documentation/api-reference/sum-of-squares) to understand more functions and options.
+- Try proving more complex inequalities, possibly with constraints.
 - Check out the interactive "Triples Solver" on this website for live examples.

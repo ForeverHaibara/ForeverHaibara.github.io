@@ -32,6 +32,36 @@ output = "src/assets/markdown/triples-documentation/api-reference/sum-of-squares
 
 [[docs]]
 type = "function"
+module = "core.structsos.structsos"
+name = "StructuralSOS"
+title = "StructuralSOS"
+introduction = """\
+The `StructuralSOS` function is a rule-based expert system to solve polynomial
+inequalities in specific structures. Most algorithms run in O(1) or linear time."""
+output = "src/assets/markdown/triples-documentation/solvers/structsos.md"
+
+[[docs]]
+type = "function"
+module = "core.linsos.linsos"
+name = "LinearSOS"
+title = "LinearSOS"
+introduction = """\
+The `LinearSOS` function is a shortcut for the `sum_of_squares` function that \
+uses only linear programming to solve inequalities."""
+output = "src/assets/markdown/triples-documentation/solvers/linsos.md"
+
+[[docs]]
+type = "function"
+module = "core.sdpsos.sdpsos"
+name = "SDPSOS"
+title = "SDPSOS"
+introduction = """\
+The `SDPSOS` function is a shortcut for the `sum_of_squares` function that \
+uses only semidefinite programming to solve inequalities."""
+output = "src/assets/markdown/triples-documentation/solvers/sdpsos.md"
+
+[[docs]]
+type = "function"
 module = "core.sdpsos.sdpsos"
 name = "SDPSOS"
 title = "SDPSOS"
@@ -39,3 +69,4 @@ introduction = """\
 The `SDPSOS` function is a shortcut for the `sum_of_squares` function that \
 uses only semidefinite programming to solve inequalities."""
 output = "src/assets/markdown/triples-documentation/semidefinite-programming/sdpsos.md"
+
