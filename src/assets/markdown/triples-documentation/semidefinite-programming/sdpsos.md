@@ -5,7 +5,6 @@ The `SDPSOS` function is a shortcut for the `sum_of_squares` function that uses 
 ## Function Signature
 
 ```python
-
 def SDPSOS(
     expr: "Expr",
     ineq_constraints: Union[List["Expr"], Dict["Expr", "Expr"]] = {},

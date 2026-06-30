@@ -567,62 +567,79 @@ def _format_examples_section(examples_text: str) -> str:
             blocks = _split_prose_and_code(part)
             for block in blocks:
                 lines.append(block)
-                if block.strip():  # only add blank line after non-empty blocks
-                    lines.append("")
+                lines.append("")
 
-    return "\n".join(lines).strip()
+    # Remove trailing blank lines
+    while lines and lines[-1].strip() == "":
+        lines.pop()
+    return "\n".join(lines)
 
 
 def _split_prose_and_code(text: str) -> List[str]:
-    """Split text into prose paragraphs and ```python``` code blocks."""
+    """Split text into prose paragraphs and ```python``` code blocks.
+
+    Paragraphs are separated by blank lines.  A paragraph that contains any
+    ``>>>`` or ``...`` line is treated as code; otherwise it is prose.
+    Consecutive code paragraphs are merged into a single code block (blank
+    lines between them are preserved inside the block).  Consecutive prose
+    paragraphs are merged into one prose paragraph.
+    """
     lines = text.strip().split("\n")
-    result: List[str] = []
-    prose_buf: List[str] = []
-    code_buf: List[str] = []
 
-    def flush_prose():
-        nonlocal prose_buf
-        if prose_buf:
-            text_out = " ".join(line.strip() for line in prose_buf if line.strip())
-            if text_out:
-                result.append(text_out)
-                result.append("")
-            prose_buf = []
-
-    def flush_code():
-        nonlocal code_buf
-        if code_buf:
-            code_text = textwrap.dedent("\n".join(code_buf)).strip()
-            result.append("```python")
-            result.append(code_text)
-            result.append("```")
-            code_buf = []
-
+    # 1. Split into paragraphs separated by blank lines.
+    paragraphs: List[List[str]] = []
+    current: List[str] = []
     for line in lines:
-        stripped = line.strip()
-        if stripped.startswith(">>> ") or stripped.startswith("... "):
-            flush_prose()
-            code_buf.append(stripped)
-        elif code_buf and stripped:
-            # Continuation line inside a code block (output lines)
-            code_buf.append(stripped)
-        elif code_buf and not stripped:
-            flush_code()
+        if line.strip() == "":
+            if current:
+                paragraphs.append(current)
+                current = []
         else:
-            flush_code()
-            prose_buf.append(line)
+            current.append(line)
+    if current:
+        paragraphs.append(current)
 
-    flush_prose()
-    flush_code()
-    # Final pass: collapse multiple blank lines into single blank line
+    # 2. Classify each paragraph.
+    is_code = [
+        any(
+            ln.strip().startswith(">>> ") or ln.strip().startswith("... ")
+            for ln in para
+        )
+        for para in paragraphs
+    ]
+
+    # 3. Merge consecutive paragraphs of the same type.
+    result: List[str] = []
+    i = 0
+    while i < len(paragraphs):
+        merged: List[str] = []
+        code = is_code[i]
+        while i < len(paragraphs) and is_code[i] == code:
+            if merged:
+                merged.append("")  # preserve blank line between merged paragraphs
+            merged.extend(paragraphs[i])
+            i += 1
+
+        if code:
+            code_text = textwrap.dedent("\n".join(merged)).strip()
+            result.append(f"```python\n{code_text}\n```")
+        else:
+            prose_text = " ".join(ln.strip() for ln in merged if ln.strip())
+            if prose_text:
+                result.append(prose_text)
+
+    # 4. Collapse runs of blank lines into a single blank line and drop trailing blanks.
     output: List[str] = []
     prev_blank = False
     for item in result:
-        is_blank = item.strip() == ""
-        if is_blank and prev_blank:
+        blank = item.strip() == ""
+        if blank and prev_blank:
             continue
         output.append(item)
-        prev_blank = is_blank
+        prev_blank = blank
+    while output and output[-1].strip() == "":
+        output.pop()
+
     return output
 
 
@@ -644,7 +661,7 @@ def generate_markdown(entry: DocEntry, title: str, introduction: str) -> str:
     md_parts.append(f"## {section_label}")
     md_parts.append("")
     md_parts.append("```python")
-    md_parts.append(entry.signature.rstrip("\n"))
+    md_parts.append(entry.signature.strip())
     md_parts.append("```")
     md_parts.append("")
 
