@@ -1,0 +1,41 @@
+# Configuration for auto-generating API documentation from triples source code.
+#
+# Each [[docs]] entry describes one function or class to document.
+# - type         : "function" or "class"
+# - module       : dotted Python module path relative to the source directory
+#                  (e.g., "core.sum_of_squares")
+# - name         : exact function / class name in the source
+# - title        : markdown heading title for the generated page
+# - introduction : text placed after the title; overrides the docstring summary
+# - output       : output markdown path relative to the workspace root
+# - source_file  : (optional) explicit source file; omit to auto-detect
+
+[source]
+directory = "D:\\PythonProjects\\Math\\Inequalities\\Triples\\Triple-SOS\\triples"
+
+# ---------------------------------------------------------------------------
+# Existing documented entries
+# ---------------------------------------------------------------------------
+
+[[docs]]
+type = "function"
+module = "core.sum_of_squares"
+name = "sum_of_squares"
+title = "Sum of Squares"
+introduction = """\
+The `sum_of_squares` function is the core utility for performing sum of squares \
+decomposition on a given expression, potentially with constraints.  It takes a \
+symbolic expression (a SymPy `Expr`) and attempts to express it in sum of squares. \
+This is a common technique to prove that the polynomial is nonnegative. The \
+function can also handle problems with inequality and equality constraints."""
+output = "src/assets/markdown/triples-documentation/api-reference/sum-of-squares.md"
+
+[[docs]]
+type = "function"
+module = "core.sdpsos.sdpsos"
+name = "SDPSOS"
+title = "SDPSOS"
+introduction = """\
+The `SDPSOS` function is a shortcut for the `sum_of_squares` function that \
+uses only semidefinite programming to solve inequalities."""
+output = "src/assets/markdown/triples-documentation/semidefinite-programming/sdpsos.md"
