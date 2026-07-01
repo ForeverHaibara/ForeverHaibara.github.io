@@ -23,10 +23,35 @@ def LinearSOS(
     linprog_options: Dict = LINPROG_OPTIONS,
     linprog_time_limit: float = 300.0,
     allow_numer: int = 0,
-    time_limit: float = 3600.0,
-    verbose: bool = False
+    verbose: bool = False,
+    time_limit: float = 3600.0
 ) -> Optional[Solution]:
 ```
+
+## Examples
+
+LinearSOS uses linear programming to solve inequality problems.
+
+```python
+>>> from triples import LinearSOS
+>>> from sympy.abc import a, b, c
+>>> sol = LinearSOS(a**5*(a-b)+b**5*(b-c)+c**5*(c-a), [a,b,c])
+>>> sol.solution # doctest: +SKIP
+(Σ(a**2*(a**2 - b*c)**2))/6 + (Σ((a - c)**2*(6*a**3*c + 6*a**2*c**2
+ + 3*a**2*(a - b)**2 + (a - b)**2*(b - c)**2)))/18 + 2*(Σ(a**2*(a - b)**2*(a**2 + a*b)))/3
+```
+
+The parameter `lift_degree_limit` controls the maximum lift degree to explore.
+
+```python
+>>> sol = LinearSOS(3 - (a+b+c)**2, [a**2-1, b**2-1, c**2-1], [a+b+c+1/a+1/b+1/c],
+... lift_degree_limit=6)
+>>> sol.solution # doctest: +SKIP
+(a*b*c*(a + b + c + 1/c + 1/b + 1/a)*(Σ(-3*a*b*c**2 + 3*a*b - 2))
+ + 3*(Σ((a**2 + 1)*(b**2 - 1)*(c**2 - 1))))/(Σ(a**2*b**2*c**2 + 1))
+```
+
+LinearSOS has complexity issues for high-dimensional problems.
 
 ## Parameters
 
@@ -73,7 +98,7 @@ def LinearSOS(
 
   <dt><code>wedderburn: bool (default: <code>True</code>)</code></dt>
   <dd>
-    Use wedderburn decomposition. Defaults to True.
+    Whether to use the wedderburn decomposition. Defaults to True.
   </dd>
 
   <dt><code>quad_diff_order: int (default: <code>8</code>)</code></dt>
@@ -111,14 +136,14 @@ def LinearSOS(
     Whether to allow numerical solution. When it is 0, the solution must be exact. When > 0, the solution can be numerical, this might be useful for large scale problems or irrational problems. TODO: Allow tolerance?
   </dd>
 
-  <dt><code>time_limit: float (default: <code>3600.0</code>)</code></dt>
-  <dd>
-    The time limit in seconds for the solver.
-  </dd>
-
   <dt><code>verbose: bool (default: <code>False</code>)</code></dt>
   <dd>
     Whether to print the information of the linear programming problem. Defaults to False.
+  </dd>
+
+  <dt><code>time_limit: float (default: <code>3600.0</code>)</code></dt>
+  <dd>
+    The time limit (in seconds) for the solver. Defaults to 3600. When the time limit is reached, the solver is killed when it returns to the main loop. However, it might not be killed instantly if it is stuck in an internal function.
   </dd>
 
 </dl>

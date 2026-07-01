@@ -26,6 +26,46 @@ def SDPSOS(
 ) -> Optional["SolutionSDP"]:
 ```
 
+## Examples
+
+SDPSOS solves inequalities by semidefinite programming (SDP).
+
+```python
+>>> from triples import SDPSOS
+>>> from sympy.abc import a, b, c, d, e, x, y, z
+>>> sol = SDPSOS(a**3*(a-b)+b**3*(b-c)+c**3*(c-a))
+>>> sol.solution # doctest: +SKIP
+(Σ((a - b)**2*(a + b)**2))/8 + (Σ((2*a*b - a*c - b*c)**2))/60 + (Σ((a**2 - a*b - b**2 + b*c)**2))/12
++ (Σ((-5*a**2 + 2*a*b - 4*a*c - 5*b**2 + 2*b*c + 10*c**2)**2))/360
++ (Σ((a**2 - a*b - a*c + b**2 - b*c + c**2)**2))/18
+```
+
+Not all nonnegative forms are SOS of polynomials. The parameter `lift_degree_limit` controls the maximum lift degree to explore.
+
+```python
+>>> sol = SDPSOS((x**2 + y**2 - 3*z**2)*x**2*y**2 + z**6, lift_degree_limit=0)
+>>> sol is None # because Motzkin's form is not SOS
+True
+>>> sol = SDPSOS((x**2 + y**2 - 3*z**2)*x**2*y**2 + z**6, lift_degree_limit=2)
+>>> sol is not None
+True
+>>> sol.solution.doit().together() # doctest: +SKIP
+(x**2*y**2*(-x + y)**2*(x + y)**2 + x**2*y**2*(x - y)**2*(x + y)**2
++ 14*x**2*y**2*(x**2 + y**2 - 2*z**2)**2 + 4*z**2*(-x + y)**2*(x*y + z**2)**2
++ 4*z**2*(x - y)**2*(x*y + z**2)**2 + 8*z**2*(x + y)**2*(x*y - z**2)**2
++ 8*(x*y - z**2)**2*(x*y + z**2)**2)/(4*(2*z**2 + (-x + y)**2 + (x - y)**2 + 2*(x + y)**2))
+```
+
+### Specifying Roots
+
+Currently SDPSOS first identifies the equality cases to apply facial reduction and then solves the problem. However, in some cases, this could be slow or cause numerical instability. To skip the process, pass in `roots = []` (an empty list).
+
+```python
+>>> sol = SDPSOS((a+b+c+d+e)**2-4*(a*b+b*c+c*d+d*e+e*a), [a,b,c,d,e], roots=[])
+>>> sol.solution # doctest: +SKIP
+(Σ(a*(a - b + c + d - e)**2) + 4*(Σ(a*b*d)))/(Σ(a))
+```
+
 ## Parameters
 
 <dl>
@@ -61,7 +101,7 @@ def SDPSOS(
 
   <dt><code>wedderburn: bool (default: <code>True</code>)</code></dt>
   <dd>
-    Use wedderburn decomposition. Defaults to True.
+    Whether to use the wedderburn decomposition. Defaults to True.
   </dd>
 
   <dt><code>dof_limit: int (default: <code>7000</code>)</code></dt>
@@ -81,7 +121,7 @@ def SDPSOS(
 
   <dt><code>solve_kwargs: Dict[str, Any] (default: <code>{}</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Extra keyword arguments to pass to the SDP solver.
   </dd>
 
   <dt><code>ineq_constraints_with_trivial: bool (default: <code>True</code>)</code></dt>
@@ -101,12 +141,12 @@ def SDPSOS(
 
   <dt><code>verbose: bool (default: <code>False</code>)</code></dt>
   <dd>
-    Whether to print the progress. Default is False.
+    Whether to print the progress. If verbose >= 2, it also prints the SDP solver progress. Default is False.
   </dd>
 
   <dt><code>time_limit: float (default: <code>3600.0</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    The time limit (in seconds) for the solver. Defaults to 3600. When the time limit is reached, the solver is killed when it returns to the main loop. However, it might not be killed instantly if it is stuck in an internal function.
   </dd>
 
 </dl>
