@@ -3,6 +3,7 @@ import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
+import rehypeHighlight from 'rehype-highlight';
 import KatexDisplay, { type KatexDisplayProps } from './KatexDisplay.tsx';
 
 interface MarkdownRendererProps {
@@ -30,10 +31,14 @@ interface MathRendererCmpProps {
   [key: string]: any;
 }
 
+interface PreChildProps {
+  className?: string;
+}
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, className }) => {
   const customComponents: Components & {
-    math?: (props: MathRendererCmpProps) => JSX.Element;
-    inlineMath?: (props: MathRendererCmpProps) => JSX.Element;
+    math?: (props: MathRendererCmpProps) => React.JSX.Element;
+    inlineMath?: (props: MathRendererCmpProps) => React.JSX.Element;
   } = {
     h1: ({node, ...props}) => <h1 className="mb-5 mt-1 text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl" {...props} />,
     h2: ({node, ...props}) => <h2 className="mb-3 mt-8 border-b border-sky-100 pb-2 text-2xl font-semibold text-sky-800" {...props} />,
@@ -102,7 +107,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     pre: ({ node, children, ...props }) => {
       const childArray = React.Children.toArray(children);
       if (childArray.length === 1) {
-        const child = childArray[0] as React.ReactElement;
+        const child = childArray[0] as React.ReactElement<PreChildProps>;
         if (child && child.props && (child.props.className?.includes('language-math') || child.type === KatexDisplay)) {
           return <div className="my-4">{children}</div>;
         }
@@ -143,7 +148,14 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
 
   return (
     <div className={`prose max-w-none text-[1.02rem] prose-headings:max-w-none prose-p:max-w-none ${className}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeRaw]} components={customComponents}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[
+          rehypeRaw,
+          [rehypeHighlight, { detect: true, ignoreMissing: true }],
+        ]}
+        components={customComponents}
+      >
         {markdownContent}
       </ReactMarkdown>
     </div>

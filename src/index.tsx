@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import { HashRouter } from 'react-router-dom';
+import './styles/markdown-code-highlight.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

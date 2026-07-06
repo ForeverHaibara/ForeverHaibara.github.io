@@ -1,0 +1,10 @@
+@import 'highlight.js/styles/github.css';
+
+.hljs {
+  background: transparent;
+}
+
+pre code.hljs,
+code.hljs {
+  padding: 0;
+}
