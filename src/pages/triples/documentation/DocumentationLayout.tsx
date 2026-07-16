@@ -43,6 +43,15 @@ const documentationSections = [
       { name: 'SDPProblem', path: '/triples/documentation/semidefinite-programming/sdp-problem' },
     ]
   },
+  {
+    name: 'Objects',
+    path: '/triples/documentation/objects',
+    subLinks: [
+      { name: 'Problem', path: '/triples/documentation/objects/problem' },
+      { name: 'Solution', path: '/triples/documentation/objects/solution' },
+      { name: 'CyclicSum', path: '/triples/documentation/objects/cyclic-sum' },
+    ]
+  },
 ];
 
 const DocumentationLayout: React.FC = () => {

@@ -483,7 +483,7 @@ def _parse_docstring_sections(entry: DocEntry) -> None:
     # NumPy-style section headers (optionally underlined with dashes)
     section_pattern = re.compile(
         r"^(Examples|Parameters|Returns|See Also|Notes|References|Warnings|Raises)\s*\n"
-        r"(?:-{3,}\n)?",
+        r"(?:[-=~]{3,}\n)?",
         re.MULTILINE,
     )
 
@@ -667,6 +667,15 @@ def _format_class_documentation(entry: DocEntry) -> str:
     while index < len(raw_lines):
         line = raw_lines[index]
 
+        # Convert NumPy/reStructuredText-style underlined headings.
+        if (index + 1 < len(raw_lines)
+                and line.strip()
+                and re.fullmatch(r"[-=~]{3,}", raw_lines[index + 1].strip())):
+            lines.append(f"### {line.strip()}")
+            lines.append("")
+            index += 2
+            continue
+
         # Keep docstring headings below generated class-level headings.
         heading_match = re.match(r"^(#{1,5})\s+(.*)$", line.strip())
         if heading_match:
@@ -693,6 +702,21 @@ def _format_class_documentation(entry: DocEntry) -> str:
                 block.pop()
             if block:
                 lines.extend(["```python", *block, "```", ""])
+            continue
+
+        # Preserve unindented doctest paragraphs from common class docstrings.
+        if line.strip().startswith((">>> ", "... ")):
+            block = []
+            while index < len(raw_lines):
+                candidate = raw_lines[index]
+                if candidate.strip():
+                    block.append(candidate)
+                    index += 1
+                elif block:
+                    break
+                else:
+                    index += 1
+            lines.extend(["```python", *block, "```", ""])
             continue
 
         lines.append(line)

@@ -80,3 +80,35 @@ The `SDPProblem` class represents a dual semidefinite programming problem. It
 provides constructors for common SDP representations, access to problem
 variables and matrix blocks, numerical solving, and structural transformations."""
 output = "src/assets/markdown/triples-documentation/semidefinite-programming/sdp-problem.md"
+
+[[docs]]
+type = "class"
+module = "core.problem"
+name = "InequalityProblem"
+title = "Problem"
+introduction = """\
+`Problem` is the user-facing name for the `InequalityProblem` class. It stores
+an inequality expression together with its inequality and equality constraints,
+and provides the common transformations used by the Triples solver."""
+output = "src/assets/markdown/triples-documentation/objects/problem.md"
+
+[[docs]]
+type = "class"
+module = "core.solution"
+name = "Solution"
+title = "Solution"
+introduction = """\
+The `Solution` class is the result object returned by Triples solving routines.
+It keeps the original problem, the proposed solution expression, and helpers
+for checking, transforming, and formatting that result."""
+output = "src/assets/markdown/triples-documentation/objects/solution.md"
+
+[[docs]]
+type = "class"
+module = "utils.expressions.cyclic"
+name = "CyclicSum"
+title = "CyclicSum"
+introduction = """\
+The `CyclicSum` class represents cyclic sums as symbolic expressions and
+integrates them with SymPy's expression and simplification system."""
+output = "src/assets/markdown/triples-documentation/objects/cyclic-sum.md"
