@@ -25,9 +25,9 @@ const AppLayout: React.FC = () => {
         className="pointer-events-none absolute inset-0 opacity-90"
         style={{
           background: `
-            radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 28%),
-            radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 30%),
-            radial-gradient(circle at 50% 260px, rgba(255, 255, 255, 0.72), transparent 420px)
+            radial-gradient(420px 320px at 0 0, rgba(125, 211, 252, 0.18), transparent 72%),
+            radial-gradient(460px 340px at 100% 0, rgba(96, 165, 250, 0.14), transparent 72%),
+            radial-gradient(600px 500px at 50% 260px, rgba(255, 255, 255, 0.72), transparent 70%)
           `,
         }}
       />
