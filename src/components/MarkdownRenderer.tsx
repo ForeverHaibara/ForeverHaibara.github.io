@@ -36,14 +36,30 @@ interface PreChildProps {
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, className }) => {
+  const isApiMethodHeading = (children: React.ReactNode) =>
+    React.Children.toArray(children).some((child) => {
+      if (!React.isValidElement(child)) return false;
+      return child.type === 'span' && child.props['data-api-method-heading'] === 'true';
+    });
+
   const customComponents: Components & {
     math?: (props: MathRendererCmpProps) => React.JSX.Element;
     inlineMath?: (props: MathRendererCmpProps) => React.JSX.Element;
   } = {
     h1: ({node, ...props}) => <h1 className="mb-5 mt-1 text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl" {...props} />,
     h2: ({node, ...props}) => <h2 className="mb-3 mt-8 border-b border-sky-100 pb-2 text-2xl font-semibold text-sky-800" {...props} />,
-    h3: ({node, ...props}) => <h3 className="mb-2 mt-5 text-xl font-semibold text-sky-700" {...props} />,
+    h3: ({node, children, ...props}) => (
+      <h3
+        className={isApiMethodHeading(children)
+          ? 'mb-5 mt-10 w-fit rounded-2xl border border-sky-100 bg-sky-50/75 px-4 py-2 text-xl font-bold tracking-[-0.02em] text-sky-900 shadow-[0_10px_24px_rgba(96,165,250,0.12)]'
+          : 'mb-2 mt-5 text-xl font-semibold text-sky-700'}
+        {...props}
+      >
+        {children}
+      </h3>
+    ),
     h4: ({node, ...props}) => <h4 className="mb-1 mt-4 text-lg font-semibold text-slate-900" {...props} />,
+    h5: ({node, ...props}) => <h5 className="mb-2 mt-4 text-base font-semibold text-sky-700" {...props} />,
 
     p: ({ node, children, ...props }) => {
       const childrenArray = React.Children.toArray(children);
@@ -126,7 +142,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, cl
     tbody: ({node, ...props}) => <tbody className="divide-y divide-sky-100 bg-white/80" {...props} />,
     td: ({node, ...props}) => <td className="align-top px-4 py-3 text-slate-700" {...props} />,
     blockquote: ({node, ...props}) => <blockquote className="my-4 rounded-r-[20px] border-l-4 border-sky-300 bg-sky-50/70 px-4 py-3 italic text-slate-700" {...props} />,
-    hr: ({node, ...props}) => <hr className="my-8 border-sky-100" {...props} />,
+    hr: ({node, ...props}) => <hr className="my-10 border-sky-200/80" {...props} />,
     dt: ({node, ...props}) => <dt className="mt-3 font-semibold text-slate-900" {...props} />,
     dd: ({node, ...props}) => <dd className="mb-2 ml-4 text-slate-600" {...props} />,
 

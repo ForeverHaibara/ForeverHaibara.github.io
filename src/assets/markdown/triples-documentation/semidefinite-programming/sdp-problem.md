@@ -77,7 +77,7 @@ class SDPProblem(TransformableDual):
 
 ## Methods
 
-### `__init__`
+### <span data-api-method-heading="true"><code>&#95;&#95;init&#95;&#95;</code></span>
 
 ```python
 def __init__(
@@ -87,7 +87,7 @@ def __init__(
 ):
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>x0_and_space: Union[Dict[str, Tuple[Matrix, Matrix]], List[Tuple[Matrix, Matrix]]]</code></dt>
@@ -102,7 +102,9 @@ def __init__(
 
 </dl>
 
-### `keys`
+---
+
+### <span data-api-method-heading="true"><code>keys</code></span>
 
 ```python
 def keys(
@@ -113,7 +115,7 @@ def keys(
 
 Get the keys of the SDP problem.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -128,7 +130,7 @@ Get the keys of the SDP problem.
 ['S1', 'S2']
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>filter_none: bool (default: <code>False</code>)</code></dt>
@@ -138,13 +140,15 @@ Get the keys of the SDP problem.
 
 </dl>
 
-## Returns
+#### Returns
 
 **`List[Any]`**
 
 keys : List[Any] The keys of the SDP problem.
 
-### `from_full_x0_and_space`
+---
+
+### <span data-api-method-heading="true"><code>from&#95;full&#95;x0&#95;and&#95;space</code></span>
 
 ```python
 @classmethod
@@ -160,7 +164,7 @@ def from_full_x0_and_space(
 
 Initialize a SDP problem with the compressed x0 and space matrix.
 
-## Examples
+#### Examples
 
 Consider a SDP problem with 3 positive semidefinite matrices: vec(S1) = [[1,0]] @ [x,y] + [-1] vec(S2) = [[1,1]] @ [x,y] + [-2] vec(S3) = [[0,5],[0,-2],[0,-2],[0,6]] @ [x,y] + [-3,0,0,-4] Together they can be concatenated into a single x0 and space:
 
@@ -182,7 +186,7 @@ To initialize the SDP for S1,S2,S3 >> 0, use `splits = [1,1,2]` to indicate the 
 [   -2*y, 6*y - 4]])}
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>x0: Matrix</code></dt>
@@ -212,13 +216,15 @@ To initialize the SDP for S1,S2,S3 >> 0, use `splits = [1,1,2]` to indicate the 
 
 </dl>
 
-## Returns
+#### Returns
 
 **`"SDPProblem"`**
 
 SDPProblem : The created SDPProblem instance.
 
-### `from_equations`
+---
+
+### <span data-api-method-heading="true"><code>from&#95;equations</code></span>
 
 ```python
 @classmethod
@@ -237,7 +243,7 @@ def from_equations(
 
 Assume the SDP problem can be rewritten in the form of eq * [vec(S1); vec(S2); ...] + eq * M = rhs where Si >> 0 and Si.shape[0] = splits[i], and M is the linear part. The function formulates the SDP problem from the given equations. This is also the primal form of the SDP problem.
 
-## Examples
+#### Examples
 
 Consider the example from https://clarabel.org/stable/examples/example_sdp/ where the SDP problem is given by min trace(X) s.t. Avec(X) = b, X >> 0 where: A = Matrix([[1,2,4,2,3,5,4,5,6]]) b = Matrix([1]) To initialize the problem, just use the `from_equations` method.
 
@@ -263,7 +269,7 @@ Consider the example from https://clarabel.org/stable/examples/example_sdp/ wher
 0.0864750551103711
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>eq: Matrix</code></dt>
@@ -308,13 +314,15 @@ Consider the example from https://clarabel.org/stable/examples/example_sdp/ wher
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Tuple["SDPProblem", Tuple[Matrix, Matrix]]`**
 
 sdp : SDPProblem The created SDP problem instance. (x0, space): Tuple[Matrix, Matrix] The rest of the linear variables can be represented by x0 + space @ y where y is the generator vector of the SDPProblem.
 
-### `from_matrix`
+---
+
+### <span data-api-method-heading="true"><code>from&#95;matrix</code></span>
 
 ```python
 @classmethod
@@ -327,7 +335,7 @@ def from_matrix(
 
 Construct a <code>SDPProblem</code> from symbolic symmetric matrices. The problem is to solve a parameter set such that all given symmetric matrices are positive semidefinite. The result can be obtained by <code>SDPProblem.as_params()</code>.
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>S: Union[Matrix, List[Matrix], Dict[str, Matrix]]</code></dt>
@@ -342,13 +350,15 @@ Construct a <code>SDPProblem</code> from symbolic symmetric matrices. The proble
 
 </dl>
 
-## Returns
+#### Returns
 
 **`"SDPProblem"`**
 
 sdp : SDPProblem The created SDP problem instance.
 
-### `S_from_y`
+---
+
+### <span data-api-method-heading="true"><code>S&#95;from&#95;y</code></span>
 
 ```python
 def S_from_y(
@@ -357,7 +367,7 @@ def S_from_y(
 ) -> Dict[str, Matrix]:
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>y: Optional[Union[MatrixBase, np.ndarray, Dict]] (default: <code>None</code>)</code></dt>
@@ -367,13 +377,15 @@ def S_from_y(
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Dict[str, Matrix]`**
 
 Returns a `Dict[str, Matrix]` object.
 
-### `as_params`
+---
+
+### <span data-api-method-heading="true"><code>as&#95;params</code></span>
 
 ```python
 def as_params(
@@ -383,7 +395,7 @@ def as_params(
 
 Return the dictionary of free symbols and their values after solving the SDP.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -397,13 +409,15 @@ Matrix([
 {a: 0.499986210665879, b: 2.00005510893102}
 ```
 
-## Returns
+#### Returns
 
 **`Dict[Symbol, "Expr"]`**
 
 params : Dict[Symbol, Expr] The dictionary of variable values.
 
-### `rationalize`
+---
+
+### <span data-api-method-heading="true"><code>rationalize</code></span>
 
 ```python
 def rationalize(
@@ -417,7 +431,7 @@ def rationalize(
 
 Rationalize a NumPy vector <code>y</code>. If verbose == True, display the numerical eigenvalues before rationalization.
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>y: np.ndarray</code></dt>
@@ -437,13 +451,15 @@ Rationalize a NumPy vector <code>y</code>. If verbose == True, display the numer
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Optional[Tuple[Matrix, "Decomp"]]`**
 
 Returns a `Optional[Tuple[Matrix, "Decomp"]]` object.
 
-### `_solve_numerical_sdp`
+---
+
+### <span data-api-method-heading="true"><code>&#95;solve&#95;numerical&#95;sdp</code></span>
 
 ```python
 def _solve_numerical_sdp(
@@ -456,7 +472,7 @@ def _solve_numerical_sdp(
 ) -> Optional[np.ndarray]:
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>objective: np.ndarray</code></dt>
@@ -486,13 +502,15 @@ def _solve_numerical_sdp(
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Optional[np.ndarray]`**
 
 Returns a `Optional[np.ndarray]` object.
 
-### `solve_obj`
+---
+
+### <span data-api-method-heading="true"><code>solve&#95;obj</code></span>
 
 ```python
 def solve_obj(
@@ -510,7 +528,7 @@ def solve_obj(
 
 Solve the SDP problem numerically with the given objective.
 
-## Examples
+#### Examples
 
 Here we illustrate the example from "Semidefinite Optimization and Convex Algebraic Geometry" by Blekherman, Parillo and Thomas, Example 2.7. Consider the SDP [[x+1, 0, y], [0, 2, -x-1], [y, -x-1, 2]] >> 0, whose feasible set is part of the elliptic curve: 3+x-x^3-3*x^2-2*y^2>=0 && x>=-1. We wish to maximize x+2*y (i.e., minimize -x-2*y) in the positive semidefinite cone. The SDP problem can be then initialized using the `from_matrix` method:
 
@@ -561,7 +579,7 @@ Matrix([
 [ 1.17093779835239]])
 ```
 
-### Solving with constraints
+##### Solving with constraints
 
 We can also add additional affine constrains to the SDP problem when calling `.solve_obj`. For example, we can add the constraint x+y<0:
 
@@ -587,7 +605,7 @@ Traceback (most recent call last):
 NonlinearError: nonlinear term: x**2
 ```
 
-### Handling exceptions
+##### Handling exceptions
 
 If the solver does not find the optimal solution, e.g., when the problem is infeasible or unbounded, or the solution is inaccurate given the tolerance, the function will raise an error. Below is an example of infeasible SDP that Matrix([[a, 2], [2, 1-a]]) >> 0. It is infeasible since a*(1-a) < 4.
 
@@ -618,7 +636,7 @@ Below is an example of unbounded SDP: min -a, s.t. [[a, 1], [1, a]] >> 0.
 
 More statuses of SDPErrors can be found in the `SDPError` class.
 
-### Using kwargs
+##### Using kwargs
 
 The `kwargs` argument can be used to pass extra arguments to the backend SDP solver. We have the follwing example to solve an SDP problem with CVXOPT solver and increased precision:
 
@@ -639,7 +657,7 @@ Optimal solution found.
 Matrix([[0.999999999999824]])
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>objective: Union["Expr", Matrix, List]</code></dt>
@@ -684,13 +702,15 @@ Matrix([[0.999999999999824]])
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Optional[Matrix]`**
 
 Returns a `Optional[Matrix]` object.
 
-### `solve`
+---
+
+### <span data-api-method-heading="true"><code>solve</code></span>
 
 ```python
 def solve(
@@ -707,7 +727,7 @@ def solve(
 
 Solve a feasible SDP problem. If the SDPProblem is rational, it tries to find a rational solution. However, the search for rational solutions is heuristic and could fail for weakly feasible SDPs.
 
-## Examples
+#### Examples
 
 Here we illustrate an example from "Moment and Polynomial Optimization" by Jiawang Nie, Section 3.1 to prove 1+x+x^2+x^3+x^4+x^5+x^6 >= 0 via sum of squares. The polynomial can always be represented as [1,x,x^2,x^3]^T @ X @ [1,x,x^2,x^3] where X is defined as:
 
@@ -770,7 +790,7 @@ It is also possible to access the decompositions via `.decompositions`, which co
 [5/8]]))}
 ```
 
-### Registering solutions
+##### Registering solutions
 
 The rationalization might fail, or generate very nasty solutions, and we may want to manually register a solution. The `register_y` method can be used to register a solution. By registration, the feasibility will be verified and the matrices and decompositions will be automatically updated.
 
@@ -805,7 +825,7 @@ We can then obtain a sum-of-squares proof via the decomposition:
 x**6 + x**5 + x**4 + x**3 + x**2 + x + 1
 ```
 
-### Allowing numerical solutions
+##### Allowing numerical solutions
 
 Although the SDPProblem tries to find a rational solution if the problem is rational, a rational solution might not exist even if the SDP is feasible. Consider the example [[a,2],[2,2*a]] >> 0, [[2,a],[a,1]] >> 0, which is a two-block SDP problem. The only solution is a = sqrt(2), which is irrational. Any number a other than sqrt(2) will make one of the matrices not positive semidefinite, so it will fail to find a feasible solution:
 
@@ -832,7 +852,7 @@ Matrix([[1.41421356161294]])
 [1.41421356161294,              1.0]])}
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>solver: Optional[str] (default: <code>None</code>)</code></dt>
@@ -872,13 +892,15 @@ Matrix([[1.41421356161294]])
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Optional[Matrix]`**
 
 y : Matrix The solution of the SDP problem. If it fails, return None.
 
-### `from_entry_contribution`
+---
+
+### <span data-api-method-heading="true"><code>from&#95;entry&#95;contribution</code></span>
 
 ```python
 @classmethod
@@ -894,7 +916,7 @@ def from_entry_contribution(
 ) -> Tuple["SDPProblem", Dict[Any, Tuple[Matrix, Matrix]]]:
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>rhs: Matrix</code></dt>
@@ -934,13 +956,15 @@ def from_entry_contribution(
 
 </dl>
 
-## Returns
+#### Returns
 
 **`Tuple["SDPProblem", Dict[Any, Tuple[Matrix, Matrix]]]`**
 
 Returns a `Tuple["SDPProblem", Dict[Any, Tuple[Matrix, Matrix]]]` object.
 
-### `constrain_symmetry`
+---
+
+### <span data-api-method-heading="true"><code>constrain&#95;symmetry</code></span>
 
 ```python
 def constrain_symmetry(
@@ -950,7 +974,7 @@ def constrain_symmetry(
 
 Constrain every matrix to be symmetric. To ensure correctness, this must be called in advance if any matrix is not symmetric.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -965,13 +989,15 @@ Constrain every matrix to be symmetric. To ensure correctness, this must be call
  [        0, y_{0}/2 + 2, 1 - y_{0}/2]])}
 ```
 
-## Returns
+#### Returns
 
 **`"SDPProblem"`**
 
 SDPProblem The transformed SDP problem.
 
-### `constrain_congruence`
+---
+
+### <span data-api-method-heading="true"><code>constrain&#95;congruence</code></span>
 
 ```python
 def constrain_congruence(
@@ -983,7 +1009,7 @@ def constrain_congruence(
 
 Apply congruence transforms to the matrices in the SDP problem.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -997,7 +1023,7 @@ Apply congruence transforms to the matrices in the SDP problem.
  [2*a + 9*b + 10*c, 4*a + 20*b + 25*c]])}
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>basis: Dict[Any, Matrix]</code></dt>
@@ -1012,7 +1038,9 @@ Apply congruence transforms to the matrices in the SDP problem.
 
 </dl>
 
-### `get_zero_diagonals`
+---
+
+### <span data-api-method-heading="true"><code>get&#95;zero&#95;diagonals</code></span>
 
 ```python
 def get_zero_diagonals(
@@ -1022,7 +1050,7 @@ def get_zero_diagonals(
 
 Get diagonals that are zero.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -1034,13 +1062,15 @@ Get diagonals that are zero.
 {'M1': [1], 'M2': []}
 ```
 
-## Returns
+#### Returns
 
 **`Dict[Any, List[int]]`**
 
 Dict[Any, List[int]] A dictionary mapping each key to a list of zero diagonals.
 
-### `get_block_structures`
+---
+
+### <span data-api-method-heading="true"><code>get&#95;block&#95;structures</code></span>
 
 ```python
 def get_block_structures(
@@ -1050,7 +1080,7 @@ def get_block_structures(
 
 Get block structures.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -1062,13 +1092,15 @@ Get block structures.
 {'M1': [[0, 1], [2]], 'M2': [[0], [1]]}
 ```
 
-## Returns
+#### Returns
 
 **`Dict[Any, List[List[int]]]`**
 
 Dict[Any, List[List[int]]] A dictionary mapping each key to a list of block structures.
 
-### `constrain_zero_diagonals`
+---
+
+### <span data-api-method-heading="true"><code>constrain&#95;zero&#95;diagonals</code></span>
 
 ```python
 def constrain_zero_diagonals(
@@ -1081,7 +1113,7 @@ def constrain_zero_diagonals(
 
 Constrain zero diagonals. Providing either <code>extractions</code> or <code>masks</code> is sufficient. If both are not provided, then the default behavior is to call <code>get_zero_diagonals</code> to get the zero diagonals.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -1123,7 +1155,7 @@ Constraining the diagonal elements to zero will also constrain the whole row to 
  [1, 4]])}
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>extractions (default: <code>None</code>)</code></dt>
@@ -1143,13 +1175,15 @@ Constraining the diagonal elements to zero will also constrain the whole row to 
 
 </dl>
 
-## Returns
+#### Returns
 
 **`"SDPProblem"`**
 
 SDPProblem The transformed SDP problem.
 
-### `constrain_block_structures`
+---
+
+### <span data-api-method-heading="true"><code>constrain&#95;block&#95;structures</code></span>
 
 ```python
 def constrain_block_structures(
@@ -1160,7 +1194,7 @@ def constrain_block_structures(
 
 Constrain block structures.
 
-## Examples
+#### Examples
 
 ```python
 >>> from sympy import Matrix
@@ -1179,7 +1213,7 @@ Constrain block structures.
  ('M2', 1): Matrix([[x + y + 1]])}
 ```
 
-## Parameters
+#### Parameters
 
 <dl>
   <dt><code>blocks (default: <code>None</code>)</code></dt>
@@ -1189,7 +1223,7 @@ Constrain block structures.
 
 </dl>
 
-## Returns
+#### Returns
 
 **`"SDPProblem"`**
 

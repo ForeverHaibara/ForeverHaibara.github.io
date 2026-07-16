@@ -560,12 +560,13 @@ def _backticks_to_code(text: str) -> str:
     return "".join(result)
 
 
-def _format_parameters_dl(entry: DocEntry) -> str:
+def _format_parameters_dl(entry: DocEntry, heading_level: int = 2) -> str:
     """Format Parameters section using <dl>/<dt>/<dd>, matching existing docs."""
     if not entry.params:
         return ""
 
-    lines = ["## Parameters", "", "<dl>"]
+    heading = "#" * heading_level
+    lines = [f"{heading} Parameters", "", "<dl>"]
 
     for param in entry.params:
         # Build <dt> content (HTML-safe, with <code> for name:type)
@@ -605,13 +606,14 @@ def _format_parameters_dl(entry: DocEntry) -> str:
     return "\n".join(lines)
 
 
-def _format_returns_section(entry: DocEntry) -> str:
+def _format_returns_section(entry: DocEntry, heading_level: int = 2) -> str:
     """Format Returns section."""
     if not entry.returns:
         return ""
 
     return_type = _escape_html(entry.returns.strip())
-    lines = ["## Returns", "", f"**`{return_type}`**", ""]
+    heading = "#" * heading_level
+    lines = [f"{heading} Returns", "", f"**`{return_type}`**", ""]
 
     # Use docstring return description if available
     if entry.return_doc:
@@ -657,8 +659,12 @@ def _format_methods_section(methods: List[DocEntry]) -> str:
         return ""
 
     lines = ["## Methods", ""]
-    for method in methods:
-        lines.append(f"### `{method.name}`")
+    for method_index, method in enumerate(methods):
+        # Encode underscores so Markdown does not treat dunder names as emphasis.
+        method_name = _escape_html(method.name).replace("_", "&#95;")
+        lines.append(
+            f"### <span data-api-method-heading=\"true\"><code>{method_name}</code></span>"
+        )
         lines.append("")
         lines.append("```python")
         lines.append(method.signature.strip())
@@ -670,19 +676,23 @@ def _format_methods_section(methods: List[DocEntry]) -> str:
             lines.append("")
 
         if method.examples_text:
-            examples_md = _format_examples_section(method.examples_text)
+            examples_md = _format_examples_section(method.examples_text, heading_level=4)
             if examples_md:
                 lines.append(examples_md)
                 lines.append("")
 
-        params_md = _format_parameters_dl(method)
+        params_md = _format_parameters_dl(method, heading_level=4)
         if params_md:
             lines.append(params_md)
             lines.append("")
 
-        returns_md = _format_returns_section(method)
+        returns_md = _format_returns_section(method, heading_level=4)
         if returns_md:
             lines.append(returns_md)
+            lines.append("")
+
+        if method_index < len(methods) - 1:
+            lines.append("---")
             lines.append("")
 
     while lines and lines[-1] == "":
@@ -690,12 +700,13 @@ def _format_methods_section(methods: List[DocEntry]) -> str:
     return "\n".join(lines)
 
 
-def _format_examples_section(examples_text: str) -> str:
+def _format_examples_section(examples_text: str, heading_level: int = 2) -> str:
     """Format Examples section from docstring into markdown with code blocks."""
     if not examples_text:
         return ""
 
-    lines = ["## Examples", ""]
+    heading = "#" * heading_level
+    lines = [f"{heading} Examples", ""]
 
     # Split by subsection headers (### ...)
     parts = re.split(r"(^###.+$)", examples_text, flags=re.MULTILINE)
@@ -706,7 +717,9 @@ def _format_examples_section(examples_text: str) -> str:
             continue
 
         if stripped.startswith("### "):
-            lines.append(stripped)
+            nested_level = min(6, heading_level + 1)
+            nested_title = stripped[4:].strip()
+            lines.append(f"{'#' * nested_level} {nested_title}")
             lines.append("")
         else:
             blocks = _split_prose_and_code(part)
