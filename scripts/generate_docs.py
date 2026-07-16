@@ -653,6 +653,56 @@ def _format_attribute_section(attributes: List[AttributeInfo]) -> str:
     return "\n".join(lines)
 
 
+def _format_class_documentation(entry: DocEntry) -> str:
+    """Format a class docstring before its generated member sections."""
+    if not entry.notes_text:
+        return ""
+
+    doc = textwrap.dedent(entry.notes_text).strip()
+    # lines = ["## Class Documentation", ""]
+    lines = []
+    raw_lines = doc.splitlines()
+    index = 0
+
+    while index < len(raw_lines):
+        line = raw_lines[index]
+
+        # Keep docstring headings below generated class-level headings.
+        heading_match = re.match(r"^(#{1,5})\s+(.*)$", line.strip())
+        if heading_match:
+            heading_level = min(6, len(heading_match.group(1)) + 1)
+            lines.append(f"{'#' * heading_level} {heading_match.group(2).strip()}")
+            lines.append("")
+            index += 1
+            continue
+
+        # Turn indented docstring examples/equations into readable code blocks.
+        if line.startswith("    "):
+            block: List[str] = []
+            while index < len(raw_lines):
+                candidate = raw_lines[index]
+                if candidate.startswith("    "):
+                    block.append(candidate[4:])
+                    index += 1
+                elif not candidate.strip() and block:
+                    block.append("")
+                    index += 1
+                else:
+                    break
+            while block and not block[-1].strip():
+                block.pop()
+            if block:
+                lines.extend(["```python", *block, "```", ""])
+            continue
+
+        lines.append(line)
+        index += 1
+
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
+
+
 def _format_methods_section(methods: List[DocEntry]) -> str:
     """Format direct class methods, reusing function documentation sections."""
     if not methods:
@@ -822,6 +872,13 @@ def generate_markdown(entry: DocEntry, title: str, introduction: str) -> str:
     md_parts.append(entry.signature.strip())
     md_parts.append("```")
     md_parts.append("")
+
+    # --- Class documentation ---
+    if entry.type == "class":
+        class_doc_md = _format_class_documentation(entry)
+        if class_doc_md:
+            md_parts.append(class_doc_md)
+            md_parts.append("")
 
     # --- Examples ---
     if entry.examples_text:

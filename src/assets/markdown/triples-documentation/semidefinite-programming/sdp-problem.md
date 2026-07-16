@@ -10,6 +10,263 @@ variables and matrix blocks, numerical solving, and structural transformations.
 class SDPProblem(TransformableDual):
 ```
 
+Class to solve dual SDP problems, which is in the form of
+
+```python
+S_i = C_i + y_1 * A_i1 + y_2 * A_i2 + ... + y_n * A_in >> 0.
+```
+
+where C, A_ij ... are known symmetric matrices, and y_i are free variables.
+
+It can be rewritten in the form of
+
+```python
+vec(S_i) = x_i + space_i @ y >> 0.
+```
+
+And together they are vec([S_1, S_2, ...]) = [x_1, x_2, ...] + [space_1, space_2, ...] @ y
+where x_i and space_i are known. The problem is to find a feasible solution y such that S_i >> 0
+and minimize a linear objective function c^Ty.
+
+### Solving Dual SDP
+
+Here is a simple tutorial to use this class to solve SDPs. Consider the example from
+https://github.com/vsdp/SDPLIB/tree/master:
+
+```python
+min   10 * x1 + 20 * x2
+
+s.t.  X = F1 * x1 + F2 * x2 - F0
+      X >= 0
+```
+
+where:
+
+```python
+F0 = Matrix(4,4,[1,0,0,0,0,2,0,0,0,0,3,0,0,0,0,4])
+F1 = Matrix(4,4,[1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0])
+F2 = Matrix(4,4,[0,0,0,0,0,1,0,0,0,0,5,2,0,0,2,6])
+```
+
+To solve this problem, we view X >> 0 as (A @ x + b) >> 0, where x = [x1,x2]
+and A is a matrix of shape 16x2 and b = -vec(F0). We initialize the problem as:
+
+```python
+>>> from sympy import Matrix
+>>> F0 = Matrix(4,4,[1,0,0,0,0,2,0,0,0,0,3,0,0,0,0,4])
+>>> F1 = Matrix(4,4,[1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0])
+>>> F2 = Matrix(4,4,[0,0,0,0,0,1,0,0,0,0,5,2,0,0,2,6])
+>>> A = Matrix.hstack(F1.reshape(16, 1), F2.reshape(16, 1))
+>>> b = -F0.reshape(16, 1)
+>>> sdp = SDPProblem({'X': (b, A)})
+>>> sdp
+<SDPProblem dof=2 size={'X': 4}>
+```
+
+We can take a look at the symbolic matrix by calling the `S_from_y` method:
+
+```python
+>>> sdp.S_from_y()
+{'X': Matrix([
+[y_{0} - 1,                 0,           0,           0],
+[        0, y_{0} + y_{1} - 2,           0,           0],
+[        0,                 0, 5*y_{1} - 3,     2*y_{1}],
+[        0,                 0,     2*y_{1}, 6*y_{1} - 4]])}
+```
+
+Then we can solve the problem by calling the `solve_obj` method
+by passing in the objective vector, and it is expected to return the solution vector.
+
+```python
+>>> sdp.solve_obj([10, 20]) # doctest: +SKIP
+Matrix([
+[0.999999990541857],
+[0.999999992256747]])
+```
+
+After the solution is found, the solution can also be accessed by `sdp.y`, `sdp.S`
+and `sdp.decompositions`. As the solving process is numerical, the matrix could
+be slightly nonpositive semidefinite up to a small numerical error.
+
+```python
+>>> sdp.y # doctest: +SKIP
+Matrix([
+[0.999999990541857],
+[0.999999992256747]])
+>>> sdp.S # doctest: +SKIP
+{'X': Matrix([
+[-9.45814337960371e-9,                  0.0,              0.0,              0.0],
+[                 0.0, -1.72013967514317e-8,              0.0,              0.0],
+[                 0.0,                  0.0, 1.99999996128373, 1.99999998451349],
+[                 0.0,                  0.0, 1.99999998451349, 1.99999995354048]])}
+>>> sdp.decompositions # doctest: +SKIP
+{'X': (Matrix([
+[0.0, 0.0,  0.707106780502134, -0.707106781870961],
+[0.0, 1.0,                0.0,                0.0],
+[1.0, 0.0,                0.0,                0.0],
+[0.0, 0.0, -0.707106781870961, -0.707106780502134]]), Matrix([
+[            0.0],
+[            0.0],
+[            0.0],
+[3.9999999419256]]))}
+```
+
+#### Initialization by from_matrix
+
+Apart from initializing by the tuple of "x" and "space", there is also
+a more flexible approach to initialize the problem by a dictionary of SymPy matrices.
+This is done by calling the `.from_matrix` classmethod.
+
+```python
+>>> from sympy.abc import x, y
+>>> X = x*F1 + y*F2 - F0 # we wish to solve the SDP problem X >> 0
+>>> sdp2 = SDPProblem.from_matrix(X)
+>>> sdp2.S_from_y() # visualize the symbolic matrix
+{0: Matrix([
+[x - 1,         0,       0,       0],
+[    0, x + y - 2,       0,       0],
+[    0,         0, 5*y - 3,     2*y],
+[    0,         0,     2*y, 6*y - 4]])}
+>>> sdp2.solve_obj([10, 20]) # doctest: +SKIP
+Matrix([
+[0.999999990541857],
+[0.999999992256747]])
+```
+
+It also supports linear objectives represented in the variables, such as:
+
+```python
+>>> sdp2.solve_obj(10*x + 20*y) # doctest: +SKIP
+Matrix([
+[0.999999990541857],
+[0.999999992256747]])
+```
+
+The solution can also be accessed by `sdp.as_params()`, which returns a dictionary of parameters.
+
+```python
+>>> sdp2.as_params() # doctest: +SKIP
+{x: 0.999999990541857, y: 0.999999992256747}
+```
+
+#### Initialization by multiple matrices
+
+Since the target matrix X is block-diagonal, X >> 0 is equivalent to three matrices S_1, S_2, S_3 >> 0.
+We can initialize the problem by passing in a dictionary of matrices, which means each of the matrices
+should be positive semidefinite.
+
+```python
+>>> S1 = Matrix([[x - 1]])
+>>> S2 = Matrix([[x + y - 2]])
+>>> S3 = Matrix([[5*y - 3, 2*y], [2*y, 6*y - 4]])
+>>> sdp3 = SDPProblem.from_matrix({'S1': S1, 'S2': S2, 'S3': S3})
+>>> sdp3.S_from_y()
+{'S1': Matrix([[x - 1]]), 'S2': Matrix([[x + y - 2]]), 'S3': Matrix([
+[5*y - 3,     2*y],
+[    2*y, 6*y - 4]])}
+>>> sdp3.solve_obj(10*x + 20*y) # doctest: +SKIP
+Matrix([
+[0.99999998837194],
+[0.99999999348851]])
+```
+
+#### Solving with constraints
+
+Because S1 and S2 are one-dimensional, the constraint is equivalent to x-1>=0, x+y-2>=0 and S3>>0.
+It is also supported to initialize the SDP by S3 only, and pass in the linear constraints to
+`solve_obj`. However, since S3 does not contain the symbol x, the symbols must be explicitly passed
+to the `gens` argument when initialization.
+
+```python
+>>> sdp4 = SDPProblem.from_matrix({'S3': S3}, gens=(x,y))
+>>> sdp4.gens
+[x, y]
+>>> sdp4.solve_obj(10*x + 20*y, constraints=[x>=1, x+y-2>=0]) # doctest: +SKIP
+Matrix([
+[ 0.99999999751827],
+[0.999999998305915]])
+```
+
+Note that equality constraints are not represented directly by == operator. This is
+because equalities like `x == 1` would be a boolean False. To correctly enforce equality
+constraints, the "== 0" should be omitted, or use the sympy.Eq class. Here is an example
+to solve the SDP given constraints x == 1 and x + y - 2 == 0 using two different
+representations of equality constraints:
+
+```python
+>>> from sympy import Eq
+>>> sdp4.solve_obj(10*x + 20*y, constraints=[Eq(x, 1), x + y - 2]) # doctest: +SKIP
+Matrix([
+[1.0],
+[1.0]])
+```
+
+### Solving SOS programming
+
+We next illustrate an example of SOS programming from https://hankyang.seas.harvard.edu/Semidefinite/SOS.html,
+Example 4.13:
+
+```python
+min   -a - b
+
+s.t.  x^4+a*x+(2+b) is SOS
+      (a-b+1)*x^2 + b*x + 1 is SOS
+```
+
+To define the problem, we assume the two SOS polys to be v1'*Q1*v1, v2'*Q2*v2,
+where v1 = [1,x,x^2], v2 = [1,x]. We need to create two symmetric matrices
+using SymPy matrices and symbols.
+
+```python
+>>> from sympy import Matrix, Symbol
+>>> from sympy.abc import x, a, b
+>>> v1, v2 = Matrix([1,x,x**2]), Matrix([1,x])
+>>> Q1 = Matrix([[Symbol(f'Q1_{min(i,j)}_{max(i,j)}') for j in range(3)] for i in range(3)])
+>>> Q2 = Matrix([[Symbol(f'Q2_{min(i,j)}_{max(i,j)}') for j in range(2)] for i in range(2)])
+>>> Q1 # check the matrix Q1, which must be symmetric
+Matrix([
+[Q1_0_0, Q1_0_1, Q1_0_2],
+[Q1_0_1, Q1_1_1, Q1_1_2],
+[Q1_0_2, Q1_1_2, Q1_2_2]])
+```
+
+We need to compute the relations of the variables by comparing the coefficients:
+
+```python
+>>> p1 = ((v1.T @ Q1 @ v1)[0,0] - (x**4 + a*x + (2+b))).as_poly(x)
+>>> p2 = ((v2.T @ Q2 @ v2)[0,0] - ((a-b+1)*x**2 + b*x + 1)).as_poly(x)
+>>> eq = p1.coeffs() + p2.coeffs()
+>>> eq # all following values should be zeros
+[Q1_2_2 - 1, 2*Q1_1_2, 2*Q1_0_2 + Q1_1_1, 2*Q1_0_1 - a, Q1_0_0 - b - 2, Q2_1_1 - a + b - 1, 2*Q2_0_1 - b, Q2_0_0 - 1]
+```
+
+We can then initialize the SDPProblem object and solve it via:
+
+```python
+>>> symbols = list(Q1.free_symbols) + list(Q2.free_symbols) + [a,b] # collect all symbols
+>>> sdp = SDPProblem.from_matrix({'Q1': Q1, 'Q2': Q2}, gens=symbols)
+>>> sol = sdp.solve_obj(-a-b, constraints=eq)
+```
+
+After solving, calling the `.as_params()` method will return a dictionary of parameter values:
+
+```python
+>>> print('(a, b) =', (sdp.as_params()[a], sdp.as_params()[b])) # doctest: +SKIP
+(a, b) = (6.61890359483024, 3.87159385296789)
+```
+
+It is also possible to access the values of the matrices by:
+
+```python
+>>> sdp.S # doctest: +SKIP
+{'Q1': Matrix([
+[ 5.87159385296789, 3.30945179741512, -1.39899944005445],
+[ 3.30945179741512,  2.7979988801089,               0.0],
+[-1.39899944005445,              0.0,               1.0]]), 'Q2': Matrix([
+[             1.0, 1.93579692648395],
+[1.93579692648395, 3.74730974186235]])}
+```
+
 ## Attributes
 
 <dl>

@@ -14,7 +14,12 @@ import PureGeometryTiebaSearchPage from './pages/geometry/PureGeometryTiebaSearc
 
 const AppLayout: React.FC = () => {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#eef7ff_0%,#f7fbff_35%,#f3f8ff_100%)] text-slate-800">
+    <div
+      className="relative flex min-h-screen flex-col overflow-hidden bg-[#fbfdff] text-slate-800"
+      style={{
+        background: 'linear-gradient(180deg, #eef7ff 0px, #f7fbff 170px, #fbfdff 380px, #fbfdff 100%)',
+      }}
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-90"
@@ -22,7 +27,7 @@ const AppLayout: React.FC = () => {
           background: `
             radial-gradient(circle at top left, rgba(125, 211, 252, 0.18), transparent 28%),
             radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 30%),
-            radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.72), transparent 42%)
+            radial-gradient(circle at 50% 260px, rgba(255, 255, 255, 0.72), transparent 420px)
           `,
         }}
       />

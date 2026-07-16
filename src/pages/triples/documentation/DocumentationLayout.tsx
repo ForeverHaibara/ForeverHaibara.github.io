@@ -73,7 +73,12 @@ const DocumentationLayout: React.FC = () => {
       </aside>
 
       <main className="min-w-0">
-        <div className="rounded-[30px] border border-white/70 bg-white/62 px-5 py-6 shadow-[0_20px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8 xl:px-10">
+        <div
+          className="rounded-[30px] border border-white/70 px-5 py-6 shadow-[0_20px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8 xl:px-10"
+          style={{
+            background: 'linear-gradient(180deg, rgba(219,234,254,0.72) 0px, rgba(239,246,255,0.78) 150px, rgba(251,253,255,0.94) 280px, rgba(251,253,255,0.94) 100%)',
+          }}
+        >
           <Outlet />
         </div>
       </main>
