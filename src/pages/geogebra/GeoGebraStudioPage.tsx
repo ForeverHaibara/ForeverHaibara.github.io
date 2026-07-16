@@ -24,7 +24,7 @@ const readSettings = (): StudioSettings => {
 };
 
 const GeoGebraStudioPage: React.FC = () => {
-  const engine = useMemo<GeoGebraEngine>(() => new GeoGebraEmbeddingAdapter(), []);
+  const [engine, setEngine] = useState<GeoGebraEngine>(() => new GeoGebraEmbeddingAdapter());
   const store = useMemo(() => new IndexedDbProjectStore(), []);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +35,7 @@ const GeoGebraStudioPage: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const restoredRef = useRef(false);
   const loadOperationRef = useRef(0);
+  const resettingRef = useRef(false);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
@@ -63,16 +64,23 @@ const GeoGebraStudioPage: React.FC = () => {
 
   const resetToInitial = useCallback(async () => {
     loadOperationRef.current += 1;
+    resettingRef.current = true;
     setLoadingMessage(null);
-    try {
-      await engine.callApi('reset', []);
-    } catch {
-      // The applet may still be initializing; the visible reset remains best effort.
-    }
+
+    // GeoGebra's reset() only changes the view. Recreate the embedding so the
+    // document itself returns to a fresh, empty initial state.
+    engine.dispose();
     await store.clear().catch(() => undefined);
     setSettings({ ...DEFAULT_STUDIO_SETTINGS });
+    setReady(false);
+    setError(null);
     setEvents([]);
     setLastResult({ success: true, command: 'Reset initial state', labels: [], timestamp: Date.now() });
+    restoredRef.current = false;
+
+    const nextEngine = new GeoGebraEmbeddingAdapter();
+    setCapabilities(nextEngine.getCapabilities());
+    setEngine(nextEngine);
   }, [engine, store]);
 
   const handleReady = useCallback(() => {
@@ -80,18 +88,22 @@ const GeoGebraStudioPage: React.FC = () => {
     setCapabilities(engine.getCapabilities());
     if (restoredRef.current) return;
     restoredRef.current = true;
+    if (resettingRef.current) {
+      resettingRef.current = false;
+      return;
+    }
     const operationId = ++loadOperationRef.current;
     setLoadingMessage('Restoring your last GeoGebra draft...');
     void store.getLatest().then(async (project) => {
       if (!project?.ggbBase64 || operationId !== loadOperationRef.current) return;
       await engine.importGgb(base64ToFile(project.ggbBase64));
-      if (operationId !== loadOperationRef.current) await engine.callApi('reset', []);
     }).catch(() => undefined).finally(() => {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
     });
   }, [engine, store]);
 
   const handleError = useCallback((loadError: Error) => {
+    resettingRef.current = false;
     setError(loadError.message);
     setCapabilities(engine.getCapabilities());
   }, [engine]);
@@ -130,10 +142,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLoadingMessage(`Opening ${file.name}...`);
     try {
       await engine.importGgb(file);
-      if (operationId !== loadOperationRef.current) {
-        await engine.callApi('reset', []);
-        return;
-      }
+      if (operationId !== loadOperationRef.current) return;
       setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
       setLastResult({ success: true, command: `Imported ${file.name}`, labels: [], timestamp: Date.now() });
     } finally {
