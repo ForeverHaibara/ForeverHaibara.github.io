@@ -166,6 +166,16 @@ class ParamInfo:
 
 
 @dataclass
+class AttributeInfo:
+    """Information about a class attribute or property."""
+    name: str
+    annotation: str = ""
+    default: Optional[str] = None
+    docstring: str = ""
+    description: str = ""
+
+
+@dataclass
 class DocEntry:
     """Extracted information from a single function / class."""
     name: str
@@ -179,6 +189,8 @@ class DocEntry:
     notes_text: str = ""  # everything before Parameters/Examples
     param_docs: Dict[str, str] = field(default_factory=dict)
     return_doc: str = ""
+    methods: List["DocEntry"] = field(default_factory=list)
+    attributes: List[AttributeInfo] = field(default_factory=list)
 
 
 def _find_source_file(source_dir: str, module: str, name: str,
@@ -246,7 +258,8 @@ def _annotate_str(annotation: ast.expr) -> str:
     return ast.unparse(annotation).replace("'", '"')
 
 
-def _extract_function(node: ast.FunctionDef, source: str) -> DocEntry:
+def _extract_function(node: ast.FunctionDef, source: str,
+                      skip_first_param: bool = False) -> DocEntry:
     """Extract function signature, docstring, and parameter info."""
     entry = DocEntry(name=node.name, type="function")
 
@@ -263,7 +276,8 @@ def _extract_function(node: ast.FunctionDef, source: str) -> DocEntry:
         entry.docstring = node.body[0].value.value
 
     # Extract parameters
-    for arg in node.args.args:
+    positional_args = node.args.args[1:] if skip_first_param else node.args.args
+    for arg in positional_args:
         param = ParamInfo(name=arg.arg)
         if arg.annotation:
             param.annotation = _annotate_str(arg.annotation)
@@ -373,11 +387,17 @@ def _build_function_signature(node: ast.FunctionDef) -> str:
 
 
 def _extract_class(node: ast.ClassDef, source: str) -> DocEntry:
-    """Extract class definition (placeholder for class doc generation)."""
+    """Extract a class definition together with its direct members."""
     entry = DocEntry(name=node.name, type="class")
 
     deco_src = _get_decorator_source(source, node)
-    entry.signature = deco_src + f"class {node.name}:"
+    bases = [ast.unparse(base) for base in node.bases]
+    keywords = [f"{keyword.arg}={ast.unparse(keyword.value)}"
+                if keyword.arg else f"**{ast.unparse(keyword.value)}"
+                for keyword in node.keywords]
+    class_args = bases + keywords
+    suffix = f"({', '.join(class_args)})" if class_args else ""
+    entry.signature = deco_src + f"class {node.name}{suffix}:"
 
     if (node.body
             and isinstance(node.body[0], ast.Expr)
@@ -386,6 +406,65 @@ def _extract_class(node: ast.ClassDef, source: str) -> DocEntry:
         entry.docstring = node.body[0].value.value
 
     _parse_docstring_sections(entry)
+
+    attribute_names = set()
+
+    for member in node.body:
+        if isinstance(member, ast.FunctionDef):
+            is_property = any(
+                isinstance(decorator, ast.Name) and decorator.id == "property"
+                for decorator in member.decorator_list
+            )
+            is_staticmethod = any(
+                isinstance(decorator, ast.Name) and decorator.id == "staticmethod"
+                for decorator in member.decorator_list
+            )
+            method = _extract_function(
+                member, source, skip_first_param=not is_staticmethod
+            )
+            if is_property:
+                entry.attributes.append(AttributeInfo(
+                    name=member.name,
+                    annotation=method.returns,
+                    docstring=method.docstring,
+                    description=method.return_doc or method.notes_text,
+                ))
+            else:
+                entry.methods.append(method)
+        elif isinstance(member, ast.AnnAssign) and isinstance(member.target, ast.Name):
+            entry.attributes.append(AttributeInfo(
+                name=member.target.id,
+                annotation=_annotate_str(member.annotation),
+                default=ast.unparse(member.value) if member.value else None,
+            ))
+        elif isinstance(member, ast.Assign):
+            for target in member.targets:
+                if isinstance(target, ast.Name):
+                    entry.attributes.append(AttributeInfo(
+                        name=target.id,
+                        default=ast.unparse(member.value),
+                    ))
+
+    # Include instance attributes created by methods, such as solver results.
+    for attribute in entry.attributes:
+        attribute_names.add(attribute.name)
+    for member in node.body:
+        if not isinstance(member, ast.FunctionDef):
+            continue
+        for child in ast.walk(member):
+            targets: List[ast.AST] = []
+            if isinstance(child, ast.Assign):
+                targets = child.targets
+            elif isinstance(child, ast.AnnAssign):
+                targets = [child.target]
+            for target in targets:
+                if (isinstance(target, ast.Attribute)
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id == "self"
+                        and target.attr not in attribute_names):
+                    entry.attributes.append(AttributeInfo(name=target.attr))
+                    attribute_names.add(target.attr)
+
     return entry
 
 
@@ -545,6 +624,72 @@ def _format_returns_section(entry: DocEntry) -> str:
     return "\n".join(lines)
 
 
+def _format_attribute_section(attributes: List[AttributeInfo]) -> str:
+    """Format class attributes and properties using the existing dl style."""
+    if not attributes:
+        return ""
+
+    lines = ["## Attributes", "", "<dl>"]
+    for attribute in attributes:
+        type_str = _escape_html(attribute.annotation) if attribute.annotation else ""
+        dt_text = f"{attribute.name}: {type_str}" if type_str else attribute.name
+        if attribute.default is not None:
+            dt_text += f" (default: <code>{_escape_html(attribute.default)}</code>)"
+        lines.append(f"  <dt><code>{dt_text}</code></dt>")
+
+        description = attribute.description or attribute.docstring
+        lines.append("  <dd>")
+        if description:
+            description_html = _backticks_to_code(" ".join(description.split()))
+            lines.append(f"    {description_html}")
+        else:
+            lines.append("    <!-- TODO: add description -->")
+        lines.append("  </dd>")
+        lines.append("")
+
+    lines.append("</dl>")
+    return "\n".join(lines)
+
+
+def _format_methods_section(methods: List[DocEntry]) -> str:
+    """Format direct class methods, reusing function documentation sections."""
+    if not methods:
+        return ""
+
+    lines = ["## Methods", ""]
+    for method in methods:
+        lines.append(f"### `{method.name}`")
+        lines.append("")
+        lines.append("```python")
+        lines.append(method.signature.strip())
+        lines.append("```")
+        lines.append("")
+
+        if method.notes_text:
+            lines.append(_backticks_to_code(" ".join(method.notes_text.split())))
+            lines.append("")
+
+        if method.examples_text:
+            examples_md = _format_examples_section(method.examples_text)
+            if examples_md:
+                lines.append(examples_md)
+                lines.append("")
+
+        params_md = _format_parameters_dl(method)
+        if params_md:
+            lines.append(params_md)
+            lines.append("")
+
+        returns_md = _format_returns_section(method)
+        if returns_md:
+            lines.append(returns_md)
+            lines.append("")
+
+    while lines and lines[-1] == "":
+        lines.pop()
+    return "\n".join(lines)
+
+
 def _format_examples_section(examples_text: str) -> str:
     """Format Examples section from docstring into markdown with code blocks."""
     if not examples_text:
@@ -683,6 +828,18 @@ def generate_markdown(entry: DocEntry, title: str, introduction: str) -> str:
         returns_md = _format_returns_section(entry)
         if returns_md:
             md_parts.append(returns_md)
+            md_parts.append("")
+
+    # --- Class members ---
+    if entry.type == "class":
+        attributes_md = _format_attribute_section(entry.attributes)
+        if attributes_md:
+            md_parts.append(attributes_md)
+            md_parts.append("")
+
+        methods_md = _format_methods_section(entry.methods)
+        if methods_md:
+            md_parts.append(methods_md)
             md_parts.append("")
 
     # Clean up trailing blank lines and internal excessive blanks

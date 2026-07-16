@@ -70,3 +70,13 @@ The `SDPSOS` function is a shortcut for the `sum_of_squares` function that \
 uses only semidefinite programming to solve inequalities."""
 output = "src/assets/markdown/triples-documentation/semidefinite-programming/sdpsos.md"
 
+[[docs]]
+type = "class"
+module = "sdp.dual"
+name = "SDPProblem"
+title = "SDPProblem"
+introduction = """\
+The `SDPProblem` class represents a dual semidefinite programming problem. It
+provides constructors for common SDP representations, access to problem
+variables and matrix blocks, numerical solving, and structural transformations."""
+output = "src/assets/markdown/triples-documentation/semidefinite-programming/sdp-problem.md"

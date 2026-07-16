@@ -40,6 +40,7 @@ const documentationSections = [
     path: '/triples/documentation/semidefinite-programming',
     subLinks: [
       { name: 'SDPSOS', path: '/triples/documentation/semidefinite-programming/sdpsos' },
+      { name: 'SDPProblem', path: '/triples/documentation/semidefinite-programming/sdp-problem' },
     ]
   },
 ];
