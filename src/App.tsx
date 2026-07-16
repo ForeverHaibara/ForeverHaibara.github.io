@@ -11,6 +11,7 @@ import TriplesDocumentationIndexPage from './pages/triples/documentation/Triples
 import DynamicDocPage from './pages/triples/documentation/DynamicDocPage.tsx';
 import GeometryLayout from './pages/geometry/GeometryLayout.tsx';
 import PureGeometryTiebaSearchPage from './pages/geometry/PureGeometryTiebaSearchPage.tsx';
+import GeoGebraStudioPage from './pages/geogebra/GeoGebraStudioPage.tsx';
 
 const AppLayout: React.FC = () => {
   return (
@@ -58,6 +59,7 @@ const App: React.FC = () => {
         <Route path="geometry" element={<GeometryLayout />}>
           <Route index element={<PureGeometryTiebaSearchPage />} />
         </Route>
+        <Route path="geogebra" element={<GeoGebraStudioPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

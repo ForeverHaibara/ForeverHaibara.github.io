@@ -58,6 +58,17 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
+        <section className="relative mb-12 overflow-hidden rounded-[28px] border border-sky-100 bg-[linear-gradient(135deg,rgba(239,246,255,0.86),rgba(224,242,254,0.65))] p-7 shadow-[0_16px_40px_rgba(56,189,248,0.12)] sm:p-8">
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">New geometry workspace</p>
+              <h2 className="mb-2 text-2xl font-semibold text-sky-950">GeoGebra Studio</h2>
+              <p className="max-w-2xl text-slate-600">Explore constructions in GeoGebra, run commands through a programmable input layer, and leave space for future relation discovery and proof tools.</p>
+            </div>
+            <Link to="/geogebra" className="inline-flex shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#1d4ed8_0%,#38bdf8_100%)] px-5 py-2.5 text-sm font-medium text-white shadow-[0_12px_24px_rgba(59,130,246,0.24)] transition-all duration-300 hover:translate-x-1">Open GeoGebra Studio</Link>
+          </div>
+        </section>
+
         <section className="relative text-center">
           <div className="mx-auto max-w-3xl rounded-[28px] border border-white/70 bg-white/42 px-6 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
             <h2 className="mb-4 text-3xl font-semibold text-slate-700">Explore Further</h2>
