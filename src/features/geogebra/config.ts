@@ -7,5 +7,4 @@ export const GEOGEBRA_LATEST_PROJECT_ID = 'latest';
 
 export const DEFAULT_STUDIO_SETTINGS = {
   sidePanelCollapsed: false,
-  consoleExpanded: false,
 };

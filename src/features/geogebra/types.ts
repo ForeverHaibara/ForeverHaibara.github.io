@@ -17,6 +17,12 @@ export interface CommandResult {
   timestamp: number;
 }
 
+export interface ApiConsoleResult {
+  input: string;
+  output?: string;
+  error?: string;
+}
+
 export interface EngineCapabilities {
   version: string | null;
   supportsBase64: boolean;
@@ -55,7 +61,6 @@ export interface ApiConsoleEntry {
 
 export interface StudioSettings {
   sidePanelCollapsed: boolean;
-  consoleExpanded: boolean;
 }
 
 export interface GeometryProjectRecord {
@@ -80,6 +85,7 @@ export const API_METHODS = [
   'evalCommandCAS',
   'getValue',
   'getValueString',
+  'getDefinitionString',
   'getObjectType',
   'getAllObjectNames',
   'getXML',

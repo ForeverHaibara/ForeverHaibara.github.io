@@ -32,7 +32,9 @@ const GeoGebraStudioPage: React.FC = () => {
   const [capabilities, setCapabilities] = useState<EngineCapabilities>(engine.getCapabilities());
   const [events, setEvents] = useState<GeometryEvent[]>([]);
   const [lastResult, setLastResult] = useState<CommandResult | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const restoredRef = useRef(false);
+  const loadOperationRef = useRef(0);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
@@ -59,15 +61,34 @@ const GeoGebraStudioPage: React.FC = () => {
     }
   }, [settings]);
 
+  const resetToInitial = useCallback(async () => {
+    loadOperationRef.current += 1;
+    setLoadingMessage(null);
+    try {
+      await engine.callApi('reset', []);
+    } catch {
+      // The applet may still be initializing; the visible reset remains best effort.
+    }
+    await store.clear().catch(() => undefined);
+    setSettings({ ...DEFAULT_STUDIO_SETTINGS });
+    setEvents([]);
+    setLastResult({ success: true, command: 'Reset initial state', labels: [], timestamp: Date.now() });
+  }, [engine, store]);
+
   const handleReady = useCallback(() => {
     setReady(true);
     setCapabilities(engine.getCapabilities());
     if (restoredRef.current) return;
     restoredRef.current = true;
-    void store.getLatest().then((project) => {
-      if (project?.ggbBase64) return engine.importGgb(base64ToFile(project.ggbBase64));
-      return undefined;
-    }).catch(() => undefined);
+    const operationId = ++loadOperationRef.current;
+    setLoadingMessage('Restoring your last GeoGebra draft...');
+    void store.getLatest().then(async (project) => {
+      if (!project?.ggbBase64 || operationId !== loadOperationRef.current) return;
+      await engine.importGgb(base64ToFile(project.ggbBase64));
+      if (operationId !== loadOperationRef.current) await engine.callApi('reset', []);
+    }).catch(() => undefined).finally(() => {
+      if (operationId === loadOperationRef.current) setLoadingMessage(null);
+    });
   }, [engine, store]);
 
   const handleError = useCallback((loadError: Error) => {
@@ -105,9 +126,19 @@ const GeoGebraStudioPage: React.FC = () => {
   }, []);
 
   const handleImport = useCallback(async (file: File) => {
-    await engine.importGgb(file);
-    setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
-    setLastResult({ success: true, command: `Imported ${file.name}`, labels: [], timestamp: Date.now() });
+    const operationId = ++loadOperationRef.current;
+    setLoadingMessage(`Opening ${file.name}...`);
+    try {
+      await engine.importGgb(file);
+      if (operationId !== loadOperationRef.current) {
+        await engine.callApi('reset', []);
+        return;
+      }
+      setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
+      setLastResult({ success: true, command: `Imported ${file.name}`, labels: [], timestamp: Date.now() });
+    } finally {
+      if (operationId === loadOperationRef.current) setLoadingMessage(null);
+    }
   }, [engine]);
 
   const handleExport = useCallback(async () => {
@@ -120,7 +151,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} settings={settings} capabilities={capabilities} events={events} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} />;
+  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} onCancelLoading={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;

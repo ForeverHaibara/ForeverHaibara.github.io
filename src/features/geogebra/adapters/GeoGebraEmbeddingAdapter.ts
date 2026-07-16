@@ -49,6 +49,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   private listeners = new Set<EngineEventListener>();
   private registeredListeners: Array<() => void> = [];
   private resizeObserver: ResizeObserver | null = null;
+  private observedLayoutElements: HTMLElement[] = [];
   private capabilities: EngineCapabilities = {
     version: null,
     supportsBase64: false,
@@ -68,7 +69,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     container.style.height = '100%';
     container.style.minHeight = '520px';
 
-    const initialRect = container.getBoundingClientRect();
+    const initialRect = this.getLayoutRect();
     const appletWidth = Math.max(320, Math.floor(initialRect.width || container.clientWidth || 800));
     const appletHeight = Math.max(420, Math.floor(initialRect.height || container.clientHeight || 600));
     await new Promise<void>((resolve, reject) => {
@@ -189,6 +190,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     this.listeners.clear();
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.observedLayoutElements = [];
     this.applet = null;
     this.container?.replaceChildren();
     this.container = null;
@@ -199,15 +201,29 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
 
     const resize = () => {
       if (!this.container || !this.applet?.setSize) return;
-      const rect = this.container.getBoundingClientRect();
+      const rect = this.getLayoutRect();
       const width = Math.max(320, Math.floor(rect.width));
       const height = Math.max(420, Math.floor(rect.height));
-      if (width > 0 && height > 0) this.applet.setSize(width, height);
+      if (width > 0 && height > 0) {
+        this.container.style.width = `${width}px`;
+        this.container.style.height = `${height}px`;
+        this.applet.setSize(width, height);
+      }
     };
 
     this.resizeObserver = new ResizeObserver(resize);
-    this.resizeObserver.observe(this.container);
+    this.observedLayoutElements = [this.container, this.container.parentElement].filter(
+      (element): element is HTMLElement => Boolean(element),
+    );
+    this.observedLayoutElements.forEach((element) => this.resizeObserver?.observe(element));
+    window.addEventListener('resize', resize);
+    this.registeredListeners.push(() => window.removeEventListener('resize', resize));
     resize();
+  }
+
+  private getLayoutRect(): DOMRect {
+    const layoutElement = this.container?.parentElement ?? this.container;
+    return layoutElement?.getBoundingClientRect() ?? new DOMRect(0, 0, 800, 600);
   }
 
   private refreshCapabilities(): void {

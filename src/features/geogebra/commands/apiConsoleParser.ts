@@ -42,8 +42,9 @@ const parseArgument = (value: string): unknown => {
 };
 
 export const parseApiCall = (input: string): ApiCall => {
-  const match = input.trim().match(/^api\s+([A-Za-z][A-Za-z0-9_]*)\s*(?:\((.*)\))?$/s);
-  if (!match) throw new Error('Use the format: api methodName(arg1, arg2)');
+  const normalizedInput = input.trim().replace(/^!\s*/, '').replace(/^api\s+/, '');
+  const match = normalizedInput.match(/^([A-Za-z][A-Za-z0-9_]*)\s*(?:\((.*)\))?$/s);
+  if (!match) throw new Error('Use the format: !methodName(arg1, arg2)');
   const method = match[1];
   const body = match[2] ?? '';
   return { method, args: body.trim() ? splitArguments(body).map(parseArgument) : [] };
