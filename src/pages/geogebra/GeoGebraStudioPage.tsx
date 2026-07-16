@@ -33,6 +33,7 @@ const GeoGebraStudioPage: React.FC = () => {
   const [events, setEvents] = useState<GeometryEvent[]>([]);
   const [lastResult, setLastResult] = useState<CommandResult | null>(null);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const restoredRef = useRef(false);
   const loadOperationRef = useRef(0);
   const resettingRef = useRef(false);
@@ -41,6 +42,32 @@ const GeoGebraStudioPage: React.FC = () => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
     return unsubscribe;
   }, [engine]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (!(target instanceof HTMLAnchorElement) || target.target === '_blank' || !target.href) return;
+      if (target.href === window.location.href) return;
+      if (!window.confirm('You may have unsaved GeoGebra changes. Leave this page?')) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => document.removeEventListener('click', handleDocumentClick, true);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     window.__GGB_DEBUG__ = {
@@ -63,6 +90,7 @@ const GeoGebraStudioPage: React.FC = () => {
   }, [settings]);
 
   const resetToInitial = useCallback(async () => {
+    if (!window.confirm('Reset GeoGebra Studio to its initial state? The current construction and local draft will be discarded.')) return;
     loadOperationRef.current += 1;
     resettingRef.current = true;
     setLoadingMessage(null);
@@ -75,6 +103,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setReady(false);
     setError(null);
     setEvents([]);
+    setHasUnsavedChanges(false);
     setLastResult({ success: true, command: 'Reset initial state', labels: [], timestamp: Date.now() });
     restoredRef.current = false;
 
@@ -122,6 +151,7 @@ const GeoGebraStudioPage: React.FC = () => {
         updatedAt: Date.now(),
       };
       await store.save(record);
+      setHasUnsavedChanges(false);
     } catch {
       // Some browser privacy modes disable IndexedDB; no user action should be blocked.
     }
@@ -135,6 +165,7 @@ const GeoGebraStudioPage: React.FC = () => {
 
   const handleCommandResult = useCallback((result: CommandResult) => {
     setLastResult(result);
+    if (result.success) setHasUnsavedChanges(true);
   }, []);
 
   const handleImport = useCallback(async (file: File) => {
@@ -144,6 +175,7 @@ const GeoGebraStudioPage: React.FC = () => {
       await engine.importGgb(file);
       if (operationId !== loadOperationRef.current) return;
       setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
+      setHasUnsavedChanges(true);
       setLastResult({ success: true, command: `Imported ${file.name}`, labels: [], timestamp: Date.now() });
     } finally {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
@@ -160,7 +192,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} onCancelLoading={resetToInitial} />;
+  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;
