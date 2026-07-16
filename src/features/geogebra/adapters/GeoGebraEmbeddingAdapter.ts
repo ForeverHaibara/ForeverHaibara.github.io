@@ -20,6 +20,7 @@ type GeoGebraApi = Record<string, (...args: any[]) => any> & {
   unregisterClearListener?: (listener: () => void) => void;
   getBase64?: (callback: (base64: string) => void) => void;
   setBase64?: (base64: string, callback?: () => void) => void;
+  setSize?: (width: number, height: number) => void;
 };
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -47,6 +48,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   private container: HTMLElement | null = null;
   private listeners = new Set<EngineEventListener>();
   private registeredListeners: Array<() => void> = [];
+  private resizeObserver: ResizeObserver | null = null;
   private capabilities: EngineCapabilities = {
     version: null,
     supportsBase64: false,
@@ -62,6 +64,13 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     }
 
     this.container = container;
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.minHeight = '520px';
+
+    const initialRect = container.getBoundingClientRect();
+    const appletWidth = Math.max(320, Math.floor(initialRect.width || container.clientWidth || 800));
+    const appletHeight = Math.max(420, Math.floor(initialRect.height || container.clientHeight || 600));
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       const timeout = window.setTimeout(() => {
@@ -75,8 +84,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
         {
           appName: 'classic',
           appVersion: GEOGEBRA_MIN_VERSION,
-          width: '100%',
-          height: '100%',
+          // The embedding API expects pixel dimensions here; percentage strings
+          // fall back to a narrow default applet instead of filling the host.
+          width: appletWidth,
+          height: appletHeight,
           showToolBar: true,
           showAlgebraInput: true,
           showMenuBar: true,
@@ -94,6 +105,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
             this.applet = api;
             this.refreshCapabilities();
             this.registerListeners();
+            this.observeContainerSize();
             resolve();
           },
         },
@@ -175,9 +187,27 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
       unregister();
     }
     this.listeners.clear();
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     this.applet = null;
     this.container?.replaceChildren();
     this.container = null;
+  }
+
+  private observeContainerSize(): void {
+    if (!this.container || !this.applet?.setSize || typeof ResizeObserver === 'undefined') return;
+
+    const resize = () => {
+      if (!this.container || !this.applet?.setSize) return;
+      const rect = this.container.getBoundingClientRect();
+      const width = Math.max(320, Math.floor(rect.width));
+      const height = Math.max(420, Math.floor(rect.height));
+      if (width > 0 && height > 0) this.applet.setSize(width, height);
+    };
+
+    this.resizeObserver = new ResizeObserver(resize);
+    this.resizeObserver.observe(this.container);
+    resize();
   }
 
   private refreshCapabilities(): void {

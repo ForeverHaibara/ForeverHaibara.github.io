@@ -27,7 +27,7 @@ const GeoGebraCanvas: React.FC<GeoGebraCanvasProps> = ({ engine, onReady, onErro
     };
   }, [engine, onError, onReady]);
 
-  return <div ref={containerRef} className="h-full min-h-[520px] w-full overflow-hidden bg-white" data-testid="geogebra-canvas" />;
+  return <div ref={containerRef} className="h-full min-h-[520px] w-full min-w-0 overflow-hidden bg-white" data-testid="geogebra-canvas" />;
 };
 
 export default GeoGebraCanvas;
