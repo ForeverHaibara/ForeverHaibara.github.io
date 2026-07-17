@@ -78,22 +78,7 @@ export interface GeoGebraDebugApi {
   status(): { ready: boolean; capabilities: EngineCapabilities | null };
 }
 
-export const API_METHODS = [
-  'getVersion',
-  'evalCommand',
-  'evalCommandGetLabels',
-  'evalCommandCAS',
-  'getValue',
-  'getValueString',
-  'getDefinitionString',
-  'getObjectType',
-  'getAllObjectNames',
-  'getXML',
-  'getPerspectiveXML',
-  'setValue',
-  'setCaption',
-  'setVisible',
-  'reset',
-] as const;
+// https://geogebra.github.io/docs/reference/en/GeoGebra_Apps_API/
+export const API_METHODS = ['evalCommand', 'evalLaTex', 'evalCommandGetLabels', 'evalCommandCAS', 'insertEmbed', 'deleteObject', 'setAuxiliary', 'setValue', 'setTextValue', 'setListValue', 'setCoords', 'setCaption', 'setColor', 'setVisible', 'setLabelVisible', 'setLabelStyle', 'setFixed', 'setTrace', 'renameObject', 'setLayer', 'setLayerVisible', 'setLineStyle', 'setLineThickness', 'setPointStyle', 'setPointSize', 'setDisplayStyle', 'setFilling', 'getPNGBase64', 'exportSVG', 'exportPDF', 'getScreenshotBase64', 'writePNGtoFile', 'isIndependent', 'isMoveable', 'showAllObjects', 'registerEmbedResolver', 'setAnimating', 'setAnimationSpeed', 'startAnimation', 'stopAnimation', 'isAnimationRunning', 'getXcoord', 'getYcoord', 'getZcoord', 'getValue', 'getListValue', 'getColor', 'getVisible', 'getValueString', 'getDefinitionString', 'getCommandString', 'getLaTeXString', 'getLaTeXBase64', 'getObjectType', 'exists', 'isDefined', 'getAllObjectNames', 'getObjectNumber', 'getCASObjectNumber', 'getObjectName', 'getLayer', 'getLineStyle', 'getLineThickness', 'getPointStyle', 'getPointSize', 'getFilling', 'getCaption', 'getLabelStyle', 'getLabelVisible', 'isInteractive', 'setMode', 'getMode', 'openFile', 'reset', 'newConstruction', 'refreshViews', 'setOnTheFlyPointCreationActive', 'setPointCapture', 'setRounding', 'hideCursorWhenDragging', 'setRepaintingActive', 'setErrorDialogsActive', 'setCoordSystem', 'setAxesVisible', 'setAxisLabels', 'setAxisSteps', 'setAxisUnits', 'setGridVisible', 'getGridVisible', 'getPerspectiveXML', 'setUndoPoint', 'undo', 'redo', 'showToolBar', 'setCustomToolBar', 'addCustomTool', 'showMenuBar', 'showAlgebraInput', 'showResetIcon', 'enableRightClick', 'enableLabelDrags', 'enableShiftDragZoom', 'enableCAS', 'enable3D', 'setPerspective', 'setWidth', 'setHeight', 'setSize', 'recalculateEnvironments', 'getEditorState', 'setEditorState', 'getGraphicsOptions', 'setGraphicsOptions', 'setAlgebraOptions', 'getViewProperties', 'registerAddListener', 'unregisterAddListener', 'registerRemoveListener', 'unregisterRemoveListener', 'registerUpdateListener', 'unregisterUpdateListener', 'registerClickListener', 'unregisterClickListener', 'registerObjectUpdateListener', 'unregisterObjectUpdateListener', 'registerObjectClickListener', 'unregisterObjectClickListener', 'registerRenameListener', 'unregisterRenameListener', 'registerClearListener', 'unregisterClearListener', 'registerStoreUndoListener', 'unregisterStoreUndoListener', 'registerClientListener', 'unregisterClientListener', 'evalXML', 'setXML', 'getXML', 'getAlgorithmXML', 'getFileJSON', 'setFileJSON', 'getBase64', 'setBase64', 'debug', 'getVersion', 'remove'] as const;
 
 export type ApiMethodName = (typeof API_METHODS)[number];
