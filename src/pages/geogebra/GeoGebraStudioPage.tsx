@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DEFAULT_STUDIO_SETTINGS, GEOGEBRA_AUTOSAVE_DELAY, GEOGEBRA_LATEST_PROJECT_ID } from '../../features/geogebra/config';
+import { DEFAULT_STUDIO_SETTINGS, GEOGEBRA_AUTOSAVE_DELAY, GEOGEBRA_LATEST_PROJECT_ID, MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../../features/geogebra/config';
 import GeoGebraStudioShell from '../../features/geogebra/components/GeoGebraStudioShell';
 import { GeoGebraEmbeddingAdapter } from '../../features/geogebra/adapters/GeoGebraEmbeddingAdapter';
 import { IndexedDbProjectStore } from '../../features/geogebra/persistence/indexedDbProjectStore';
@@ -18,7 +18,12 @@ const blobToBase64 = async (blob: Blob): Promise<string> => {
 const readSettings = (): StudioSettings => {
   try {
     const raw = window.localStorage.getItem('geogebra-studio-settings');
-    return raw ? { ...DEFAULT_STUDIO_SETTINGS, ...JSON.parse(raw) as Partial<StudioSettings> } : { ...DEFAULT_STUDIO_SETTINGS };
+    if (!raw) return { ...DEFAULT_STUDIO_SETTINGS };
+    const parsed = JSON.parse(raw) as Partial<StudioSettings>;
+    const sidePanelWidth = typeof parsed.sidePanelWidth === 'number' && Number.isFinite(parsed.sidePanelWidth)
+      ? Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, parsed.sidePanelWidth))
+      : DEFAULT_STUDIO_SETTINGS.sidePanelWidth;
+    return { ...DEFAULT_STUDIO_SETTINGS, ...parsed, sidePanelWidth };
   } catch {
     return { ...DEFAULT_STUDIO_SETTINGS };
   }

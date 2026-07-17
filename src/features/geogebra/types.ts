@@ -61,6 +61,7 @@ export interface ApiConsoleEntry {
 
 export interface StudioSettings {
   sidePanelCollapsed: boolean;
+  sidePanelWidth: number;
 }
 
 export interface GeometryProjectRecord {

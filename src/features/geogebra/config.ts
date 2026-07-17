@@ -4,7 +4,10 @@ export const GEOGEBRA_AUTOSAVE_DELAY = 1400;
 export const GEOGEBRA_DATABASE_NAME = 'foreverhaibara-geogebra-studio';
 export const GEOGEBRA_PROJECT_STORE = 'projects';
 export const GEOGEBRA_LATEST_PROJECT_ID = 'latest';
+export const MIN_SIDE_PANEL_WIDTH = 280;
+export const MAX_SIDE_PANEL_WIDTH = 560;
 
 export const DEFAULT_STUDIO_SETTINGS = {
   sidePanelCollapsed: false,
+  sidePanelWidth: 350,
 };
