@@ -20,6 +20,7 @@ export interface GeometryTolerance {
 export interface RelationWitness {
   points: string[];
   segments?: Array<[string, string]>;
+  lineFamilies?: string[][][];
 }
 
 export interface DependencySeparation {

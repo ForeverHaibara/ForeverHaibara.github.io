@@ -64,6 +64,20 @@ describe('GeoGebra geometric relation discovery', () => {
     expect(result.relations.some((relation) => relation.kind === 'collinear' && relation.pointNames.includes('A') && relation.pointNames.includes('F'))).toBe(true);
   });
 
+  it('keeps distinct parallel directions for a constructed parallelogram', () => {
+    const graph = buildDependencyGraph([
+      point('A', 0, 0), point('B', 2, 1), point('C', 1, 3), point('D', 3, 4),
+    ]);
+    const result = detectGeometryRelations(graph);
+    const parallelConclusions = result.relations
+      .filter((relation) => relation.kind === 'parallel')
+      .flatMap((relation) => relation.witnesses[0].lineFamilies ?? []);
+    expect(parallelConclusions).toEqual(expect.arrayContaining([
+      [['A', 'C'], ['B', 'D']],
+      [['A', 'B'], ['C', 'D']],
+    ]));
+  });
+
   it('discovers perpendicular relations and rejects degenerate point pairs', () => {
     const graph = buildDependencyGraph([
       point('A', 0, 0), point('B', 2, 0), point('C', 0, 1), point('D', 0, 3), point('E', 0, 0),

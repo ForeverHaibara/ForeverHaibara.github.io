@@ -18,6 +18,14 @@ interface LineGroup {
   offset: number;
 }
 
+interface RelationSeed {
+  key: string;
+  kind: GeometryRelationKind;
+  witness: RelationWitness;
+  points: Set<number>;
+  confidence: number;
+}
+
 interface CircleCandidate {
   centerX: number;
   centerY: number;
@@ -64,6 +72,21 @@ const buildTolerance = (points: readonly GeometryPoint[]): GeometryTolerance => 
 
 const pointsFromPairs = (pairs: readonly PointPair[]): Set<number> => new Set(pairs.flatMap((pair) => [pair.left, pair.right]));
 
+const linePointIndexes = (line: LineGroup, points: readonly GeometryPoint[]): number[] => {
+  const direction = line.pairs[0]?.angle ?? 0;
+  const dx = Math.cos(direction);
+  const dy = Math.sin(direction);
+  return [...line.points].sort((left, right) => {
+    const leftProjection = points[left].coordinates.x * dx + points[left].coordinates.y * dy;
+    const rightProjection = points[right].coordinates.x * dx + points[right].coordinates.y * dy;
+    return leftProjection - rightProjection;
+  });
+};
+
+const linePointNames = (line: LineGroup, points: readonly GeometryPoint[]): string[] => linePointIndexes(line, points).map((index) => points[index].name);
+
+const lineFamilyNames = (lines: readonly LineGroup[], points: readonly GeometryPoint[]): string[][] => lines.map((line) => linePointNames(line, points));
+
 const groupLinePairs = (pairs: readonly PointPair[], directionRoot: number, tolerance: GeometryTolerance): LineGroup[] => {
   const lineSet = new DisjointSet(pairs.length);
   for (let left = 0; left < pairs.length; left += 1) {
@@ -75,16 +98,6 @@ const groupLinePairs = (pairs: readonly PointPair[], directionRoot: number, tole
     const groupPairs = indexes.map((index) => pairs[index]);
     return { directionRoot, points: pointsFromPairs(groupPairs), pairs: groupPairs, offset: groupPairs.reduce((sum, pair) => sum + pair.offset, 0) / groupPairs.length };
   }).filter((group) => group.points.size >= 2);
-};
-
-const pairWitness = (left: LineGroup, right: LineGroup): RelationWitness | null => {
-  for (const leftPair of left.pairs) {
-    for (const rightPair of right.pairs) {
-      const points = [leftPair.left, leftPair.right, rightPair.left, rightPair.right];
-      if (new Set(points).size === 4) return { points: points.map(String), segments: [[String(leftPair.left), String(leftPair.right)], [String(rightPair.left), String(rightPair.right)]] };
-    }
-  }
-  return null;
 };
 
 const createCircle = (a: PointCoordinate, b: PointCoordinate, c: PointCoordinate): { centerX: number; centerY: number; radius: number } | null => {
@@ -101,8 +114,6 @@ const createCircle = (a: PointCoordinate, b: PointCoordinate, c: PointCoordinate
 const geometryPoints = (graph: DependencyGraph): GeometryPoint[] => graph.nodes
   .filter((node): node is GraphNode & { coordinates: PointCoordinate } => !node.isSentinel && node.coordinates !== undefined && Number.isFinite(node.coordinates.x) && Number.isFinite(node.coordinates.y))
   .map((node) => ({ name: node.name, coordinates: node.coordinates }));
-
-const relationId = (kind: GeometryRelationKind, points: readonly string[]): string => `${kind}:${[...points].sort().join('|')}`;
 
 export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Date.now()): GeometryRelationResult => {
   const points = geometryPoints(graph);
@@ -123,15 +134,18 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   const directionSet = clusterByBuckets(pairs.map((pair) => pair.angle), tolerance.angular, Math.PI, (left, right) => circularDistance(left, right, Math.PI) <= tolerance.angular);
   const directionGroups = [...directionSet.groups().entries()].map(([root, indexes]) => ({ root, pairs: indexes.map((index) => pairs[index]) }));
   const lineGroups = directionGroups.flatMap(({ root, pairs: directionPairs }) => groupLinePairs(directionPairs, root, tolerance));
-  const relationSeeds: Array<{ kind: GeometryRelationKind; witness: RelationWitness; points: Set<number>; confidence: number }> = [];
+  const relationSeeds: RelationSeed[] = [];
 
-  lineGroups.forEach((line, lineIndex) => {
-    if (line.points.size >= 3) relationSeeds.push({ kind: 'collinear', witness: { points: [...line.points].slice(0, MAX_WITNESSES).map((index) => points[index].name) }, points: line.points, confidence: Math.min(1, 0.75 + (line.points.size - 3) * 0.05) });
-    lineGroups.slice(lineIndex + 1).forEach((other) => {
-      if (line.directionRoot !== other.directionRoot) return;
-      const witness = pairWitness(line, other);
-      if (witness) relationSeeds.push({ kind: 'parallel', witness: { ...witness, points: witness.points.map((index) => points[Number(index)].name) }, points: new Set([...line.points, ...other.points]), confidence: 0.98 });
-    });
+  lineGroups.forEach((line) => {
+    const names = linePointNames(line, points);
+    if (line.points.size >= 3) relationSeeds.push({ key: `collinear:${names.join('|')}`, kind: 'collinear', witness: { points: names.slice(0, MAX_WITNESSES), lineFamilies: [[names]] }, points: line.points, confidence: Math.min(1, 0.75 + (line.points.size - 3) * 0.05) });
+  });
+
+  [...new Set(lineGroups.map((line) => line.directionRoot))].forEach((directionRoot) => {
+    const family = lineGroups.filter((line) => line.directionRoot === directionRoot);
+    if (family.length < 2) return;
+    const pointsInFamily = new Set(family.flatMap((line) => [...line.points]));
+    relationSeeds.push({ key: `parallel:${directionRoot}`, kind: 'parallel', witness: { points: [...pointsInFamily].map((index) => points[index].name), lineFamilies: [lineFamilyNames(family, points)] }, points: pointsInFamily, confidence: 0.98 });
   });
 
   directionGroups.forEach((left, leftIndex) => {
@@ -139,15 +153,9 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
       if (circularDistance(left.pairs[0].angle - right.pairs[0].angle, Math.PI / 2, Math.PI) > tolerance.angular) return;
       const leftLines = lineGroups.filter((line) => line.directionRoot === left.root);
       const rightLines = lineGroups.filter((line) => line.directionRoot === right.root);
-      for (const leftLine of leftLines) {
-        for (const rightLine of rightLines) {
-          const witness = pairWitness(leftLine, rightLine);
-          if (witness) {
-            relationSeeds.push({ kind: 'perpendicular', witness: { ...witness, points: witness.points.map((index) => points[Number(index)].name) }, points: new Set([...leftLine.points, ...rightLine.points]), confidence: 0.98 });
-            return;
-          }
-        }
-      }
+      if (leftLines.length === 0 || rightLines.length === 0) return;
+      const pointsInFamily = new Set([...leftLines, ...rightLines].flatMap((line) => [...line.points]));
+      relationSeeds.push({ key: `perpendicular:${Math.min(left.root, right.root)}:${Math.max(left.root, right.root)}`, kind: 'perpendicular', witness: { points: [...pointsInFamily].map((index) => points[index].name), lineFamilies: [lineFamilyNames(leftLines, points), lineFamilyNames(rightLines, points)] }, points: pointsInFamily, confidence: 0.98 });
     });
   });
 
@@ -182,14 +190,17 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   });
   [...circleSet.groups().values()].forEach((indexes) => {
     const pointSet = new Set(indexes.flatMap((index) => circles[index].points));
-    if (pointSet.size >= 4) relationSeeds.push({ kind: 'concyclic', witness: { points: [...pointSet].slice(0, MAX_WITNESSES).map((index) => points[index].name) }, points: pointSet, confidence: Math.min(1, 0.85 + (pointSet.size - 4) * 0.03) });
+    if (pointSet.size >= 4) {
+      const names = [...pointSet].map((index) => points[index].name);
+      relationSeeds.push({ key: `concyclic:${[...names].sort().join('|')}`, kind: 'concyclic', witness: { points: names.slice(0, MAX_WITNESSES) }, points: pointSet, confidence: Math.min(1, 0.85 + (pointSet.size - 4) * 0.03) });
+    }
   });
 
   const profile = buildDependencyProfile(graph);
   const relations = new Map<string, GeometryRelation>();
   relationSeeds.forEach((seed) => {
     const pointNames = [...seed.points].map((index) => points[index].name).sort();
-    const id = relationId(seed.kind, pointNames);
+    const id = seed.key;
     const witness = { ...seed.witness, points: [...new Set(seed.witness.points)].sort() };
     const metric = measureDependencySeparation(profile, witness.points);
     const relation: GeometryRelation = { id, kind: seed.kind, pointNames, witnesses: [witness], confidence: seed.confidence, nonTriviality: scoreDependencySeparation(metric), explanation: explainDependencySeparation(metric), metric };

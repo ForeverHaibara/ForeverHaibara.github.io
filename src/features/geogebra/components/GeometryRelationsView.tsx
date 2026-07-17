@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { GeometryRelation, GeometryRelationKind } from '../analysis/geometryTypes';
+import type { GeometryRelation, GeometryRelationKind, RelationWitness } from '../analysis/geometryTypes';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 
 const labels: Record<GeometryRelationKind, string> = {
@@ -16,11 +16,17 @@ const colors: Record<GeometryRelationKind, string> = {
   concyclic: 'bg-emerald-50 text-emerald-700',
 };
 
-const formatWitness = (relation: GeometryRelation, witness: { points: string[] }): string => {
-  if (relation.kind === 'collinear') return witness.points.join(' - ');
-  if (relation.kind === 'concyclic') return `(${witness.points.join(', ')})`;
-  const [first, second, third, fourth] = witness.points;
-  return `${first}${second} ${relation.kind === 'parallel' ? '∥' : '⟂'} ${third}${fourth}`;
+const formatLine = (line: string[]): string => line.join('');
+const formatLineFamily = (family: string[][]): string => family.map(formatLine).join('//');
+
+const formatConclusion = (relation: GeometryRelation, witness: RelationWitness): string => {
+  if (relation.kind === 'perpendicular' && witness.lineFamilies?.length === 2) {
+    return `(${formatLineFamily(witness.lineFamilies[0])}) \u22A5 (${formatLineFamily(witness.lineFamilies[1])})`;
+  }
+  if (relation.kind === 'parallel' && witness.lineFamilies?.length === 1) return formatLineFamily(witness.lineFamilies[0]);
+  if (relation.kind === 'collinear' && witness.lineFamilies?.[0]?.[0]) return `${formatLine(witness.lineFamilies[0][0])} collinear`;
+  if (relation.kind === 'concyclic') return `${witness.points.join('')} concyclic`;
+  return labels[relation.kind];
 };
 
 const GeometryRelationsView: React.FC<{ state: GeometryRelationsState }> = ({ state }) => {
@@ -35,14 +41,11 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState }> = ({ st
     {result.diagnostics.length > 0 && <div className="rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-700">{result.diagnostics.join(' ')}</div>}
     {result.relations.length === 0 ? <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">No significant geometric relations found.</p> : <div className="max-h-[420px] space-y-2 overflow-auto pr-1">{result.relations.map((relation) => {
       const expanded = expandedId === relation.id;
-      return <article key={relation.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      return <article key={relation.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
         <button type="button" className="w-full text-left" onClick={() => setExpandedId(expanded ? null : relation.id)} aria-expanded={expanded}>
-          <div className="flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${colors[relation.kind]}`}>{labels[relation.kind]}</span><span className="text-[10px] font-semibold text-slate-500">{relation.nonTriviality.toFixed(0)} novelty</span></div>
-          <p className="mt-2 break-words text-xs font-semibold text-slate-700">{relation.pointNames.join(', ')}</p>
-          <p className="mt-1 break-words text-[11px] text-slate-500">{formatWitness(relation, relation.witnesses[0])}</p>
-          <p className="mt-1 text-[10px] text-slate-400">{relation.explanation}</p>
+          <div className="flex min-h-6 items-center justify-between gap-3"><p className="min-w-0 break-words text-xs font-semibold text-slate-700">{formatConclusion(relation, relation.witnesses[0])}</p><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${colors[relation.kind]}`}>{relation.nonTriviality.toFixed(0)}</span></div>
         </button>
-        {expanded && <div className="mt-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500"><p>Confidence: {(relation.confidence * 100).toFixed(0)}%</p><p className="mt-1">Witnesses: {relation.witnesses.map((witness) => formatWitness(relation, witness)).join('; ')}</p><p className="mt-1">Depth factor: {relation.metric.depthFactor.toFixed(2)}; branch separation: {relation.metric.branchDiversity.toFixed(2)}</p></div>}
+        {expanded && <div className="mt-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500"><p>Type: {labels[relation.kind]}</p><p className="mt-1">Confidence: {(relation.confidence * 100).toFixed(0)}%</p><p className="mt-1">Witnesses: {relation.witnesses.map((witness) => formatConclusion(relation, witness)).join('; ')}</p><p className="mt-1">{relation.explanation}</p><p className="mt-1">Depth factor: {relation.metric.depthFactor.toFixed(2)}; branch separation: {relation.metric.branchDiversity.toFixed(2)}</p></div>}
       </article>;
     })}</div>}
   </div>;
