@@ -5,6 +5,7 @@ import { GeoGebraEmbeddingAdapter } from '../../features/geogebra/adapters/GeoGe
 import { IndexedDbProjectStore } from '../../features/geogebra/persistence/indexedDbProjectStore';
 import { base64ToFile, blobToDownload } from '../../features/geogebra/persistence/ggbFileCodec';
 import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, GeometryProjectRecord, StudioSettings } from '../../features/geogebra/types';
+import { useDependencyGraph } from '../../features/geogebra/analysis/useDependencyGraph';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -37,6 +38,7 @@ const GeoGebraStudioPage: React.FC = () => {
   const restoredRef = useRef(false);
   const loadOperationRef = useRef(0);
   const resettingRef = useRef(false);
+  const dependencyGraphState = useDependencyGraph(engine, ready);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
@@ -126,10 +128,11 @@ const GeoGebraStudioPage: React.FC = () => {
     void store.getLatest().then(async (project) => {
       if (!project?.ggbBase64 || operationId !== loadOperationRef.current) return;
       await engine.importGgb(base64ToFile(project.ggbBase64));
+      dependencyGraphState.refresh();
     }).catch(() => undefined).finally(() => {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
     });
-  }, [engine, store]);
+  }, [dependencyGraphState.refresh, engine, store]);
 
   const handleError = useCallback((loadError: Error) => {
     resettingRef.current = false;
@@ -173,6 +176,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLoadingMessage(`Opening ${file.name}...`);
     try {
       await engine.importGgb(file);
+      dependencyGraphState.refresh();
       if (operationId !== loadOperationRef.current) return;
       setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
       setHasUnsavedChanges(true);
@@ -180,7 +184,7 @@ const GeoGebraStudioPage: React.FC = () => {
     } finally {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
     }
-  }, [engine]);
+  }, [dependencyGraphState.refresh, engine]);
 
   const handleExport = useCallback(async () => {
     const blob = await engine.exportGgb();
@@ -192,7 +196,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
+  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;

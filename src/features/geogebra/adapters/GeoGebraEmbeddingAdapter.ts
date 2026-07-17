@@ -14,10 +14,12 @@ type GeoGebraApi = Record<string, (...args: any[]) => any> & {
   registerRemoveListener?: (listener: (name: string) => void) => void;
   registerUpdateListener?: (listener: (name: string) => void) => void;
   registerClearListener?: (listener: () => void) => void;
+  registerClientListener?: (listener: (event: string | { type?: string }) => void) => void;
   unregisterAddListener?: (listener: (name: string) => void) => void;
   unregisterRemoveListener?: (listener: (name: string) => void) => void;
   unregisterUpdateListener?: (listener: (name: string) => void) => void;
   unregisterClearListener?: (listener: () => void) => void;
+  unregisterClientListener?: (listener: (event: string | { type?: string }) => void) => void;
   getBase64?: (callback: (base64: string) => void) => void;
   setBase64?: (base64: string, callback?: () => void) => void;
   setSize?: (width: number, height: number) => void;
@@ -251,6 +253,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const onRemove = (name: string) => emit('remove', name);
     const onUpdate = (name: string) => emit('update', name);
     const onClear = () => emit('clear');
+    const onClientEvent = (event: string | { type?: string }) => {
+      const eventName = typeof event === 'string' ? event : event.type ?? '';
+      if (/dragend|drag_end|dragEnd/u.test(eventName)) emit('dragEnd');
+    };
 
     if (applet.registerAddListener) {
       applet.registerAddListener(onAdd);
@@ -267,6 +273,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     if (applet.registerClearListener) {
       applet.registerClearListener(onClear);
       this.registeredListeners.push(() => applet.unregisterClearListener?.(onClear));
+    }
+    if (applet.registerClientListener) {
+      applet.registerClientListener(onClientEvent);
+      this.registeredListeners.push(() => applet.unregisterClientListener?.(onClientEvent));
     }
   }
 }

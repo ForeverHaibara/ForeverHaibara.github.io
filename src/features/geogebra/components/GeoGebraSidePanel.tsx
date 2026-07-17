@@ -1,14 +1,20 @@
 import React from 'react';
 import type { EngineCapabilities, GeometryEvent } from '../types';
+import DependencyGraphView from './DependencyGraphView';
+import type { DependencyGraph } from '../analysis/graphTypes';
 
 interface GeoGebraSidePanelProps {
   collapsed: boolean;
   capabilities: EngineCapabilities;
   events: GeometryEvent[];
+  graph: DependencyGraph | null;
+  graphStatus: 'idle' | 'loading' | 'ready' | 'error';
+  graphError: string | null;
+  onRefreshGraph(): void;
   onToggle(): void;
 }
 
-const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, capabilities, events, onToggle }) => {
+const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, capabilities, events, graph, graphStatus, graphError, onRefreshGraph, onToggle }) => {
   if (collapsed) {
     return <button type="button" onClick={onToggle} className="absolute right-3 top-3 z-10 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-sky-700 shadow-lg backdrop-blur hover:bg-white">Open analysis panel</button>;
   }
@@ -27,14 +33,7 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, capabi
         <div className="rounded-xl bg-sky-50 p-3"><span className="block text-slate-500">Version</span><strong className="text-sky-800">{capabilities.version ?? 'Loading'}</strong></div>
         <div className="rounded-xl bg-emerald-50 p-3"><span className="block text-slate-500">Events</span><strong className="text-emerald-800">{events.length}</strong></div>
       </div>
-      <div className="border-t border-slate-100 px-4 py-4">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Planned analyzers</h3>
-        <div className="mt-3 space-y-2 text-sm text-slate-600">
-          <div className="rounded-xl border border-dashed border-slate-200 p-3">Conjectured relations <span className="float-right text-xs text-slate-400">Soon</span></div>
-          <div className="rounded-xl border border-dashed border-slate-200 p-3">Exact verification <span className="float-right text-xs text-slate-400">Soon</span></div>
-          <div className="rounded-xl border border-dashed border-slate-200 p-3">Proof steps <span className="float-right text-xs text-slate-400">Soon</span></div>
-        </div>
-      </div>
+      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dependency graph</h3><p className="mt-1 text-xs leading-5 text-slate-500">Dependencies point toward the object that uses them.</p></div><DependencyGraphView graph={graph} status={graphStatus} error={graphError} onRefresh={onRefreshGraph} /></div>
       <div className="min-h-0 flex-1 border-t border-slate-100 px-4 py-4">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Construction events</h3>
         <div className="mt-3 max-h-52 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-500">
