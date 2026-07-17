@@ -23,6 +23,7 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
   const requestVersionRef = useRef(0);
   const runningRef = useRef(false);
   const pendingRef = useRef(false);
+  const draggingRef = useRef(false);
   const updateTimerRef = useRef<number | null>(null);
 
   const runRefresh = useCallback(async () => {
@@ -82,6 +83,16 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
   }, [runRefresh]);
 
   const handleEvent = useCallback((event: GeometryEvent) => {
+    if (event.type === 'dragStart') {
+      draggingRef.current = true;
+      return;
+    }
+    if (event.type === 'dragEnd') {
+      draggingRef.current = false;
+      requestRefresh(true);
+      return;
+    }
+    if (draggingRef.current && event.type === 'update') return;
     if (event.type === 'update') requestRefresh(false);
     else requestRefresh(true);
   }, [requestRefresh]);
@@ -107,4 +118,3 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
   const refresh = useCallback(() => requestRefresh(true), [requestRefresh]);
   return { graph, status, error, refresh };
 };
-

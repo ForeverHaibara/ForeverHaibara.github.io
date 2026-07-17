@@ -42,8 +42,10 @@ export const buildDependencyGraph = (objects: readonly ConstructionObjectInput[]
       objectType: object.objectType,
       commandString: object.commandString,
       parsed,
+      coordinates: object.coordinates,
+      coordinateError: object.coordinateError,
       dependencyStatus,
-      diagnostics: [...diagnostics, ...(parsed?.diagnostics ?? [])],
+      diagnostics: [...diagnostics, ...(parsed?.diagnostics ?? []), ...(object.coordinateError ? [{ message: object.coordinateError, severity: 'warning' as const }] : [])],
     };
     nodes.push(node);
 
@@ -98,4 +100,3 @@ export const projectGraph = (graph: DependencyGraph, options: GraphProjectionOpt
 
   return { ...graph, nodes: visibleNodes, edges: [...edges.values()] };
 };
-

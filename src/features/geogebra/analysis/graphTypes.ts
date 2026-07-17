@@ -24,10 +24,17 @@ export interface ParsedConstruction {
   source: string;
 }
 
+export interface PointCoordinate {
+  x: number;
+  y: number;
+}
+
 export interface ConstructionObjectInput {
   name: string;
   objectType: string | null;
   commandString: string | null;
+  coordinates?: PointCoordinate;
+  coordinateError?: string;
   readError?: string;
 }
 
@@ -42,6 +49,8 @@ export interface GraphNode {
   objectType: string | null;
   commandString: string | null;
   parsed: ParsedConstruction | null;
+  coordinates?: PointCoordinate;
+  coordinateError?: string;
   dependencyStatus: 'free' | 'parsed' | 'partial' | 'unavailable';
   diagnostics: ParseDiagnostic[];
   isSentinel?: boolean;
@@ -60,4 +69,3 @@ export interface DependencyGraph {
   edges: GraphEdge[];
   generatedAt: number;
 }
-

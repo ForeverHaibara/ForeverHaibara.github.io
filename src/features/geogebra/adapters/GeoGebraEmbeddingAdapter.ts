@@ -255,6 +255,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const onClear = () => emit('clear');
     const onClientEvent = (event: string | { type?: string }) => {
       const eventName = typeof event === 'string' ? event : event.type ?? '';
+      if (/dragstart|drag_start|dragStart/u.test(eventName)) emit('dragStart');
       if (/dragend|drag_end|dragEnd/u.test(eventName)) emit('dragEnd');
     };
 

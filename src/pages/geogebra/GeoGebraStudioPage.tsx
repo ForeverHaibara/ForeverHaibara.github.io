@@ -6,6 +6,7 @@ import { IndexedDbProjectStore } from '../../features/geogebra/persistence/index
 import { base64ToFile, blobToDownload } from '../../features/geogebra/persistence/ggbFileCodec';
 import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, GeometryProjectRecord, StudioSettings } from '../../features/geogebra/types';
 import { useDependencyGraph } from '../../features/geogebra/analysis/useDependencyGraph';
+import { useGeometryRelations } from '../../features/geogebra/analysis/useGeometryRelations';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -44,6 +45,7 @@ const GeoGebraStudioPage: React.FC = () => {
   const loadOperationRef = useRef(0);
   const resettingRef = useRef(false);
   const dependencyGraphState = useDependencyGraph(engine, ready);
+  const geometryRelations = useGeometryRelations(dependencyGraphState.graph, dependencyGraphState.status);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
@@ -201,7 +203,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
+  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} geometryRelations={geometryRelations} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;
