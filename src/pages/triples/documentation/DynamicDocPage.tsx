@@ -8,7 +8,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner.tsx';
 // Vite's import.meta.glob is a build-time feature.
 const markdownModules: Record<string, string> = import.meta.glob(
   '/src/assets/markdown/triples-documentation/**/*.md', 
-  { eager: true, as: 'raw' }
+  { eager: true, query: '?raw', import: 'default' }
 );
 
 // Log all modules captured by glob for debugging.

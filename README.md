@@ -10,6 +10,26 @@ Homepage: [https://foreverhaibara.github.io/](https://foreverhaibara.github.io/)
 -   Multiple pages (Home, About, Triples Solver, Triples Documentation).
 -   **Triples Solver**: An interface to input mathematical expressions and get non-negativity proofs via the Sum of Squares method by calling a Gradio backend. Results are rendered using KaTeX.
 -   **KaTeX Integration**: Uses a locally installed `katex` package for rendering mathematical notation.
+-   **Markdown Blog**: Add Markdown files under `src/assets/markdown/blog/` to publish posts automatically.
+
+### Writing a blog post
+
+Create a file such as `src/assets/markdown/blog/my-post.md` with optional frontmatter:
+
+```md
+---
+title: My post title
+date: 2026-08-23
+summary: A short description shown on the blog index.
+tags: [notes, code]
+---
+
+# My post title
+
+Write the article here using normal Markdown.
+```
+
+The file becomes available at `#/blog/my-post`. The existing Markdown renderer also supports GFM, syntax-highlighted code blocks, and KaTeX math.
 
 ## Tech Stack
 

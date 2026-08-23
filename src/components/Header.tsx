@@ -6,6 +6,7 @@ const navigationItems = [
   { name: 'Triples', path: '/triples' },
   { name: 'Geometry', path: '/geometry' },
   { name: 'GeoGebra', path: '/geogebra' },
+  { name: 'Blog', path: '/blog' },
   { name: 'About', path: '/about' },
 ];
 
@@ -20,7 +21,7 @@ const Header: React.FC = () => {
           ForeverHaibara
         </NavLink>
         <nav className="mt-4 sm:mt-0">
-          <ul className="flex items-center gap-2 rounded-full border border-white/60 bg-white/55 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <ul className="flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/60 bg-white/55 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
             {navigationItems.map((item) => (
               <li key={item.name}>
                 <NavLink
