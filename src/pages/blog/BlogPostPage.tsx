@@ -20,7 +20,7 @@ const BlogPostPage: React.FC = () => {
   }
 
   return (
-    <article className="rounded-[32px] border border-white/70 bg-[linear-gradient(180deg,rgba(219,234,254,0.72) 0px,rgba(239,246,255,0.78) 170px,rgba(251,253,255,0.95) 360px)] px-5 py-7 shadow-[0_20px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl sm:px-8 sm:py-9 xl:px-12">
+    <article className="animate-fadeIn">
       <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-sky-100 pb-5 text-sm text-slate-500">
         <Link to="/blog" className="font-medium text-sky-700 transition-colors hover:text-sky-900">← All posts</Link>
         <span aria-hidden="true">·</span>
@@ -33,4 +33,3 @@ const BlogPostPage: React.FC = () => {
 };
 
 export default BlogPostPage;
-

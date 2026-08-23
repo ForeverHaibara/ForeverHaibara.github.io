@@ -5,10 +5,10 @@ import { blogPosts } from './blogPosts.ts';
 const BlogPage: React.FC = () => {
   return (
     <div className="animate-fadeIn">
-      <section className="mb-8 rounded-[32px] border border-white/65 bg-white/58 px-6 py-10 shadow-[0_20px_60px_rgba(148,163,184,0.16)] backdrop-blur-xl sm:px-10">
-        <div className="mb-10 max-w-2xl">
+      <section>
+        <div className="mb-10 max-w-3xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Notes & ideas</p>
-          <h1 className="mb-4 bg-[linear-gradient(135deg,#0f3b73_0%,#2563eb_45%,#38bdf8_100%)] bg-clip-text text-5xl font-semibold tracking-[-0.05em] text-transparent sm:text-6xl">
+          <h1 className="mb-5 pb-2 leading-[1.15] bg-[linear-gradient(135deg,#0f3b73_0%,#2563eb_45%,#38bdf8_100%)] bg-clip-text text-5xl font-semibold tracking-[-0.05em] text-transparent sm:text-6xl">
             Blog
           </h1>
           <p className="text-lg leading-8 text-slate-600">
@@ -58,4 +58,3 @@ const BlogPage: React.FC = () => {
 };
 
 export default BlogPage;
-

@@ -14,6 +14,7 @@ import PureGeometryTiebaSearchPage from './pages/geometry/PureGeometryTiebaSearc
 import GeoGebraStudioPage from './pages/geogebra/GeoGebraStudioPage.tsx';
 import BlogPage from './pages/blog/BlogPage.tsx';
 import BlogPostPage from './pages/blog/BlogPostPage.tsx';
+import BlogLayout from './pages/blog/BlogLayout.tsx';
 
 const AppLayout: React.FC = () => {
   return (
@@ -62,7 +63,7 @@ const App: React.FC = () => {
           <Route index element={<PureGeometryTiebaSearchPage />} />
         </Route>
         <Route path="geogebra" element={<GeoGebraStudioPage />} />
-        <Route path="blog">
+        <Route path="blog" element={<BlogLayout />}>
           <Route index element={<BlogPage />} />
           <Route path=":slug" element={<BlogPostPage />} />
         </Route>

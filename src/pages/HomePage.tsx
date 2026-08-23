@@ -19,7 +19,7 @@ const HomePage: React.FC = () => {
           </p>
         </header>
 
-        <section className="relative mb-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <section className="relative mb-12 grid gap-6 md:grid-cols-3">
           <div className="group rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(239,246,255,0.72))] p-7 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(96,165,250,0.16)]">
             <h2 className="mb-3 text-2xl font-semibold text-sky-900">Triples Inequality Solver</h2>
             <p className="mb-5 text-slate-600">
@@ -54,18 +54,6 @@ const HomePage: React.FC = () => {
               className="inline-flex items-center rounded-full border border-sky-200 bg-white/70 px-5 py-2.5 text-sm font-medium text-sky-700 shadow-[0_10px_24px_rgba(148,163,184,0.1)] transition-all duration-300 hover:translate-x-1 hover:border-sky-300 hover:bg-white hover:text-sky-800"
             >
               Read More About Me
-            </Link>
-          </div>
-          <div className="group rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(240,249,255,0.72))] p-7 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(56,189,248,0.18)]">
-            <h2 className="mb-3 text-2xl font-semibold text-sky-900">Blog</h2>
-            <p className="mb-5 text-slate-600">
-              Notes on mathematics, code, experiments, and ideas in progress.
-            </p>
-            <Link
-              to="/blog"
-              className="inline-flex items-center rounded-full border border-sky-200 bg-white/70 px-5 py-2.5 text-sm font-medium text-sky-700 shadow-[0_10px_24px_rgba(148,163,184,0.1)] transition-all duration-300 hover:translate-x-1 hover:border-sky-300 hover:bg-white hover:text-sky-800"
-            >
-              Read the Blog
             </Link>
           </div>
         </section>
