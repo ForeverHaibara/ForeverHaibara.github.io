@@ -56,8 +56,8 @@ const parsePost = (filePath: string, rawMarkdown: string): BlogPost => {
   return {
     slug,
     title: attributes.title || heading || slug,
-    date: attributes.date || '未注明日期',
-    summary: attributes.summary || '记录一些想法、实验和正在进行的工作。',
+    date: attributes.date || '',
+    summary: attributes.summary || '',
     tags: attributes.tags ? parseTags(attributes.tags) : [],
     content,
   };

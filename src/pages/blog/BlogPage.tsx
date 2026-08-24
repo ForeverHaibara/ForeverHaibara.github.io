@@ -11,9 +11,9 @@ const BlogPage: React.FC = () => {
           <h1 className="mb-5 pb-2 leading-[1.15] bg-[linear-gradient(135deg,#0f3b73_0%,#2563eb_45%,#38bdf8_100%)] bg-clip-text text-5xl font-semibold tracking-[-0.05em] text-transparent sm:text-6xl">
             Blog
           </h1>
-          <p className="text-lg leading-8 text-slate-600">
-            A small collection of notes about mathematics, code, experiments, and things I am learning.
-          </p>
+          {/* <p className="text-lg leading-8 text-slate-600">
+            Various blogs
+          </p> */}
         </div>
 
         {blogPosts.length > 0 ? (
@@ -47,12 +47,12 @@ const BlogPage: React.FC = () => {
         )}
       </section>
 
-      <div className="rounded-[24px] border border-white/70 bg-white/48 px-6 py-5 text-sm leading-7 text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-        <span className="font-semibold text-sky-800">Markdown powered.</span> Add a file with frontmatter such as
+      {/* <div className="rounded-[24px] border border-white/70 bg-white/48 px-6 py-5 text-sm leading-7 text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        <span className="font-semibold text-sky-800">Markdown powered.</span>Add a file with frontmatter such as
         <code className="mx-1 rounded-lg bg-sky-50 px-2 py-1 font-mono text-sky-900">title</code>,
         <code className="mx-1 rounded-lg bg-sky-50 px-2 py-1 font-mono text-sky-900">date</code>, and
         <code className="mx-1 rounded-lg bg-sky-50 px-2 py-1 font-mono text-sky-900">summary</code> to maintain the blog in plain text.
-      </div>
+      </div> */}
     </div>
   );
 };
