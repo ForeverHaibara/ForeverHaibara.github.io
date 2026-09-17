@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import { fetchGeometryTiebaPosts } from '../../services/geometryTiebaService.ts';
 import type { GeometryTiebaPost } from '../../services/geometryTiebaService.ts';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
@@ -27,6 +27,77 @@ const columns: ColumnConfig[] = [
 const PAGE_SIZE = 50;
 const heroCardClass = 'relative overflow-hidden rounded-[30px] border border-white/70 bg-white/50 px-5 py-6 shadow-[0_18px_42px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8';
 const panelClass = 'rounded-[30px] border border-white/70 bg-white/62 p-5 shadow-[0_20px_44px_rgba(148,163,184,0.14)] backdrop-blur-xl sm:p-6 lg:p-7';
+
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+const PaginationControls: React.FC<PaginationControlsProps> = ({ currentPage, totalPages, onPageChange }) => {
+  const pageInputId = useId();
+  const [pageInput, setPageInput] = useState(String(currentPage));
+
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
+
+  const goToPage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const requestedPage = Number.parseInt(pageInput, 10);
+
+    if (Number.isNaN(requestedPage)) {
+      setPageInput(String(currentPage));
+      return;
+    }
+
+    onPageChange(Math.min(totalPages, Math.max(1, requestedPage)));
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(148,163,184,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Previous
+      </button>
+      <div className="rounded-full border border-white/80 bg-sky-50/80 px-4 py-2 text-sm font-medium text-sky-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        Page {currentPage} / {totalPages}
+      </div>
+      <button
+        type="button"
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(148,163,184,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Next
+      </button>
+      <form onSubmit={goToPage} className="flex items-center gap-2" aria-label="Jump to page">
+        <label htmlFor={pageInputId} className="sr-only">
+          Page number
+        </label>
+        <input
+          id={pageInputId}
+          type="number"
+          min="1"
+          max={totalPages}
+          value={pageInput}
+          onChange={(event) => setPageInput(event.target.value)}
+          className="w-20 rounded-full border border-sky-100 bg-white/82 px-3 py-2 text-center text-sm text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-colors focus:border-sky-300 focus:ring-sky-200"
+        />
+        <button
+          type="submit"
+          className="rounded-full border border-sky-200 bg-sky-100/80 px-4 py-2 text-sm font-medium text-sky-800 shadow-[0_8px_20px_rgba(96,165,250,0.1)] transition-all hover:bg-sky-100"
+        >
+          Go
+        </button>
+      </form>
+    </div>
+  );
+};
 
 const tokenizeQuery = (query: string) =>
   query
@@ -163,7 +234,7 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
             Pure Geometry Tieba Search
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-            Search the pure geometry Tieba archive in place. The dataset is loaded once from the public repository, then every query, sort action, and page change updates the table below without leaving this page.
+            Search a pre-saved archive of Pure Geometry Tieba posts loaded from GitHub. The archive is not updated automatically, so it may not include the latest posts. If the data cannot be loaded, please check your network connection and try again.
           </p>
         </div>
       </section>
@@ -214,27 +285,11 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
                 <span className="font-semibold text-slate-800">{pageEnd}</span> of{' '}
                 <span className="font-semibold text-slate-800">{sortedPosts.length.toLocaleString()}</span> results
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(148,163,184,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <div className="rounded-full border border-white/80 bg-sky-50/80 px-4 py-2 text-sm font-medium text-sky-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-                  Page {currentPage} / {totalPages}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-full border border-white/80 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_20px_rgba(148,163,184,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
 
             <div className="overflow-hidden rounded-[26px] border border-sky-100 shadow-[0_18px_40px_rgba(148,163,184,0.1)]">
@@ -313,6 +368,14 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <div className="flex justify-end border-t border-sky-100/80 pt-4">
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         )}
