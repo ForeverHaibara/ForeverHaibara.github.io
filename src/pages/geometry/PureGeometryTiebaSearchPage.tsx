@@ -1,11 +1,16 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
-import { fetchGeometryTiebaPosts } from '../../services/geometryTiebaService.ts';
+import {
+  fetchGeometryTiebaOcr,
+  fetchGeometryTiebaPosts,
+  normalizeGeometryTiebaImagePath,
+} from '../../services/geometryTiebaService.ts';
 import type { GeometryTiebaPost } from '../../services/geometryTiebaService.ts';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
 import AlertMessage from '../../components/AlertMessage.tsx';
 
 type SortKey = 'tid' | 'title' | 'author' | 'createTime' | 'replyNum';
 type SortDirection = 'asc' | 'desc';
+type SearchScope = 'metadata' | 'metadataAndOcr';
 
 interface ColumnConfig {
   key: SortKey;
@@ -14,7 +19,10 @@ interface ColumnConfig {
   width?: string;
 }
 
-const searchFields: (keyof Pick<GeometryTiebaPost, 'title' | 'author' | 'text'>)[] = ['title', 'author', 'text'];
+const searchScopeOptions: { value: SearchScope; label: string }[] = [
+  { value: 'metadata', label: 'Post metadata' },
+  { value: 'metadataAndOcr', label: 'Post metadata + OCR' },
+];
 
 const columns: ColumnConfig[] = [
   { key: 'title', label: 'Post Title', width: '46%' },
@@ -106,13 +114,29 @@ const tokenizeQuery = (query: string) =>
     .map((term) => term.trim())
     .filter(Boolean);
 
-const matchesQuery = (post: GeometryTiebaPost, queryTerms: string[], keys: readonly (keyof GeometryTiebaPost)[]) => {
+const getPostOcrText = (post: GeometryTiebaPost, ocrByImage: ReadonlyMap<string, string>) =>
+  post.images
+    .map((imagePath) => ocrByImage.get(normalizeGeometryTiebaImagePath(imagePath)) ?? '')
+    .filter(Boolean)
+    .join(' ');
+
+const matchesQuery = (
+  post: GeometryTiebaPost,
+  queryTerms: string[],
+  searchScope: SearchScope,
+  ocrByImage: ReadonlyMap<string, string>
+) => {
   if (queryTerms.length === 0) {
     return true;
   }
 
+  const searchableValues = [post.title, post.author, post.text];
+  if (searchScope === 'metadataAndOcr') {
+    searchableValues.push(getPostOcrText(post, ocrByImage));
+  }
+
   return queryTerms.every((term) =>
-    keys.some((key) => String(post[key] ?? '').toLowerCase().includes(term.toLowerCase()))
+    searchableValues.some((value) => value.toLowerCase().includes(term.toLowerCase()))
   );
 };
 
@@ -142,10 +166,16 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
   const [posts, setPosts] = useState<GeometryTiebaPost[]>([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isPostDataLoaded, setIsPostDataLoaded] = useState(false);
+  const [isOcrLoading, setIsOcrLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrByImage, setOcrByImage] = useState<Map<string, string>>(new Map());
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>('tid');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [showOcrContent, setShowOcrContent] = useState(true);
+  const [searchScope, setSearchScope] = useState<SearchScope>('metadata');
 
   useEffect(() => {
     let isMounted = true;
@@ -158,10 +188,13 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
         const loadedPosts = await fetchGeometryTiebaPosts();
         if (isMounted) {
           setPosts(loadedPosts);
+          setIsPostDataLoaded(true);
         }
       } catch (loadError) {
         if (isMounted) {
           setError(loadError instanceof Error ? loadError.message : 'Failed to load the dataset.');
+          setOcrError('OCR data was not loaded because the post metadata is unavailable.');
+          setIsOcrLoading(false);
         }
       } finally {
         if (isMounted) {
@@ -177,11 +210,45 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isPostDataLoaded) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const loadOcr = async () => {
+      setIsOcrLoading(true);
+      setOcrError(null);
+
+      try {
+        const loadedOcr = await fetchGeometryTiebaOcr();
+        if (isMounted) {
+          setOcrByImage(loadedOcr);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setOcrError(loadError instanceof Error ? loadError.message : 'Failed to load OCR data.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsOcrLoading(false);
+        }
+      }
+    };
+
+    loadOcr();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPostDataLoaded]);
+
   const queryTerms = useMemo(() => tokenizeQuery(query), [query]);
 
   const filteredPosts = useMemo(
-    () => posts.filter((post) => matchesQuery(post, queryTerms, searchFields)),
-    [posts, queryTerms]
+    () => posts.filter((post) => matchesQuery(post, queryTerms, searchScope, ocrByImage)),
+    [ocrByImage, posts, queryTerms, searchScope]
   );
 
   const sortedPosts = useMemo(() => {
@@ -243,7 +310,7 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
           <div>
             <label htmlFor="geometry-search" className="mb-2 block text-sm font-medium text-slate-700">
-              Search in title, author, and text
+              Search {searchScope === 'metadataAndOcr' ? 'metadata and OCR text' : 'post metadata'}
             </label>
             <input
               id="geometry-search"
@@ -264,6 +331,53 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
             </p>
             <p className="mt-1 text-sm text-slate-600">
               {isLoading ? 'Fetching archive data.' : `${sortedPosts.length.toLocaleString()} matching results`}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4 border-t border-sky-100/80 pt-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div>
+            <label htmlFor="geometry-search-scope" className="mb-2 block text-sm font-medium text-slate-700">
+              Search scope
+            </label>
+            <select
+              id="geometry-search-scope"
+              value={searchScope}
+              onChange={(event) => setSearchScope(event.target.value as SearchScope)}
+              className="w-full rounded-2xl border border-sky-100 bg-white/82 px-4 py-3 text-sm text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-colors focus:border-sky-300 focus:ring-sky-200"
+            >
+              {searchScopeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs leading-6 text-slate-500">
+              {searchScope === 'metadataAndOcr'
+                ? 'Searches the title, author, post text, and associated OCR text.'
+                : 'Searches the title, author, and saved post text.'}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(239,246,255,0.65))] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={showOcrContent}
+                onChange={(event) => setShowOcrContent(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-sky-200 text-sky-600 accent-sky-600 focus:ring-sky-200"
+              />
+              <span>
+                <span className="block text-sm font-medium text-slate-700">Show OCR text in posts</span>
+                <span className="mt-1 block text-xs leading-6 text-slate-500">
+                  OCR can be inaccurate. Turn this off when you only want to read the original metadata.
+                </span>
+              </span>
+            </label>
+            <p className="mt-3 text-xs text-slate-500">
+              {isOcrLoading
+                ? 'OCR data is loading separately from the post metadata.'
+                : ocrError
+                  ? 'OCR data is unavailable. Please check your network connection.'
+                  : `${ocrByImage.size.toLocaleString()} image OCR results loaded.`}
             </p>
           </div>
         </div>
@@ -325,39 +439,51 @@ const PureGeometryTiebaSearchPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sky-100/80">
-                    {paginatedPosts.map((post) => (
-                      <tr key={post.tid} className="transition-colors hover:bg-sky-50/55">
-                        <td className="max-w-[420px] px-4 py-4 align-top">
-                          <div className="space-y-2">
-                            <a
-                              href={`https://tieba.baidu.com/p/${post.tid}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block text-sm font-semibold leading-6 text-sky-800 transition-colors hover:text-sky-600 hover:underline"
-                            >
-                              {post.title || '(Untitled post)'}
-                            </a>
-                            {post.text && (
-                              <p className="text-xs leading-6 text-slate-500">
-                                {post.text.length > 140 ? `${post.text.slice(0, 140)}...` : post.text}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 align-top text-sm text-slate-700">
-                          {post.author || 'Unknown'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-slate-700">
-                          {post.createTime}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-right align-top text-sm text-slate-700">
-                          {post.replyNum.toLocaleString()}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-slate-500">
-                          {post.tid}
-                        </td>
-                      </tr>
-                    ))}
+                    {paginatedPosts.map((post) => {
+                      const ocrText = getPostOcrText(post, ocrByImage);
+
+                      return (
+                        <tr key={post.tid} className="transition-colors hover:bg-sky-50/55">
+                          <td className="max-w-[420px] px-4 py-4 align-top">
+                            <div className="space-y-2">
+                              <a
+                                href={`https://tieba.baidu.com/p/${post.tid}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block text-sm font-semibold leading-6 text-sky-800 transition-colors hover:text-sky-600 hover:underline"
+                              >
+                                {post.title || '(Untitled post)'}
+                              </a>
+                              {post.text && (
+                                <p className="text-xs leading-6 text-slate-500">
+                                  {post.text.length > 140 ? `${post.text.slice(0, 140)}...` : post.text}
+                                </p>
+                              )}
+                              {showOcrContent && post.images.length > 0 && (isOcrLoading || ocrText) && (
+                                <div className="rounded-2xl border border-violet-100 bg-violet-50/70 px-3 py-2 text-xs leading-6 text-violet-800">
+                                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-500">
+                                    OCR text
+                                  </p>
+                                  <p>{isOcrLoading ? 'Loading OCR text...' : ocrText}</p>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 align-top text-sm text-slate-700">
+                            {post.author || 'Unknown'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-slate-700">
+                            {post.createTime}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 text-right align-top text-sm text-slate-700">
+                            {post.replyNum.toLocaleString()}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-4 align-top text-sm text-slate-500">
+                            {post.tid}
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {paginatedPosts.length === 0 && (
                       <tr>
                         <td colSpan={columns.length} className="px-6 py-12 text-center text-sm text-slate-500">
