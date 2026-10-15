@@ -53,19 +53,22 @@
 - 同类型批量输出沿用当前 Conic 的独立输出方案；在嵌套表达式中取第一项，需另提供末尾整数 `i` 选择单项。表中批量命令均按此规则。单项／多项不通过对象移动而切换返回类型。
 - 不新增 point+circle+line 的混合输出。Circle 的圆心用 Center，其他辅助对象单独调用。输出契约变更必须在实现时扩充现有输出元数据，不能仅填写一个误导性的 `returns: list`。
 - `i` 是离散编号，不是可连续拖动的几何实参。无实解时保留固定数量的 undefined 槽；不能排序后删掉空槽而让其他对象改名。
+- 不返回 Geogebra 内置的 Zip 型等列表型对象。因为这类集合型变量中的单个元素无法在交互界面中拆分选中。
 
 ### 2.2 共用数学原语
 
 下列记号只用于阐述算法：`a=|BC|, b=|CA|, c=|AB|`；`G=(A+B+C)/3`；O 为外心，H 为垂心，I 为内心，R、r 为外接圆、内切圆半径。
 
 1. **有向重心坐标**：用有向二倍面积求 P 的齐次重心 `(p:q:r)`。有限化为 `(pA+qB+rC)/(p+q+r)`；外点保留负号。下文有时用 `(u:v:w)` 避免与半径 r 混淆。三线坐标转重心必须逐项乘 `a,b,c`，不能直接混用。
-2. **射影 join/meet**：点、线均先用三维齐次坐标，叉积求连线和交点，最后才有限化。尽量消除可约公共因子；结果三坐标全零是未定，不是原点。最终在无穷远的点没有普通 point 输出。
+2. **射影 join/meet**：点、线均先用三维齐次坐标，叉积求连线和交点，最后才有限化。尽量消除可约公共因子；结果三坐标全零是未定，不是原点。最终在无穷远的点没有普通 point 输出。或考虑作点与点关于线的对称点的中点。
 3. **垂足**：用向量点积投影到支撑直线，不用斜率，不限线段。平行线、竖直线和水平线使用相同公式。
 4. **共轭与相切**：二次型矩阵 Q 给出极线 QP、极点 adj(Q)l；有限普通切点处切线就是极线。若需过外点的两条切线，先交极线与二次曲线取切点，再连外点；不要把两个近切交点相减估计方向。原生极线／极点优先。
 5. **第二交点**：已知 P 在二次曲线上，以弦中点反射 P；圆的弦中点是圆心到弦的垂足。圆与圆已有公共点 P 时，先取两圆根轴再求该弦的第二点。不能固定选 Intersect 的序号。
 6. **有向复数相似**：点的复数乘除前先平移到局部原点；直接相似使用复数比，反相似使用共轭比。避免用无向 Angle 决定旋转方向。
 7. **二次曲线方程**：以对称 3×3 矩阵或六系数表示，使用局部平移、尺度归一化减小消去误差；返回真正的 conic，不用 implicitCurve 冒充。TriangleCurve 可说明重心方程，但其原生输出为隐式多项式，不能直接充当 conic 的后端。
 8. **表达式预算**：短式直接生成；重复中间量在原生匿名绑定中复用。模板 locals 只是文本展开，不保证缓存。禁止任意自由 Point、采样、数值坐标快照、命名临时对象、回调脚本。大矩阵算法必须先估计展开长度，不承诺“一个行列式”就一定便宜。
+9. **距离** 两点距离尽量用内置的 Distance 函数。不要用 "AB" 这样的语法，因为它在两点字符串非单个字符时会出错。
+
 
 ### 2.3 退化和连续性
 
@@ -73,14 +76,21 @@
 
 不使用固定世界坐标的 epsilon、不用随机点打破对称。需要检验时使用相对尺度残差；相近但不相等的对象不得被随意强行合并。输出在无穷远、输入三角形共线、无限解族、奇异处切线不唯一时允许 undefined，并解释几何原因。保持对象类型固定不等于保证每个位置都存在有限实解。
 
+尽量不对情形分类讨论，保持连续性。因为要保证任何非强类型的判断都在 Geogebra 内部动态计算，不在 js 中计算。不讨论选择哪个尽量最稳定的计算分支。该条优先级高于下面的具体工具条目规则，因为该条是后更新的说明。
+
+### 2.4 简洁性
+
+如果几何构造可保持稳定性（例如当退化情形只有无穷远或undefined的，而不是可连续的），可采用几何或复合构造，避免将复杂算式完全展开。且代码更清晰简洁。允许定义命令复用，便于维护。
+
+
 ## 3. 三角形中心与基本圆
 
 这些是建议保留的少量常用语义快捷名。其余编号中心直接使用 TriangleCenter，无需为 X(57)、X(21) 等各开一个函数。原生中心编号及可用范围以 [TriangleCenter 手册](https://geogebra.github.io/docs/manual/en/commands/TriangleCenter/) 为准；超出手册示例的编号仍须在项目所用引擎核验。
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `Centroid(A,B,C) → point` | Triangle centroid. | `(A+B+C)/3`；不必作两条中线，三个点共线时仍有定义。 | S001 S434 |
-| P1 | `Orthocenter(A,B,C) → point` | Triangle orthocenter. | 原生 TriangleCenter 的 X(4)；或有外心时 `A+B+C−2O`。避免两条高度重合导致直角位置失效。 | S002 S435 |
+| P1 | `Centroid(A,B,C) → point` | Triangle centroid. | `(A+B+C)/3`；不必作两条中线，三个点共线时仍有定义。需要对现有ggb工具重载。 | S001 S434 |
+| P1 | `Orthocenter(A,B,C) → point` | Triangle orthocenter. | 原生 TriangleCenter 的 X(4)； | S002 S435 |
 | Existing | `Incenter(A,B,C) → point` | Triangle incenter. | 已使用原生 X(1)，保留。 | S009 |
 | P1 | `Circumcenter(A,B,C) → point` | Triangle circumcenter. | 原生 X(3) 或外接圆 Center；共线时无有限外心。 | S010 |
 | P1 | `NinePointCenter(A,B,C) → point` | Center of the nine-point circle. | `(O+H)/2`，无需重建三个高足。 | S017 |
@@ -88,20 +98,20 @@
 | P1 | `GergonnePoint(A,B,C) → point` | Triangle Gergonne point. | 原生 X(7)；不用内切圆与边段的相切求交。 | S066 S382 |
 | P1 | `NagelPoint(A,B,C) → point` | Triangle Nagel point. | 原生 X(8)，替换旧版多轮取交点。 | S067 S383 |
 | P1 | `Mittenpunkt(A,B,C) → point` | Triangle mittenpunkt. | 原生 X(9)，替换固定输出。 | S072 S384 |
-| P1 | `SpiekerCenter(A,B,C) → point` | Incenter of the medial triangle. | 对三边中点取 Incenter；无需依赖额外编号。 | S032 |
+| P1 | `SpiekerCenter(A,B,C) → point` | Incenter of the medial triangle. | 直接使用X(10)，不要取中点。 | S032 |
 | P1 | `Excenter(A,B,C) → point` | Excenter opposite A. | `(-aA+bB+cC)/(-a+b+c)`；采用对应符号也等价。A 是明确的对顶点。非退化三角形分母为正。 | S003 |
 | P1 | `Excenters(A,B,C[,i]) → point × 3 / point` | Excenters opposite A, B and C. | 循环调用同一加权公式，不用角平分线交点，顺序固定。 | S027 |
 | P1 | `Excircle(A,B,C) → circle` | Excircle opposite A. | 以上述旁心为圆心，到 BC 支撑线的距离为半径；无需附送三个切点。 | S433 |
 | P1 | `Excircles(A,B,C[,i]) → circle × 3 / circle` | Excircles opposite A, B and C. | 循环构造 Excircle，仅返回圆。 | S028 |
 | P1 | `NinePointCircle(A,B,C) → circle` | Triangle nine-point circle. | 圆心 N=(O+H)/2，半径 R/2；比三高足定圆更适合直角位置。 | S015 |
 | P1 | `EulerLine(A,B,C) → line` | Triangle Euler line. | 以 O、H 的齐次连线为主，化简公共因子；O=H 时方向不唯一，undefined。 | S008 |
-| P1 | `BrocardPoints(A,B,C[,i]) → point × 2 / point` | First and second Brocard points of ordered triangle ABC. | 两组重心可取 `(a²c²:a²b²:b²c²)` 与 `(a²b²:b²c²:a²c²)`，先用有向等角条件核定 first/second 对应；约定第一满足 ∠PAB=∠PBC=∠PCA，第二反向循环。镜像不交换 A、B、C 身份，交换 B、C 会交换两点。 | S006 |
-| P2 | `IsogonicCenter(A,B,C,i) → point` | First (i=1) or second (i=2) isogonic center. | 采用原生 X(13)、X(14) 的代数中心，不由圆交点决定外作方向。与距离和最小点严格区分。 | S005 |
-| P2 | `FermatPoint(A,B,C) → point` | Point minimizing the sum of distances to A, B and C. | 任一角≥120°时返回该顶点，以边向量点积与长度判定；否则返回 X(13)。120°处连续，不能把总是返回第一等角中心的宏称为此优化解。 | S005 |
+| P1 | `BrocardPoints(A,B,C[,i]) → point × 2 / point` | First and second Brocard points of ordered triangle ABC. | 两组重心可取 `(a²c²:a²b²:b²c²)` 与 `(a²b²:b²c²:a²c²)`，先用有向等角条件核定 first/second 对应；约定第一满足 ∠PAB=∠PBC=∠PCA，第二反向循环。镜像不交换 A、B、C 身份，交换 B、C 会交换两点。保证连续性。 | S006 |
+| P2 | `IsogonicCenter(A,B,C,i) → point` |  | 不常用。不实现。 | S005 |
+| P2 | `FermatPoint(A,B,C) → point` | First isodynamic point. | 只返回X(13)，避免讨论。 | S005 |
 | P1 | `IsodynamicPoint(A,B,C,i) → point` | First or second isodynamic point. | i=1/2 分别采用 X(15)/X(16)，不提供 First/Second 两个函数名；引擎对正三角形的约定须实测。 | S380 S381 |
 | P1 | `FuhrmannCircle(A,B,C) → circle` | Circle with diameter joining the orthocenter and Nagel point. | 圆心 `(H+Na)/2`，半径 `|H−Na|/2`。 | S373 |
 | P1 | `BrocardCircle(A,B,C) → circle` | Circle with diameter joining the circumcenter and symmedian point. | 圆心 `(O+K)/2`，半径 `|O−K|/2`；两点重合时遵循原生零半径圆语义。 | S374 |
-| P2 | `FeuerbachPoint(A,B,C) → point` | Contact point of the incircle and nine-point circle. | 已知两圆内切，令九点半径 ρ=R/2，取 `(ρ I−r N)/(ρ−r)`，可先用圆心关系化简。正三角形两圆重合，接触点不唯一；不可强行指定一个点。避免求两个相切圆的交点。 | S016 |
+| P2 | `FeuerbachPoint(A,B,C) → point` | Contact point of the incircle and nine-point circle. | 用 X(11) | S016 |
 
 `BrocardPoints` 的坐标式是本计划的独立代数方案，最终编号由表中等角定义决定，不能依赖原宏输出 I/J。所有中心快捷名的描述都应写清具体对象，而非笼统的 “draw point”。
 
@@ -119,16 +129,16 @@
 | P1 | `IntouchTriangle(A,B,C[,i]) → point × 3 / point` | Contact points of the incircle with BC, CA and AB. | 将 I 投影到三边，不作相切求交。 | S102 S432 |
 | P1 | `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Anticevian triangle of P relative to ABC. | 由 P 的齐次重心构成 `(-p:q:r),(p:-q:r),(p:q:-r)`；按有向齐次运算处理外点，分母零时对应顶点在无穷远。 | S404 |
 | P1 | `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Second intersections of AP, BP and CP with the circumcircle. | 对 A、B、C 分别调用已有 SecondIntersection；P=A 时 A 处分支方向未给定，不猜切线。 | S092 |
-| P1 | `TangentialTriangle(A,B,C[,i]) → point × 3 / point` | Intersections of the circumcircle tangents at B and C, C and A, A and B. | 三顶点极线后两两求交；不用外点两条切线命令。相邻顶点对径时有输出在无穷远。 | S388 |
+| P1 | `TangentialTriangle(A,B,C[,i]) → point × 3 / point` | Intersections of the circumcircle tangents at B and C, C and A, A and B. | 三顶点极线后两两求交，或求三边极点；不用外点两条切线命令。相邻顶点对径时有输出在无穷远。 | S388 |
 | P1 | `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Triangle whose sides pass through A, B and C perpendicular to AP, BP and CP. | 三条边分别以 A−P、B−P、C−P 为法向量，两两求交；P 为顶点时对应边缺少方向。 | S457 |
 | P1 | `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` | Circumcenters of PBC, PCA and PAB. | 三次原生外心；P 落对应边上时该点无有限定义。 | S417 |
-| P2 | `SimsonLine(A,B,C,P) → line` | Simson line of a point P on the circumcircle. | 从三个垂足取有最大分离度的一对连线，或用等价齐次系数直接生成；两足在顶点位置重合时换另一对。P∈外接圆是前提，不把任意 P 的两垂足线称为 Simson line。 | S036 |
-| P2 | `SteinerLine(A,B,C,P) → line` | Line of the reflections of P in the three sidelines. | P∈外接圆；对 SimsonLine 作以 P 为中心、倍率 2 的位似，避免三次圆交点。可与下一节四直线版本按类型／数量重载。 | S037 |
+| P2 | `SimsonLine(A,B,C,P) → line` | Simson line of a point P on the circumcircle. | P关于AB,AC垂足连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。 | S036 |
+| P2 | `SteinerLine(A,B,C,P) → line` | Line of the reflections of P in the three sidelines. | P关于AB,AC对称点连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。可与下一节四直线版本按类型／数量重载。 | S037 |
 | P1 | `Orthopole(A,B,C,l) → point` | Orthopole of line l with respect to triangle ABC. | A、B、C 投影到 l 得 U,V,W；分别过 U,V,W 作垂直 BC、CA、AB 的线，求其中两条交点。非退化 ABC 的前两条目标线不平行；只要 l 有定义就不需要自由点。 | S035 |
-| P2 | `AntiSteinerPoint(A,B,C,l) → point` | Circumcircle point whose Steiner line is l. | 前提 l 过 H。取过 O 且垂直 l 的线 m，求 m 的 Orthopole T，输出 `2T−H`；核验其在外接圆上且 SteinerLine 恢复 l。l 不过 H 时不声称为逆变换。 | S367 |
+| P2 | `AntiSteinerPoint(A,B,C,l) → point` | Circumcircle point whose Steiner line is parallel to l. | 过 H 作 l 平行线（即只考虑 l 的方向）。对l关于AB,AC的对称直线求交点。 | S367 |
 | P2 | `Orthotransversal(A,B,C,P) → line` | Line through the sideline traces perpendicular to AP, BP and CP. | A 迹点是 BC 与过 P 垂直 AP 的线的交点，B、C 类推。用齐次表达式求三迹共线的线，避免仅连两个恰好重合的迹点；P=A 等零方向位置先判断是否有唯一化简延拓。 | S370 |
 | P2 | `Orthocorrespondent(A,B,C,P) → point` | Trilinear pole of the orthotransversal of P. | 使用上一行的线，再取本节后述 TrilinearPole；在齐次层化简，不能将中间无穷远迹点先转普通点。 | S419 |
-| P2 | `TaylorCircle(A,B,C) → circle` | Circle through the six projections of altitude feet onto the other sidelines. | 先作三个高足，每个高足投影到另外两条边；六点共圆。按最大面积选择三点，或从等距线性方程解圆心并核验全部六点；不能永久固定三个在对称位置可能重合的点。六点不能唯一确定圆时 undefined。 | S376 |
+| P2 | `TaylorCircle(A,B,C) → circle` | Circle through the six projections of altitude feet onto the other sidelines. | 作一个高足，投影到另一条边。圆心直接用 X(389)。 | S376 |
 
 ## 5. 点变换、有向比例与共轭
 
@@ -141,19 +151,22 @@
 | Existing | `IsogonalConjugate(A,B,C,P) → point` | Isogonal conjugate of P with respect to triangle ABC. | 齐次重心 `(a²qr:b²rp:c²pq)`；保留现有有向面积算法。位于边内部时延拓至对顶点，顶点处未定。 | S029 S437 S489 |
 | Existing | `IsotomicConjugate(A,B,C,P) → point` | Isotomic conjugate of P with respect to triangle ABC. | 齐次重心 `(qr:rp:pq)`；保留现有实现，不作边上圆交点。 | S030 S438 |
 | P1 | `IsogonalComplement(A,B,C,P) → point` | Isogonal conjugate of the complement of P. | 先 Complement，再 IsogonalConjugate；内联齐次公式以避免中间仿射极点。不要误称 complementary conjugate。 | S443 |
-| P1 | `ComplementOfIsotomicConjugate(A,B,C,P) → point` | Complement of the isotomic conjugate of P. | 按真实步骤明确复合顺序，内联重心乘积后作 Complement；旧名 Isotocomplementary 不作为命令别名。 | S465 |
+| P1 | `ComplementOfIsotomicConjugate(A,B,C,P) → point` | 暂时不要 | 命名太长。暂时不实现。 | S465 |
 | P2 | `AntigonalConjugate(A,B,C,P) → point` | Antigonal image of P with respect to triangle ABC. | 等角共轭 → 关于外接圆反演 → 等角共轭。先在重心齐次层合成并约掉公共因子，使外接圆上的一般点可延拓到 H；H 等本质基点仍未定。不能只依赖可能非唯一的五点双曲线。 | S467 |
 | P1 | `TrilinearPolar(A,B,C,P) → line` | Trilinear polar of P with respect to triangle ABC. | P 的重心为 `(p:q:r)`，线在重心变量 X,Y,Z 中为 `qr X+rp Y+pq Z=0`。名称虽含 trilinear，系数必须与当前坐标制一致；保留符号。 | S369 |
 | P1 | `TrilinearPole(A,B,C,l) → point` | Trilinear pole of l with respect to triangle ABC. | 将 l 写成重心线系数 `(u:v:w)`，输出重心 `(vw:wu:uv)`；先化简再有限化。是上一行在一般位置的逆；非二次曲线的 Pole。 | S377 |
-| P1 | `HarmonicConjugate(A,B,P) → point` | Harmonic conjugate of P with respect to A and B. | P=A+t(B−A)，输出 A+t/(2t−1)(B−A)。A≠B 且 P∈AB；t=0/1 连续返回端点，t=1/2 的结果在无穷远。不用圆反演的无向解释。 | S403 |
+| P1 | `HarmonicConjugate(A,B,P) → point` | Harmonic conjugate of P with respect to A and B. | 总是返回Q使得ABPQ构成圆上的调和四边形。分组为(A,B);(P,Q)。这样使得当ABP共线时可退化为直线上的调和共轭。需要仔细构思算法（可能要使用复数并化简）。 | S403 |
 | P1 | `TransferRatio(A,B,C,D,P) → point` | Transfer the directed division parameter of P on AB to CD. | t=((P−A)·(B−A))/|B−A|²，输出 C+t(D−C)，要求 P∈AB；保留外分和反向。A=B 未定，C=D 可连续返回 C。 | S415 |
 | P1 | `TrisectionPoint(A,B) → point` | Trisection point one third of the way from A to B. | `(2A+B)/3`；两点重合仍有效。另一点由交换输入得到。 | S106 |
 | P1 | `GoldenSectionPoint(A,B) → point` | Internal golden-section point at parameter (sqrt(5)-1)/2 from A to B. | `A+((√5−1)/2)(B−A)`；描述明确取靠近 B 的分点，替代旧式正方形和圆交点。另一点交换 A、B。 | S436 |
-| P1 | `DirectSimilarity(A,B,C,D) → point` | Image of C under the direct similarity fixing A and sending B to D. | 局部复数 `A+(D−A)(C−A)/(B−A)`；B≠A，不读无向角，D=A 时连续成为常值映射。 | S455 |
-| P1 | `OppositeSimilarity(A,B,C,D) → point` | Image of C under the opposite similarity fixing A and sending B to D. | `A+(D−A) conjugate((C−A)/(B−A))`；明确 orientation reversing 语义。与上一行不能仅按四点类型重载，因为签名相同但语义不同。 | S456 |
+| P1 | `DirectSimilarity(A,B,C,D) → point` | Image of D under the direct similarity fixing A and sending B to C. | 局部复数 `A+(D−A)(C−A)/(B−A)`；B≠A，不读无向角，D=A 时连续成为常值映射。 | S455 |
+| P1 | `DirectSimilarity(A,B,C,D,E) → point` | Point F such that there is a direct similarity sending A,B,C to D,E,F | 重载。上面其实是这一条的特例。 | S455 |
+| P1 | `OppositeSimilarity(A,B,C,D) → point` | Image of D under the opposite similarity fixing A and sending B to C. | 定义有所改变，注意使用的复数式子。 | S456 |
+| P1 | `OppositeSimilarity(A,B,C,D,E) → point` | Point F such that there is an opposite similarity sending A,B,C to D,E,F | 重载。上面其实是这一条的特例。  | S456 |
 | P2 | `CevianAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the cevian triangle of X. | 先求 X 的三个 cevian 顶点 D,E,F；P 的归一化重心为 α,β,γ，返回 αD+βE+γF。某个目标顶点在无穷远时不是仿射映射；不要用复杂交点链绕过此前提。 | S406 |
 | P2 | `PedalAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the pedal triangle of X. | 将上一行目标 D,E,F 换成 X 的三垂足；共线目标允许降秩仿射映射。纠正 Pedian 的含混命名及原参数说明。 | S416 |
-| P2 | `FixedPointIsoconjugate(A,B,C,X,P) → point` | Isoconjugate of P under the diagonal reciprocal map fixing X. | 设 X 重心 `(u:v:w)`，P 为 `(p:q:r)`，取 `(u²qr:v²rp:w²pq)`。这是 barycentric fixed-point convention；与某些文献用 P 命名的 isoconjugate 不同，描述必须保留 “fixing X”。需用源宏一般位置核对，而不是直接沿用 X_fixed 名称。 | S414 |
+| P2 | `Isoconjugate(A,B,C,X,P) → point` | Isoconjugate of P under the diagonal reciprocal map fixing X. | 设 X 重心 `(u:v:w)`，P 为 `(p:q:r)`，取 `(u²qr:v²rp:w²pq)`。这是 barycentric fixed-point convention；与某些文献用 P 命名的 isoconjugate 不同，描述必须保留 “fixing X”。需用源宏一般位置核对，而不是直接沿用 X_fixed 名称。 | S414 |
+| P2 | `Isoconjugate(A,B,C,X,Y,P) → point` | Isoconjugate of P under the diagonal reciprocal map sending X to Y. | 重载。上一条是这一条的特例。 | S414 |
 | P2 | `Crosspoint(A,B,C,P,Q) → point` | Intersection of the tangents at P and Q to the circumconic through ABCPQ. | 原生五点 Conic，再分别取 P、Q 的极线求交；比通过自由点求 Pole 稳定。优先推导重心乘积式以延拓可消去退化；P=Q 的一般切线极限不唯一，不能任取一点。 | S412 |
 | P2 | `Cevapoint(A,B,C,P,Q) → point` | Cevapoint of P and Q with respect to triangle ABC. | 作 Q 的反 cevian 三角形；按定义从 P 向其顶点连线取得 ABC 边上的迹，求所得三角形与 ABC 的透视中心。用齐次叉积和公共因子消除实现；最终核验三条透视线共点与 P/Q 对称性。 | S408 |
 | P2 | `CevaConjugate(A,B,C,X,P) → point` | X-Ceva conjugate of P with respect to triangle ABC. | 取 X 的 cevian 三角形和 P 的 anticevian 三角形的对应顶点连线之透视中心；在齐次层实现。明确 X 是参数、P 是被作用点，验证一般位置为对合。 | S409 |
@@ -165,10 +178,12 @@
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
 | P1 | `ArcMidpoint(A,B,C) → point` | Midpoint of the BC arc not containing A on the circumcircle. | 从 A 沿内部角平分线方向取外接圆的第二点；用单位方向 `u=(B−A)/c+(C−A)/b` 和圆的已知根公式，不需要 I≠A 或求交编号。两相邻点对径等临界位置由 A 所在半平面定义。 | S018 |
-| P1 | `OppositeArcMidpoint(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | 对上一点作关于 O 的中心对称。South/North 并非绝对方位，不沿用旧名。 | S019 |
-| P1 | `Antipode(c,P) → point`; `Antipode(A,B,C) → point` | Antipode of P on a circle, or of A on the triangle circumcircle. | 分别 `2Center(c)−P` 和 `2O−A`；要求 P∈c。三点版与圆点版按类型及个数重载。 | S020 |
+| P1 | `SouthPole(A,B,C) → point` | South pole of triangle ABC. | 与上一条相同，SouthPole是三角形几何学中常用俗称。| S019 |
+| P1 | `OppositeArcMidpoint(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | 对上一点作关于 O 的中心对称。 | S019 |
+| P1 | `NorthPole(A,B,C) → point` | North pole of triangle ABC. | 与上一条相同，NorthPole是三角形几何学中常用俗称。| S019 |
+| P1 | `Antipode(c,P) → point`; `Antipode(A,B,C) → point` | Antipode of P on a circle, or of A on the triangle circumcircle. | 分别 `2Center(c)−P` 和 `2O−A`；要求 P∈c。三点版与圆点版按类型及个数重载。前者应当支持conic。 | S020 |
 | P1 | `CircumcevianPoint(A,B,C,P) → point` | Second intersection of AP with the triangle circumcircle. | A 是已知根，用 SecondIntersection；此命令是 CircumcevianTriangle 的 A 分量，便于只取一个输出。 | S092 |
-| P1 | `CircumsymmedianPoint(A,B,C) → point` | Second intersection of the A-symmedian with the circumcircle. | 以 K 的方向作 A 的第二交点，可直接使用重心方向 `(a²:b²:c²)`；等腰时仍有唯一的非 A 点。 | S026 |
+| P1 | `CircumsymmedianPoint(A,B,C) → point` | 不实现 | 不实现。请查看 HarmonicConjugate。 | S026 |
 
 旧 `Circumortho Point`、`CircumMixtilinear Conjugate` 名称的公认定义尚未核定，见暂缓区；不能仅凭词根猜测。
 
@@ -182,14 +197,14 @@
 | Existing | `SecondIntersection(q,P,Q) → point` | Other intersection of q with line PQ, given P on q. | 保留当前共轭直径求弦中点后反射的算法；普通相切返回 P。包含直线或第二点在无穷远时允许 undefined。 | S104 |
 | P1 | `RadicalCenter(c1,c2,c3) → point` | Radical center of three circles. | 取两组原生根轴再求交，或将归一化圆幂方程相减解 2×2 线性系统；共轴时不唯一、根轴平行时在无穷远。 | S221 S366 |
 | P1 | `SimilarityCenter(c1,c2,s) → point` | External (s=1) or internal (s=-1) center of similitude of two circles. | O1,O2 半径 r1,r2，输出 `(r1 O2−s r2 O1)/(r1−s r2)`。s 仅允许 ±1；外位似等半径时一般在无穷远，内位似中心正常。不要通过任意圆上点确定相似。 | S361 S362 |
-| P2 | `CommonTangents(c1,c2,s[,i]) → line × 2 / line` | Common direct (s=1) or transverse (s=-1) tangents of two circles. | 以单位法向 n 写 `n·(O2−O1)=r1−s r2`，由中心差方向及其 90°方向构造两个 n，线为 `n·(X−O1)=r1`。平方根只用于真正的二分支；等半径外公切线仍有限。普通相切两槽可重合，不以无穷远位似中心为前提。需要全部公切线时直接用原生 Tangent。 | S222 S223 S363 S364 |
+| P2 | `CommonTangents(c1,c2,s[,i]) → line × 2 / line` | Common direct (s=1) or transverse (s=-1) tangents of two circles. | 以单位法向 n 写 `n·(O2−O1)=r1−s r2`，由中心差方向及其 90°方向构造两个 n，线为 `n·(X−O1)=r1`。平方根只用于真正的二分支；等半径外公切线仍有限。普通相切两槽可重合，不以无穷远位似中心为前提。需要全部公切线时直接用原生 Tangent。尽量考虑能否推广到二次曲线。 | S222 S223 S363 S364 |
 | P2 | `MixtilinearIncircle(A,B,C) → circle` | Circle tangent to rays AB and AC and internally tangent to the circumcircle. | 取内部角平分线单位向量 u、k=sin(A/2)。圆心 X=A+t u、半径 ρ=tk；由 `|X−O|²=(R−ρ)²`，约去顶点零半径根后 `t=2((O−A)·u−Rk)/(1−k²)`。核验 t>0、ρ≤R 及射线接触。仅返回圆。 | S022 |
 | P2 | `MixtilinearIncircles(A,B,C[,i]) → circle × 3 / circle` | A-, B- and C-mixtilinear incircles. | 对上式循环排列，不重复计算外心，不附送错序的圆心。 | S023 |
 | P2 | `MixtilinearContactPoint(A,B,C) → point` | Contact point of the A-mixtilinear incircle with the circumcircle. | 由两圆内切关系用圆心径向比例求 `(R X−ρ O)/(R−ρ)`；不求相切圆交点。重合圆时接触不唯一。 | S024 |
 | P2 | `MixtilinearExcircle(A,B,C) → circle` | Circle tangent to rays AB and AC and externally tangent to the circumcircle. | 与上式同一内部角平分线，用 `|X−O|²=(R+ρ)²` 得 `t=2((O−A)·u+Rk)/(1−k²)`，取正半径解。这里明确是外切外接圆的 A 支，不混同旁切圆或外角平分线分支。 | S130 |
 | P2 | `MixtilinearExcircles(A,B,C[,i]) → circle × 3 / circle` | A-, B- and C-mixtilinear excircles. | 上一算法按 A、B、C 循环；与 incircle 是不同的相切语义，不依赖同一签名作隐式判别。 | S131 |
-| P2 | `HaggeCircle(A,B,C,P) → circle` | Hagge circle of P with respect to triangle ABC. | 先求 P 的三个 circumcevian 点，分别关于 BC、CA、AB 反射，再定圆；用重心／韦达式消除已知根。选择不退化的三点，P 在外接圆上或顶点等情况需按方程检查唯一极限，不保留原宏碰巧得到的点圆。 | S375 |
-| P2 | `HaggeInverse(A,B,C,P) → point` | Inverse of P in its Hagge circle. | 求圆心 C0、半径 ρ 后 `C0+ρ²(P−C0)/|P−C0|²`，优先与 HaggeCircle 的表达式合成约分，避免构造整圆的重复展开；P=C0 无有限反演像。 | S484 |
+| P2 | `HaggeCircle(A,B,C,P) → circle` | Hagge circle of P with respect to triangle ABC. | Hagge圆的圆心为P的等角共轭点关于九点圆心（X(5)）的对称点。且经过垂心。 | S375 |
+| P2 | `HaggeInverse(A,B,C,P) → point` | Inverse of P in its Hagge circle. | P对Hagge圆反演。 | S484 |
 | P2 | `ApolloniusCircle(A,B,C) → conic` | Generalized circle defined by PB/PC = AB/AC. | 以 `b²|X−B|²−c²|X−C|²=0` 生成二次系数。b=c 时保留为 BC 的垂直平分线的退化 conic，而非除以 b²−c²；能否稳定保持原生 conic 类型须验证。不叫含混的 Apollinius。 | S378 |
 | P2 | `ApolloniusCircles(A,B,C[,i]) → conic × 3 / conic` | Apollonius generalized circles associated with A, B and C. | 循环使用上一系数式，固定三个 conic 槽；不把等腰位置动态改成 line 返回类型。若原生不能保持类型，此家族暂缓，而非承诺不存在的圆。 | S379 |
 
@@ -201,15 +216,15 @@
 |---|---|---|---|---|
 | P2 | `IsogonalConjugate(A,B,C,l) → conic` | Isogonal image of the supporting line l. | **重载现有点版**。l 的重心线系数为 u,v,w；像的重心方程是 `u a² YZ+v b² ZX+w c² XY=0`。直接换算二次系数，不取两个自由点。直线过顶点时保留完整代数退化像并说明可能有基点附加分量，不能声称它始终是非退化轨迹。 | S368 |
 | P2 | `IsotomicConjugate(A,B,C,l) → conic` | Isotomic image of the supporting line l. | 与上一重载平行，方程 `u YZ+v ZX+w XY=0`。这是从现有共轭家族自然补齐的新增项；退化语义同上。 | — |
-| P2 | `KiepertHyperbola(A,B,C) → conic` | Kiepert rectangular circumhyperbola of triangle ABC. | 取 Brocard axis（O 与 K 的连线）的等角共轭像，使用直接系数而非五点拟合；在 O=K 等对称位置要先化简公共因子，仅在存在唯一极限时延拓。原宏的固定 D 绝不进入算法。 | S007 |
-| P2 | `JerabekHyperbola(A,B,C) → conic` | Jerabek rectangular circumhyperbola of triangle ABC. | 取 Euler line 的等角共轭像并化简；比 A,B,C,O,H 五点法更能处理 O 或 H 与顶点重合。Euler line 不唯一时不能任意指定曲线。 | S466 |
-| P2 | `FeuerbachHyperbola(A,B,C) → conic` | Feuerbach rectangular circumhyperbola of triangle ABC. | 取 OI 直线的等角共轭像，先生成齐次二次系数再化简；A,B,C,I,H 五点条件用于一般位置验证。O=I 等位置检查是否有唯一延拓。仅输出曲线；中心／渐近线由原生命令取得，不照搬未验证的原辅助线。 | S012 |
+| P2 | `KiepertHyperbola(A,B,C) → conic` | Kiepert rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCGH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义） | S007 |
+| P2 | `JerabekHyperbola(A,B,C) → conic` | Jerabek rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCOH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义）  | S466 |
+| P2 | `FeuerbachHyperbola(A,B,C) → conic` | Feuerbach rectangular circumhyperbola of triangle ABC. |圆锥曲线ABCIH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义）  | S012 |
 | P2 | `SteinerInellipse(A,B,C) → conic` | Ellipse tangent to the triangle sidelines at their midpoints. | 对标准等边三角形的内切圆作仿射映射，或用重心二次型 `X²+Y²+Z²−2XY−2YZ−2ZX=0` 换算系数；中心 G。非共线 ABC 时稳定。 | S401 |
 | P2 | `SteinerCircumellipse(A,B,C) → conic` | Circumellipse of ABC centered at the centroid. | 将 SteinerInellipse 关于 G 作倍率 −2 的位似；亦可用重心方程 `XY+YZ+ZX=0`。原名 Steiner Exellipse 改为标准 circumellipse。 | S402 |
 | P2 | `SteinerFoci(A,B,C[,i]) → point × 2 / point` | Foci of the Steiner inellipse. | 从上一二次型取原生 Focus。正三角形时两焦点重合 G，保留两个输出；不命名为 Laofeng Points。 | S372 |
 | P2 | `InconicWithFocus(A,B,C,P) → conic` | Real ellipse tangent to the three sidelines with P as a focus. | 仅在 P 为严格内点时承诺实内切椭圆：另一焦点 Q 是等角共轭；将 P 关于任一边反射，反射点到 Q 的距离为长轴长，得到中心和二次型。不凭固定一条边与 PQ 相交取椭圆上的点。外点可能对应其他实 conic，不自动称 ellipse。 | S371 |
 | P2 | `InconicWithCenter(A,B,C,P) → conic` | Conic tangent to the three sidelines with center P. | 在边坐标中写一般内切二次型，中心条件是两条线性约束，连同尺度归一化解系数；可用其对偶矩阵的对角零形式降低次数。非唯一或退化时如实未定义。中点三角形内部对应实内切椭圆；其他位置可能为双曲线或虚曲线，不统一称 ellipse。 | S470 |
-| P2 | `IsogonalPairWithMidpoint(A,B,C,P[,i]) → point × 2 / point` | Isogonal pair with prescribed midpoint P. | 在实内切椭圆存在的区域，求 InconicWithCenter 的两个焦点；用“焦点等角共轭”及中点 P 核验。其余区域需直接解 `Q+Q*=2P` 的实解并证明完备性，当前版本先限制为该椭圆区域，不能把双曲线焦点冒充等角共轭对。 | S471 |
+| P2 | `IsogonalPairWithMidpoint(A,B,C,P[,i]) → point × 2 / point` | Isogonal pair with prescribed midpoint P. | 作以P为中心的圆锥曲线的焦点。 | S471 |
 
 **后端注意**：TriangleCurve 的标准重心方程可用于推导和验证；[官方手册](https://geogebra.github.io/docs/manual/en/commands/TriangleCurve/)明确其结果是隐式多项式。所有承诺返回 conic 的命令仍应转换为六系数原生 Conic。
 
@@ -220,13 +235,15 @@
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
 | P1 | `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` | Diagonal points of the complete quadrangle ABCD. | 固定顺序 AB∩CD、AC∩BD、AD∩BC。齐次叉积，无穷远对角点无法作为普通 point 输出。比 CompleteQuadrilateral 更准确。 | S091 |
-| P2 | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of a complete quadrilateral. | 选共享有限顶点 P 的两个三线三角形外接圆。P 是已知公共点，用根轴＋已知根反射得到另一点，不取交点编号。自适应选择非退化三角形；平行、三线共点等情况不保证存在唯一有限点。核验四个圆。 | S083 |
-| P1 | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；选分离度足够的一对或直接齐次化简求线。三中点重合时方向不唯一。 | S084 |
+| P2 | `MiquelPoint(A,B,C,D) → point` | Miquel point of a complete quadrilateral. | 选共享有限顶点 P 的两个三线三角形外接圆。P 是已知公共点，用根轴＋已知根反射得到另一点，不取交点编号。自适应选择非退化三角形；平行、三线共点等情况不保证存在唯一有限点。核验四个圆。 | S083 |
+| P2 | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of a complete quadrilateral. | 重载。 | S083 |
+| P1 | `NewtonLine(A,B,C,D) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 重载。 | S084 |
+| P1 | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；只固定取其中两个。不讨论中点是否重合。 | S084 |
 | P2 | `SteinerLine(l1,l2,l3,l4) → line` | Line containing the orthocenters of the four component triangles. | 与三角形＋外接圆点版本重载。求四个三线三角形垂心，选择不重合的一对连线，验证另两个在其上。不要与 Steiner/Simson 同名现象混成一个错误签名。 | S085 |
-| P2 | `SteinerCircle(l1,l2,l3,l4) → circle` | Circle through the circumcenters of the four component triangles. | 求四个外心，选非共线三点定圆并验证第四点。平行输入或共圆心的特例需明确几何未定性。 | S086 |
+| P2 | `SteinerCircle(l1,l2,l3,l4) → circle` | Circle through the circumcenters of the four component triangles. | 暂不实现，等想到更好的算法。 | S086 |
 | P2 | `TangentParabola(l1,l2,l3,l4) → conic` | Parabola tangent to four lines in general position. | 优先使用 MiquelPoint 为焦点、四线 SteinerLine 为准线的直接构造，核验四条线的对偶切线条件；也可在对偶 conic 中加入无穷远线为切线求解。焦点在准线上是退化，不擅自投影修正。 | S099 |
-| P2 | `NinePointConic(A,B,C,D) → conic` | Conic through the six pairwise midpoints of four points. | 取六个中点，选秩为 5 的五点约束，求 conic 并核验第六点；先用仿射坐标推导紧凑式以减少候选穷举。对角点等对称位置导致无限 conic 族时不任取。拒绝 #87 的四直线循环包装。 | S464 |
-| P2 | `InvolutionFixedPoints(l,A,A1,B,B1[,i]) → point × 2 / point` | Real fixed points of the projective involution exchanging A with A1 and B with B1 on l. | 所有点在 l 上。在 l 的射影 1D 坐标中令矩阵 T 的迹为 0，由两组对应解线性系数；求 T 的两个实特征方向，再映回 l。用齐次二次根和稳定的根对恢复，避免相消；椭圆型无实不动点，重根保留两槽，无穷远根无普通点输出。重复配对不能唯一确定 T 时 undefined。 | S078 |
+| P2 | `NinePointConic(A,B,C,D) → conic` | Conic through the six pairwise midpoints of four points. | 九点曲线的一个性质是它是经过ABCD四点圆锥曲线中心的轨迹，据此考虑直接推出其表达式。不用轨迹功能。在两点重合时尽量能退化为九点圆。 | S464 |
+| P2 | `InvolutionFixedPoints(l,A,A1,B,B1[,i]) → point × 2 / point` | 不实现 | 函数API还需细究，暂不实现。 | S078 |
 
 ## 8. 代数曲线、极曲线与剩余交点
 
