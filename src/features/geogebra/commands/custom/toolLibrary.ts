@@ -16,9 +16,13 @@ export const validateToolLibrary = (value: unknown): ToolLibrary => {
       if (!Array.isArray(overload.params) || overload.variadic && overload.params.length === 0) throw new Error(`Invalid parameters: ${tool.name}`);
       const parameters = new Set(overload.params.map((param) => param.name));
       if (parameters.size !== overload.params.length || overload.params.some((param) => !parameterTypes.has(param.type) || !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(param.name)) || !resultTypes.has(overload.returns)) throw new Error(`Invalid signature: ${tool.name}`);
-      if (Boolean(overload.expression) === Boolean(overload.builder) || overload.builder && !Object.prototype.hasOwnProperty.call(GEOMETRY_BUILDERS, overload.builder)) throw new Error(`Invalid implementation: ${tool.name}`);
+      if ([overload.expression, overload.builder, overload.compose].filter((implementation) => implementation !== undefined).length !== 1
+        || overload.expression !== undefined && (typeof overload.expression !== 'string' || !overload.expression.trim())
+        || overload.compose !== undefined && !(typeof overload.compose === 'string' ? overload.compose.trim() : Array.isArray(overload.compose) && overload.compose.length > 0 && overload.compose.every((expression) => typeof expression === 'string' && expression.trim()))
+        || overload.builder !== undefined && (typeof overload.builder !== 'string' || !Object.prototype.hasOwnProperty.call(GEOMETRY_BUILDERS, overload.builder))) throw new Error(`Invalid implementation: ${tool.name}`);
       const scope = new Set(parameters);
-      for (const local of [...(overload.locals ?? []), { name: '', expression: overload.expression ?? '' }]) {
+      const expressions = overload.compose === undefined ? [overload.expression ?? ''] : [overload.compose].flat();
+      for (const local of [...(overload.locals ?? []), ...expressions.map((expression) => ({ name: '', expression }))]) {
         for (const match of local.expression.matchAll(/\$([\p{L}_][\p{L}\p{N}_]*)/gu)) if (!scope.has(match[1])) throw new Error(`Unknown or forward local reference: ${match[0]} in ${tool.name}`);
         if (local.name) { if (scope.has(local.name)) throw new Error(`Duplicate local: ${local.name}`); scope.add(local.name); }
       }
@@ -49,10 +53,18 @@ export const selectOverload = (tool: ToolDefinition, args: readonly TypedExpress
   return candidates[0]?.overload;
 };
 
-export const expandTool = (overload: ToolOverload, args: readonly TypedExpression[], allocate: () => string): TypedExpression => {
+export const expandTool = (overload: ToolOverload, args: readonly TypedExpression[], allocate: () => string,
+  compose?: (expression: string, bindings: ReadonlyMap<string, TypedExpression>) => TypedExpression): TypedExpression => {
   if (overload.builder) {
     const built = GEOMETRY_BUILDERS[overload.builder](args, allocate);
     return { ...(typeof built === 'string' ? { expression: built } : built), type: overload.returns };
+  }
+  if (overload.compose !== undefined) {
+    if (!compose) throw new Error('A composition compiler is required.');
+    const bindings = new Map(overload.params.map((param, i) => [param.name, args[i]]));
+    for (const local of overload.locals ?? []) bindings.set(local.name, compose(local.expression, bindings));
+    const expressions = [overload.compose].flat().map((expression) => compose(expression, bindings).expression);
+    return { expression: expressions[0], ...(expressions.length > 1 ? { outputExpressions: expressions } : {}), type: overload.returns };
   }
   const bindings = new Map(overload.params.map((param, i) => [param.name, args[i].expression]));
   const substitute = (expression: string) => expression.replace(/\$([\p{L}_][\p{L}\p{N}_]*)/gu, (_, name: string) => `(${bindings.get(name)!})`);

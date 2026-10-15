@@ -2,6 +2,7 @@ import { GeoGebraEmbeddingAdapter } from '../src/features/geogebra/adapters/GeoG
 import { executeCommandPipeline } from '../src/features/geogebra/commands/commandPipeline';
 import { readFileTools } from '../src/features/geogebra/commands/custom/commandEnvironment';
 import { createFileToolCompletionProvider } from '../src/features/geogebra/commands/completion/fileToolCompletionProvider';
+import { verifyP1 } from './geogebra-p1-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -56,6 +57,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'p1') {
+      await verifyP1(engine, report);
+      report('COMPLETE');
+      return;
+    }
     await run('A=(0,0)\nB=(4,0)\nC=(0,3)\nP=(-0.5,0.75)\nD=(3,2)\nE=(2,4)\nl:x=1\nm:y=2\nn:x+y=4\no:x-y=3\nr:2x+y=6\ns=Segment((1,-2),(1,4))\nt=Ray((0,2),(1,2))\ncircle=Circle(A,2)\nU=(2,0)\nV=(2,1)');
     await run('F1=(1,0)\nF2=(0,1)\nF3=(-1,0)\nF4=(0,-1)\nF5=(0.6,0.8)\nf:x+y=sqrt(2)\ng:2x-y=sqrt(5)\nh:x-2y=sqrt(5)\nj:3x+y=sqrt(10)\nk:x+3y=sqrt(10)\nfs=Segment((0,sqrt(2)),(sqrt(2),0))\nft=Ray((0,-sqrt(5)),(1,2-sqrt(5)))');
     const before = await api('getAllObjectNames') as string[];

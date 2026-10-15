@@ -6,6 +6,8 @@ export interface ToolOverload {
   returns: GeometryType;
   /** Expression templates use $parameter and $local placeholders, never textual label replacement. */
   expression?: string;
+  /** Explicit site-tool composition; arrays produce independent geometric outputs. */
+  compose?: string | string[];
   locals?: Array<{ name: string; expression: string }>;
   builder?: string;
   variadic?: boolean;
@@ -30,6 +32,8 @@ export interface TypedExpression extends BuiltExpression {
 
 export interface BuiltExpression {
   expression: string;
+  /** Already scalar expressions, emitted separately only at statement level. */
+  outputExpressions?: string[];
   /** A list-valued backend emitted as separate objects at statement level. */
   outputCount?: number;
   /** Optional typed sentinel elements preceding the actual outputs. */

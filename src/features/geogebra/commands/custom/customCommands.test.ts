@@ -7,7 +7,7 @@ import { compileStudioCommand, containsStudioCall } from './commandCompiler';
 import { normalizeGeometryType, readFileTools } from './commandEnvironment';
 import { outerCalls, splitTopLevel } from './commandSyntax';
 import { selectOverload, studioToolLibrary, studioTools, validateToolLibrary } from './toolLibrary';
-import type { CommandEnvironment, GeometryType } from './types';
+import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload } from './types';
 
 const environment = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([['A', 'point'], ['B', 'point'], ['C', 'point'], ['D', 'point'], ['E', 'point'], ['P', 'point'], ['l', 'line'], ['m', 'line'], ['n', 'line'], ['o', 'line'], ['r', 'line'], ['s', 'segment'], ['t', 'ray'], ['circle', 'circle']]),
@@ -166,6 +166,101 @@ describe('tool library and completion', () => {
     listener({ type: 'clear', timestamp: 0 });
     await readFileTools(engine);
     expect(callApi).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('reusable tool definitions and P1 outputs', () => {
+  const definition = (name: string, compose: ToolOverload['compose']): ToolDefinition => ({
+    name, description: name, overloads: [{ params: [{ name: 'P', type: 'point' }], returns: 'point', compose }],
+  });
+
+  it('composes with typed arguments without allowing file tools or caller labels to replace dependencies', () => {
+    const scope = environment();
+    scope.macros.add('circumcenter');
+    scope.objects.set('Orthocenter', 'function');
+    const expression = compile('NinePointCenter(A,B,C)', scope);
+    expect(expression).toContain('TriangleCenter');
+    expect(expression).not.toMatch(/Circumcenter|Orthocenter/u);
+    expect(compile('Circumcenter(A,B,C)', scope)).toBe('Circumcenter(A,B,C)');
+    expect(compile('Centroid(Polygon(A,B,C))')).toBe('Centroid(Polygon(A,B,C))');
+  });
+
+  it('retains native implementations inside dependencies and preserves arguments already compiled by the caller', () => {
+    const native = { ...definition('Native', undefined), overloads: [{ params: [{ name: 'P', type: 'point' as const }], returns: 'point' as const, expression: 'Centroid($P,$P,$P)' }] };
+    const wrapped = definition('Wrapped', 'Native($P)');
+    const tools = new Map([native, wrapped].map((tool) => [tool.name.toLowerCase(), tool]));
+    expect(compileStudioCommand('Wrapped(A)', environment(), tools)).toMatch(/^Centroid\(/u);
+    const source = 'CircumcevianTriangle(A,B,C,IsogonalConjugate(A,B,C,P),1)';
+    const expression = compile(source);
+    expect(expression).not.toMatch(/IsogonalConjugate|Circumcevian/u);
+    expect(expression).toContain('ConjugateDiameter');
+    expect(expression.length).toBeLessThan(30_000);
+  });
+
+  it('detects direct and indirect cycles, while allowing distinct overloads of the same tool', () => {
+    for (const tools of [
+      [definition('Loop', 'Loop($P)')],
+      [definition('Loop', 'Other($P)'), definition('Other', 'Loop($P)')],
+    ]) {
+      expect(() => compileStudioCommand('Loop(A)', environment(), new Map(tools.map((tool) => [tool.name.toLowerCase(), tool])))).toThrow('Cyclic tool composition');
+    }
+    expect(compile('Antipode(A,B,C)')).toContain('Reflect');
+  });
+
+  it('keeps dependency locals hygienic in the presence of user Zip bindings and long point labels', () => {
+    const scope = environment();
+    scope.objects.set('PointAlpha', 'point');
+    scope.objects.set('v1', 'point');
+    const expression = compile('Zip(NinePointCircle(PointAlpha,B,v2),v2,{C,D})', scope);
+    expect(expression.match(/,v2,\{/gu)).toHaveLength(1);
+    expect(expression).toContain('PointAlpha');
+    expect(expression).not.toMatch(/NinePoint|Circumcenter|Orthocenter/u);
+    expect(compile('Excircle(PointAlpha,B,C)', scope)).toContain('Distance');
+  });
+
+  it('emits each triangle vertex or circle as an independent object and keeps nested results scalar', () => {
+    for (const [name, arguments_, count] of [
+      ['Excenters', 'A,B,C', 3], ['Excircles', 'A,B,C', 3], ['BrocardPoints', 'A,B,C', 2],
+      ['MedialTriangle', 'A,B,C', 3], ['OrthicTriangle', 'A,B,C', 3], ['CevianTriangle', 'A,B,C,P', 3],
+      ['PedalTriangle', 'A,B,C,P', 3], ['IntouchTriangle', 'A,B,C', 3], ['AnticevianTriangle', 'A,B,C,P', 3],
+      ['CircumcevianTriangle', 'A,B,C,P', 3], ['TangentialTriangle', 'A,B,C', 3],
+      ['AntipedalTriangle', 'A,B,C,P', 3], ['CarnotTriangle', 'A,B,C,P', 3], ['DiagonalPoints', 'A,B,C,D', 3],
+    ] as const) {
+      const outputs = compile(`Result=${name}(${arguments_})`).split('\n');
+      expect(outputs, name).toHaveLength(count);
+      expect(outputs[0], name).toMatch(/^Result=/u);
+      expect(outputs.slice(1).every((line) => !line.startsWith('Result=')), name).toBe(true);
+      expect(compile(`${name}(${arguments_},2)`), name).not.toContain('\n');
+      expect(compile(`Line(${name}(${arguments_}),P)`), name).not.toContain('\n');
+      expect(outputs.every((line) => line.length < 30_000), name).toBe(true);
+    }
+  });
+
+  it('implements every approved P1 signature and excludes the explicitly rejected tools', () => {
+    for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
+      if (['conic', 'conicBranch'].includes(overload.builder ?? '')) continue;
+      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', circle: 'circle', conic: 'circle', lineLike: 's', number: '1' };
+      const arguments_ = overload.params.map((param) => fixtures[param.type]);
+      expect(arguments_.every(Boolean), tool.name).toBe(true);
+      expect(() => compile(`${tool.name}(${arguments_.join(',')})`), tool.name).not.toThrow();
+    }
+    expect(studioTools.has('complementofisotomicconjugate')).toBe(false);
+    expect(studioTools.has('circumsymmedianpoint')).toBe(false);
+    expect(studioTools.get('directsimilarity')?.overloads).toHaveLength(2);
+    expect(studioTools.get('oppositesimilarity')?.overloads).toHaveLength(2);
+    expect(compile('Antipode(circle,A)')).toContain('Center');
+    expect(compile('NorthPole(A,B,C)')).toContain('ConjugateDiameter');
+  });
+
+  it('validates composition implementations, placeholders and local order', () => {
+    for (const invalid of [
+      { compose: [] }, { compose: '' }, { compose: '$missing' }, { compose: 'Loop($P)', expression: '$P' },
+      { compose: '$later', locals: [{ name: 'earlier', expression: '$later' }, { name: 'later', expression: '$P' }] },
+    ]) {
+      const tool = definition('Loop', '$P');
+      Object.assign(tool.overloads[0], invalid);
+      expect(() => validateToolLibrary({ schemaVersion: 1, id: 'test', version: '1', tools: [tool] })).toThrow();
+    }
   });
 });
 

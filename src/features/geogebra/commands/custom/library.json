@@ -1,37 +1,427 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "tools": [
     {
       "name": "Incenter",
       "description": "Triangle incenter; uses the native triangle-center construction.",
-      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)" }]
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
+      ]
     },
     {
       "name": "IsogonalConjugate",
       "description": "Isogonal conjugate in triangle ABC, using homogeneous barycentric products.",
-      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "P", "type": "point" }], "returns": "point", "builder": "isogonal" }]
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"}
+      ]
     },
     {
       "name": "IsotomicConjugate",
       "description": "Isotomic conjugate in triangle ABC, using signed barycentric products.",
-      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "P", "type": "point" }], "returns": "point", "builder": "isotomic" }]
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"}
+      ]
     },
     {
       "name": "Conic",
       "description": "Five point/tangent-line constraints in any order. Mixed inputs create separate conics (2 or 4 slots); undefined slots can appear on dragging. Add a 1-based index to select one. Nested calls select the first solution. Segments/rays mean supporting lines. Native point/coefficient forms are preserved.",
       "overloads": [
-        { "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "D", "type": "point" }, { "name": "E", "type": "point" }], "returns": "conic", "expression": "Conic($A,$B,$C,$D,$E)" },
-        { "params": [{ "name": "a", "type": "lineLike" }, { "name": "b", "type": "lineLike" }, { "name": "c", "type": "lineLike" }, { "name": "d", "type": "lineLike" }, { "name": "e", "type": "lineLike" }], "returns": "conic", "builder": "conic" },
-        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }], "returns": "conic", "builder": "conic" },
-        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }, { "name": "index", "type": "number" }], "returns": "conic", "builder": "conicBranch" }
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "conic", "expression": "Conic($A,$B,$C,$D,$E)"},
+        {"params": [{"name": "a", "type": "lineLike"}, {"name": "b", "type": "lineLike"}, {"name": "c", "type": "lineLike"}, {"name": "d", "type": "lineLike"}, {"name": "e", "type": "lineLike"}], "returns": "conic", "builder": "conic"},
+        {"params": [{"name": "a", "type": "pointOrLine"}, {"name": "b", "type": "pointOrLine"}, {"name": "c", "type": "pointOrLine"}, {"name": "d", "type": "pointOrLine"}, {"name": "e", "type": "pointOrLine"}], "returns": "conic", "builder": "conic"},
+        {"params": [{"name": "a", "type": "pointOrLine"}, {"name": "b", "type": "pointOrLine"}, {"name": "c", "type": "pointOrLine"}, {"name": "d", "type": "pointOrLine"}, {"name": "e", "type": "pointOrLine"}, {"name": "index", "type": "number"}], "returns": "conic", "builder": "conicBranch"}
       ]
     },
     {
       "name": "SecondIntersection",
       "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
-      "overloads": [{ "params": [{ "name": "conic", "type": "conic" }, { "name": "P", "type": "point" }, { "name": "Q", "type": "point" }], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))" }]
+      "overloads": [
+        {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"}
+      ]
+    },
+    {
+      "name": "Centroid",
+      "description": "Triangle centroid; the three-point overload also accepts collinear points.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "($A+$B+$C)/3"}
+      ]
+    },
+    {
+      "name": "Orthocenter",
+      "description": "Triangle orthocenter.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,4)"}
+      ]
+    },
+    {
+      "name": "Circumcenter",
+      "description": "Triangle circumcenter.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,3)"}
+      ]
+    },
+    {
+      "name": "SymmedianPoint",
+      "description": "Triangle symmedian point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,6)"}
+      ]
+    },
+    {
+      "name": "GergonnePoint",
+      "description": "Triangle Gergonne point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,7)"}
+      ]
+    },
+    {
+      "name": "NagelPoint",
+      "description": "Triangle Nagel point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,8)"}
+      ]
+    },
+    {
+      "name": "Mittenpunkt",
+      "description": "Triangle mittenpunkt.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,9)"}
+      ]
+    },
+    {
+      "name": "SpiekerCenter",
+      "description": "Incenter of the medial triangle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,10)"}
+      ]
+    },
+    {
+      "name": "NinePointCenter",
+      "description": "Center of the triangle nine-point circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "(Circumcenter($A,$B,$C)+Orthocenter($A,$B,$C))/2"}
+      ]
+    },
+    {
+      "name": "Excenter",
+      "description": "Excenter opposite A.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "Trilinear($A,$B,$C,-1,1,1)"}
+      ]
+    },
+    {
+      "name": "Excenters",
+      "description": "Excenters opposite A, B and C; an optional 1-based index selects one.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Excenter($A,$B,$C)", "Excenter($B,$C,$A)", "Excenter($C,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Excenter($A,$B,$C),Excenter($B,$C,$A),Excenter($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "Excircle",
+      "description": "Excircle opposite A.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,Distance($center,Line($B,$C)))", "locals": [{"name": "center", "expression": "Excenter($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "Excircles",
+      "description": "Excircles opposite A, B and C; an optional 1-based index selects one.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["Excircle($A,$B,$C)", "Excircle($B,$C,$A)", "Excircle($C,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Excircle($A,$B,$C),Excircle($B,$C,$A),Excircle($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "NinePointCircle",
+      "description": "Triangle nine-point circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(NinePointCenter($A,$B,$C),Distance(Circumcenter($A,$B,$C),$A)/2)"}
+      ]
+    },
+    {
+      "name": "EulerLine",
+      "description": "Line through the triangle circumcenter and orthocenter; undefined when they coincide.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Line(Circumcenter($A,$B,$C),Orthocenter($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "BrocardPoints",
+      "description": "First and second Brocard points of ordered triangle ABC; the first satisfies angle PAB = PBC = PCA. Optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "builder": "brocard"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "brocard"}
+      ]
+    },
+    {
+      "name": "IsodynamicPoint",
+      "description": "First (i=1) or second (i=2) isodynamic point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "expression": "If($i==1,TriangleCenter($A,$B,$C,15),If($i==2,TriangleCenter($A,$B,$C,16)))"}
+      ]
+    },
+    {
+      "name": "FuhrmannCircle",
+      "description": "Circle with diameter joining the orthocenter and Nagel point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(($left+$right)/2,Distance($left,$right)/2)", "locals": [{"name": "left", "expression": "Orthocenter($A,$B,$C)"}, {"name": "right", "expression": "NagelPoint($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "BrocardCircle",
+      "description": "Circle with diameter joining the circumcenter and symmedian point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(($left+$right)/2,Distance($left,$right)/2)", "locals": [{"name": "left", "expression": "Circumcenter($A,$B,$C)"}, {"name": "right", "expression": "SymmedianPoint($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "MedialTriangle",
+      "description": "Midpoints of BC, CA and AB; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($B+$C)/2", "($C+$A)/2", "($A+$B)/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($B+$C)/2,($C+$A)/2,($A+$B)/2},$i))"}
+      ]
+    },
+    {
+      "name": "OrthicTriangle",
+      "description": "Feet of the altitudes from A, B and C; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($A+Reflect($A,Line($B,$C)))/2", "($B+Reflect($B,Line($C,$A)))/2", "($C+Reflect($C,Line($A,$B)))/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($A+Reflect($A,Line($B,$C)))/2,($B+Reflect($B,Line($C,$A)))/2,($C+Reflect($C,Line($A,$B)))/2},$i))"}
+      ]
+    },
+    {
+      "name": "CevianTriangle",
+      "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$P),Line($B,$C))", "Intersect(Line($B,$P),Line($C,$A))", "Intersect(Line($C,$P),Line($A,$B))"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$P),Line($B,$C)),Intersect(Line($B,$P),Line($C,$A)),Intersect(Line($C,$P),Line($A,$B))},$i))"}
+      ]
+    },
+    {
+      "name": "PedalTriangle",
+      "description": "Projections of P onto the supporting lines BC, CA and AB; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["($P+Reflect($P,Line($B,$C)))/2", "($P+Reflect($P,Line($C,$A)))/2", "($P+Reflect($P,Line($A,$B)))/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($P+Reflect($P,Line($B,$C)))/2,($P+Reflect($P,Line($C,$A)))/2,($P+Reflect($P,Line($A,$B)))/2},$i))"}
+      ]
+    },
+    {
+      "name": "PedalCircle",
+      "description": "Circle through the three pedal points of P; undefined when they are collinear.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(PedalTriangle($A,$B,$C,$P,1),PedalTriangle($A,$B,$C,$P,2),PedalTriangle($A,$B,$C,$P,3))"}
+      ]
+    },
+    {
+      "name": "IntouchTriangle",
+      "description": "Contact points of the incircle with BC, CA and AB; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($center+Reflect($center,Line($B,$C)))/2", "($center+Reflect($center,Line($C,$A)))/2", "($center+Reflect($center,Line($A,$B)))/2"], "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($center+Reflect($center,Line($B,$C)))/2,($center+Reflect($center,Line($C,$A)))/2,($center+Reflect($center,Line($A,$B)))/2},$i))", "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "AnticevianTriangle",
+      "description": "Anticevian vertices (-p:q:r), (p:-q:r), (p:q:-r) of P; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "anticevian"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "anticevian"}
+      ]
+    },
+    {
+      "name": "CircumcevianPoint",
+      "description": "Second intersection of AP with the circumcircle, given A on the circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$P)"}
+      ]
+    },
+    {
+      "name": "CircumcevianTriangle",
+      "description": "Second intersections of AP, BP and CP with the circumcircle; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["CircumcevianPoint($A,$B,$C,$P)", "CircumcevianPoint($B,$C,$A,$P)", "CircumcevianPoint($C,$A,$B,$P)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({CircumcevianPoint($A,$B,$C,$P),CircumcevianPoint($B,$C,$A,$P),CircumcevianPoint($C,$A,$B,$P)},$i))"}
+      ]
+    },
+    {
+      "name": "TangentialTriangle",
+      "description": "Intersections of circumcircle tangents at B and C, C and A, A and B; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Polar(Line($B,$C),$circle)", "Polar(Line($C,$A),$circle)", "Polar(Line($A,$B),$circle)"], "locals": [{"name": "circle", "expression": "Circle($A,$B,$C)"}]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Polar(Line($B,$C),$circle),Polar(Line($C,$A),$circle),Polar(Line($A,$B),$circle)},$i))", "locals": [{"name": "circle", "expression": "Circle($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "AntipedalTriangle",
+      "description": "Vertices opposite the lines through A, B and C perpendicular to PA, PB and PC; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C)))", "Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A)))", "Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C))),Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A))),Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))},$i))"}
+      ]
+    },
+    {
+      "name": "CarnotTriangle",
+      "description": "Circumcenters of PBC, PCA and PAB; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Circumcenter($P,$B,$C)", "Circumcenter($P,$C,$A)", "Circumcenter($P,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Circumcenter($P,$B,$C),Circumcenter($P,$C,$A),Circumcenter($P,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "Orthopole",
+      "description": "Orthopole of the supporting line l with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(PerpendicularLine(($A+Reflect($A,$support))/2,Line($B,$C)),PerpendicularLine(($B+Reflect($B,$support))/2,Line($C,$A)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}]}
+      ]
+    },
+    {
+      "name": "Complement",
+      "description": "Complement of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "($A+$B+$C-$P)/2"}
+      ]
+    },
+    {
+      "name": "Anticomplement",
+      "description": "Anticomplement of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "$A+$B+$C-2*$P"}
+      ]
+    },
+    {
+      "name": "IsogonalComplement",
+      "description": "Isogonal conjugate of the complement of P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "IsogonalConjugate($A,$B,$C,Complement($A,$B,$C,$P))"}
+      ]
+    },
+    {
+      "name": "TrilinearPolar",
+      "description": "Trilinear polar of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "builder": "trilinearPolar"}
+      ]
+    },
+    {
+      "name": "TrilinearPole",
+      "description": "Trilinear pole of the supporting line l with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "builder": "trilinearPole"}
+      ]
+    },
+    {
+      "name": "HarmonicConjugate",
+      "description": "Point Q with complex cross-ratio (A,B;P,Q)=-1; includes the collinear harmonic conjugate.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($B-$A)*ToComplex($P-$A)/ToComplex(2*$P-$A-$B))"}
+      ]
+    },
+    {
+      "name": "TransferRatio",
+      "description": "Transfer the directed affine parameter of P on AB to CD; P must lie on AB.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "$C+AffineRatio($A,$B,$P)*($D-$C)"}
+      ]
+    },
+    {
+      "name": "TrisectionPoint",
+      "description": "Point one third of the way from A to B.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}], "returns": "point", "expression": "(2*$A+$B)/3"}
+      ]
+    },
+    {
+      "name": "GoldenSectionPoint",
+      "description": "Point at parameter (sqrt(5)-1)/2 from A to B.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}], "returns": "point", "expression": "$A+(sqrt(5)-1)/2*($B-$A)"}
+      ]
+    },
+    {
+      "name": "DirectSimilarity",
+      "description": "Orientation-preserving similarity: four points fix A and map B to C, returning the image of D; five points map ABC to DEF.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($C-$A)*(ToComplex($D-$A)/ToComplex($B-$A)))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($D)+ToComplex($E-$D)*(ToComplex($C-$A)/ToComplex($B-$A)))"}
+      ]
+    },
+    {
+      "name": "OppositeSimilarity",
+      "description": "Orientation-reversing similarity: four points fix A and map B to C, returning the image of D; five points map ABC to DEF.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($C-$A)*(conjugate(ToComplex($D-$A)/ToComplex($B-$A))))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($D)+ToComplex($E-$D)*(conjugate(ToComplex($C-$A)/ToComplex($B-$A))))"}
+      ]
+    },
+    {
+      "name": "ArcMidpoint",
+      "description": "Midpoint of the BC arc not containing A on the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$A+($B-$A)/Distance($A,$B)+($C-$A)/Distance($A,$C))"}
+      ]
+    },
+    {
+      "name": "SouthPole",
+      "description": "Midpoint of the BC arc not containing A; alias of ArcMidpoint.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "ArcMidpoint($A,$B,$C)"}
+      ]
+    },
+    {
+      "name": "OppositeArcMidpoint",
+      "description": "Midpoint of the BC arc containing A on the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "Antipode(Circle($A,$B,$C),ArcMidpoint($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "NorthPole",
+      "description": "Midpoint of the BC arc containing A; alias of OppositeArcMidpoint.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "OppositeArcMidpoint($A,$B,$C)"}
+      ]
+    },
+    {
+      "name": "Antipode",
+      "description": "Central reflection of P in a conic center, or of A in the circumcenter of ABC; parabolas have no finite antipode.",
+      "overloads": [
+        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "Reflect($P,Center($q))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "Antipode(Circle($A,$B,$C),$A)"}
+      ]
+    },
+    {
+      "name": "RadicalCenter",
+      "description": "Radical center of three circles.",
+      "overloads": [
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "c3", "type": "circle"}], "returns": "point", "expression": "Intersect(RadicalAxis($c1,$c2),RadicalAxis($c1,$c3))"}
+      ]
+    },
+    {
+      "name": "SimilarityCenter",
+      "description": "External (s=1) or internal (s=-1) center of similitude of two circles.",
+      "overloads": [
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "s", "type": "number"}], "returns": "point", "expression": "If($s^2==1,(Radius($c1)*Center($c2)-$s*Radius($c2)*Center($c1))/(Radius($c1)-$s*Radius($c2)))"}
+      ]
+    },
+    {
+      "name": "DiagonalPoints",
+      "description": "AB intersect CD, AC intersect BD and AD intersect BC; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$B),Line($C,$D))", "Intersect(Line($A,$C),Line($B,$D))", "Intersect(Line($A,$D),Line($B,$C))"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$B),Line($C,$D)),Intersect(Line($A,$C),Line($B,$D)),Intersect(Line($A,$D),Line($B,$C))},$i))"}
+      ]
+    },
+    {
+      "name": "NewtonLine",
+      "description": "Newton line of the quadrilateral with ordered vertices ABCD, or of four supporting lines.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "Line(($A+$C)/2,($B+$D)/2)"},
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "Line((Intersect($s1,$s2)+Intersect($s3,$s4))/2,(Intersect($s1,$s4)+Intersect($s2,$s3))/2)", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+      ]
     }
   ]
 }

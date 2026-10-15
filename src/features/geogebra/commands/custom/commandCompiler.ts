@@ -1,17 +1,17 @@
 import { GEOGEBRA_COMMAND_NAMES } from '../completion/geogebraCommandNames';
 import { outerCalls, splitTopLevel } from './commandSyntax';
 import { expandTool, selectOverload, studioTools, toolSignature } from './toolLibrary';
-import type { CommandEnvironment, GeometryType, TypedExpression } from './types';
+import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload, TypedExpression } from './types';
 
 const nativeNames = new Set(GEOGEBRA_COMMAND_NAMES.map((name) => name.toLowerCase()));
 const nativeReturns: Record<string, GeometryType> = {
-  point: 'point', midpoint: 'point', trianglecenter: 'point', intersect: 'point',
-  closestpoint: 'point', center: 'point', barycenter: 'point', focus: 'point',
+  point: 'point', midpoint: 'point', trianglecenter: 'point', intersect: 'point', centroid: 'point',
+  closestpoint: 'point', center: 'point', barycenter: 'point', focus: 'point', trilinear: 'point', tocomplex: 'point', topoint: 'point',
   line: 'line', perpendicularline: 'line', parallel: 'line', polar: 'line',
-  segment: 'segment', ray: 'ray', circle: 'circle', incircle: 'circle',
+  segment: 'segment', ray: 'ray', vector: 'vector', circle: 'circle', incircle: 'circle',
   ellipse: 'conic', hyperbola: 'conic', parabola: 'conic', conic: 'conic',
   distance: 'number', length: 'number', angle: 'number', x: 'number', y: 'number', z: 'number',
-  abs: 'number', sqrt: 'number', sin: 'number', cos: 'number',
+  abs: 'number', sqrt: 'number', sin: 'number', cos: 'number', radius: 'number', affineratio: 'number',
   sequence: 'list', zip: 'list', join: 'list', solutions: 'list',
 };
 
@@ -57,9 +57,15 @@ export const containsStudioCall = (source: string, depth = 0): boolean => {
   return outerCalls(source).some((call) => !call.declaration && (studioTools.has(call.name.toLowerCase()) || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
 };
 
-export const compileStudioCommand = (source: string, environment: CommandEnvironment): string => {
+export const compileStudioCommand = (source: string, environment: CommandEnvironment, tools: ReadonlyMap<string, ToolDefinition> = studioTools): string => {
   const occupied = new Set([...source.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)].map((match) => match[0]));
   for (const name of environment.objects.keys()) occupied.add(name);
+  for (const tool of tools.values()) for (const overload of tool.overloads) {
+    for (const expression of [overload.compose ?? []].flat().concat((overload.locals ?? []).map((local) => local.expression))) {
+      for (const match of expression.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)) occupied.add(match[0]);
+    }
+  }
+  const dependencies: Array<{ overload: ToolOverload; signature: string }> = [];
   let serial = 0;
   // Zip/KeepIf require identifiers: bare _ and # are not accepted by GeoGebra.
   // Short ASCII names stay readable while avoiding every source/global label.
@@ -100,23 +106,52 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       let result: TypedExpression = { expression: native, type: nativeReturns[key] ?? 'unknown' };
       const fileDefined = scope.macros.has(key) || scope.objects.has(call.name);
       if (fileDefined) result.type = scope.macroTypes?.get(key) ?? (scope.objects.get(call.name) === 'function' ? 'number' : 'unknown');
-      const tool = studioTools.get(key);
+      const tool = tools.get(key);
       if (tool && !fileDefined) {
         const overload = selectOverload(tool, args);
-        if (overload) result = expandTool(overload, args, allocate);
+        if (overload) {
+          const signature = toolSignature(tool, overload);
+          if (dependencies.some((dependency) => dependency.overload === overload)) throw new Error(`Cyclic tool composition: ${[...dependencies.map((dependency) => dependency.signature), signature].join(' -> ')}`);
+          dependencies.push({ overload, signature });
+          try {
+            result = expandTool(overload, args, allocate, (template, bindings) => {
+              // Compile only the definition, with typed opaque argument tokens.
+              // File macros cannot change a library dependency; caller expressions
+              // are substituted afterwards, so native calls are not expanded twice.
+              const definitionScope: CommandEnvironment = { objects: new Map(), macros: new Set() };
+              const replacements = new Map<string, string>();
+              const tokens = new Map([...bindings].map(([name, binding]) => {
+                const token = allocate();
+                definitionScope.objects.set(token, binding.type);
+                replacements.set(token, binding.expression);
+                return [name, token];
+              }));
+              const body = template.replace(/\$([\p{L}_][\p{L}\p{N}_]*)/gu, (_, name: string) => tokens.get(name)!);
+              const compiled = compile(body, definitionScope, depth + 1);
+              compiled.expression = compiled.expression.replace(/"(?:\\.|[^"\\])*"|(?:\/\/|#)[^\n]*|[\p{L}_][\p{L}\p{N}_']*/gu,
+                (token) => replacements.has(token) ? `(${replacements.get(token)})` : token);
+              if (compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+              return compiled;
+            });
+          } finally { dependencies.pop(); }
+        }
         else if (!nativeNames.has(key)) throw new Error(`No overload for ${tool.name}(${args.map((arg) => arg.type).join(', ')}). Expected: ${tool.overloads.map((overload) => toolSignature(tool, overload)).join(' or ')}. Use existing object labels or typed nested commands for unknown arguments.`);
       }
+      if (key === 'polar' && !fileDefined && ['line', 'segment', 'ray'].includes(args[0]?.type)) result.type = 'point';
       if (['reflect', 'rotate', 'translate', 'dilate', 'applymatrix'].includes(key) && !fileDefined) result.type = args[key === 'applymatrix' ? 1 : 0]?.type ?? 'unknown';
       if (key === 'if' && (args.length === 2 || args[1]?.type === args[2]?.type)) result.type = args[1].type;
       if (key === 'element' && call.args.length >= 2) result.type = listElementType(call.args[0]);
-      if (result.outputCount) {
+      if (result.outputCount || result.outputExpressions) {
         const prefix = input.slice(0, call.start).trim();
         const suffix = input.slice(call.end).replace(/(?:\/\/|#)[^\n]*/gu, '').trim();
         const standalone = depth === 0 && !suffix && (!prefix || /^[\p{L}_][\p{L}\p{N}_{}']*\s*=$/u.test(prefix));
         const select = (index: number) => `Element(${result.expression},${index + (result.outputOffset ?? 0)})`;
         // GeoGebra supplies unused labels for subsequent outputs. An explicit
         // assignment labels the first object only.
-        result.expression = standalone ? Array.from({ length: result.outputCount }, (_, i) => select(i + 1)).join('\n') : select(1);
+        result.expression = result.outputExpressions
+          ? standalone ? result.outputExpressions.join('\n') : result.outputExpressions[0]
+          : standalone ? Array.from({ length: result.outputCount! }, (_, i) => select(i + 1)).join('\n') : select(1);
+        result.outputExpressions = undefined;
         result.outputCount = undefined;
         result.outputOffset = undefined;
       }

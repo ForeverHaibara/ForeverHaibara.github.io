@@ -1,6 +1,6 @@
 # Custom geometry tools — implementation review plan
 
-状态：**供人工审阅的设计稿，尚未批准实现**。本轮仅新增此文档，不修改命令、类型系统、测试或 `README.md`。工具的最终名称和面向用户的描述使用英文；设计理由和算法说明使用中文，便于审阅修改。
+状态：**P1 已实现，实际 GeoGebra 引擎验证待运行**。按人工审阅后的计划完成首批工具及工具组合机制；P2 与暂缓项目仍为后续计划。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
 
 ## 1. 范围、来源和取舍
 
@@ -11,12 +11,12 @@
 阶段约定：
 
 - **Existing**：当前网站已实现，保留接口；本轮不重写。
-- **P1**：建议首批新增，定义明确，表达式较短，依赖现有能力。
+- **Implemented (P1)**：已加入工具库，编译／执行边界测试通过；不代表已完成实际引擎几何验证。
 - **P2**：建议后续新增，需要更多数学核验、类型支持或原生引擎验证。
 - **Native**：使用 GeoGebra 内置功能，不新增同义工具。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
-“建议新增”不代表已经完成引擎验证。所有算法都是数学层面的方案，不是可直接粘贴的 GeoGebra 命令。
+下表记录当前实现算法及后续方案，公式不一定是可直接粘贴的 GeoGebra 命令。P1 的实际原生表达式以 `library.json` 和 `geometryBuilders.ts` 为准。
 
 ### 已确认的源工具问题
 
@@ -60,11 +60,11 @@
 下列记号只用于阐述算法：`a=|BC|, b=|CA|, c=|AB|`；`G=(A+B+C)/3`；O 为外心，H 为垂心，I 为内心，R、r 为外接圆、内切圆半径。
 
 1. **有向重心坐标**：用有向二倍面积求 P 的齐次重心 `(p:q:r)`。有限化为 `(pA+qB+rC)/(p+q+r)`；外点保留负号。下文有时用 `(u:v:w)` 避免与半径 r 混淆。三线坐标转重心必须逐项乘 `a,b,c`，不能直接混用。
-2. **射影 join/meet**：点、线均先用三维齐次坐标，叉积求连线和交点，最后才有限化。尽量消除可约公共因子；结果三坐标全零是未定，不是原点。最终在无穷远的点没有普通 point 输出。或考虑作点与点关于线的对称点的中点。
+2. **射影 join/meet**：点、线均先用三维齐次坐标，叉积求连线和交点，最后才有限化。尽量消除可约公共因子；结果三坐标全零是未定，不是原点。最终在无穷远的点没有普通 point 输出。点与其关于直线的反射点的中点可用于求垂足，不是一般直线交点的替代算法。
 3. **垂足**：用向量点积投影到支撑直线，不用斜率，不限线段。平行线、竖直线和水平线使用相同公式。
 4. **共轭与相切**：二次型矩阵 Q 给出极线 QP、极点 adj(Q)l；有限普通切点处切线就是极线。若需过外点的两条切线，先交极线与二次曲线取切点，再连外点；不要把两个近切交点相减估计方向。原生极线／极点优先。
 5. **第二交点**：已知 P 在二次曲线上，以弦中点反射 P；圆的弦中点是圆心到弦的垂足。圆与圆已有公共点 P 时，先取两圆根轴再求该弦的第二点。不能固定选 Intersect 的序号。
-6. **有向复数相似**：点的复数乘除前先平移到局部原点；直接相似使用复数比，反相似使用共轭比。避免用无向 Angle 决定旋转方向。
+6. **有向复数相似**：先平移到局部原点并显式 ToComplex，乘除后 ToPoint；普通坐标点相乘可能是点积。直接相似使用复数比，反相似使用共轭比。避免用无向 Angle 决定旋转方向。
 7. **二次曲线方程**：以对称 3×3 矩阵或六系数表示，使用局部平移、尺度归一化减小消去误差；返回真正的 conic，不用 implicitCurve 冒充。TriangleCurve 可说明重心方程，但其原生输出为隐式多项式，不能直接充当 conic 的后端。
 8. **表达式预算**：短式直接生成；重复中间量在原生匿名绑定中复用。模板 locals 只是文本展开，不保证缓存。禁止任意自由 Point、采样、数值坐标快照、命名临时对象、回调脚本。大矩阵算法必须先估计展开长度，不承诺“一个行列式”就一定便宜。
 9. **距离** 两点距离尽量用内置的 Distance 函数。不要用 "AB" 这样的语法，因为它在两点字符串非单个字符时会出错。
@@ -89,28 +89,28 @@
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `Centroid(A,B,C) → point` | Triangle centroid. | `(A+B+C)/3`；不必作两条中线，三个点共线时仍有定义。需要对现有ggb工具重载。 | S001 S434 |
-| P1 | `Orthocenter(A,B,C) → point` | Triangle orthocenter. | 原生 TriangleCenter 的 X(4)； | S002 S435 |
+| Implemented (P1) | `Centroid(A,B,C) → point` | Triangle centroid. | `(A+B+C)/3`；不必作两条中线，三个点共线时仍有定义。需要对现有ggb工具重载。 | S001 S434 |
+| Implemented (P1) | `Orthocenter(A,B,C) → point` | Triangle orthocenter. | 原生 TriangleCenter 的 X(4)； | S002 S435 |
 | Existing | `Incenter(A,B,C) → point` | Triangle incenter. | 已使用原生 X(1)，保留。 | S009 |
-| P1 | `Circumcenter(A,B,C) → point` | Triangle circumcenter. | 原生 X(3) 或外接圆 Center；共线时无有限外心。 | S010 |
-| P1 | `NinePointCenter(A,B,C) → point` | Center of the nine-point circle. | `(O+H)/2`，无需重建三个高足。 | S017 |
-| P1 | `SymmedianPoint(A,B,C) → point` | Triangle symmedian point. | 原生 X(6)，或重心 `(a²:b²:c²)`。 | S031 |
-| P1 | `GergonnePoint(A,B,C) → point` | Triangle Gergonne point. | 原生 X(7)；不用内切圆与边段的相切求交。 | S066 S382 |
-| P1 | `NagelPoint(A,B,C) → point` | Triangle Nagel point. | 原生 X(8)，替换旧版多轮取交点。 | S067 S383 |
-| P1 | `Mittenpunkt(A,B,C) → point` | Triangle mittenpunkt. | 原生 X(9)，替换固定输出。 | S072 S384 |
-| P1 | `SpiekerCenter(A,B,C) → point` | Incenter of the medial triangle. | 直接使用X(10)，不要取中点。 | S032 |
-| P1 | `Excenter(A,B,C) → point` | Excenter opposite A. | `(-aA+bB+cC)/(-a+b+c)`；采用对应符号也等价。A 是明确的对顶点。非退化三角形分母为正。 | S003 |
-| P1 | `Excenters(A,B,C[,i]) → point × 3 / point` | Excenters opposite A, B and C. | 循环调用同一加权公式，不用角平分线交点，顺序固定。 | S027 |
-| P1 | `Excircle(A,B,C) → circle` | Excircle opposite A. | 以上述旁心为圆心，到 BC 支撑线的距离为半径；无需附送三个切点。 | S433 |
-| P1 | `Excircles(A,B,C[,i]) → circle × 3 / circle` | Excircles opposite A, B and C. | 循环构造 Excircle，仅返回圆。 | S028 |
-| P1 | `NinePointCircle(A,B,C) → circle` | Triangle nine-point circle. | 圆心 N=(O+H)/2，半径 R/2；比三高足定圆更适合直角位置。 | S015 |
-| P1 | `EulerLine(A,B,C) → line` | Triangle Euler line. | 以 O、H 的齐次连线为主，化简公共因子；O=H 时方向不唯一，undefined。 | S008 |
-| P1 | `BrocardPoints(A,B,C[,i]) → point × 2 / point` | First and second Brocard points of ordered triangle ABC. | 两组重心可取 `(a²c²:a²b²:b²c²)` 与 `(a²b²:b²c²:a²c²)`，先用有向等角条件核定 first/second 对应；约定第一满足 ∠PAB=∠PBC=∠PCA，第二反向循环。镜像不交换 A、B、C 身份，交换 B、C 会交换两点。保证连续性。 | S006 |
-| P2 | `IsogonicCenter(A,B,C,i) → point` |  | 不常用。不实现。 | S005 |
-| P2 | `FermatPoint(A,B,C) → point` | First isodynamic point. | 只返回X(13)，避免讨论。 | S005 |
-| P1 | `IsodynamicPoint(A,B,C,i) → point` | First or second isodynamic point. | i=1/2 分别采用 X(15)/X(16)，不提供 First/Second 两个函数名；引擎对正三角形的约定须实测。 | S380 S381 |
-| P1 | `FuhrmannCircle(A,B,C) → circle` | Circle with diameter joining the orthocenter and Nagel point. | 圆心 `(H+Na)/2`，半径 `|H−Na|/2`。 | S373 |
-| P1 | `BrocardCircle(A,B,C) → circle` | Circle with diameter joining the circumcenter and symmedian point. | 圆心 `(O+K)/2`，半径 `|O−K|/2`；两点重合时遵循原生零半径圆语义。 | S374 |
+| Implemented (P1) | `Circumcenter(A,B,C) → point` | Triangle circumcenter. | 原生 X(3) 或外接圆 Center；共线时无有限外心。 | S010 |
+| Implemented (P1) | `NinePointCenter(A,B,C) → point` | Center of the nine-point circle. | `(O+H)/2`，无需重建三个高足。 | S017 |
+| Implemented (P1) | `SymmedianPoint(A,B,C) → point` | Triangle symmedian point. | 原生 X(6)，或重心 `(a²:b²:c²)`。 | S031 |
+| Implemented (P1) | `GergonnePoint(A,B,C) → point` | Triangle Gergonne point. | 原生 X(7)；不用内切圆与边段的相切求交。 | S066 S382 |
+| Implemented (P1) | `NagelPoint(A,B,C) → point` | Triangle Nagel point. | 原生 X(8)，替换旧版多轮取交点。 | S067 S383 |
+| Implemented (P1) | `Mittenpunkt(A,B,C) → point` | Triangle mittenpunkt. | 原生 X(9)，替换固定输出。 | S072 S384 |
+| Implemented (P1) | `SpiekerCenter(A,B,C) → point` | Incenter of the medial triangle. | 直接使用X(10)，不要取中点。 | S032 |
+| Implemented (P1) | `Excenter(A,B,C) → point` | Excenter opposite A. | `(-aA+bB+cC)/(-a+b+c)`；采用对应符号也等价。A 是明确的对顶点。非退化三角形分母为正。 | S003 |
+| Implemented (P1) | `Excenters(A,B,C[,i]) → point × 3 / point` | Excenters opposite A, B and C. | 循环调用同一加权公式，不用角平分线交点，顺序固定。 | S027 |
+| Implemented (P1) | `Excircle(A,B,C) → circle` | Excircle opposite A. | 以上述旁心为圆心，到 BC 支撑线的距离为半径；无需附送三个切点。 | S433 |
+| Implemented (P1) | `Excircles(A,B,C[,i]) → circle × 3 / circle` | Excircles opposite A, B and C. | 循环构造 Excircle，仅返回圆。 | S028 |
+| Implemented (P1) | `NinePointCircle(A,B,C) → circle` | Triangle nine-point circle. | 圆心 N=(O+H)/2，半径 R/2；比三高足定圆更适合直角位置。 | S015 |
+| Implemented (P1) | `EulerLine(A,B,C) → line` | Triangle Euler line. | 以 O、H 的齐次连线为主，化简公共因子；O=H 时方向不唯一，undefined。 | S008 |
+| Implemented (P1) | `BrocardPoints(A,B,C[,i]) → point × 2 / point` | First and second Brocard points of ordered triangle ABC. | 两组重心可取 `(a²c²:a²b²:b²c²)` 与 `(a²b²:b²c²:a²c²)`，先用有向等角条件核定 first/second 对应；约定第一满足 ∠PAB=∠PBC=∠PCA，第二反向循环。镜像不交换 A、B、C 身份，交换 B、C 会交换两点。保证连续性。 | S006 |
+| Defer | `IsogonicCenter(A,B,C,i) → point` | First or second isogonic center. | 不常用。不实现。 | S005 |
+| P2 | `FermatPoint(A,B,C) → point` | First isogonic center (X13). | 只返回X(13)，避免讨论。 | S005 |
+| Implemented (P1) | `IsodynamicPoint(A,B,C,i) → point` | First or second isodynamic point. | i=1/2 分别采用 X(15)/X(16)，不提供 First/Second 两个函数名；引擎对正三角形的约定须实测。 | S380 S381 |
+| Implemented (P1) | `FuhrmannCircle(A,B,C) → circle` | Circle with diameter joining the orthocenter and Nagel point. | 圆心 `(H+Na)/2`，半径 `|H−Na|/2`。 | S373 |
+| Implemented (P1) | `BrocardCircle(A,B,C) → circle` | Circle with diameter joining the circumcenter and symmedian point. | 圆心 `(O+K)/2`，半径 `|O−K|/2`；两点重合时遵循原生零半径圆语义。 | S374 |
 | P2 | `FeuerbachPoint(A,B,C) → point` | Contact point of the incircle and nine-point circle. | 用 X(11) | S016 |
 
 `BrocardPoints` 的坐标式是本计划的独立代数方案，最终编号由表中等角定义决定，不能依赖原宏输出 I/J。所有中心快捷名的描述都应写清具体对象，而非笼统的 “draw point”。
@@ -121,20 +121,20 @@
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `MedialTriangle(A,B,C[,i]) → point × 3 / point` | Midpoints of BC, CA and AB. | 依次 `(B+C)/2,(C+A)/2,(A+B)/2`。替换含混的 Midpoints。 | S013 |
-| P1 | `OrthicTriangle(A,B,C[,i]) → point × 3 / point` | Feet of the three triangle altitudes. | A 向 BC、B 向 CA、C 向 AB 作点积投影；直角时允许两个输出重合。 | S014 S385 |
-| P1 | `CevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Traces of P on the triangle sidelines. | 用 P 的齐次重心依次取 `(0:q:r),(p:0:r),(p:q:0)`，在最终输出时有限化。P 是顶点时部分迹点不唯一。 | S033 S387 |
-| P1 | `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Orthogonal projections of P onto BC, CA and AB. | 三次投影；即使 P 在外部也投到无限支撑线。 | S034 S385 |
-| P1 | `PedalCircle(A,B,C,P) → circle` | Circle through the three pedal points of P. | 三垂足定圆；P 在外接圆上时三点共线，不伪装成圆。`PedalCircle(A,B,C,H)` 与 NinePointCircle 相同。 | S386 |
-| P1 | `IntouchTriangle(A,B,C[,i]) → point × 3 / point` | Contact points of the incircle with BC, CA and AB. | 将 I 投影到三边，不作相切求交。 | S102 S432 |
-| P1 | `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Anticevian triangle of P relative to ABC. | 由 P 的齐次重心构成 `(-p:q:r),(p:-q:r),(p:q:-r)`；按有向齐次运算处理外点，分母零时对应顶点在无穷远。 | S404 |
-| P1 | `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Second intersections of AP, BP and CP with the circumcircle. | 对 A、B、C 分别调用已有 SecondIntersection；P=A 时 A 处分支方向未给定，不猜切线。 | S092 |
-| P1 | `TangentialTriangle(A,B,C[,i]) → point × 3 / point` | Intersections of the circumcircle tangents at B and C, C and A, A and B. | 三顶点极线后两两求交，或求三边极点；不用外点两条切线命令。相邻顶点对径时有输出在无穷远。 | S388 |
-| P1 | `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Triangle whose sides pass through A, B and C perpendicular to AP, BP and CP. | 三条边分别以 A−P、B−P、C−P 为法向量，两两求交；P 为顶点时对应边缺少方向。 | S457 |
-| P1 | `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` | Circumcenters of PBC, PCA and PAB. | 三次原生外心；P 落对应边上时该点无有限定义。 | S417 |
+| Implemented (P1) | `MedialTriangle(A,B,C[,i]) → point × 3 / point` | Midpoints of BC, CA and AB. | 依次 `(B+C)/2,(C+A)/2,(A+B)/2`。替换含混的 Midpoints。 | S013 |
+| Implemented (P1) | `OrthicTriangle(A,B,C[,i]) → point × 3 / point` | Feet of the three triangle altitudes. | A 向 BC、B 向 CA、C 向 AB 作点积投影；直角时允许两个输出重合。 | S014 S385 |
+| Implemented (P1) | `CevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Traces of P on the triangle sidelines. | 固定取 AP∩BC、BP∩CA、CP∩AB 的原生直线交点；等价于重心 `(0:q:r),(p:0:r),(p:q:0)`。P 是顶点时部分迹点不唯一。 | S033 S387 |
+| Implemented (P1) | `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Orthogonal projections of P onto BC, CA and AB. | 各垂足用 P 与其关于支撑直线反射点的中点；不按线段裁剪。 | S034 S385 |
+| Implemented (P1) | `PedalCircle(A,B,C,P) → circle` | Circle through the three pedal points of P. | 三垂足定圆；P 在外接圆上时三点共线，不伪装成圆。`PedalCircle(A,B,C,H)` 与 NinePointCircle 相同。 | S386 |
+| Implemented (P1) | `IntouchTriangle(A,B,C[,i]) → point × 3 / point` | Contact points of the incircle with BC, CA and AB. | 将 I 投影到三边，不作相切求交。 | S102 S432 |
+| Implemented (P1) | `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Anticevian triangle of P relative to ABC. | 由 P 的齐次重心构成 `(-p:q:r),(p:-q:r),(p:q:-r)`；按有向齐次运算处理外点，分母零时对应顶点在无穷远。 | S404 |
+| Implemented (P1) | `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point` | Second intersections of AP, BP and CP with the circumcircle. | 对 A、B、C 分别调用已有 SecondIntersection；P=A 时 A 处分支方向未给定，不猜切线。 | S092 |
+| Implemented (P1) | `TangentialTriangle(A,B,C[,i]) → point × 3 / point` | Intersections of the circumcircle tangents at B and C, C and A, A and B. | 三顶点极线后两两求交，或求三边极点；不用外点两条切线命令。相邻顶点对径时有输出在无穷远。 | S388 |
+| Implemented (P1) | `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Triangle whose sides pass through A, B and C perpendicular to AP, BP and CP. | 三条边分别以 A−P、B−P、C−P 为法向量，两两求交；P 为顶点时对应边缺少方向。 | S457 |
+| Implemented (P1) | `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` | Circumcenters of PBC, PCA and PAB. | 三次原生外心；P 落对应边上时该点无有限定义。 | S417 |
 | P2 | `SimsonLine(A,B,C,P) → line` | Simson line of a point P on the circumcircle. | P关于AB,AC垂足连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。 | S036 |
 | P2 | `SteinerLine(A,B,C,P) → line` | Line of the reflections of P in the three sidelines. | P关于AB,AC对称点连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。可与下一节四直线版本按类型／数量重载。 | S037 |
-| P1 | `Orthopole(A,B,C,l) → point` | Orthopole of line l with respect to triangle ABC. | A、B、C 投影到 l 得 U,V,W；分别过 U,V,W 作垂直 BC、CA、AB 的线，求其中两条交点。非退化 ABC 的前两条目标线不平行；只要 l 有定义就不需要自由点。 | S035 |
+| Implemented (P1) | `Orthopole(A,B,C,l) → point` | Orthopole of line l with respect to triangle ABC. | A、B、C 投影到 l 得 U,V,W；分别过 U,V,W 作垂直 BC、CA、AB 的线，求其中两条交点。非退化 ABC 的前两条目标线不平行；只要 l 有定义就不需要自由点。 | S035 |
 | P2 | `AntiSteinerPoint(A,B,C,l) → point` | Circumcircle point whose Steiner line is parallel to l. | 过 H 作 l 平行线（即只考虑 l 的方向）。对l关于AB,AC的对称直线求交点。 | S367 |
 | P2 | `Orthotransversal(A,B,C,P) → line` | Line through the sideline traces perpendicular to AP, BP and CP. | A 迹点是 BC 与过 P 垂直 AP 的线的交点，B、C 类推。用齐次表达式求三迹共线的线，避免仅连两个恰好重合的迹点；P=A 等零方向位置先判断是否有唯一化简延拓。 | S370 |
 | P2 | `Orthocorrespondent(A,B,C,P) → point` | Trilinear pole of the orthotransversal of P. | 使用上一行的线，再取本节后述 TrilinearPole；在齐次层化简，不能将中间无穷远迹点先转普通点。 | S419 |
@@ -146,23 +146,23 @@
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `Complement(A,B,C,P) → point` | Complement of P with respect to triangle ABC. | `(A+B+C−P)/2`；倍率 −1/2、中心 G。该定义适用于共线 A、B、C。 | S094 S440 |
-| P1 | `Anticomplement(A,B,C,P) → point` | Anticomplement of P with respect to triangle ABC. | `A+B+C−2P`；倍率 −2、中心 G，与上一行互逆。 | S411 S439 |
+| Implemented (P1) | `Complement(A,B,C,P) → point` | Complement of P with respect to triangle ABC. | `(A+B+C−P)/2`；倍率 −1/2、中心 G。该定义适用于共线 A、B、C。 | S094 S440 |
+| Implemented (P1) | `Anticomplement(A,B,C,P) → point` | Anticomplement of P with respect to triangle ABC. | `A+B+C−2P`；倍率 −2、中心 G，与上一行互逆。 | S411 S439 |
 | Existing | `IsogonalConjugate(A,B,C,P) → point` | Isogonal conjugate of P with respect to triangle ABC. | 齐次重心 `(a²qr:b²rp:c²pq)`；保留现有有向面积算法。位于边内部时延拓至对顶点，顶点处未定。 | S029 S437 S489 |
 | Existing | `IsotomicConjugate(A,B,C,P) → point` | Isotomic conjugate of P with respect to triangle ABC. | 齐次重心 `(qr:rp:pq)`；保留现有实现，不作边上圆交点。 | S030 S438 |
-| P1 | `IsogonalComplement(A,B,C,P) → point` | Isogonal conjugate of the complement of P. | 先 Complement，再 IsogonalConjugate；内联齐次公式以避免中间仿射极点。不要误称 complementary conjugate。 | S443 |
-| P1 | `ComplementOfIsotomicConjugate(A,B,C,P) → point` | 暂时不要 | 命名太长。暂时不实现。 | S465 |
+| Implemented (P1) | `IsogonalComplement(A,B,C,P) → point` | Isogonal conjugate of the complement of P. | 先 Complement，再 IsogonalConjugate；内联齐次公式以避免中间仿射极点。不要误称 complementary conjugate。 | S443 |
+| Defer | `ComplementOfIsotomicConjugate(A,B,C,P) → point` | Complement of the isotomic conjugate of P. | 命名太长。暂时不实现。 | S465 |
 | P2 | `AntigonalConjugate(A,B,C,P) → point` | Antigonal image of P with respect to triangle ABC. | 等角共轭 → 关于外接圆反演 → 等角共轭。先在重心齐次层合成并约掉公共因子，使外接圆上的一般点可延拓到 H；H 等本质基点仍未定。不能只依赖可能非唯一的五点双曲线。 | S467 |
-| P1 | `TrilinearPolar(A,B,C,P) → line` | Trilinear polar of P with respect to triangle ABC. | P 的重心为 `(p:q:r)`，线在重心变量 X,Y,Z 中为 `qr X+rp Y+pq Z=0`。名称虽含 trilinear，系数必须与当前坐标制一致；保留符号。 | S369 |
-| P1 | `TrilinearPole(A,B,C,l) → point` | Trilinear pole of l with respect to triangle ABC. | 将 l 写成重心线系数 `(u:v:w)`，输出重心 `(vw:wu:uv)`；先化简再有限化。是上一行在一般位置的逆；非二次曲线的 Pole。 | S377 |
-| P1 | `HarmonicConjugate(A,B,P) → point` | Harmonic conjugate of P with respect to A and B. | 总是返回Q使得ABPQ构成圆上的调和四边形。分组为(A,B);(P,Q)。这样使得当ABP共线时可退化为直线上的调和共轭。需要仔细构思算法（可能要使用复数并化简）。 | S403 |
-| P1 | `TransferRatio(A,B,C,D,P) → point` | Transfer the directed division parameter of P on AB to CD. | t=((P−A)·(B−A))/|B−A|²，输出 C+t(D−C)，要求 P∈AB；保留外分和反向。A=B 未定，C=D 可连续返回 C。 | S415 |
-| P1 | `TrisectionPoint(A,B) → point` | Trisection point one third of the way from A to B. | `(2A+B)/3`；两点重合仍有效。另一点由交换输入得到。 | S106 |
-| P1 | `GoldenSectionPoint(A,B) → point` | Internal golden-section point at parameter (sqrt(5)-1)/2 from A to B. | `A+((√5−1)/2)(B−A)`；描述明确取靠近 B 的分点，替代旧式正方形和圆交点。另一点交换 A、B。 | S436 |
-| P1 | `DirectSimilarity(A,B,C,D) → point` | Image of D under the direct similarity fixing A and sending B to C. | 局部复数 `A+(D−A)(C−A)/(B−A)`；B≠A，不读无向角，D=A 时连续成为常值映射。 | S455 |
-| P1 | `DirectSimilarity(A,B,C,D,E) → point` | Point F such that there is a direct similarity sending A,B,C to D,E,F | 重载。上面其实是这一条的特例。 | S455 |
-| P1 | `OppositeSimilarity(A,B,C,D) → point` | Image of D under the opposite similarity fixing A and sending B to C. | 定义有所改变，注意使用的复数式子。 | S456 |
-| P1 | `OppositeSimilarity(A,B,C,D,E) → point` | Point F such that there is an opposite similarity sending A,B,C to D,E,F | 重载。上面其实是这一条的特例。  | S456 |
+| Implemented (P1) | `TrilinearPolar(A,B,C,P) → line` | Trilinear polar of P with respect to triangle ABC. | P 的重心为 `(p:q:r)`，线在重心变量 X,Y,Z 中为 `qr X+rp Y+pq Z=0`。名称虽含 trilinear，系数必须与当前坐标制一致；保留符号。 | S369 |
+| Implemented (P1) | `TrilinearPole(A,B,C,l) → point` | Trilinear pole of l with respect to triangle ABC. | 将 l 写成重心线系数 `(u:v:w)`，输出重心 `(vw:wu:uv)`；先化简再有限化。是上一行在一般位置的逆；非二次曲线的 Pole。 | S377 |
+| Implemented (P1) | `HarmonicConjugate(A,B,P) → point` | Point Q with complex cross-ratio (A,B;P,Q)=-1, including the collinear case. | 取局部复数 u=B−A、v=P−A，输出 `A+uv/(2v−u)`。显式 ToComplex 后乘除，再 ToPoint；非共线时四点共圆且交比 −1，共线时连续退化为有向调和共轭。2v=u 时结果在无穷远。 | S403 |
+| Implemented (P1) | `TransferRatio(A,B,C,D,P) → point` | Transfer the directed division parameter of P on AB to CD. | t=((P−A)·(B−A))/|B−A|²，输出 C+t(D−C)，要求 P∈AB；保留外分和反向。A=B 未定，C=D 可连续返回 C。 | S415 |
+| Implemented (P1) | `TrisectionPoint(A,B) → point` | Trisection point one third of the way from A to B. | `(2A+B)/3`；两点重合仍有效。另一点由交换输入得到。 | S106 |
+| Implemented (P1) | `GoldenSectionPoint(A,B) → point` | Internal golden-section point at parameter (sqrt(5)-1)/2 from A to B. | `A+((√5−1)/2)(B−A)`；描述明确取靠近 B 的分点，替代旧式正方形和圆交点。另一点交换 A、B。 | S436 |
+| Implemented (P1) | `DirectSimilarity(A,B,C,D) → point` | Image of D under the direct similarity fixing A and sending B to C. | 局部复数 `A+(C−A)(D−A)/(B−A)`；B≠A。C=A 时为常值映射，D=A 时该作用点返回 A。 | S455 |
+| Implemented (P1) | `DirectSimilarity(A,B,C,D,E) → point` | Point F such that there is a direct similarity sending A,B,C to D,E,F. | 输出 `D+(E−D)(C−A)/(B−A)`；四点版是固定 A 的特例。 | S455 |
+| Implemented (P1) | `OppositeSimilarity(A,B,C,D) → point` | Image of D under the opposite similarity fixing A and sending B to C. | 局部复数 `A+(C−A) conjugate((D−A)/(B−A))`；B≠A。 | S456 |
+| Implemented (P1) | `OppositeSimilarity(A,B,C,D,E) → point` | Point F such that there is an opposite similarity sending A,B,C to D,E,F. | 输出 `D+(E−D) conjugate((C−A)/(B−A))`；四点版是固定 A 的特例。 | S456 |
 | P2 | `CevianAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the cevian triangle of X. | 先求 X 的三个 cevian 顶点 D,E,F；P 的归一化重心为 α,β,γ，返回 αD+βE+γF。某个目标顶点在无穷远时不是仿射映射；不要用复杂交点链绕过此前提。 | S406 |
 | P2 | `PedalAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the pedal triangle of X. | 将上一行目标 D,E,F 换成 X 的三垂足；共线目标允许降秩仿射映射。纠正 Pedian 的含混命名及原参数说明。 | S416 |
 | P2 | `Isoconjugate(A,B,C,X,P) → point` | Isoconjugate of P under the diagonal reciprocal map fixing X. | 设 X 重心 `(u:v:w)`，P 为 `(p:q:r)`，取 `(u²qr:v²rp:w²pq)`。这是 barycentric fixed-point convention；与某些文献用 P 命名的 isoconjugate 不同，描述必须保留 “fixing X”。需用源宏一般位置核对，而不是直接沿用 X_fixed 名称。 | S414 |
@@ -177,13 +177,13 @@
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `ArcMidpoint(A,B,C) → point` | Midpoint of the BC arc not containing A on the circumcircle. | 从 A 沿内部角平分线方向取外接圆的第二点；用单位方向 `u=(B−A)/c+(C−A)/b` 和圆的已知根公式，不需要 I≠A 或求交编号。两相邻点对径等临界位置由 A 所在半平面定义。 | S018 |
-| P1 | `SouthPole(A,B,C) → point` | South pole of triangle ABC. | 与上一条相同，SouthPole是三角形几何学中常用俗称。| S019 |
-| P1 | `OppositeArcMidpoint(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | 对上一点作关于 O 的中心对称。 | S019 |
-| P1 | `NorthPole(A,B,C) → point` | North pole of triangle ABC. | 与上一条相同，NorthPole是三角形几何学中常用俗称。| S019 |
-| P1 | `Antipode(c,P) → point`; `Antipode(A,B,C) → point` | Antipode of P on a circle, or of A on the triangle circumcircle. | 分别 `2Center(c)−P` 和 `2O−A`；要求 P∈c。三点版与圆点版按类型及个数重载。前者应当支持conic。 | S020 |
-| P1 | `CircumcevianPoint(A,B,C,P) → point` | Second intersection of AP with the triangle circumcircle. | A 是已知根，用 SecondIntersection；此命令是 CircumcevianTriangle 的 A 分量，便于只取一个输出。 | S092 |
-| P1 | `CircumsymmedianPoint(A,B,C) → point` | 不实现 | 不实现。请查看 HarmonicConjugate。 | S026 |
+| Implemented (P1) | `ArcMidpoint(A,B,C) → point` | Midpoint of the BC arc not containing A on the circumcircle. | 从 A 沿内部角平分线方向取外接圆的第二点；用单位方向 `u=(B−A)/c+(C−A)/b` 和圆的已知根公式，不需要 I≠A 或求交编号。两相邻点对径等临界位置由 A 所在半平面定义。 | S018 |
+| Implemented (P1) | `SouthPole(A,B,C) → point` | South pole of triangle ABC. | 与上一条相同，SouthPole是三角形几何学中常用俗称。| S018 |
+| Implemented (P1) | `OppositeArcMidpoint(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | 对上一点作关于 O 的中心对称。 | S019 |
+| Implemented (P1) | `NorthPole(A,B,C) → point` | North pole of triangle ABC. | 与上一条相同，NorthPole是三角形几何学中常用俗称。| S019 |
+| Implemented (P1) | `Antipode(q:conic,P) → point`; `Antipode(A,B,C) → point` | Antipode of P on a central conic, or of A on the triangle circumcircle. | 二次曲线版作 P 关于 Center(q) 的中心反射，前提 P∈q；支持圆、椭圆、双曲线，抛物线无有限中心。三点版复用此命令求 A 的外接圆对径点。 | S020 |
+| Implemented (P1) | `CircumcevianPoint(A,B,C,P) → point` | Second intersection of AP with the triangle circumcircle. | A 是已知根，用 SecondIntersection；此命令是 CircumcevianTriangle 的 A 分量，便于只取一个输出。 | S092 |
+| Defer | `CircumsymmedianPoint(A,B,C) → point` | Second intersection of the A-symmedian with the circumcircle. | 不实现。请查看 HarmonicConjugate。 | S026 |
 
 旧 `Circumortho Point`、`CircumMixtilinear Conjugate` 名称的公认定义尚未核定，见暂缓区；不能仅凭词根猜测。
 
@@ -195,8 +195,8 @@
 |---|---|---|---|---|
 | Existing | `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` | Conics satisfying five point and tangent-line constraints. | 保留当前混合约束算法与输出槽；不新增 Conic0P5L 等组合名。所有直线类取支撑线。 | S079 S080 S081 S082 |
 | Existing | `SecondIntersection(q,P,Q) → point` | Other intersection of q with line PQ, given P on q. | 保留当前共轭直径求弦中点后反射的算法；普通相切返回 P。包含直线或第二点在无穷远时允许 undefined。 | S104 |
-| P1 | `RadicalCenter(c1,c2,c3) → point` | Radical center of three circles. | 取两组原生根轴再求交，或将归一化圆幂方程相减解 2×2 线性系统；共轴时不唯一、根轴平行时在无穷远。 | S221 S366 |
-| P1 | `SimilarityCenter(c1,c2,s) → point` | External (s=1) or internal (s=-1) center of similitude of two circles. | O1,O2 半径 r1,r2，输出 `(r1 O2−s r2 O1)/(r1−s r2)`。s 仅允许 ±1；外位似等半径时一般在无穷远，内位似中心正常。不要通过任意圆上点确定相似。 | S361 S362 |
+| Implemented (P1) | `RadicalCenter(c1,c2,c3) → point` | Radical center of three circles. | 取两组原生根轴再求交，或将归一化圆幂方程相减解 2×2 线性系统；共轴时不唯一、根轴平行时在无穷远。 | S221 S366 |
+| Implemented (P1) | `SimilarityCenter(c1,c2,s) → point` | External (s=1) or internal (s=-1) center of similitude of two circles. | O1,O2 半径 r1,r2，输出 `(r1 O2−s r2 O1)/(r1−s r2)`。s 仅允许 ±1；外位似等半径时一般在无穷远，内位似中心正常。不要通过任意圆上点确定相似。 | S361 S362 |
 | P2 | `CommonTangents(c1,c2,s[,i]) → line × 2 / line` | Common direct (s=1) or transverse (s=-1) tangents of two circles. | 以单位法向 n 写 `n·(O2−O1)=r1−s r2`，由中心差方向及其 90°方向构造两个 n，线为 `n·(X−O1)=r1`。平方根只用于真正的二分支；等半径外公切线仍有限。普通相切两槽可重合，不以无穷远位似中心为前提。需要全部公切线时直接用原生 Tangent。尽量考虑能否推广到二次曲线。 | S222 S223 S363 S364 |
 | P2 | `MixtilinearIncircle(A,B,C) → circle` | Circle tangent to rays AB and AC and internally tangent to the circumcircle. | 取内部角平分线单位向量 u、k=sin(A/2)。圆心 X=A+t u、半径 ρ=tk；由 `|X−O|²=(R−ρ)²`，约去顶点零半径根后 `t=2((O−A)·u−Rk)/(1−k²)`。核验 t>0、ρ≤R 及射线接触。仅返回圆。 | S022 |
 | P2 | `MixtilinearIncircles(A,B,C[,i]) → circle × 3 / circle` | A-, B- and C-mixtilinear incircles. | 对上式循环排列，不重复计算外心，不附送错序的圆心。 | S023 |
@@ -234,11 +234,11 @@
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P1 | `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` | Diagonal points of the complete quadrangle ABCD. | 固定顺序 AB∩CD、AC∩BD、AD∩BC。齐次叉积，无穷远对角点无法作为普通 point 输出。比 CompleteQuadrilateral 更准确。 | S091 |
+| Implemented (P1) | `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` | Diagonal points of the complete quadrangle ABCD. | 固定顺序 AB∩CD、AC∩BD、AD∩BC。齐次叉积，无穷远对角点无法作为普通 point 输出。比 CompleteQuadrilateral 更准确。 | S091 |
 | P2 | `MiquelPoint(A,B,C,D) → point` | Miquel point of a complete quadrilateral. | 选共享有限顶点 P 的两个三线三角形外接圆。P 是已知公共点，用根轴＋已知根反射得到另一点，不取交点编号。自适应选择非退化三角形；平行、三线共点等情况不保证存在唯一有限点。核验四个圆。 | S083 |
 | P2 | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of a complete quadrilateral. | 重载。 | S083 |
-| P1 | `NewtonLine(A,B,C,D) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 重载。 | S084 |
-| P1 | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；只固定取其中两个。不讨论中点是否重合。 | S084 |
+| Implemented (P1) | `NewtonLine(A,B,C,D) → line` | Newton line of the quadrilateral with ordered vertices ABCD. | 四点为循环顶点，输出 AC 与 BD 中点的连线；对应四线 AB、BC、CD、DA 版本。 | S084 |
+| Implemented (P1) | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；只固定取其中两个。不讨论中点是否重合。 | S084 |
 | P2 | `SteinerLine(l1,l2,l3,l4) → line` | Line containing the orthocenters of the four component triangles. | 与三角形＋外接圆点版本重载。求四个三线三角形垂心，选择不重合的一对连线，验证另两个在其上。不要与 Steiner/Simson 同名现象混成一个错误签名。 | S085 |
 | P2 | `SteinerCircle(l1,l2,l3,l4) → circle` | Circle through the circumcenters of the four component triangles. | 暂不实现，等想到更好的算法。 | S086 |
 | P2 | `TangentParabola(l1,l2,l3,l4) → conic` | Parabola tangent to four lines in general position. | 优先使用 MiquelPoint 为焦点、四线 SteinerLine 为准线的直接构造，核验四条线的对偶切线条件；也可在对偶 conic 中加入无穷远线为切线求解。焦点在准线上是退化，不擅自投影修正。 | S099 |
@@ -338,7 +338,21 @@
 
 后续每个工具只需围绕真实数学性质验证：一般三角形、交换 B/C、镜像、平移和尺度变换；钝角／直角／等腰／正三角形；边上点、顶点、切点、平行和重合。变换检查对合或逆关系，圆检查幂／切线距离，conic 检查齐次代入，极线检查极化恒等式。拖动时观察唯一极限能否恢复、undefined 槽能否重新显现。
 
-还应检查导出重开后的原生依赖、辅助标签数量为零、表达式长度与现有编译器预算。**本轮没有执行这些引擎验证，也没有声称算法已通过它们。**
+还应检查导出重开后的原生依赖、辅助标签数量为零、表达式长度与现有编译器预算。**本轮未能运行实际引擎验证：当前会话浏览器清单为空。已提供 P1 验证页，尚不声称其几何检查已通过。**
+
+### P1 实现记录
+
+- `library.json` 已升至 0.1.0，新增 **52 个命令、70 个重载**；原有 5 个命令保留。明确写了“不实现”的 ComplementOfIsotomicConjugate、CircumsymmedianPoint 未加入；其他 P2 项目未提前实现。
+- 新增显式 `compose` 定义。可复用其他自定义工具、原生命令及按顺序声明的局部表达式；`expression` 仍只调用原生命令。按重载检测循环依赖，保留嵌套及 500,000 字符上限；文件同名宏不改变内部依赖，调用入口仍尊重文件工具优先级。
+- 多输出直接发出独立几何表达式；匿名列表或 Zip 只作内部实现，不返回列表对象。末尾整数 i 在 GeoGebra 中动态选取，不读取数值到 JavaScript。
+- SpiekerCenter 使用 X(10)；HarmonicConjugate 使用圆上／直线统一的复数交比公式；两个 Similarity 均完成四点、五点重载；Antipode 接受中心二次曲线。X(13) 的英文描述也已纠正，它不是 first isodynamic point；FermatPoint 仍为 P2。
+- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=p1`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，**尚未运行**。
+
+### 后续计划的勘误
+
+五点 Conic 的一般位置描述不保证所有非共线三角形均稳定：直角时 H 与顶点重合，ABCGH／ABCOH／ABCIH 会重复输入点，条件可能失秩。P2 实现前仍须核定可化简的等价系数，不能断言仅共线或等边时才有问题。
+
+四点的 NinePointConic 在两点重合时一般也不能退化为九点圆：重合点必须落在极限 conic 上，却通常不在其余三点的九点圆上。需核查极限是否依赖靠近方向，不能任意补成九点圆。
 
 ## 12. 参考资料与本轮查阅情况
 
@@ -347,69 +361,70 @@
 - [Encyclopedia of Poly Geometry](https://www.chrisvantienhoven.nl/epg/) 与 [QL-Cu1 条目](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-cu1/)：用于确认目录名称存在；不代表本轮已核实全部 QA/QL 条目。
 - GeoGebra 官方手册：[TriangleCenter](https://geogebra.github.io/docs/manual/en/commands/TriangleCenter/)、[Cubic](https://geogebra.github.io/docs/manual/en/commands/Cubic/)、[ImplicitCurve](https://geogebra.github.io/docs/manual/en/commands/ImplicitCurve/)、[TriangleCurve](https://geogebra.github.io/docs/manual/en/commands/TriangleCurve/)、[Polar](https://geogebra.github.io/docs/manual/en/commands/Polar/)、[Tangent](https://geogebra.github.io/docs/manual/en/commands/Tangent/)。
 
+
 ## 13. 源名称审计表
 
 下表按源文件首次出现顺序列出所有未排除的显示名称；同名重复导入合并在一行，变体编号单列。中文名称保留在此仅用于溯源，不是最终英文工具名。Source 列的 S 编号可在本文搜索到设计或处置条目。
 
 | Source | Original display name | Entries / definitions | Decision / target |
 |---|---|---|---|
-| S001 | Centroid | 6 / 1 | P1: `Centroid(A,B,C) → point` |
-| S002 | Orthocenter | 6 / 1 | P1: `Orthocenter(A,B,C) → point` |
-| S003 | Excenter | 6 / 1 | P1: `Excenter(A,B,C) → point` |
+| S001 | Centroid | 6 / 1 | Implemented (P1): `Centroid(A,B,C) → point` |
+| S002 | Orthocenter | 6 / 1 | Implemented (P1): `Orthocenter(A,B,C) → point` |
+| S003 | Excenter | 6 / 1 | Implemented (P1): `Excenter(A,B,C) → point` |
 | S004 | Center of Conic | 6 / 1 | Native: Center of Conic |
-| S005 | Fermat Point | 6 / 1 | P2: `IsogonicCenter(A,B,C,i) → point`; P2: `FermatPoint(A,B,C) → point` |
-| S006 | Brocard Point | 6 / 1 | P1: `BrocardPoints(A,B,C[,i]) → point × 2 / point` |
+| S005 | Fermat Point | 6 / 1 | Defer: `IsogonicCenter(A,B,C,i) → point`; P2: `FermatPoint(A,B,C) → point` |
+| S006 | Brocard Point | 6 / 1 | Implemented (P1): `BrocardPoints(A,B,C[,i]) → point × 2 / point` |
 | S007 | Kiepert Hyperbola | 6 / 1 | P2: `KiepertHyperbola(A,B,C) → conic` |
-| S008 | Euler Line | 6 / 1 | P1: `EulerLine(A,B,C) → line` |
+| S008 | Euler Line | 6 / 1 | Implemented (P1): `EulerLine(A,B,C) → line` |
 | S009 | Incenter | 6 / 1 | Existing: `Incenter(A,B,C) → point` |
-| S010 | Circumcenter | 6 / 1 | P1: `Circumcenter(A,B,C) → point` |
+| S010 | Circumcenter | 6 / 1 | Implemented (P1): `Circumcenter(A,B,C) → point` |
 | S011 | Incircle | 6 / 1 | Native: Incircle / 内切圆 |
 | S012 | Feuerbach Hyperbola | 6 / 1 | P2: `FeuerbachHyperbola(A,B,C) → conic` |
-| S013 | Midpoints | 6 / 1 | P1: `MedialTriangle(A,B,C[,i]) → point × 3 / point` |
-| S014 | Pedals | 6 / 1 | P1: `OrthicTriangle(A,B,C[,i]) → point × 3 / point` |
-| S015 | NinePoint Circle | 6 / 1 | P1: `NinePointCircle(A,B,C) → circle` |
+| S013 | Midpoints | 6 / 1 | Implemented (P1): `MedialTriangle(A,B,C[,i]) → point × 3 / point` |
+| S014 | Pedals | 6 / 1 | Implemented (P1): `OrthicTriangle(A,B,C[,i]) → point × 3 / point` |
+| S015 | NinePoint Circle | 6 / 1 | Implemented (P1): `NinePointCircle(A,B,C) → circle` |
 | S016 | Feuerbach Point | 6 / 1 | P2: `FeuerbachPoint(A,B,C) → point` |
-| S017 | NinePoint Center | 6 / 1 | P1: `NinePointCenter(A,B,C) → point` |
-| S018 | South Pole | 6 / 1 | P1: `ArcMidpoint(A,B,C) → point` |
-| S019 | North Pole | 6 / 1 | P1: `OppositeArcMidpoint(A,B,C) → point` |
-| S020 | Antipodal Point | 6 / 1 | P1: `Antipode(c,P) → point`; `Antipode(A,B,C) → point` |
+| S017 | NinePoint Center | 6 / 1 | Implemented (P1): `NinePointCenter(A,B,C) → point` |
+| S018 | South Pole | 6 / 1 | Implemented (P1): `ArcMidpoint(A,B,C) → point`; Implemented (P1): `SouthPole(A,B,C) → point` |
+| S019 | North Pole | 6 / 1 | Implemented (P1): `OppositeArcMidpoint(A,B,C) → point`; Implemented (P1): `NorthPole(A,B,C) → point` |
+| S020 | Antipodal Point | 6 / 1 | Implemented (P1): `Antipode(q:conic,P) → point`; `Antipode(A,B,C) → point` |
 | S021 | Circumortho Point | 6 / 1 | Defer: See deferred-definition notes |
 | S022 | Mixtilinear Incircle | 6 / 1 | P2: `MixtilinearIncircle(A,B,C) → circle` |
 | S023 | Three Mixtilinear Incircles | 6 / 1 | P2: `MixtilinearIncircles(A,B,C[,i]) → circle × 3 / circle` |
 | S024 | CicumMixtilinear Tangency | 6 / 1 | P2: `MixtilinearContactPoint(A,B,C) → point` |
 | S025 | CircumMixtilinear Conjugate | 6 / 1 | Defer: See deferred-definition notes |
-| S026 | Circumsymmedian Point | 6 / 1 | P1: `CircumsymmedianPoint(A,B,C) → point` |
-| S027 | Three Excenters | 6 / 1 | P1: `Excenters(A,B,C[,i]) → point × 3 / point` |
-| S028 | Three Excircles | 6 / 1 | P1: `Excircles(A,B,C[,i]) → circle × 3 / circle` |
+| S026 | Circumsymmedian Point | 6 / 1 | Defer: `CircumsymmedianPoint(A,B,C) → point` |
+| S027 | Three Excenters | 6 / 1 | Implemented (P1): `Excenters(A,B,C[,i]) → point × 3 / point` |
+| S028 | Three Excircles | 6 / 1 | Implemented (P1): `Excircles(A,B,C[,i]) → circle × 3 / circle` |
 | S029 | Isogonal Point | 6 / 1 | Existing: `IsogonalConjugate(A,B,C,P) → point` |
 | S030 | Isotomic Point | 6 / 1 | Existing: `IsotomicConjugate(A,B,C,P) → point` |
-| S031 | Symmedian point | 6 / 1 | P1: `SymmedianPoint(A,B,C) → point` |
-| S032 | Spieker Center | 6 / 1 | P1: `SpiekerCenter(A,B,C) → point` |
-| S033 | Ceva Triangle | 7 / 2; variants S033, S387 | P1: `CevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
-| S034 | Pedal Triangle | 6 / 1 | P1: `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
-| S035 | Orthopole | 6 / 1 | P1: `Orthopole(A,B,C,l) → point` |
+| S031 | Symmedian point | 6 / 1 | Implemented (P1): `SymmedianPoint(A,B,C) → point` |
+| S032 | Spieker Center | 6 / 1 | Implemented (P1): `SpiekerCenter(A,B,C) → point` |
+| S033 | Ceva Triangle | 7 / 2; variants S033, S387 | Implemented (P1): `CevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S034 | Pedal Triangle | 6 / 1 | Implemented (P1): `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S035 | Orthopole | 6 / 1 | Implemented (P1): `Orthopole(A,B,C,l) → point` |
 | S036 | Simson Line | 6 / 1 | P2: `SimsonLine(A,B,C,P) → line` |
 | S037 | Mirrorimage Line | 6 / 1 | P2: `SteinerLine(A,B,C,P) → line` |
-| S066 | Gergonne | 6 / 2; variants S066, S382 | P1: `GergonnePoint(A,B,C) → point` |
-| S067 | Nagel | 6 / 2; variants S067, S383 | P1: `NagelPoint(A,B,C) → point` |
-| S072 | Mittenpunkt | 6 / 2; variants S072, S384 | P1: `Mittenpunkt(A,B,C) → point` |
+| S066 | Gergonne | 6 / 2; variants S066, S382 | Implemented (P1): `GergonnePoint(A,B,C) → point` |
+| S067 | Nagel | 6 / 2; variants S067, S383 | Implemented (P1): `NagelPoint(A,B,C) → point` |
+| S072 | Mittenpunkt | 6 / 2; variants S072, S384 | Implemented (P1): `Mittenpunkt(A,B,C) → point` |
 | S078 | 对合不动点 | 3 / 1 | P2: `InvolutionFixedPoints(l,A,A1,B,B1[,i]) → point × 2 / point` |
 | S079 | Conic 0P5L | 3 / 1 | Existing: `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` |
 | S080 | Conic 1P4L | 3 / 1 | Existing: `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` |
 | S081 | Conic 2P3L | 3 / 1 | Existing: `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` |
 | S082 | Conic 3P2L | 3 / 1 | Existing: `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` |
-| S083 | Miquel Point | 2 / 1 | P2: `MiquelPoint(l1,l2,l3,l4) → point` |
-| S084 | Newton Line | 2 / 1 | P1: `NewtonLine(l1,l2,l3,l4) → line` |
+| S083 | Miquel Point | 2 / 1 | P2: `MiquelPoint(A,B,C,D) → point`; P2: `MiquelPoint(l1,l2,l3,l4) → point` |
+| S084 | Newton Line | 2 / 1 | Implemented (P1): `NewtonLine(A,B,C,D) → line`; Implemented (P1): `NewtonLine(l1,l2,l3,l4) → line` |
 | S085 | Steiner Line | 2 / 1 | P2: `SteinerLine(l1,l2,l3,l4) → line` |
 | S086 | Steiner Circle | 2 / 1 | P2: `SteinerCircle(l1,l2,l3,l4) → circle` |
 | S087 | NinePoint Conic | 2 / 1 | Defer: See deferred-definition notes |
 | S088 | Pseudocircumcenter | 3 / 2; variants S088, S459 | Defer: See deferred-definition notes |
 | S089 | Isogonal Center | 3 / 2; variants S089, S444 | Defer: See deferred-definition notes |
 | S090 | Poncelet Point | 3 / 2; variants S090, S458 | Defer: See deferred-definition notes |
-| S091 | Complete Quadrilateral | 2 / 1 | P1: `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` |
-| S092 | Circumcevian Triangle | 2 / 1 | P1: `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point`; P1: `CircumcevianPoint(A,B,C,P) → point` |
+| S091 | Complete Quadrilateral | 2 / 1 | Implemented (P1): `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` |
+| S092 | Circumcevian Triangle | 2 / 1 | Implemented (P1): `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point`; Implemented (P1): `CircumcevianPoint(A,B,C,P) → point` |
 | S093 | Intersection | 2 / 1 | Native: Intersection |
-| S094 | Complementary | 2 / 1 | P1: `Complement(A,B,C,P) → point` |
+| S094 | Complementary | 2 / 1 | Implemented (P1): `Complement(A,B,C,P) → point` |
 | S095 | Foci | 2 / 1 | Native: Foci / Asymptotes / Axes / Directrices |
 | S096 | Asymptotes | 2 / 1 | Native: Foci / Asymptotes / Axes / Directrices |
 | S097 | Axes | 2 / 1 | Native: Foci / Asymptotes / Axes / Directrices |
@@ -417,11 +432,11 @@
 | S099 | Tangent Parabola | 2 / 1 | P2: `TangentParabola(l1,l2,l3,l4) → conic` |
 | S100 | Triangle Center X_57 | 2 / 1 | Native: Triangle Center X_57; Bevan Point; Schiffler Point |
 | S101 | Bevan Point | 2 / 1 | Native: Triangle Center X_57; Bevan Point; Schiffler Point |
-| S102 | Intouch Triangle | 2 / 1 | P1: `IntouchTriangle(A,B,C[,i]) → point × 3 / point` |
+| S102 | Intouch Triangle | 2 / 1 | Implemented (P1): `IntouchTriangle(A,B,C[,i]) → point × 3 / point` |
 | S103 | Pedal | 2 / 1 | Native: Pedal |
 | S104 | Intersection on Circle | 2 / 1 | Existing: `SecondIntersection(q,P,Q) → point`; P2: `SecondIntersection(q,P,l:lineLike) → point` |
 | S105 | Pole | 2 / 1 | P2: `PolarLine(P,q:conic) → line`; Native: Pole |
-| S106 | Trisection Point | 2 / 1 | P1: `TrisectionPoint(A,B) → point` |
+| S106 | Trisection Point | 2 / 1 | Implemented (P1): `TrisectionPoint(A,B) → point` |
 | S107 | Schiffler Point | 2 / 1 | Native: Triangle Center X_57; Bevan Point; Schiffler Point |
 | S126 | Mixtilinear Circumcircle Tangency | 2 / 1 | Defer: See deferred-definition notes |
 | S127 | Mixtilinear Circumcircle | 2 / 1 | Defer: See deferred-definition notes |
@@ -429,50 +444,50 @@
 | S130 | Mixtilinear Excircle | 2 / 1 | P2: `MixtilinearExcircle(A,B,C) → circle` |
 | S131 | Three Mixtilinear Excircles | 2 / 1 | P2: `MixtilinearExcircles(A,B,C[,i]) → circle × 3 / circle` |
 | S220 | Radical Axis | 2 / 2; variants S220, S365 | Native: Radical Axis / 根轴 |
-| S221 | Radical Center | 2 / 2; variants S221, S366 | P1: `RadicalCenter(c1,c2,c3) → point` |
+| S221 | Radical Center | 2 / 2; variants S221, S366 | Implemented (P1): `RadicalCenter(c1,c2,c3) → point` |
 | S222 | Outer Tangent | 2 / 2; variants S222, S363 | P2: `CommonTangents(c1,c2,s[,i]) → line × 2 / line` |
 | S223 | Inner tangent | 1 / 1 | P2: `CommonTangents(c1,c2,s[,i]) → line × 2 / line` |
-| S361 | External Center of Similitude | 1 / 1 | P1: `SimilarityCenter(c1,c2,s) → point` |
-| S362 | Internal Center of Similitude | 1 / 1 | P1: `SimilarityCenter(c1,c2,s) → point` |
+| S361 | External Center of Similitude | 1 / 1 | Implemented (P1): `SimilarityCenter(c1,c2,s) → point` |
+| S362 | Internal Center of Similitude | 1 / 1 | Implemented (P1): `SimilarityCenter(c1,c2,s) → point` |
 | S364 | Inner Tangent | 1 / 1 | P2: `CommonTangents(c1,c2,s[,i]) → line × 2 / line` |
 | S367 | Anti-Steiner Point | 1 / 1 | P2: `AntiSteinerPoint(A,B,C,l) → point` |
 | S368 | Isogonal Conic | 1 / 1 | P2: `IsogonalConjugate(A,B,C,l) → conic` |
-| S369 | Trilinear Polar | 1 / 1 | P1: `TrilinearPolar(A,B,C,P) → line` |
+| S369 | Trilinear Polar | 1 / 1 | Implemented (P1): `TrilinearPolar(A,B,C,P) → line` |
 | S370 | Orthotransversal | 1 / 1 | P2: `Orthotransversal(A,B,C,P) → line` |
 | S371 | Inner Tangent Ellipse | 1 / 1 | P2: `InconicWithFocus(A,B,C,P) → conic` |
 | S372 | Laofeng Points | 1 / 1 | P2: `SteinerFoci(A,B,C[,i]) → point × 2 / point` |
-| S373 | Fuhrmann Circle | 1 / 1 | P1: `FuhrmannCircle(A,B,C) → circle` |
-| S374 | Brocard Circle | 1 / 1 | P1: `BrocardCircle(A,B,C) → circle` |
+| S373 | Fuhrmann Circle | 1 / 1 | Implemented (P1): `FuhrmannCircle(A,B,C) → circle` |
+| S374 | Brocard Circle | 1 / 1 | Implemented (P1): `BrocardCircle(A,B,C) → circle` |
 | S375 | Hagge Circle | 1 / 1 | P2: `HaggeCircle(A,B,C,P) → circle` |
 | S376 | Taylor Circle | 1 / 1 | P2: `TaylorCircle(A,B,C) → circle` |
-| S377 | Trilinear Pole | 1 / 1 | P1: `TrilinearPole(A,B,C,l) → point` |
+| S377 | Trilinear Pole | 1 / 1 | Implemented (P1): `TrilinearPole(A,B,C,l) → point` |
 | S378 | Apollinius Circle | 1 / 1 | P2: `ApolloniusCircle(A,B,C) → conic` |
 | S379 | Three Apollinious Circle | 1 / 1 | P2: `ApolloniusCircles(A,B,C[,i]) → conic × 3 / conic` |
-| S380 | Second Isodynamic Point | 1 / 1 | P1: `IsodynamicPoint(A,B,C,i) → point` |
-| S381 | First Isodynamic Point | 1 / 1 | P1: `IsodynamicPoint(A,B,C,i) → point` |
-| S385 | Orthic Triangle | 1 / 1 | P1: `OrthicTriangle(A,B,C[,i]) → point × 3 / point`; P1: `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
-| S386 | Orthic Circle | 1 / 1 | P1: `PedalCircle(A,B,C,P) → circle` |
-| S388 | Tangential Triangle | 1 / 1 | P1: `TangentialTriangle(A,B,C[,i]) → point × 3 / point` |
+| S380 | Second Isodynamic Point | 1 / 1 | Implemented (P1): `IsodynamicPoint(A,B,C,i) → point` |
+| S381 | First Isodynamic Point | 1 / 1 | Implemented (P1): `IsodynamicPoint(A,B,C,i) → point` |
+| S385 | Orthic Triangle | 1 / 1 | Implemented (P1): `OrthicTriangle(A,B,C[,i]) → point × 3 / point`; Implemented (P1): `PedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S386 | Orthic Circle | 1 / 1 | Implemented (P1): `PedalCircle(A,B,C,P) → circle` |
+| S388 | Tangential Triangle | 1 / 1 | Implemented (P1): `TangentialTriangle(A,B,C[,i]) → point × 3 / point` |
 | S389 | Cubic With Pivot | 1 / 1 | P2: `PivotalIsogonalCubic(A,B,C,P) → implicitCurve` |
 | S390 | Neuberg Cubic | 1 / 1 | Native: Neuberg Cubic / K001 Neuberg |
 | S391 | Zosma Transform | 1 / 1 | Defer: See deferred-definition notes |
 | S401 | Steiner Inellipse | 1 / 1 | P2: `SteinerInellipse(A,B,C) → conic` |
 | S402 | Steiner Exellipse | 1 / 1 | P2: `SteinerCircumellipse(A,B,C) → conic` |
-| S403 | Harmonious Conjugate | 1 / 1 | P1: `HarmonicConjugate(A,B,P) → point` |
-| S404 | Anticevian Triangle | 1 / 1 | P1: `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S403 | Harmonious Conjugate | 1 / 1 | Implemented (P1): `HarmonicConjugate(A,B,P) → point` |
+| S404 | Anticevian Triangle | 1 / 1 | Implemented (P1): `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
 | S405 | Orthopolar Conic | 1 / 1 | Defer: See deferred-definition notes |
 | S406 | Cevian Affine Mapping | 1 / 1 | P2: `CevianAffineMap(A,B,C,X,P) → point` |
 | S407 | Gergonne Conic | 1 / 1 | Defer: See deferred-definition notes |
 | S408 | Cevapoint | 1 / 1 | P2: `Cevapoint(A,B,C,P,Q) → point` |
 | S409 | Cevaconjugate | 1 / 1 | P2: `CevaConjugate(A,B,C,X,P) → point` |
 | S410 | Stammler Hyperbola | 1 / 1 | Defer: See deferred-definition notes |
-| S411 | Anticomplementary | 1 / 1 | P1: `Anticomplement(A,B,C,P) → point` |
+| S411 | Anticomplementary | 1 / 1 | Implemented (P1): `Anticomplement(A,B,C,P) → point` |
 | S412 | Crosspoint | 1 / 1 | P2: `Crosspoint(A,B,C,P,Q) → point` |
 | S413 | Crossconjugate | 1 / 1 | P2: `CrossConjugate(A,B,C,X,P) → point` |
-| S414 | X_fixed isoconjugate | 1 / 1 | P2: `FixedPointIsoconjugate(A,B,C,X,P) → point` |
-| S415 | Ratio Point | 1 / 1 | P1: `TransferRatio(A,B,C,D,P) → point` |
+| S414 | X_fixed isoconjugate | 1 / 1 | P2: `Isoconjugate(A,B,C,X,P) → point`; P2: `Isoconjugate(A,B,C,X,Y,P) → point` |
+| S415 | Ratio Point | 1 / 1 | Implemented (P1): `TransferRatio(A,B,C,D,P) → point` |
 | S416 | Pedian Affine Mapping | 1 / 1 | P2: `PedalAffineMap(A,B,C,X,P) → point` |
-| S417 | Carnot Triangle | 1 / 1 | P1: `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S417 | Carnot Triangle | 1 / 1 | Implemented (P1): `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` |
 | S418 | Cyclocevian Conjugate | 1 / 1 | P2: `CyclocevianConjugate(A,B,C,P) → point` |
 | S419 | Orthocorrespondence | 1 / 1 | P2: `Orthocorrespondent(A,B,C,P) → point` |
 | S420 | Excenters Rectangular Hyperbola | 1 / 1 | Defer: See deferred-definition notes |
@@ -487,18 +502,18 @@
 | S429 | K002 Thomson | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S430 | Quartic | 1 / 1 | Native: `ImplicitCurve({P1,...,P14}) → implicitCurve` |
 | S431 | 根轴 | 1 / 1 | Native: Radical Axis / 根轴 |
-| S432 | 内切圆 | 1 / 1 | P1: `IntouchTriangle(A,B,C[,i]) → point × 3 / point`; Native: Incircle / 内切圆 |
-| S433 | 旁切圆 | 1 / 1 | P1: `Excircle(A,B,C) → circle` |
-| S434 | 三点重心 | 1 / 1 | P1: `Centroid(A,B,C) → point` |
-| S435 | 垂心 | 1 / 1 | P1: `Orthocenter(A,B,C) → point` |
-| S436 | 黄金分割 | 1 / 1 | P1: `GoldenSectionPoint(A,B) → point` |
+| S432 | 内切圆 | 1 / 1 | Implemented (P1): `IntouchTriangle(A,B,C[,i]) → point × 3 / point`; Native: Incircle / 内切圆 |
+| S433 | 旁切圆 | 1 / 1 | Implemented (P1): `Excircle(A,B,C) → circle` |
+| S434 | 三点重心 | 1 / 1 | Implemented (P1): `Centroid(A,B,C) → point` |
+| S435 | 垂心 | 1 / 1 | Implemented (P1): `Orthocenter(A,B,C) → point` |
+| S436 | 黄金分割 | 1 / 1 | Implemented (P1): `GoldenSectionPoint(A,B) → point` |
 | S437 | 等角共轭 | 1 / 1 | Existing: `IsogonalConjugate(A,B,C,P) → point` |
 | S438 | 等截共轭 | 1 / 1 | Existing: `IsotomicConjugate(A,B,C,P) → point` |
-| S439 | 补点 | 1 / 1 | P1: `Anticomplement(A,B,C,P) → point` |
-| S440 | 反补点 | 1 / 1 | P1: `Complement(A,B,C,P) → point` |
+| S439 | 补点 | 1 / 1 | Implemented (P1): `Anticomplement(A,B,C,P) → point` |
+| S440 | 反补点 | 1 / 1 | Implemented (P1): `Complement(A,B,C,P) → point` |
 | S441 | 九点三次曲线 | 1 / 1 | P2: `Cubic(P1,...,P9) → implicitCurve` |
 | S442 | 十四点四次曲线 | 1 / 1 | Native: `ImplicitCurve({P1,...,P14}) → implicitCurve` |
-| S443 | IsogonalComplementary | 1 / 1 | P1: `IsogonalComplement(A,B,C,P) → point` |
+| S443 | IsogonalComplementary | 1 / 1 | Implemented (P1): `IsogonalComplement(A,B,C,P) → point` |
 | S445 | QA-Cu1 | 1 / 1 | Defer: See deferred-definition notes |
 | S446 | QL-Cu1 | 1 / 1 | Defer: See deferred-definition notes |
 | S447 | QL-Isogonal Pair | 1 / 1 | Defer: See deferred-definition notes |
@@ -508,15 +523,15 @@
 | S452 | Dimidium Circle | 1 / 1 | Defer: See deferred-definition notes |
 | S453 | QL-P17 | 1 / 1 | Defer: See deferred-definition notes |
 | S454 | Tf1-QLP17 | 1 / 1 | Defer: See deferred-definition notes |
-| S455 | Spiral Similarity | 1 / 1 | P1: `DirectSimilarity(A,B,C,D) → point` |
-| S456 | Inverse Similarity | 1 / 1 | P1: `OppositeSimilarity(A,B,C,D) → point` |
-| S457 | Antipedal Triangle | 1 / 1 | P1: `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
+| S455 | Spiral Similarity | 1 / 1 | Implemented (P1): `DirectSimilarity(A,B,C,D) → point`; Implemented (P1): `DirectSimilarity(A,B,C,D,E) → point` |
+| S456 | Inverse Similarity | 1 / 1 | Implemented (P1): `OppositeSimilarity(A,B,C,D) → point`; Implemented (P1): `OppositeSimilarity(A,B,C,D,E) → point` |
+| S457 | Antipedal Triangle | 1 / 1 | Implemented (P1): `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` |
 | S460 | Perspective Cubic | 1 / 1 | Defer: See deferred-definition notes |
 | S461 | Q002 | 1 / 1 | Defer: K028; K073; Q002 |
 | S462 | K028 | 1 / 1 | Defer: K028; K073; Q002 |
 | S463 | Anti QA-Cu1 | 1 / 1 | Defer: See deferred-definition notes |
 | S464 | Nine-Point Conic | 1 / 1 | P2: `NinePointConic(A,B,C,D) → conic` |
-| S465 | Isotocomplementary | 1 / 1 | P1: `ComplementOfIsotomicConjugate(A,B,C,P) → point` |
+| S465 | Isotocomplementary | 1 / 1 | Defer: `ComplementOfIsotomicConjugate(A,B,C,P) → point` |
 | S466 | Jerabek Hyperbola | 1 / 1 | P2: `JerabekHyperbola(A,B,C) → conic` |
 | S467 | Antigonal Conjugate | 1 / 1 | P2: `AntigonalConjugate(A,B,C,P) → point` |
 | S468 | LiangZelich Perspector | 1 / 1 | Defer: See deferred-definition notes |

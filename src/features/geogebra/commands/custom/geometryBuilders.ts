@@ -31,14 +31,57 @@ const homogeneous = (arg: TypedExpression): string[] => {
   return [`x(${line})`, `y(${line})`, `z(${line})`];
 };
 
+const triangleAreas = ([a, b, c, p]: string[]) => {
+  const area = (u: string, v: string) => sub(mul(`x(${u})-x(${p})`, `y(${v})-y(${p})`), mul(`y(${u})-y(${p})`, `x(${v})-x(${p})`));
+  return [area(b, c), area(c, a), area(a, b)];
+};
+const barycentricPoint = ([a, b, c]: string[], [u, v, w]: string[]) => `((${u})*(${a})+(${v})*(${b})+(${w})*(${c}))/((${u})+(${v})+(${w}))`;
+const independentOutputs = (outputs: string[], index?: string) => index
+  ? `If(${index}==floor(${index})&&${index}>=1&&${index}<=${outputs.length},Element({${outputs.join(',')}},${index}))`
+  : { expression: outputs[0], outputExpressions: outputs };
+
 const conjugate = (isogonal: boolean): ExpressionBuilder => (args, allocate) => {
   const [a, b, c, p] = args.map((arg) => arg.expression);
-  const area = (u: string, v: string) => sub(mul(`x(${u})-x(${p})`, `y(${v})-y(${p})`), mul(`y(${u})-y(${p})`, `x(${v})-x(${p})`));
   // Signed area coordinates; products replace reciprocals and extend across triangle sidelines.
-  return bind([area(b, c), area(c, a), area(a, b)], allocate, ([u, v, w]) => {
+  return bind(triangleAreas([a, b, c, p]), allocate, ([u, v, w]) => {
     const weights = [mul(v, w), mul(w, u), mul(u, v)].map((weight, i) => isogonal ? mul(weight, `Distance(${[b, c, a][i]},${[c, a, b][i]})^2`) : weight);
     return `If((${u}+${v}+${w})!=0,${bind(weights, allocate, ([r, s, t]) => `(${r}*(${a})+${s}*(${b})+${t}*(${c}))/(${r}+${s}+${t})`)})`;
   });
+};
+
+const brocard: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const [a, b, c] = vertices;
+  const point = (second: boolean) => bind([`Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
+    ([u, v, w]) => barycentricPoint(vertices, second ? [mul(u, v), mul(v, w), mul(w, u)] : [mul(u, w), mul(u, v), mul(v, w)]));
+  const outputs = [point(false), point(true)];
+  return independentOutputs(outputs, args[3]?.expression);
+};
+
+const anticevian: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const areas = triangleAreas(args.map((arg) => arg.expression));
+  const outputs = [0, 1, 2].map((index) => bind(areas, allocate, (weights) =>
+    `If(${add(weights)}!=0,${barycentricPoint(vertices, weights.map((weight, i) => i === index ? `-(${weight})` : weight))})`));
+  return independentOutputs(outputs, args[4]?.expression);
+};
+
+const trilinearPolar: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map(homogeneous);
+  const sidelines = [cross(vertices[1], vertices[2]), cross(vertices[2], vertices[0]), cross(vertices[0], vertices[1])];
+  return bind(triangleAreas(args.map((arg) => arg.expression)), allocate, ([u, v, w]) => {
+    const weights = [mul(v, w), mul(w, u), mul(u, v)];
+    const coefficients = [0, 1, 2].map((axis) => add(weights.map((weight, i) => mul(weight, sidelines[i][axis]))));
+    return bind(coefficients, allocate, ([a, b, c]) =>
+      `If((${u}+${v}+${w})!=0,Line((-${a}*${c}/(${a}^2+${b}^2),-${b}*${c}/(${a}^2+${b}^2)),Vector((${b},-${a}))))`);
+  });
+};
+
+const trilinearPole: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  return bind(homogeneous(args[3]), allocate, ([a, b, c]) =>
+    bind(vertices.map((vertex) => `${a}*x(${vertex})+${b}*y(${vertex})+${c}`), allocate, ([u, v, w]) =>
+      `If(${determinant(vertices.map((vertex) => [`x(${vertex})`, `y(${vertex})`, '1']))}!=0,${barycentricPoint(vertices, [mul(v, w), mul(w, u), mul(u, v)])})`));
 };
 
 // Coefficient order: a²,b²,c²,ab,ac,bc in the projective parameter plane.
@@ -117,5 +160,6 @@ const conicBranch: ExpressionBuilder = (args, allocate) => {
 
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
+  brocard, anticevian, trilinearPolar, trilinearPole,
 };
 

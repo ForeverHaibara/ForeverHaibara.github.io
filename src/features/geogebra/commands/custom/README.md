@@ -26,8 +26,38 @@ spelling review. Adding an expression tool normally needs only a catalog entry:
 Parameters and optional `locals: [{name, expression}]` use `$name` placeholders.
 Locals may reference parameters and earlier locals, and expand as expressions;
 they do not imply runtime caching. Forward references and shadowing are rejected.
-Templates emit **native** expressions, so `Conic(...)` in an implementation does
-not recursively invoke this compiler. Complex symbolic construction generators
+`expression` templates emit **native** expressions, so `Conic(...)` in one does
+not recursively invoke this compiler. Use `compose` to call other site tools:
+
+```json
+{
+  "name": "NinePointCenter",
+  "description": "Center of the triangle nine-point circle.",
+  "overloads": [{
+    "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }],
+    "returns": "point",
+    "compose": "(Circumcenter($A,$B,$C)+Orthocenter($A,$B,$C))/2"
+  }]
+}
+```
+
+Exactly one of `expression`, `compose`, or `builder` is required. A `compose`
+array contains scalar expressions for independent outputs, ordered as declared;
+it never creates a labeled list. Top-level calls emit all outputs, assignments
+name the first, and nested calls use the first. Catalog overloads with a final
+integer `i` select one output dynamically; invalid indices are undefined.
+Internal anonymous `Zip` bindings remain available for reuse without public
+list objects. New triangle outputs follow BC, CA, AB order.
+
+Composition parameters and locals are compiled in an isolated typed scope with
+hygienic opaque argument tokens. Dependencies resolve against this library,
+so a file macro or construction label cannot silently change an internal
+dependency. Call-site file-tool priority remains unchanged. Native templates
+inside dependencies stay native; already compiled caller arguments are not
+expanded a second time. Direct/indirect dependency cycles and excessive nesting
+or expansion produce errors; different overloads may call one another.
+
+Complex symbolic construction generators
 live in `geometryBuilders.ts`, referenced by `builder` instead of `expression`.
 Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
@@ -165,6 +195,14 @@ conics may be returned using the projective discriminant/adjugate definition of
 tangency. This is not a solver for every degenerate family.
 
 ## Verification
+
+The P1 tools are in `library.json`; the full catalog is not duplicated here.
+For P1 real-engine verification, open
+`/scripts/geogebra-smoke.html?suite=p1` and click **Run verification**. It checks
+every new overload, scalar output types, helper counts, harmonic cross-ratios,
+similarities, conjugation/polarity identities, supporting lines, dragging and
+export/reopen dependencies. This browser suite is separate from Vitest and must
+be run against the actual embedded engine.
 
 Run `npm test -- --run` for parser/dispatch, hygiene, completion and adapter
 tests. With `npm run dev`, open `/scripts/geogebra-smoke.html` and click **Run
