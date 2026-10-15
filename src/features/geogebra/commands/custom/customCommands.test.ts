@@ -51,7 +51,7 @@ describe('custom command syntax and dispatch', () => {
     expect(() => compile('Incenter(A,l,C)')).toThrow('No overload');
     expect(compile('Conic(1,2,3,4,5,6)')).toBe('Conic(1,2,3,4,5,6)');
     expect(compile('Conic({1,2,3,4,5,6})')).toBe('Conic({1,2,3,4,5,6})');
-    expect(() => compile('SecondIntersection(Conic(A,B,C,D,E),A,B)')).toThrow('No overload');
+    expect(compile('SecondIntersection(Conic(A,B,C,D,E),A,B)')).toContain('ConjugateDiameter');
   });
 
   it('selects mixed Conic overloads in every point/line order', () => {
@@ -59,13 +59,42 @@ describe('custom command syntax and dispatch', () => {
     for (let mask = 0; mask < 32; mask += 1) {
       const args = Array.from({ length: 5 }, (_, i) => ({ expression: 'ABCDE'[i], type: (mask & (1 << i) ? 'point' : 'line') as GeometryType }));
       const overload = selectOverload(tool, args)!;
-      expect(overload.returns).toBe(mask === 0 || mask === 31 ? 'conic' : 'list');
+      expect(overload.returns).toBe('conic');
       const scope = environment();
       args.forEach((arg) => scope.objects.set(arg.expression, arg.type));
       const expression = compile('Conic(A,B,C,D,E)', scope);
+      const pointCount = args.filter((arg) => arg.type === 'point').length;
+      expect(expression.split('\n')).toHaveLength(pointCount === 0 || pointCount === 5 ? 1 : pointCount === 1 || pointCount === 4 ? 2 : 4);
       expect(expression.length).toBeLessThan(100_000);
       expect(expression).not.toMatch(/(?:SetValue|SetCoords|Execute|Delete|studiolocal\d+\s*=)/u);
     }
+  });
+
+  it('emits separate top-level conics while assignments label the first output only', () => {
+    const lines = compile('K=Conic(A,B,C,l,m)').split('\n');
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toMatch(/^K=Element\(/u);
+    expect(lines.slice(1).every((line) => line.startsWith('Element('))).toBe(true);
+    expect(lines.every((line, i) => line.endsWith(`,${i + 2})`))).toBe(true);
+    expect(lines.every((line) => line.includes('Join({Conic({1,1,0/0,0,0,0})}'))).toBe(true);
+  });
+
+  it('selects one conic in nested expressions or with an explicit 1-based index', () => {
+    const nested = compile('SecondIntersection(Conic(A,B,C,l,m),A,P)');
+    expect(nested).not.toContain('\n');
+    expect(nested).toContain('ConjugateDiameter');
+    const selected = compile('K=Conic(A,B,C,l,m,2)');
+    expect(selected).not.toContain('\n');
+    expect(selected).toMatch(/,\(2\)\+1\)$/u);
+    expect(compile('Conic(A,B,C,D,E,1)')).toBe('Element({Conic(A,B,C,D,E)},1)');
+  });
+
+  it('uses the same conjugate-diameter construction for circles and all conics', () => {
+    const scope = environment();
+    scope.objects.set('ellipse', 'conic');
+    expect(compile('SecondIntersection(circle,A,B)')).toBe('Reflect((A),Intersect(Line((A),(B)),ConjugateDiameter(Line((A),(B)),(circle))))');
+    expect(compile('SecondIntersection(ellipse,A,B)', scope)).toContain('ConjugateDiameter(Line((A),(B)),(ellipse))');
+    expect(studioTools.get('secondintersection')?.overloads).toHaveLength(1);
   });
 
   it('extends segments and rays to supporting lines without creating named objects', () => {
@@ -100,13 +129,16 @@ describe('tool library and completion', () => {
     const context = getCompletionContext('', 0, 0, true)!;
     const items = await studioCompletionRegistry.complete(context, new AbortController().signal);
     for (const tool of studioToolLibrary.tools) expect(items.find((item) => item.label === tool.name)?.kind).toBe('custom');
-    expect(items.find((item) => item.label === 'Conic')?.signatures).toHaveLength(5);
+    expect(items.find((item) => item.label === 'Conic')?.signatures).toHaveLength(6);
   });
 
   it('normalizes engine types without collapsing directed line-like objects too early', () => {
     expect(normalizeGeometryType('GeoSegment')).toBe('segment');
     expect(normalizeGeometryType('ray')).toBe('ray');
     expect(normalizeGeometryType('circle')).toBe('circle');
+    for (const type of ['Ellipse', 'Hyperbola', 'Parabola', 'IntersectingLines', 'ParallelLines', 'DoubleLine', 'EmptySet']) {
+      expect(normalizeGeometryType(type)).toBe('conic');
+    }
     expect(normalizeGeometryType('point3d')).toBe('unknown');
   });
 

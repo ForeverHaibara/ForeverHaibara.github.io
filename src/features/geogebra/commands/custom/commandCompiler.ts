@@ -107,6 +107,17 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       if (['reflect', 'rotate', 'translate', 'dilate', 'applymatrix'].includes(key) && !fileDefined) result.type = args[key === 'applymatrix' ? 1 : 0]?.type ?? 'unknown';
       if (key === 'if' && (args.length === 2 || args[1]?.type === args[2]?.type)) result.type = args[1].type;
       if (key === 'element' && call.args.length >= 2) result.type = listElementType(call.args[0]);
+      if (result.outputCount) {
+        const prefix = input.slice(0, call.start).trim();
+        const suffix = input.slice(call.end).replace(/(?:\/\/|#)[^\n]*/gu, '').trim();
+        const standalone = depth === 0 && !suffix && (!prefix || /^[\p{L}_][\p{L}\p{N}_{}']*\s*=$/u.test(prefix));
+        const select = (index: number) => `Element(${result.expression},${index + (result.outputOffset ?? 0)})`;
+        // GeoGebra supplies unused labels for subsequent outputs. An explicit
+        // assignment labels the first object only.
+        result.expression = standalone ? Array.from({ length: result.outputCount }, (_, i) => select(i + 1)).join('\n') : select(1);
+        result.outputCount = undefined;
+        result.outputOffset = undefined;
+      }
       if (stripParens(input) === input.slice(call.start, call.end)) entireType = result.type;
       expression += result.expression;
       const typeName = allocate();

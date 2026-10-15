@@ -84,11 +84,22 @@ reuse those scalar expressions without labels. On a sideline the image extends
 to the opposite vertex; at a vertex it is indeterminate. A collinear reference
 triangle or an image at infinity is undefined as an ordinary affine point.
 
-`SecondIntersection(circle,P,Q)` requires a **circle** and a known point P on it.
-It reflects P in the foot from the circle center to Line(P,Q). This is Vieta's
-second-root construction: it does not select a numerical intersection branch
-and returns P at tangency. P=Q is undefined; P lying on the circle is a geometric
-precondition, not an extra projection which silently changes the problem.
+`SecondIntersection(conic,P,Q)` accepts every conic, including circles, and a
+known point P on it. It uses one expression for all conic types:
+
+```
+Reflect(P,Intersect(Line(P,Q),ConjugateDiameter(Line(P,Q),conic)))
+```
+
+The conjugate diameter meets the chord at its midpoint, so reflecting P gives
+the second intersection. For a circle this diameter is perpendicular to the
+chord. Algebraically, restricting the quadratic to `P+t*(Q-P)` gives
+`t*(H*t+L)=0`; midpoint reflection selects `t=-L/H` without a square root or a
+numerical intersection branch. It returns P at ordinary tangency, and remains
+dynamic when an ellipse changes into a circle or a supported degenerate conic.
+P=Q, a contained line, or a second intersection at infinity is undefined as an
+affine point. P lying on the conic is a geometric precondition, not an extra
+projection which silently changes the problem.
 
 ### Mixed Conic
 
@@ -96,9 +107,22 @@ precondition, not an extra projection which silently changes the problem.
 Segments/rays mean **unbounded supporting lines**, not finite contact domains;
 their orientation has no effect. Path parameters 0 and 1/2 are used because a
 ray's parameter 1 represents infinity. Five points retain native behavior;
-five lines return one conic; mixed input returns a **list of real conics**,
-possibly empty. `Element(result,i)` accesses an individual result. The native
-six-number and coefficient-list forms still work.
+five lines return one conic. Mixed input creates **independently selectable
+conic objects**, with two output slots for four points/one line or one point/
+four lines, and four slots for three points/two lines or two points/three lines.
+If fewer real solutions exist, the remaining slots are undefined and draw
+nothing; retaining them allows solutions to appear after dragging. `K=Conic(...)`
+names the first output K; GeoGebra supplies unused names for subsequent outputs.
+`Conic(a,b,c,d,e,i)` selects just the i-th real solution (1-based). When used
+inside another expression the five-argument form selects the first solution.
+The native six-number and coefficient-list forms still work.
+
+The builder still solves the whole family as a native anonymous list. Output
+metadata tells the compiler to select individual elements as separate commands;
+no named list or helper is created. A typed, undefined conic is prepended inside
+the anonymous list so initially empty families still produce conic-typed slots
+which can become defined later. Only this implementation sentinel is skipped by
+the 1-based public solution index.
 
 If at least three constraints are points, use the primal plane. Otherwise use
 the dual plane, swapping incidence with tangency, then take the adjugate to
@@ -123,7 +147,7 @@ uses its six coefficients and the adjugate. The final coefficient order is the
 native `{x²,y²,constant,xy,x,y}` order.
 
 Native numerical conic intersection controls accuracy and multiplicities.
-Repeated roots and branch collisions inherit its tolerance. List indices are
+Repeated roots and branch collisions inherit its tolerance. Solution indices are
 not persistent branch identifiers across chart transitions or loss of real
 solutions. Rank-deficient frames (three collinear base points or concurrent
 base lines), duplicate constraints and infinite solution families are not
@@ -138,6 +162,8 @@ tests. With `npm run dev`, open `/scripts/geogebra-smoke.html` and click **Run
 verification** for a disposable real-engine construction. It checks all six
 point/line counts against known circle solutions, every returned incidence and
 tangency equation, segment/ray normalization, conjugation involutions and a
-sideline limit, circle tangency, dragging, helper-label counts, file round trips,
-and a file macro overriding a site command. The page is a development harness
+sideline limit, independent conic outputs, initially undefined slots becoming
+defined, optional solution selection, general conic second intersections,
+tangency, conic-to-circle/line-pair transitions, dragging, helper-label counts,
+file round trips, and a file macro overriding a site command. The page is a development harness
 and is not part of the production build.

@@ -50,7 +50,10 @@ export const selectOverload = (tool: ToolDefinition, args: readonly TypedExpress
 };
 
 export const expandTool = (overload: ToolOverload, args: readonly TypedExpression[], allocate: () => string): TypedExpression => {
-  if (overload.builder) return { expression: GEOMETRY_BUILDERS[overload.builder](args, allocate), type: overload.returns };
+  if (overload.builder) {
+    const built = GEOMETRY_BUILDERS[overload.builder](args, allocate);
+    return { ...(typeof built === 'string' ? { expression: built } : built), type: overload.returns };
+  }
   const bindings = new Map(overload.params.map((param, i) => [param.name, args[i].expression]));
   const substitute = (expression: string) => expression.replace(/\$([\p{L}_][\p{L}\p{N}_]*)/gu, (_, name: string) => `(${bindings.get(name)!})`);
   for (const local of overload.locals ?? []) bindings.set(local.name, substitute(local.expression));

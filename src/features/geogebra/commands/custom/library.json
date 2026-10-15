@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "tools": [
     {
       "name": "Incenter",
@@ -20,17 +20,18 @@
     },
     {
       "name": "Conic",
-      "description": "Five point/tangent-line constraints in any order. Mixed constraints return a list of all real conics; segments and rays mean their supporting lines. Native point/coefficient forms are preserved.",
+      "description": "Five point/tangent-line constraints in any order. Mixed inputs create separate conics (2 or 4 slots); undefined slots can appear on dragging. Add a 1-based index to select one. Nested calls select the first solution. Segments/rays mean supporting lines. Native point/coefficient forms are preserved.",
       "overloads": [
         { "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "D", "type": "point" }, { "name": "E", "type": "point" }], "returns": "conic", "expression": "Conic($A,$B,$C,$D,$E)" },
         { "params": [{ "name": "a", "type": "lineLike" }, { "name": "b", "type": "lineLike" }, { "name": "c", "type": "lineLike" }, { "name": "d", "type": "lineLike" }, { "name": "e", "type": "lineLike" }], "returns": "conic", "builder": "conic" },
-        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }], "returns": "list", "builder": "conic" }
+        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }], "returns": "conic", "builder": "conic" },
+        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }, { "name": "index", "type": "number" }], "returns": "conic", "builder": "conicBranch" }
       ]
     },
     {
       "name": "SecondIntersection",
-      "description": "Other intersection of a circle and the line through known point P and Q. P must be on the circle; reflection in the chord midpoint avoids selecting an intersection branch.",
-      "overloads": [{ "params": [{ "name": "circle", "type": "circle" }, { "name": "P", "type": "point" }, { "name": "Q", "type": "point" }], "returns": "point", "expression": "Reflect($P,ClosestPoint(Line($P,$Q),Center($circle)))" }]
+      "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
+      "overloads": [{ "params": [{ "name": "conic", "type": "conic" }, { "name": "P", "type": "point" }, { "name": "Q", "type": "point" }], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))" }]
     }
   ]
 }

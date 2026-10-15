@@ -70,6 +70,7 @@ button.onclick = async () => {
     check(await value('Distance(U,W)') < 1e-8, 'second circle intersection is continuous at tangency');
     const version = await api('getVersion');
     report(`Engine version: ${version}`);
+    const conicOutputs = new Map<string, string[]>();
     for (const [name, expression] of [
       ['K5', 'Conic(F1,F2,F3,F4,F5)'],
       ['K4', 'Conic(F1,F2,F3,F4,f)'],
@@ -80,14 +81,17 @@ button.onclick = async () => {
       ['KS', 'Conic(F1,fs,F2,ft,F3)'],
     ]) {
       const result = await run(`${name}=${expression}`);
+      const outputs = result.labels ?? [];
+      conicOutputs.set(name, outputs);
       check(Boolean(await api('isDefined', name)), `${expression} is defined (${result.expandedCommand?.length ?? expression.length} characters)`);
       report(`${name}: ${await api('getValueString', name)}`);
-      const mixed = name !== 'K5' && name !== 'K0';
-      const count = mixed ? await value(`Length(${name})`) : 1;
+      const count = outputs.length;
       check(count === ({ K5: 1, K4: 2, K3: 4, K2: 4, K1: 2, K0: 1, KS: 4 } as Record<string, number>)[name], `${name} has all expected real solutions (${count})`);
       let containsCircle = false;
       for (let index = 1; index <= count; index += 1) {
-        const raw = await list(`Coefficients(${mixed ? `Element(${name},${index})` : name})`, 6);
+        const output = outputs[index - 1];
+        check(await api('getObjectType', output) !== 'list', `${output} is an independent geometric object`);
+        const raw = await list(`Coefficients(${output})`, 6);
         const scale = Math.max(...raw.map(Math.abs));
         if (!Number.isFinite(scale) || scale === 0) throw new Error(`Invalid coefficients for ${name}[${index}]`);
         const [a, b, c, d, e, f] = raw.map((coefficient) => coefficient / scale);
@@ -111,18 +115,50 @@ button.onclick = async () => {
     const conicBefore = await api('getValueString', 'K3');
     await api('setCoords', 'F1', 1.03, 0.02);
     check(conicBefore !== await api('getValueString', 'K3'), 'mixed conics update when a constraint point is dragged');
-    const updatedCount = await value('Length(K3)');
+    const updatedOutputs = conicOutputs.get('K3')!;
     let maxIncidenceResidual = 0;
-    for (let i = 1; i <= updatedCount; i += 1) {
-      const raw = await list(`Coefficients(Element(K3,${i}))`, 6);
+    for (const output of updatedOutputs) {
+      const raw = await list(`Coefficients(${output})`, 6);
       const scale = Math.max(...raw.map(Math.abs));
       const [a, b, c, d, e, f] = raw.map((coefficient) => coefficient / scale);
       maxIncidenceResidual = Math.max(maxIncidenceResidual, Math.abs(a * 1.03 ** 2 + b * 0.02 ** 2 + c + d * 1.03 * 0.02 + e * 1.03 + f * 0.02));
     }
-    check(updatedCount > 0 && maxIncidenceResidual < 1e-6, 'updated mixed conics satisfy the moved input constraint');
+    check(updatedOutputs.length > 0 && maxIncidenceResidual < 1e-6, 'updated mixed conics satisfy the moved input constraint');
     const after = await api('getAllObjectNames') as string[];
     check(!after.some((name) => name.startsWith('studiolocal')), 'local bindings create no labeled helper objects');
-    check(after.length - before.length === 15, `only requested output objects were created (actual ${after.length - before.length})`);
+    check(after.length - before.length === 26, `only requested output objects were created (actual ${after.length - before.length})`);
+    await run('Chosen=Conic(F1,F2,F3,f,g,2)');
+    check(await value(`If(AreEqual(Chosen,${updatedOutputs[1]}),1,0)`) === 1, 'the optional sixth argument selects one independent conic');
+    await run('Seed=(0.515,0.51)');
+    const dormant = await run('Dormant=Conic(F1,F2,Seed,f,g)');
+    const dormantOutputs = dormant.labels ?? [];
+    check(dormantOutputs.length === 4 && (await Promise.all(dormantOutputs.map((label) => api('isDefined', label)))).every((defined) => !defined), 'singular frames create undefined conic slots without visible helper objects');
+    await api('setCoords', 'Seed', -1, 0);
+    check((await Promise.all(dormantOutputs.map((label) => api('isDefined', label)))).some(Boolean), 'initially undefined slots become geometric conics after dragging');
+    await run('el:x^2/9+y^2/4=1\nhy:x^2/4-y^2=1\npa:y=x^2\nskew:x^2+x*y+y^2-3*x-4*y=0\npair:x*y=0\ninfinite:x*y=1\nshape=4\ndynamic:x^2+shape*y^2=4');
+    report(`Native degenerate conic type: ${await api('getObjectType', 'pair')}`);
+    for (const [name, expression, expected] of [
+      ['SE', 'SecondIntersection(el,(3,0),(-3,0))', '(-3,0)'],
+      ['SH', 'SecondIntersection(hy,(2,0),(-2,0))', '(-2,0)'],
+      ['SP', 'SecondIntersection(pa,(1,1),(0,0))', '(0,0)'],
+      ['SS', 'SecondIntersection(skew,(0,0),(1,2))', '(11/7,22/7)'],
+      ['SD', 'SecondIntersection(pair,(1,0),(0,1))', '(0,1)'],
+      ['SC', 'SecondIntersection(circle,(2,0),(0,2))', '(0,2)'],
+      ['SR', 'SecondIntersection(circle,(2,0),(4,0))', '(-2,0)'],
+      ['TE', 'SecondIntersection(el,(3,0),(3,1))', '(3,0)'],
+      ['TH', 'SecondIntersection(hy,(2,0),(2,1))', '(2,0)'],
+      ['TP', 'SecondIntersection(pa,(1,1),(2,3))', '(1,1)'],
+    ]) {
+      await run(`${name}=${expression}`);
+      check(await value(`Distance(${name},${expected})`) < 1e-7, `${expression} has the expected second intersection`);
+    }
+    await run('NoFinite=SecondIntersection(infinite,(1,1),(2,1))\nContained=SecondIntersection(pair,(1,0),(2,0))\nMoving=SecondIntersection(dynamic,(2,0),(0,1))');
+    check(!await api('isDefined', 'NoFinite') && !await api('isDefined', 'Contained'), 'an infinite second point or a contained line stays undefined');
+    check(await value('Distance(Moving,(0,1))') < 1e-7, 'the dynamic conic starts as an ellipse');
+    await api('setValue', 'shape', 1);
+    check(await value('Distance(Moving,(-1.2,1.6))') < 1e-7, 'the same dependent construction updates when the conic becomes a circle');
+    await api('setValue', 'shape', 0);
+    check(await value('Distance(Moving,(-2,2))') < 1e-7, 'the same dependent construction handles degeneration into a line pair');
     const file = await engine.exportGgb();
     await engine.importGgb(new File([file], 'smoke.ggb'));
     await api('setCoords', 'B', 5, 0);

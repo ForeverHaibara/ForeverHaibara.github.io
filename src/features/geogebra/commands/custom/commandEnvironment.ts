@@ -6,7 +6,9 @@ export const normalizeGeometryType = (type: unknown): GeometryType => {
   if (['point', 'pointonpath', 'pointinregion'].includes(value)) return 'point';
   if (['numeric', 'angle', 'number', 'integer'].includes(value)) return 'number';
   if (value === 'functionnvar') return 'function';
-  if (['ellipse', 'hyperbola', 'parabola', 'conic', 'conicpart'].includes(value)) return 'conic';
+  // GeoConic's API type string changes with its classification, even though
+  // the underlying object and all of its dependencies remain a conic.
+  if (['ellipse', 'hyperbola', 'parabola', 'conic', 'conicpart', 'intersectinglines', 'parallellines', 'doubleline', 'emptyset'].includes(value)) return 'conic';
   if (['line', 'segment', 'ray', 'circle', 'list', 'vector', 'function'].includes(value)) return value as GeometryType;
   return 'unknown';
 };

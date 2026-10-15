@@ -24,12 +24,19 @@ export interface ToolLibrary {
   tools: ToolDefinition[];
 }
 
-export interface TypedExpression {
-  expression: string;
+export interface TypedExpression extends BuiltExpression {
   type: GeometryType;
 }
 
-export type ExpressionBuilder = (args: readonly TypedExpression[], allocate: () => string) => string;
+export interface BuiltExpression {
+  expression: string;
+  /** A list-valued backend emitted as separate objects at statement level. */
+  outputCount?: number;
+  /** Optional typed sentinel elements preceding the actual outputs. */
+  outputOffset?: number;
+}
+
+export type ExpressionBuilder = (args: readonly TypedExpression[], allocate: () => string) => string | BuiltExpression;
 
 export interface CommandEnvironment {
   objects: Map<string, GeometryType>;

@@ -56,7 +56,7 @@ const conic: ExpressionBuilder = (args, allocate) => {
   const base = dual ? lines : points;
   const tangents = dual ? points : lines;
   const columns = base.slice(0, 3).map(homogeneous);
-  return bind(transpose(columns).flat(), allocate, (entries) => {
+  const expression = bind(transpose(columns).flat(), allocate, (entries) => {
     const frame = [entries.slice(0, 3), entries.slice(3, 6), entries.slice(6, 9)];
     return bind(adjugate(frame).flat(), allocate, (inverseEntries) => {
       // adj(frame) is a homogeneous inverse: avoid division by its determinant.
@@ -98,9 +98,24 @@ const conic: ExpressionBuilder = (args, allocate) => {
       });
     });
   });
+  if (points.length === 0) return expression;
+  // A conic sentinel gives Element a fixed GeoConic output type even when
+  // the real-solution list is initially empty. It is never a labeled object.
+  return {
+    expression: `Join({Conic({1,1,0/0,0,0,0})},${expression})`,
+    outputCount: points.length === 1 || points.length === 4 ? 2 : 4,
+    outputOffset: 1,
+  };
+};
+
+const conicBranch: ExpressionBuilder = (args, allocate) => {
+  const built = conic(args.slice(0, 5), allocate);
+  const index = args[5].expression;
+  if (typeof built === 'string') return `Element({${built}},${index})`;
+  return `Element(${built.expression},(${index})+${built.outputOffset ?? 0})`;
 };
 
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  isogonal: conjugate(true), isotomic: conjugate(false), conic,
+  isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
 };
 
