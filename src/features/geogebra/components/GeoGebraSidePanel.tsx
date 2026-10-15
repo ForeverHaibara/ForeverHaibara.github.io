@@ -68,12 +68,8 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, width,
     }
   };
 
-  if (collapsed) {
-    return <button type="button" onClick={onToggle} className="absolute right-3 top-3 z-10 rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-xs font-semibold text-sky-700 shadow-lg backdrop-blur hover:bg-white">Open analysis panel</button>;
-  }
-
   return (
-    <aside ref={panelRef} style={{ '--side-panel-width': `${width}px` } as React.CSSProperties} className="relative flex min-h-[520px] w-full min-w-0 flex-col border-l border-slate-200/80 bg-white/75 backdrop-blur-xl lg:w-[var(--side-panel-width)] lg:shrink-0" aria-label="Analysis and proof panel">
+    <aside id="geogebra-analysis-panel" ref={panelRef} hidden={collapsed} style={{ '--side-panel-width': `${width}px` } as React.CSSProperties} className={`geogebra-analysis-panel relative min-h-[520px] w-full min-w-0 flex-col border-l border-slate-200/80 bg-white/95 backdrop-blur-xl lg:w-[var(--side-panel-width)] lg:shrink-0 ${collapsed ? 'hidden' : 'flex'}`} aria-label="Analysis and proof panel">
       <div
         className={`group absolute -left-2 top-0 z-10 hidden h-full w-4 cursor-col-resize items-center justify-center lg:flex ${dragging ? 'bg-sky-100/50' : 'hover:bg-sky-100/40'}`}
         onPointerDown={startDragging}

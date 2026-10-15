@@ -11,6 +11,7 @@ Homepage: [https://foreverhaibara.github.io/](https://foreverhaibara.github.io/)
 -   **Triples Solver**: An interface to input mathematical expressions and get non-negativity proofs via the Sum of Squares method by calling a Gradio backend. Results are rendered using KaTeX.
 -   **KaTeX Integration**: Uses a locally installed `katex` package for rendering mathematical notation.
 -   **Markdown Blog**: Add Markdown files under `src/assets/markdown/blog/` to publish posts automatically.
+-   **GeoGebra Studio** (`#/geogebra`): Use **Fullscreen** to fill the browser viewport, toggle **Analysis** and **Commands** independently, or choose **Focus canvas** to hide the workspace tools. Analysis docks on the right on desktop and opens as a drawer on smaller screens. **Show workspace tools** restores the previous layout; **Exit fullscreen** or `Esc` returns to the page. Panel preferences are saved locally, and layout changes preserve the construction and unsubmitted commands. File actions are available under **Files**.
 
 ### Writing a blog post
 

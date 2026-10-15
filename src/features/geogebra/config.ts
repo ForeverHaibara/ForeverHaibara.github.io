@@ -10,4 +10,5 @@ export const MAX_SIDE_PANEL_WIDTH = 560;
 export const DEFAULT_STUDIO_SETTINGS = {
   sidePanelCollapsed: false,
   sidePanelWidth: 350,
+  commandBarCollapsed: false,
 };

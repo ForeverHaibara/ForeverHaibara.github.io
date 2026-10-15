@@ -1,0 +1,108 @@
+.geogebra-studio-canvas {
+  min-height: min(82vh, 980px);
+}
+
+.geogebra-studio-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  height: 100vh;
+  height: 100dvh;
+  background: #f8fafc;
+}
+
+.geogebra-studio-fullscreen .geogebra-studio-shell {
+  height: 100%;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.geogebra-studio-fullscreen .geogebra-studio-header {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+.geogebra-studio-fullscreen .geogebra-studio-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.geogebra-studio-fullscreen .geogebra-studio-canvas {
+  min-height: 0;
+}
+
+.geogebra-studio-fullscreen .geogebra-analysis-panel {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.geogebra-studio-fullscreen .geogebra-command-dock {
+  max-height: 38%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.geogebra-studio-fullscreen[data-focus-mode='true'] .geogebra-studio-header {
+  display: none;
+}
+
+.geogebra-focus-controls {
+  bottom: max(16px, env(safe-area-inset-bottom));
+  right: max(16px, env(safe-area-inset-right));
+}
+
+@media (min-width: 1024px) {
+  .geogebra-studio-body {
+    height: min(82vh, 980px);
+  }
+
+  .geogebra-studio-canvas,
+  .geogebra-analysis-panel {
+    min-height: 0;
+  }
+
+  .geogebra-analysis-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 1023px) {
+  .geogebra-studio-fullscreen .geogebra-analysis-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 30;
+    width: min(var(--side-panel-width), 90%);
+    box-shadow: -12px 0 32px rgb(15 23 42 / 12%);
+  }
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .geogebra-studio-fullscreen .geogebra-studio-title {
+    display: none;
+  }
+
+  .geogebra-studio-fullscreen .geogebra-studio-header {
+    padding: 8px;
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+
+  .geogebra-studio-fullscreen .geogebra-studio-header button,
+  .geogebra-studio-fullscreen .geogebra-studio-header summary {
+    padding: 7px 8px;
+  }
+
+  .geogebra-studio-fullscreen .geogebra-command-dock {
+    max-height: 44%;
+  }
+}

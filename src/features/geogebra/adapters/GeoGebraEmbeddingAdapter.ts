@@ -69,11 +69,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     this.container = container;
     container.style.width = '100%';
     container.style.height = '100%';
-    container.style.minHeight = '520px';
 
     const initialRect = this.getLayoutRect();
-    const appletWidth = Math.max(320, Math.floor(initialRect.width || container.clientWidth || 800));
-    const appletHeight = Math.max(420, Math.floor(initialRect.height || container.clientHeight || 600));
+    const appletWidth = Math.max(1, Math.floor(initialRect.width || container.clientWidth || 800));
+    const appletHeight = Math.max(1, Math.floor(initialRect.height || container.clientHeight || 600));
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       const timeout = window.setTimeout(() => {
@@ -204,8 +203,8 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const resize = () => {
       if (!this.container || !this.applet?.setSize) return;
       const rect = this.getLayoutRect();
-      const width = Math.max(320, Math.floor(rect.width));
-      const height = Math.max(420, Math.floor(rect.height));
+      const width = Math.floor(rect.width);
+      const height = Math.floor(rect.height);
       if (width > 0 && height > 0) {
         this.container.style.width = `${width}px`;
         this.container.style.height = `${height}px`;

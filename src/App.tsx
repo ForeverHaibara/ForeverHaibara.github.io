@@ -36,7 +36,7 @@ const AppLayout: React.FC = () => {
         }}
       />
       <Header />
-      <main className="relative z-10 flex-grow">
+      <main className="relative z-10 flex-grow has-[.geogebra-studio-fullscreen]:z-[60]">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <Outlet />
         </div>
