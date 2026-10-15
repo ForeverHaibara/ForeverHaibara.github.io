@@ -127,7 +127,14 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     }
 
     try {
-      const rawResult = await this.callApi('evalCommandGetLabels', [normalizedCommand]);
+      // GeoGebra loads advanced command modules on demand. Its exported async
+      // evaluator waits for them; retrying a failed synchronous command could
+      // duplicate partially constructed objects. Older engines retain the fallback.
+      // source/web/web-common/.../main/DefaultExportedApi.java
+      const asyncEvaluator = this.applet?.asyncEvalCommandGetLabels;
+      const rawResult = typeof asyncEvaluator === 'function'
+        ? await asyncEvaluator.call(this.applet, normalizedCommand)
+        : await this.callApi('evalCommandGetLabels', [normalizedCommand]);
       const labels = typeof rawResult === 'string' && rawResult.length > 0 ? rawResult.split(',').filter(Boolean) : [];
       const success = rawResult !== null && rawResult !== undefined && rawResult !== false;
       return { success, command: normalizedCommand, labels, rawResult, timestamp, ...(!success ? { error: 'GeoGebra rejected this command. Check its name and arguments.' } : {}) };
@@ -257,6 +264,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
       const eventName = typeof event === 'string' ? event : event.type ?? '';
       if (/dragstart|drag_start|dragStart/u.test(eventName)) emit('dragStart');
       if (/dragend|drag_end|dragEnd/u.test(eventName)) emit('dragEnd');
+      if (['addMacro', 'removeMacro', 'renameMacro'].includes(eventName)) emit('toolsChanged');
     };
 
     if (applet.registerAddListener) {

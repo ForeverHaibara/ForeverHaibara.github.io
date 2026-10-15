@@ -8,6 +8,7 @@ import { studioCompletionRegistry } from '../commands/completion/studioCompletio
 import { useCommandCompletion } from '../commands/completion/useCommandCompletion';
 import GeoGebraCompletionMenu from './GeoGebraCompletionMenu';
 import { createObjectCompletionProvider } from '../commands/completion/objectCompletionProvider';
+import { createFileToolCompletionProvider } from '../commands/completion/fileToolCompletionProvider';
 import { useCommandSpelling } from '../commands/useCommandSpelling';
 import GeoGebraSpellingReview from './GeoGebraSpellingReview';
 
@@ -26,7 +27,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
   const historyRef = useRef(new CommandHistory());
   const composingRef = useRef(false);
   const helpId = useId();
-  const providers = useMemo(() => engine ? [createObjectCompletionProvider(engine)] : [], [engine]);
+  const providers = useMemo(() => engine ? [createObjectCompletionProvider(engine), createFileToolCompletionProvider(engine)] : [], [engine]);
   const spelling = useCommandSpelling(value, inputRef, completionRegistry, providers, setValue);
   const completion = useCommandCompletion({ inputRef, registry: completionRegistry, providers, enabled: ready && !busy && !spelling.review, onChange: setValue });
 

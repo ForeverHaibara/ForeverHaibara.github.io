@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "studio.geometry",
+  "version": "0.0.1",
+  "tools": [
+    {
+      "name": "Incenter",
+      "description": "Triangle incenter; uses the native triangle-center construction.",
+      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)" }]
+    },
+    {
+      "name": "IsogonalConjugate",
+      "description": "Isogonal conjugate in triangle ABC, using homogeneous barycentric products.",
+      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "P", "type": "point" }], "returns": "point", "builder": "isogonal" }]
+    },
+    {
+      "name": "IsotomicConjugate",
+      "description": "Isotomic conjugate in triangle ABC, using signed barycentric products.",
+      "overloads": [{ "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "P", "type": "point" }], "returns": "point", "builder": "isotomic" }]
+    },
+    {
+      "name": "Conic",
+      "description": "Five point/tangent-line constraints in any order. Mixed constraints return a list of all real conics; segments and rays mean their supporting lines. Native point/coefficient forms are preserved.",
+      "overloads": [
+        { "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }, { "name": "C", "type": "point" }, { "name": "D", "type": "point" }, { "name": "E", "type": "point" }], "returns": "conic", "expression": "Conic($A,$B,$C,$D,$E)" },
+        { "params": [{ "name": "a", "type": "lineLike" }, { "name": "b", "type": "lineLike" }, { "name": "c", "type": "lineLike" }, { "name": "d", "type": "lineLike" }, { "name": "e", "type": "lineLike" }], "returns": "conic", "builder": "conic" },
+        { "params": [{ "name": "a", "type": "pointOrLine" }, { "name": "b", "type": "pointOrLine" }, { "name": "c", "type": "pointOrLine" }, { "name": "d", "type": "pointOrLine" }, { "name": "e", "type": "pointOrLine" }], "returns": "list", "builder": "conic" }
+      ]
+    },
+    {
+      "name": "SecondIntersection",
+      "description": "Other intersection of a circle and the line through known point P and Q. P must be on the circle; reflection in the chord midpoint avoids selecting an intersection branch.",
+      "overloads": [{ "params": [{ "name": "circle", "type": "circle" }, { "name": "P", "type": "point" }, { "name": "Q", "type": "point" }], "returns": "point", "expression": "Reflect($P,ClosestPoint(Line($P,$Q),Center($circle)))" }]
+    }
+  ]
+}
