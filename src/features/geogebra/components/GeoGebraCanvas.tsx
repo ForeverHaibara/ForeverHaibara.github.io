@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import type { GeoGebraEngine } from '../types';
 
 interface GeoGebraCanvasProps {
@@ -9,6 +9,11 @@ interface GeoGebraCanvasProps {
 
 const GeoGebraCanvas: React.FC<GeoGebraCanvasProps> = ({ engine, onReady, onError }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const callbacksRef = useRef({ onReady, onError });
+
+  useLayoutEffect(() => {
+    callbacksRef.current = { onReady, onError };
+  }, [onReady, onError]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -16,16 +21,16 @@ const GeoGebraCanvas: React.FC<GeoGebraCanvasProps> = ({ engine, onReady, onErro
 
     let active = true;
     engine.initialize(container).then(() => {
-      if (active) onReady();
+      if (active) callbacksRef.current.onReady();
     }).catch((error: unknown) => {
-      if (active) onError(error instanceof Error ? error : new Error('GeoGebra failed to initialize.'));
+      if (active) callbacksRef.current.onError(error instanceof Error ? error : new Error('GeoGebra failed to initialize.'));
     });
 
     return () => {
       active = false;
       engine.dispose();
     };
-  }, [engine, onError, onReady]);
+  }, [engine]);
 
   return <div ref={containerRef} className="h-full min-h-0 w-full min-w-0 overflow-hidden bg-white" data-testid="geogebra-canvas" />;
 };

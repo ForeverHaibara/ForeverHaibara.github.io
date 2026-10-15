@@ -1,21 +1,29 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { formatApiResult, parseApiCall } from '../commands/apiConsoleParser';
 import { CommandHistory } from '../commands/commandHistory';
 import { executeCommandPipeline } from '../commands/commandPipeline';
 import type { ApiConsoleResult, CommandResult, GeoGebraEngine } from '../types';
+import type { CompletionRegistry } from '../commands/completion/completionRegistry';
+import { studioCompletionRegistry } from '../commands/completion/studioCompletionRegistry';
+import { useCommandCompletion } from '../commands/completion/useCommandCompletion';
+import GeoGebraCompletionMenu from './GeoGebraCompletionMenu';
 
 interface GeoGebraCommandBarProps {
   engine: GeoGebraEngine | null;
   ready: boolean;
   onResult(result: CommandResult): void;
+  completionRegistry?: CompletionRegistry;
 }
 
-const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, onResult }) => {
+const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, onResult, completionRegistry = studioCompletionRegistry }) => {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [apiResult, setApiResult] = useState<ApiConsoleResult | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyRef = useRef(new CommandHistory());
+  const composingRef = useRef(false);
+  const helpId = useId();
+  const completion = useCommandCompletion({ inputRef, registry: completionRegistry, enabled: ready && !busy, onChange: setValue });
 
   const refocus = () => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
@@ -23,6 +31,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
 
   const execute = async () => {
     if (!engine || !value.trim() || busy) return;
+    completion.dismiss();
     setBusy(true);
     const input = value;
     historyRef.current.push(input);
@@ -54,7 +63,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
       <div className="mb-2 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">GGB Command Bar</h2>
-          <p className="text-xs text-slate-500">Commands are processed here before reaching GeoGebra.</p>
+          <p className="text-xs text-slate-500">Type a command or !API method to see suggestions.</p>
         </div>
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${ready ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
           {ready ? 'Engine ready' : 'Waiting for engine'}
@@ -64,20 +73,50 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
         <textarea
           ref={inputRef}
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(event) => {
+            setValue(event.target.value);
+            if (!composingRef.current) completion.requestFromInput();
+          }}
+          onFocus={() => completion.requestFromInput(false, true)}
+          onBlur={completion.dismiss}
+          onSelect={() => { if (!composingRef.current) completion.requestFromInput(); }}
+          onCompositionStart={() => { composingRef.current = true; completion.dismiss(); }}
+          onCompositionEnd={() => { composingRef.current = false; completion.requestFromInput(); }}
+          onKeyUp={(event) => event.stopPropagation()}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
+            if (composingRef.current || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+              event.stopPropagation();
+              return;
+            }
+            if (event.key !== 'Escape') event.stopPropagation();
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
               event.preventDefault();
+              event.stopPropagation();
+              void execute();
+            } else if (completion.handleKeyDown(event)) {
+              return;
+            } else if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              event.stopPropagation();
               void execute();
             } else if (event.key === 'ArrowUp' && !value.includes('\n')) {
               event.preventDefault();
+              event.stopPropagation();
               setValue(historyRef.current.previous());
             } else if (event.key === 'ArrowDown' && !value.includes('\n')) {
               event.preventDefault();
+              event.stopPropagation();
               setValue(historyRef.current.next());
             }
           }}
           disabled={!ready || busy}
+          role="combobox"
+          aria-label="GeoGebra commands"
+          aria-autocomplete="list"
+          aria-expanded={Boolean(completion.state)}
+          aria-controls={completion.state ? completion.listId : undefined}
+          aria-activedescendant={completion.state ? `${completion.listId}-${completion.state.activeIndex}` : undefined}
+          aria-describedby={helpId}
           placeholder={'A = (0, 0)\nB = (4, 0)\nCircle(A, B, (1, 3))\n!getObjectType("A")'}
           className="min-h-12 min-w-0 flex-1 resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
           data-testid="geogebra-command-input"
@@ -91,6 +130,8 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
           {busy ? 'Running...' : 'Run command'}
         </button>
       </div>
+      <p id={helpId} className="mt-2 text-[11px] text-slate-400">Tab / Enter complete · Ctrl+Space suggestions · Ctrl+Enter run · Shift+Enter new line</p>
+      {completion.state && inputRef.current && <GeoGebraCompletionMenu anchor={inputRef.current} listId={completion.listId} items={completion.state.items} prefix={completion.state.context.prefix} activeIndex={completion.state.activeIndex} onAccept={completion.accept} onActiveIndexChange={completion.setActiveIndex} onDismiss={completion.dismiss} />}
       {apiResult && (
         <div className={`mt-2 rounded-xl border px-3 py-2 font-mono text-xs ${apiResult.error ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} data-testid="geogebra-command-result">
           <p className="font-semibold">{apiResult.input}</p>

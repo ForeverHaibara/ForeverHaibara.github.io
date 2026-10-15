@@ -12,6 +12,7 @@ Homepage: [https://foreverhaibara.github.io/](https://foreverhaibara.github.io/)
 -   **KaTeX Integration**: Uses a locally installed `katex` package for rendering mathematical notation.
 -   **Markdown Blog**: Add Markdown files under `src/assets/markdown/blog/` to publish posts automatically.
 -   **GeoGebra Studio** (`#/geogebra`): Use **Fullscreen** to fill the browser viewport, toggle **Analysis** and **Commands** independently, or choose **Focus canvas** to hide the workspace tools. Analysis docks on the right on desktop and opens as a drawer on smaller screens. **Show workspace tools** restores the previous layout; **Exit fullscreen** or `Esc` returns to the page. Panel preferences are saved locally, and layout changes preserve the construction and unsubmitted commands. File actions are available under **Files**.
+-   **Command completion**: The extra GeoGebra command bar offers case-insensitive command and `!API` suggestions. Use Up/Down to navigate, Tab/Enter to complete, Esc to dismiss, Ctrl+Space to request suggestions, and Ctrl+Enter to execute directly. Custom command modules can register their own candidates through the [completion registry](src/features/geogebra/commands/completion/README.md).
 
 ### Writing a blog post
 
