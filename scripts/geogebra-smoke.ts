@@ -125,8 +125,12 @@ button.onclick = async () => {
     }
     check(updatedOutputs.length > 0 && maxIncidenceResidual < 1e-6, 'updated mixed conics satisfy the moved input constraint');
     const after = await api('getAllObjectNames') as string[];
-    check(!after.some((name) => name.startsWith('studiolocal')), 'local bindings create no labeled helper objects');
-    check(after.length - before.length === 26, `only requested output objects were created (actual ${after.length - before.length})`);
+    check(after.length - before.length === 26, `only requested output objects were created, without labeled helpers (actual ${after.length - before.length})`);
+    await run('v1=Midpoint(P,P)\nv2=9');
+    const safe = await run('Safe=IsogonalConjugate(A,B,C,v1)');
+    check(!safe.expandedCommand?.match(/,v[12],\{/u) && await value('Distance(Safe,G)') < 1e-7 && await value('v2') === 9, 'short locals avoid existing point/numeric labels without changing dependencies');
+    await run('Nested=IsogonalConjugate(A,B,C,IsogonalConjugate(A,B,C,P))');
+    check(await value('Distance(Nested,P)') < 1e-7, 'nested short local bindings do not capture one another');
     await run('Chosen=Conic(F1,F2,F3,f,g,2)');
     check(await value(`If(AreEqual(Chosen,${updatedOutputs[1]}),1,0)`) === 1, 'the optional sixth argument selects one independent conic');
     await run('Seed=(0.515,0.51)');

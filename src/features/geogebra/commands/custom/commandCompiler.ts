@@ -61,7 +61,9 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
   const occupied = new Set([...source.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)].map((match) => match[0]));
   for (const name of environment.objects.keys()) occupied.add(name);
   let serial = 0;
-  const allocate = () => { let name: string; do { name = `studiolocal${++serial}`; } while (occupied.has(name)); occupied.add(name); return name; };
+  // Zip/KeepIf require identifiers: bare _ and # are not accepted by GeoGebra.
+  // Short ASCII names stay readable while avoiding every source/global label.
+  const allocate = () => { let name: string; do { name = `v${++serial}`; } while (occupied.has(name)); occupied.add(name); return name; };
 
   const compile = (input: string, scope = environment, depth = 0): TypedExpression => {
     if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');

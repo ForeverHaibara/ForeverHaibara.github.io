@@ -66,7 +66,7 @@ describe('custom command syntax and dispatch', () => {
       const pointCount = args.filter((arg) => arg.type === 'point').length;
       expect(expression.split('\n')).toHaveLength(pointCount === 0 || pointCount === 5 ? 1 : pointCount === 1 || pointCount === 4 ? 2 : 4);
       expect(expression.length).toBeLessThan(100_000);
-      expect(expression).not.toMatch(/(?:SetValue|SetCoords|Execute|Delete|studiolocal\d+\s*=)/u);
+      expect(expression).not.toMatch(/(?:SetValue|SetCoords|Execute|Delete|v\d+\s*=)/u);
     }
   });
 
@@ -105,13 +105,23 @@ describe('custom command syntax and dispatch', () => {
   });
 
   it('allocates hygienic locals and retains the original point dependencies', () => {
-    const source = 'IsogonalConjugate(A,B,C,studiolocal1)';
+    const source = 'IsogonalConjugate(A,B,C,v1)';
     const scope = environment();
-    scope.objects.set('studiolocal1', 'point');
+    scope.objects.set('v1', 'point');
+    scope.objects.set('v2', 'number');
     const expression = compile(source, scope);
-    expect(expression).toContain('x(studiolocal1)');
-    expect(expression).not.toContain('studiolocal1,{');
+    expect(expression).toContain('x(v1)');
+    expect(expression).not.toMatch(/,v[12],\{/u);
+    expect(expression).toContain(',v3,{');
+    expect(expression).not.toContain('studiolocal');
     expect(expression).toContain('Distance(B,C)^2');
+  });
+
+  it('avoids capturing source-local names across nested symbolic constructions', () => {
+    const expression = compile('Zip(IsogonalConjugate(A,B,C,IsogonalConjugate(A,B,C,v1)),v1,{P})');
+    // The only v1 binding belongs to the original Zip, not to either expansion.
+    expect(expression.match(/,v1,\{/gu)).toHaveLength(1);
+    expect(expression).toContain('x(v1)');
   });
 });
 

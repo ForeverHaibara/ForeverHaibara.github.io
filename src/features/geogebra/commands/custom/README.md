@@ -33,6 +33,15 @@ Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
 backends without changing the command names or signatures.
 
+Generated local identifiers are short ASCII names (`v1`, `v2`, …), unique within
+each compilation and excluding all identifiers in the input and existing object
+labels. This also protects enclosing `Zip` locals and nested expansions. Bare
+`_`, `_1` and `#` were rejected as `Zip` variable names by the real engine;
+underscores also carry subscript syntax, and `#` starts a comment in our parser.
+The naming change shortens expressions; it does not change their dependency
+graph or imply fewer native geometry calculations. Existing saved expressions
+with the old names continue to work.
+
 The library file can be versioned or shared independently of `.ggb` files.
 There is no tool-import/export UI or `.ggt` conversion in this first version.
 
