@@ -133,7 +133,7 @@
 | Implemented (P1) | `AntipedalTriangle(A,B,C,P[,i]) → point × 3 / point` | Triangle whose sides pass through A, B and C perpendicular to AP, BP and CP. | 三条边分别以 A−P、B−P、C−P 为法向量，两两求交；P 为顶点时对应边缺少方向。 | S457 |
 | Implemented (P1) | `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` | Circumcenters of PBC, PCA and PAB. | 三次原生外心；P 落对应边上时该点无有限定义。 | S417 |
 | P2 | `SimsonLine(A,B,C,P) → line` | Simson line of a point P on the circumcircle. | P关于AB,AC垂足连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。 | S036 |
-| P2 | `SteinerLine(A,B,C,P) → line` | Line of the reflections of P in the three sidelines. | P关于AB,AC对称点连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。可与下一节四直线版本按类型／数量重载。 | S037 |
+| P2 | `SteinerLine(A,B,C,P) → line` | Line of the reflections of P in the three sidelines. | P关于AB,AC对称点连线。当P不在外接圆上时，仍然默认使用这一行为保持连续性。  | S037 |
 | Implemented (P1) | `Orthopole(A,B,C,l) → point` | Orthopole of line l with respect to triangle ABC. | A、B、C 投影到 l 得 U,V,W；分别过 U,V,W 作垂直 BC、CA、AB 的线，求其中两条交点。非退化 ABC 的前两条目标线不平行；只要 l 有定义就不需要自由点。 | S035 |
 | P2 | `AntiSteinerPoint(A,B,C,l) → point` | Circumcircle point whose Steiner line is parallel to l. | 过 H 作 l 平行线（即只考虑 l 的方向）。对l关于AB,AC的对称直线求交点。 | S367 |
 | P2 | `Orthotransversal(A,B,C,P) → line` | Line through the sideline traces perpendicular to AP, BP and CP. | A 迹点是 BC 与过 P 垂直 AP 的线的交点，B、C 类推。用齐次表达式求三迹共线的线，避免仅连两个恰好重合的迹点；P=A 等零方向位置先判断是否有唯一化简延拓。 | S370 |
@@ -216,9 +216,9 @@
 |---|---|---|---|---|
 | P2 | `IsogonalConjugate(A,B,C,l) → conic` | Isogonal image of the supporting line l. | **重载现有点版**。l 的重心线系数为 u,v,w；像的重心方程是 `u a² YZ+v b² ZX+w c² XY=0`。直接换算二次系数，不取两个自由点。直线过顶点时保留完整代数退化像并说明可能有基点附加分量，不能声称它始终是非退化轨迹。 | S368 |
 | P2 | `IsotomicConjugate(A,B,C,l) → conic` | Isotomic image of the supporting line l. | 与上一重载平行，方程 `u YZ+v ZX+w XY=0`。这是从现有共轭家族自然补齐的新增项；退化语义同上。 | — |
-| P2 | `KiepertHyperbola(A,B,C) → conic` | Kiepert rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCGH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义） | S007 |
-| P2 | `JerabekHyperbola(A,B,C) → conic` | Jerabek rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCOH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义）  | S466 |
-| P2 | `FeuerbachHyperbola(A,B,C) → conic` | Feuerbach rectangular circumhyperbola of triangle ABC. |圆锥曲线ABCIH （显然定义良好，仅在ABC坍缩为三点共线或等边是自然无定义）  | S012 |
+| P2 | `KiepertHyperbola(A,B,C) → conic` | Kiepert rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCGK。避免直接取ABC垂心导致直角三角形不良定。  | S007 |
+| P2 | `JerabekHyperbola(A,B,C) → conic` | Jerabek rectangular circumhyperbola of triangle ABC. | 圆锥曲线ABCOK 。避免直接取ABC垂心导致直角三角形不良定。 | S466 |
+| P2 | `FeuerbachHyperbola(A,B,C) → conic` | Feuerbach rectangular circumhyperbola of triangle ABC. |经过ABCI、（BCI垂心）的圆锥曲线。避免直接取ABC垂心导致直角三角形不良定。 | S012 |
 | P2 | `SteinerInellipse(A,B,C) → conic` | Ellipse tangent to the triangle sidelines at their midpoints. | 对标准等边三角形的内切圆作仿射映射，或用重心二次型 `X²+Y²+Z²−2XY−2YZ−2ZX=0` 换算系数；中心 G。非共线 ABC 时稳定。 | S401 |
 | P2 | `SteinerCircumellipse(A,B,C) → conic` | Circumellipse of ABC centered at the centroid. | 将 SteinerInellipse 关于 G 作倍率 −2 的位似；亦可用重心方程 `XY+YZ+ZX=0`。原名 Steiner Exellipse 改为标准 circumellipse。 | S402 |
 | P2 | `SteinerFoci(A,B,C[,i]) → point × 2 / point` | Foci of the Steiner inellipse. | 从上一二次型取原生 Focus。正三角形时两焦点重合 G，保留两个输出；不命名为 Laofeng Points。 | S372 |
@@ -235,14 +235,16 @@
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
 | Implemented (P1) | `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` | Diagonal points of the complete quadrangle ABCD. | 固定顺序 AB∩CD、AC∩BD、AD∩BC。齐次叉积，无穷远对角点无法作为普通 point 输出。比 CompleteQuadrilateral 更准确。 | S091 |
-| P2 | `MiquelPoint(A,B,C,D) → point` | Miquel point of a complete quadrilateral. | 选共享有限顶点 P 的两个三线三角形外接圆。P 是已知公共点，用根轴＋已知根反射得到另一点，不取交点编号。自适应选择非退化三角形；平行、三线共点等情况不保证存在唯一有限点。核验四个圆。 | S083 |
-| P2 | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of a complete quadrilateral. | 重载。 | S083 |
+| P2 | `MiquelPoint(A,B,C,D) → point` | Miquel point of a complete quadrilateral. | 是两个线段的顺相似中心，似乎能通过复数迅速求出。 | S083 |
+| P2 | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of a complete quadrilateral. | 重载。 同上。| S083 |
 | Implemented (P1) | `NewtonLine(A,B,C,D) → line` | Newton line of the quadrilateral with ordered vertices ABCD. | 四点为循环顶点，输出 AC 与 BD 中点的连线；对应四线 AB、BC、CD、DA 版本。 | S084 |
 | Implemented (P1) | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；只固定取其中两个。不讨论中点是否重合。 | S084 |
-| P2 | `SteinerLine(l1,l2,l3,l4) → line` | Line containing the orthocenters of the four component triangles. | 与三角形＋外接圆点版本重载。求四个三线三角形垂心，选择不重合的一对连线，验证另两个在其上。不要与 Steiner/Simson 同名现象混成一个错误签名。 | S085 |
+| P2 | `SteinerLineQ(A,B,C,D) → line` | Line containing the orthocenters of the four component triangles. | 由于参数一样，不与三角形版本重载。因此改名为 SteinerLineQ。 应该是(AC),(BD)直径圆的根轴。避免垂心重合的退化。  | S085 |
+| P2 | `SteinerLineQ(l1,l2,l3,l4) → line` | Line containing the orthocenters of the four component triangles. | 重载。同上。 | S085 |
 | P2 | `SteinerCircle(l1,l2,l3,l4) → circle` | Circle through the circumcenters of the four component triangles. | 暂不实现，等想到更好的算法。 | S086 |
-| P2 | `TangentParabola(l1,l2,l3,l4) → conic` | Parabola tangent to four lines in general position. | 优先使用 MiquelPoint 为焦点、四线 SteinerLine 为准线的直接构造，核验四条线的对偶切线条件；也可在对偶 conic 中加入无穷远线为切线求解。焦点在准线上是退化，不擅自投影修正。 | S099 |
-| P2 | `NinePointConic(A,B,C,D) → conic` | Conic through the six pairwise midpoints of four points. | 九点曲线的一个性质是它是经过ABCD四点圆锥曲线中心的轨迹，据此考虑直接推出其表达式。不用轨迹功能。在两点重合时尽量能退化为九点圆。 | S464 |
+| P2 | `TangentParabola(A,B,C,D) → conic` | .... | 优先使用 MiquelPoint 为焦点、  SteinerLineQ 为准线的直接构造。   | S099 |
+| P2 | `TangentParabola(l1,l2,l3,l4) → conic` | Parabola tangent to four lines in general position. | 优先使用 MiquelPoint 为焦点、  SteinerLineQ 为准线的直接构造。   | S099 |
+| P2 | `NinePointConic(A,B,C,D) → conic` | Conic through the six pairwise midpoints of four points. | 九点曲线的一个性质是它是经过ABCD四点圆锥曲线中心的轨迹。考虑直接推出其表达式以避免选取一些中点重合的退化（如平行四边形情况）。不用轨迹功能。 | S464 |
 | P2 | `InvolutionFixedPoints(l,A,A1,B,B1[,i]) → point × 2 / point` | 不实现 | 函数API还需细究，暂不实现。 | S078 |
 
 ## 8. 代数曲线、极曲线与剩余交点
@@ -253,18 +255,19 @@
 
 不保留 `CubicThirdIntersection2`、`CubicPolarLine2` 等后缀名字。九个点先构造成一个有标签的曲线，再传给操作；这种分步使用便于复用，避免每次重复展开九个大型行列式。若将来确有需要，可在相同名字下增加“九点＋作用点”的按个数重载，但本计划不优先实现这种长签名。
 
-二次／三次的 **polar line** 合并为 `PolarLine(P,curve)` 的强类型重载；三次的第一极曲线是 conic，另称 `PolarConic`，不可用同一个不带阶数的 implicitCurve 签名猜测返回 line 或 conic。原生 `Polar(P,q)` 和 `Polar(l,q)` 继续可用，不改变其语义。GeoGebra 的 [Polar 手册](https://geogebra.github.io/docs/manual/en/commands/Polar/) 已同时覆盖二次曲线的极线和极点。
+二次／三次的 **polar line** 合并为 `PolarLine(P,curve)` 的强类型重载；三次的第一极曲线是 conic，另称 `PolarConic`，不可用同一个不带阶数的 implicitCurve 签名猜测返回 line 或 conic。原生 `Polar(P,q)` 和 `Polar(l,q)` 继续可用，不改变其语义。GeoGebra 的 [Polar 手册](https://geogebra.github.io/docs/manual/en/commands/Polar/) 已同时覆盖二次曲线的极线和极点。缺秩时可视为undefined。
 
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
-| P2 | `Cubic(P1,...,P9) → implicitCurve` | Unique cubic through nine points, when the constraints are independent. | 增加**九点重载**，保留原生 `(A,B,C,index)`。优先原生 ImplicitCurve 的九点形式；若需自建，用含常数项的 9×10 次数≤3单项式矩阵求一维齐次核。平移尺度归一化，秩<9时拒绝无限解族，不用强定常数=1的仿射解。 | S424 S441 |
+| P2 | `Cubic(P1,...,P9) → implicitCurve` | Unique cubic through nine points, when the constraints are independent. | 增加**九点重载**，保留原生 `(A,B,C,index)`。优先原生 ImplicitCurve 的九点形式；若需自建，用含常数项的 9×10 次数≤3单项式矩阵求一维齐次核。缺秩时可以视为undefined。 | S424 S441 |
 | Native | `ImplicitCurve({P1,...,P14}) → implicitCurve` | Implicit curve through fourteen points. | 原生已提供四次插值；不再新增 Quartic 的十四点同义包装。秩不足时不把“画出来某条曲线”当唯一解。 | S430 S442 |
-| P2 | `PolarLine(P,q:conic) → line` | Polar line of P with respect to a conic. | 原生 Polar(P,q)；此短别名只为与三次版形成统一语义家族。 | S105 |
-| P2 | `PolarLine(P,F:implicitCurve) → line` | Second polar of P with respect to a cubic. | 将 F 齐次化为次数 3 的 Fh(X,Y,Z)，P=(p,q,1)，令 DP=p∂X+q∂Y+∂Z；输出 `DP² Fh=0` 的线。也可用 ∇Fh(P) 作线系数。P 不必在曲线上；P 在曲线上且光滑时它才是切线。奇点梯度为零时不捏造切线。 | S474 S478 |
+| P2 | `PolarLine(P,q:conic) → line` | 不要实现 | 原生已有 Polar(P,q)；不需要别名。 | S105 |
+| P2 | `Polar(P,F:implicitCurve) → line` | Second polar of P with respect to a cubic. | 重载。 将 F 齐次化为次数 3 的 Fh(X,Y,Z)，P=(p,q,1)，令 DP=p∂X+q∂Y+∂Z；输出 `DP² Fh=0` 的线。也可用 ∇Fh(P) 作线系数。P 不必在曲线上；P 在曲线上且光滑时它才是切线。奇点梯度为零时不捏造切线。 | S474 S478 |
 | P2 | `PolarConic(P,F:implicitCurve) → conic` | First polar conic of P with respect to a cubic. | 输出 `DP Fh=0` 的六系数二次型；不能只对非齐次 F 求 x、y 导数而漏掉 Z 方向的低次项。允许退化 conic，零多项式未定。 | S473 S479 |
 | P2 | `SecondIntersection(q,P,l:lineLike) → point` | Other intersection of a conic and a line containing the known point P. | 在现有 `(q,P,Q:point)` 之外增加**直线重载**。以 l 的法向取稳定方向，再用弦中点／韦达算法；核验 P 在 l∩q。不改变现有三点接口。 | S104 |
 | P2 | `ThirdIntersection(F,P,Q) → point` | Residual intersection of cubic F with line PQ, given P and Q on F. | 令 X=P+t(Q−P)，限制 F 得 `At³+Bt²+Ct+D`，已知根 t=0、1，剩余根为 `−B/A−1`；从最高次齐次项算 A，直接恢复第三点。避免斜率、求三根再删最近两根。A=0 时剩余点在无穷远；直线为分量时非唯一。 | S472 S476 |
-| P2 | `TangentialPoint(F,P) → point` | Residual intersection of a cubic with its tangent at a smooth point P. | 用 PolarLine 得切线方向 v，限制 F(P+t v)，已知二重根 t=0，剩余根为 `−B/A`。普通拐点返回 P（三重交），P 奇异时不指定切向。不要把 Q=P 代入 ThirdIntersection 的零方向。 | S475 S477 |
+| P2 | `ThirdIntersection(F,P) → point` |  Residual intersection of a cubic with its tangent at a smooth point P.| 重载。即Q=P的特例。但是可能实现有略微差别。用 PolarLine 得切线方向 v，限制 F(P+t v)，已知二重根 t=0，剩余根为 `−B/A`。普通拐点返回 P（三重交），P 奇异时不指定切向。不要把 Q=P 代入 ThirdIntersection 的零方向。 | S472 S476 |
+| P2 | `TangentialPoint(F,P) → point` | 暂不实现 | 使用上一函数。这个暂不实现。 | S475 S477 |
 | P2 | `PivotalIsogonalCubic(A,B,C,P) → implicitCurve` | Locus where a point, its isogonal conjugate and pivot P are collinear. | 在重心变量 X,Y,Z 中用行列式 `det[(X,Y,Z),(a²YZ,b²ZX,c²XY),(p,q,r)]`；整体次数 3，生成隐式多项式。无轨迹点、无分支扫掠。原生 TriangleCurve 可承载此方程。 | S389 |
 
 原生 [ImplicitCurve](https://geogebra.github.io/docs/manual/en/commands/ImplicitCurve/) 已按点数支持不同次数；它不能保证秩退化时的唯一性。[Cubic](https://geogebra.github.io/docs/manual/en/commands/Cubic/) 已提供常用编号三次曲线，支持的编号随引擎版本变化。凡内置有对应编号就使用内置，不从九个中心再拟合。
@@ -338,7 +341,7 @@
 
 后续每个工具只需围绕真实数学性质验证：一般三角形、交换 B/C、镜像、平移和尺度变换；钝角／直角／等腰／正三角形；边上点、顶点、切点、平行和重合。变换检查对合或逆关系，圆检查幂／切线距离，conic 检查齐次代入，极线检查极化恒等式。拖动时观察唯一极限能否恢复、undefined 槽能否重新显现。
 
-还应检查导出重开后的原生依赖、辅助标签数量为零、表达式长度与现有编译器预算。**本轮未能运行实际引擎验证：当前会话浏览器清单为空。已提供 P1 验证页，尚不声称其几何检查已通过。**
+还应检查导出重开后的原生依赖、辅助标签数量为零、表达式长度与现有编译器预算。已人工检查。
 
 ### P1 实现记录
 
@@ -346,13 +349,8 @@
 - 新增显式 `compose` 定义。可复用其他自定义工具、原生命令及按顺序声明的局部表达式；`expression` 仍只调用原生命令。按重载检测循环依赖，保留嵌套及 500,000 字符上限；文件同名宏不改变内部依赖，调用入口仍尊重文件工具优先级。
 - 多输出直接发出独立几何表达式；匿名列表或 Zip 只作内部实现，不返回列表对象。末尾整数 i 在 GeoGebra 中动态选取，不读取数值到 JavaScript。
 - SpiekerCenter 使用 X(10)；HarmonicConjugate 使用圆上／直线统一的复数交比公式；两个 Similarity 均完成四点、五点重载；Antipode 接受中心二次曲线。X(13) 的英文描述也已纠正，它不是 first isodynamic point；FermatPoint 仍为 P2。
-- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=p1`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，**尚未运行**。
+- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=p1`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，已人工运行。
 
-### 后续计划的勘误
-
-五点 Conic 的一般位置描述不保证所有非共线三角形均稳定：直角时 H 与顶点重合，ABCGH／ABCOH／ABCIH 会重复输入点，条件可能失秩。P2 实现前仍须核定可化简的等价系数，不能断言仅共线或等边时才有问题。
-
-四点的 NinePointConic 在两点重合时一般也不能退化为九点圆：重合点必须落在极限 conic 上，却通常不在其余三点的九点圆上。需核查极限是否依赖靠近方向，不能任意补成九点圆。
 
 ## 12. 参考资料与本轮查阅情况
 
