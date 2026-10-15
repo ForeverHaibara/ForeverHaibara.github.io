@@ -129,7 +129,8 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     try {
       const rawResult = await this.callApi('evalCommandGetLabels', [normalizedCommand]);
       const labels = typeof rawResult === 'string' && rawResult.length > 0 ? rawResult.split(',').filter(Boolean) : [];
-      return { success: rawResult !== null && rawResult !== undefined, command: normalizedCommand, labels, rawResult, timestamp };
+      const success = rawResult !== null && rawResult !== undefined && rawResult !== false;
+      return { success, command: normalizedCommand, labels, rawResult, timestamp, ...(!success ? { error: 'GeoGebra rejected this command. Check its name and arguments.' } : {}) };
     } catch (error) {
       return {
         success: false,

@@ -13,6 +13,7 @@ Homepage: [https://foreverhaibara.github.io/](https://foreverhaibara.github.io/)
 -   **Markdown Blog**: Add Markdown files under `src/assets/markdown/blog/` to publish posts automatically.
 -   **GeoGebra Studio** (`#/geogebra`): Use **Fullscreen** to fill the browser viewport, toggle **Analysis** and **Commands** independently, or choose **Focus canvas** to hide the workspace tools. Analysis docks on the right on desktop and opens as a drawer on smaller screens. **Show workspace tools** restores the previous layout; **Exit fullscreen** or `Esc` returns to the page. Panel preferences are saved locally, and layout changes preserve the construction and unsubmitted commands. File actions are available under **Files**.
 -   **Command completion**: The extra GeoGebra command bar offers case-insensitive command and `!API` suggestions. Use Up/Down to navigate, Tab/Enter to complete, Esc to dismiss, Ctrl+Space to request suggestions, and Ctrl+Enter to execute directly. Custom command modules can register their own candidates through the [completion registry](src/features/geogebra/commands/completion/README.md).
+-   **Object completion and spelling review**: Current construction objects appear before commands, with matching letter case preferred. Failed commands can offer bounded function-name spelling corrections; review the proposed names and press Tab to apply, then run again to execute.
 
 ### Writing a blog post
 

@@ -63,3 +63,15 @@ studioCompletionRegistry.register({
 - Ctrl+Enter (Cmd+Enter on macOS) executes directly. Shift+Enter inserts a newline.
 - With candidates closed: Enter executes, and Up/Down recalls single-line command history.
 - Tab without candidates and Shift+Tab retain normal focus navigation. IME confirmation keys do not accept or execute commands.
+
+## Construction objects and spelling review
+
+The command bar injects an engine-scoped `createObjectCompletionProvider` rather than putting construction data in the shared registry. It reads current object names on each request and refreshes an open list after add/remove/clear events. Objects are inserted as plain names and always appear before commands. Within objects, case-sensitive prefix matches come first, followed by exact and other case-insensitive matches. Distinct labels such as `A` and `a`, and an object and command with the same name, remain separate entries. The default selection follows that ordering as asynchronous results arrive, unless the user has already navigated the list.
+
+`CompletionRegistry.complete` and `useCommandCompletion` accept additional local providers; this keeps separate engines from leaking objects into one another. Local providers can expose `subscribe` to notify their editor when data changes.
+
+Only a failed execution triggers spelling review. `commandTokens.ts` scans function names followed by `()` or `[]`, excluding strings, comments, member calls and inline function declarations. `spellingSuggestions.ts` compares against callable entries from the same completion registry, so custom registrations also participate; known objects and valid mathematical functions are protected. API review checks only the outer method name and retains failed input.
+
+Matching uses bounded Damerau-Levenshtein distance (including adjacent transpositions): names of up to three characters allow case correction only; lengths 4–7 allow one edit; longer names allow two. Names over 64 characters are not guessed. Only the best-distance candidates are offered, with at most four alternatives per occurrence. Correctly spelled function names never receive spelling suggestions merely because their arguments failed.
+
+The review panel lets the user choose ambiguous alternatives and apply names with Tab or a button. Acceptance replaces function-name spans only, highlights the first replacement, and never executes automatically. Esc dismisses; edits discard stale suggestions. The review uses the original input offsets, including whitespace and newlines.

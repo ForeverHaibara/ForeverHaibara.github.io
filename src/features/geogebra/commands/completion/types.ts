@@ -11,7 +11,7 @@ export interface CompletionContext {
 
 export interface CompletionItem {
   label: string;
-  kind: 'command' | 'api' | 'custom';
+  kind: 'command' | 'api' | 'custom' | 'object';
   description?: string;
   signatures?: readonly string[];
   aliases?: readonly string[];
@@ -26,6 +26,7 @@ export interface CompletionItem {
 export interface CompletionProvider {
   id: string;
   provide(context: CompletionContext, signal: AbortSignal): readonly CompletionItem[] | Promise<readonly CompletionItem[]>;
+  subscribe?(listener: () => void): () => void;
 }
 
 export interface CompletionEdit {
