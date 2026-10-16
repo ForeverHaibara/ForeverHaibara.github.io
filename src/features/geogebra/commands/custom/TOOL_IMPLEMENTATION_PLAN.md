@@ -1,6 +1,6 @@
 # Custom geometry tools — implementation review plan
 
-状态：**P1、P2 已实现；P3 仅完成接口及算法规划，尚未实现**。P1 已人工运行实际 GeoGebra 引擎验证，完整 P2 实机验证待运行；后续兼容性专项验收另见第 11 节。P3 按 `022fa18` 的人工草案补充，见第 10.2 节；本轮只修改本文，不修改工具代码。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
+状态：**P1、P2、P3 已实现；完整 P3 实机验收尚未完成**。P1 已人工运行实际 GeoGebra 引擎验证，完整 P2 实机验证待运行；兼容性专项和 P3 本次已验证范围见第 11 节。P3 按已确认的第 10.2 节计划实现，共新增 34 个工具名、42 个重载。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
 
 ## 1. 范围、来源和取舍
 
@@ -16,6 +16,7 @@
 - **Implemented (compatibility)**：内置指令核对后补充的兼容性实现，验收范围见第 11 节。
 - **Native**：使用 GeoGebra 内置功能，不新增同义工具。
 - **Planned (P3)**：已列出新增接口和候选算法；推导、表达式预算与实机验收仍须在实现阶段完成，不能视为已上线。
+- **Implemented (P3)**：工具已进入版本 0.3.0，自动验证通过；实机验证仅限第 11 节记录的实际通过项目，不代表完整 P3 验收通过。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
 下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `geometryBuilders.ts`、`triangleBuilders.ts`、`curveBuilders.ts` 为准，共用表达式原语见 `expressionGeometry.ts`。
@@ -342,7 +343,7 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 
 ### 10.2 P3 接口与算法计划（2026-10-16）
 
-本节承接人工草案的全部新增工具，阶段均为 **Planned (P3)**。公式是算法设计，不是已被 GeoGebra 接受的最终命令。优先采用短几何复合；只有中间对象的无穷远／重合会破坏最终有限极限时，才改用约分后的齐次公式。所有退化判断留在 GeoGebra 内动态计算，不在 JavaScript 读取坐标、挑选分支或缓存数值。
+本节承接人工草案的全部新增工具，现为 **Implemented (P3)**；表中保留设计理由与原候选方案，实际采用的简化及验收范围见第 11 节。公式用于解释算法，最终表达式以版本 0.3.0 的工具库及 builder 为准。优先采用短几何复合；只有中间对象的无穷远／重合会破坏最终有限极限时，才改用约分后的齐次公式。所有退化判断留在 GeoGebra 内动态计算，不在 JavaScript 读取坐标、挑选分支或缓存数值。
 
 #### 10.2.1 接入规则和参考结构
 
@@ -496,7 +497,7 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 
 #### 10.2.8 表达式预算、实施顺序与验收约定
 
-本节给的是候选复杂度与验收要求，本轮没有生成 P3 最终命令，也没有运行 P3 实机测试。
+本节给出设计时的复杂度与验收要求。现已生成 P3 命令并补充自动测试及实机专项入口；已经完成的验收与仍待验证的项目分别在第 11 节记录。
 
 1. **先实现小原语和短式家族**：三轴、Soddy、CoTf3 两式、QA 四点，再建 QL 的 M/κ／广义圆系数与四外心共用块。随后派生 QL 点对、圆、中心；最后接曲线及 QLTf1 多项式重载。OrthopolarConic 的二倍角消元和 LiangZelich 的专名／透视解释单独复核。不能因后一重载尚待预算而阻挡已满足定义与验收的独立工具。
 2. **预算看最终展开表达式**：短 compose 目标为几百到数千字符；中等 builder 尽量控制在约 10k 字符内；QAP2／QLTf1 曲线等可先设 30k 字符的审阅线。这些是设计目标，不是新的编译器硬限制。记录代表性标识符和长嵌套调用的字符数、匿名绑定数、原生几何操作数及生成耗时；若超过审阅线，先绑定复用、改为六／十／十五系数或 ApplyMatrix，再决定是否需要更大预算。不能把符号上的一个 `det`、一个 compose 当成恒定成本。
@@ -506,6 +507,19 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 6. **后端和持久依赖**：静态测试检查重载匹配、独立输出和 i、卫生变量、最终原生命令名、无命名辅助对象、无 Locus／采样拟合、预算；实际嵌入引擎检查原生语法／签名、conic 的 XML 类、动态定义恢复、拖动、导出重开后的依赖。增加 P3 专项入口，仍不替代完整 P2 验收。网页公式核实、离线代数校验、编译器测试、实机测试的结论分别记录。
 
 ## 11. 实现记录与验收要点
+
+### P3 实现记录（2026-10-16）
+
+- `library.json` 升至 **0.3.0**，从 103 增至 **137 个工具名**，P3 新增 **34 名／42 重载**，包含 QLTf1 的五种强类型重载和三组点对的可选编号。工具补全、文件宏优先、独立输出与原生持久依赖沿用现有编译器；没有安装宏、命名辅助对象、脚本或 JavaScript 坐标快照。
+- 新增 `p3TriangleBuilders.ts`、`quadrilateralBuilders.ts`、`polynomialGeometry.ts`、`qlCurveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
+- QLTf1 曲线变换先将实系数转换为 `z^i conjugate(z)^j` 系数。反演交换相应幂，原生动态选 `m=max(i,j)` 后清分母，恰好消去人工引入的所有 `rho=(x−Mx)²+(y−My)²` 因子；随后将共轭项合并为实多项式。不需要符号 CAS、曲线采样或数值多项式插值。输入至多四次时输出至多八次，使用基数 5 编码与原生完整多项式相等检查，支持动态次数／圆型极限。
+- QL-Qu3 保留 E、F 的齐次坐标，将固定点转换为圆方程行 `(Ux²+Uy²,UxUw,UyUw,Uw²)`。各圆系数先匿名绑定，再作稀疏多项式行列式；恒等为零的五次项直接去除。一对边平行时无需生成无穷远仿射交点，第三个圆允许作为直线型代数极限；多个约束同时消失、全零多项式仍 undefined。QL 圆心链仍要求有限的分量三角形外心，不宣称全部平行配置都有有限结果。
+- 点对编号重载直接将 i 传入原生交点指令，或直接用符号 `(3−2i)` 选择复平方根分支，避免先求两个完整分支再从匿名列表抽取。双输出仍是两个独立对象；无实交点保留 undefined 槽。
+- 最终展开预算（代表性长输入标签）：QLQu3 **9,327 字符**，QLTf1 四次多项式重载 **4,618 字符**，其他重载均不足 2k 字符；全部低于 30k 审阅线。此长度检查不证明原生求值或绘制耗时。
+- 自动检查：新增 `p3Commands.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
+- 实机入口为 `/scripts/geogebra-smoke.html?suite=p3`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
+- **已取得的实机证据**：整批运行前 20 项通过，包括三轴、Soddy、LiangZelich、Stammler／Orthopolar、Cundy–Parry、两种 Co-Tf3、QAP2/3/4/5、Plücker／Newton 点对重载和固定点双输出的类型／对象数检查。CoTf3 专项及修订后的 QL2P3 双输出／编号单输出专项分别得到 **COMPLETE**。
+- **尚未完成的实机验收**：整批运行及 QLTf1 曲线专项随后遇到浏览器 CDP 控制超时，无法读取最终状态；这不是明确的几何失败，也不能据此确认通过。QL 中心／圆、各曲线重载、完整几何残差、动态恢复及导出重开仍需完成整批专项。特别是高次曲线变换的实际引擎性能尚未验证；本轮未发布、提交或部署这些改动。
 
 1. 先实现 P1 中的中心、投影、三角形、线性变换；统一参数顺序和同类型多输出元数据。保持现有五个命令兼容。
 2. 再实现 P2 的圆和二次型家族；所有 conic 输出都核验原生类型、退化类型及下游重载，不仅检查画面。
@@ -614,11 +628,11 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S083 | Miquel Point | 2 / 1 | Implemented (P2): `MiquelPoint(A,B,C,D) → point`; Implemented (P2): `MiquelPoint(l1,l2,l3,l4) → point` |
 | S084 | Newton Line | 2 / 1 | Implemented (P1): `NewtonLine(A,B,C,D) → line`; Implemented (P1): `NewtonLine(l1,l2,l3,l4) → line` |
 | S085 | Steiner Line | 2 / 1 | Implemented (P2): `SteinerLineQ(A,B,C,D) → line`; Implemented (P2): `SteinerLineQ(l1,l2,l3,l4) → line` |
-| S086 | Steiner Circle | 2 / 1 | Planned (P3): `QLCi3 (four-point interface only)`; see section 10.2 |
+| S086 | Steiner Circle | 2 / 1 | Implemented (P3): `QLCi3 (four-point interface only)`; see section 10.2 |
 | S087 | NinePoint Conic | 2 / 1 | Defer: See deferred-definition notes |
-| S088 | Pseudocircumcenter | 3 / 2; variants S088, S459 | Planned (P3): `QAP3; legacy line variant remains deferred`; see section 10.2 |
-| S089 | Isogonal Center | 3 / 2; variants S089, S444 | Planned (P3): S444 point construction via `QAP4`; S089 line interface remains deferred |
-| S090 | Poncelet Point | 3 / 2; variants S090, S458 | Planned (P3): `QAP2; legacy line variant remains deferred`; see section 10.2 |
+| S088 | Pseudocircumcenter | 3 / 2; variants S088, S459 | Implemented (P3): `QAP3; legacy line variant remains deferred`; see section 10.2 |
+| S089 | Isogonal Center | 3 / 2; variants S089, S444 | Implemented (P3): S444 point construction via `QAP4`; S089 line interface remains deferred |
+| S090 | Poncelet Point | 3 / 2; variants S090, S458 | Implemented (P3): `QAP2; legacy line variant remains deferred`; see section 10.2 |
 | S091 | Complete Quadrilateral | 2 / 1 | Implemented (P1): `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` |
 | S092 | Circumcevian Triangle | 2 / 1 | Implemented (P1): `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point`; Implemented (P1): `CircumcevianPoint(A,B,C,P) → point` |
 | S093 | Intersection | 2 / 1 | Native: Intersection |
@@ -673,12 +687,12 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S402 | Steiner Exellipse | 1 / 1 | Implemented (P2): `SteinerCircumellipse(A,B,C) → conic` |
 | S403 | Harmonious Conjugate | 1 / 1 | Implemented (P1): `HarmonicConjugate(A,B,P) → point` |
 | S404 | Anticevian Triangle | 1 / 1 | Implemented (P1): `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
-| S405 | Orthopolar Conic | 1 / 1 | Planned (P3): `OrthopolarConic`; see section 10.2 |
+| S405 | Orthopolar Conic | 1 / 1 | Implemented (P3): `OrthopolarConic`; see section 10.2 |
 | S406 | Cevian Affine Mapping | 1 / 1 | Implemented (P2): `CevianAffineMap(A,B,C,X,P) → point` |
 | S407 | Gergonne Conic | 1 / 1 | Defer: See deferred-definition notes |
 | S408 | Cevapoint | 1 / 1 | Implemented (P2): `Cevapoint(A,B,C,P,Q) → point` |
 | S409 | Cevaconjugate | 1 / 1 | Implemented (P2): `CevaConjugate(A,B,C,X,P) → point` |
-| S410 | Stammler Hyperbola | 1 / 1 | Planned (P3): `StammlerHyperbola`; see section 10.2 |
+| S410 | Stammler Hyperbola | 1 / 1 | Implemented (P3): `StammlerHyperbola`; see section 10.2 |
 | S411 | Anticomplementary | 1 / 1 | Implemented (P1): `Anticomplement(A,B,C,P) → point` |
 | S412 | Crosspoint | 1 / 1 | Implemented (P2): `Crosspoint(A,B,C,P,Q) → point` |
 | S413 | Crossconjugate | 1 / 1 | Implemented (P2): `CrossConjugate(A,B,C,X,P) → point` |
@@ -689,9 +703,9 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S418 | Cyclocevian Conjugate | 1 / 1 | Implemented (P2): `CyclocevianConjugate(A,B,C,P) → point` |
 | S419 | Orthocorrespondence | 1 / 1 | Implemented (P2): `Orthocorrespondent(A,B,C,P) → point` |
 | S420 | Excenters Rectangular Hyperbola | 1 / 1 | Defer: See deferred-definition notes |
-| S421 | Orthopivotal Cubic | 2 / 2; variants S421, S450 | Planned (P3): `OrthopivotalCubic (direct equation; old variants not copied)`; see section 10.2 |
-| S422 | Cundy-Parry-Phi Transform | 1 / 1 | Planned (P3): `CundyParryPhi`; see section 10.2 |
-| S423 | Cundy-Parry-Psi Transform | 1 / 1 | Planned (P3): `CundyParryPsi`; see section 10.2 |
+| S421 | Orthopivotal Cubic | 2 / 2; variants S421, S450 | Implemented (P3): `OrthopivotalCubic (direct equation; old variants not copied)`; see section 10.2 |
+| S422 | Cundy-Parry-Phi Transform | 1 / 1 | Implemented (P3): `CundyParryPhi`; see section 10.2 |
+| S423 | Cundy-Parry-Psi Transform | 1 / 1 | Implemented (P3): `CundyParryPsi`; see section 10.2 |
 | S424 | Cubic | 1 / 1 | Implemented (P2): `Cubic(P1,...,P9) → implicitCurve` |
 | S425 | K003 McCAY | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S426 | K004 Darboux | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
@@ -712,13 +726,13 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S441 | 九点三次曲线 | 1 / 1 | Implemented (P2): `Cubic(P1,...,P9) → implicitCurve` |
 | S442 | 十四点四次曲线 | 1 / 1 | Native: `ImplicitCurve({P1,...,P14}) → implicitCurve` |
 | S443 | IsogonalComplementary | 1 / 1 | Implemented (P1): `IsogonalComplement(A,B,C,P) → point` |
-| S445 | QA-Cu1 | 1 / 1 | Planned (P3): `QACu1`; see section 10.2 |
-| S446 | QL-Cu1 | 1 / 1 | Planned (P3): `QLCu1 (four-point interface only)`; see section 10.2 |
-| S447 | QL-Isogonal Pair | 1 / 1 | Planned (P3): `QL2P2 (four-point interface only)`; see section 10.2 |
-| S448 | QL-P21 | 1 / 1 | Planned (P3): `QLP21 (four-point interface only)`; see section 10.2 |
+| S445 | QA-Cu1 | 1 / 1 | Implemented (P3): `QACu1`; see section 10.2 |
+| S446 | QL-Cu1 | 1 / 1 | Implemented (P3): `QLCu1 (four-point interface only)`; see section 10.2 |
+| S447 | QL-Isogonal Pair | 1 / 1 | Implemented (P3): `QL2P2 (four-point interface only)`; see section 10.2 |
+| S448 | QL-P21 | 1 / 1 | Implemented (P3): `QLP21 (four-point interface only)`; see section 10.2 |
 | S449 | QL-Cu1-Double | 1 / 1 | Defer: See deferred-definition notes |
 | S451 | QL-Quartic1 | 1 / 1 | Defer: See deferred-definition notes |
-| S452 | Dimidium Circle | 1 / 1 | Planned (P3): `QLCi6 (four-point interface only)`; see section 10.2 |
+| S452 | Dimidium Circle | 1 / 1 | Implemented (P3): `QLCi6 (four-point interface only)`; see section 10.2 |
 | S453 | QL-P17 | 1 / 1 | Defer: See deferred-definition notes |
 | S454 | Tf1-QLP17 | 1 / 1 | Defer: See deferred-definition notes |
 | S455 | Spiral Similarity | 1 / 1 | Implemented (P1): `DirectSimilarity(A,B,C,D) → point`; Implemented (P1): `DirectSimilarity(A,B,C,D,E) → point` |
@@ -732,7 +746,7 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S465 | Isotocomplementary | 1 / 1 | Defer: `ComplementOfIsotomicConjugate(A,B,C,P) → point` |
 | S466 | Jerabek Hyperbola | 1 / 1 | Implemented (P2): `JerabekHyperbola(A,B,C) → conic` |
 | S467 | Antigonal Conjugate | 1 / 1 | Implemented (P2): `AntigonalConjugate(A,B,C,P) → point` |
-| S468 | LiangZelich Perspector | 1 / 1 | Planned (P3): `LiangZelichPerspector (polarity definition; perspectivity interpretation pending)`; see section 10.2 |
+| S468 | LiangZelich Perspector | 1 / 1 | Implemented (P3): `LiangZelichPerspector (polarity definition; perspectivity interpretation pending)`; see section 10.2 |
 | S469 | K007 Lucas | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S470 | Tangent Conic | 1 / 1 | Implemented (P2): `InconicWithCenter(A,B,C,P) → conic` |
 | S471 | Isogonal Pair with Center | 1 / 1 | Implemented (P2): `IsogonalPairWithMidpoint(A,B,C,P[,i]) → point × 2 / point` |
@@ -746,8 +760,8 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 | S479 | Cubic Polar Conic | 1 / 1 | Implemented (P2): `PolarConic(P,F:implicitCurve) → conic` |
 | S480 | K073 | 1 / 1 | Defer: K028; K073; Q002 |
 | S481 | Strophoid | 1 / 1 | Defer: See deferred-definition notes |
-| S482 | CoTf3 | 1 / 1 | Planned (P3): `CoTf3(P,q)`; see section 10.2 |
-| S483 | AntiCoTf3 | 1 / 1 | Planned (P3): `InvCoTf3(P,q)`; see section 10.2 |
+| S482 | CoTf3 | 1 / 1 | Implemented (P3): `CoTf3(P,q)`; see section 10.2 |
+| S483 | AntiCoTf3 | 1 / 1 | Implemented (P3): `InvCoTf3(P,q)`; see section 10.2 |
 | S484 | Inverse in Hagge Circle | 1 / 1 | Implemented (P2): `HaggeInverse(A,B,C,P) → point` |
 | S485 | Hagge Infinity Cubic | 1 / 1 | Defer: See deferred-definition notes |
 | S486 | QL-Cu1Vertical | 1 / 1 | Defer: See deferred-definition notes |

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "tools": [
     {
       "name": "Incenter",
@@ -757,6 +757,252 @@
       "description": "Locus where a point, its isogonal conjugate and pivot P are collinear.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotal"}
+      ]
+    },
+    {
+      "name": "BrocardAxis",
+      "description": "Line joining the circumcenter and symmedian point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Line(Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "LemoineAxis",
+      "description": "Polar of the symmedian point in the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Polar(SymmedianPoint($A,$B,$C),Circle($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "OrthicAxis",
+      "description": "Trilinear polar of the orthocenter, extended continuously to right triangles.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "builder": "orthicAxis"}
+      ]
+    },
+    {
+      "name": "SoddyPoint",
+      "description": "Outer (i=1, X175) or inner (i=2, X176) Soddy point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "expression": "If($i==1,TriangleCenter($A,$B,$C,175),If($i==2,TriangleCenter($A,$B,$C,176)))"}
+      ]
+    },
+    {
+      "name": "LiangZelichPerspector",
+      "description": "Pole of OP in the conic through P and the in/excenters.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "liangZelich"}
+      ]
+    },
+    {
+      "name": "StammlerHyperbola",
+      "description": "Stammler hyperbola through the in/excenters and circumcenter, including line-pair limits.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "stammler"}
+      ]
+    },
+    {
+      "name": "OrthopolarConic",
+      "description": "Algebraic conic of orthopoles of lines through P, including degenerate limits.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "orthopolar"}
+      ]
+    },
+    {
+      "name": "CundyParryPhi",
+      "description": "Cundy-Parry Phi image: OP intersected with H(P*).",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cundyPhi"}
+      ]
+    },
+    {
+      "name": "CundyParryPsi",
+      "description": "Cundy-Parry Psi image: O(P*) intersected with HP.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cundyPsi"}
+      ]
+    },
+    {
+      "name": "CoTf3",
+      "description": "Scimemi image of P with respect to the conic, including circle and parabola limits.",
+      "overloads": [
+        {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "scimemi"}
+      ]
+    },
+    {
+      "name": "InvCoTf3",
+      "description": "Inverse Scimemi image of P, including the finite rectangular-hyperbola limit.",
+      "overloads": [
+        {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "inverseScimemi"}
+      ]
+    },
+    {
+      "name": "QAP2",
+      "description": "Euler-Poncelet point of the four-point set.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qap2"}
+      ]
+    },
+    {
+      "name": "QAP4",
+      "description": "Isogonal center of the four-point set; cyclic sets return their circumcenter.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qap4"}
+      ]
+    },
+    {
+      "name": "QAP5",
+      "description": "Isotomic center of the four-point set.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qap5"}
+      ]
+    },
+    {
+      "name": "QAP3",
+      "description": "Gergonne-Steiner point of the four-point set.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "($A+$B+$C+$D)/2-QAP2($A,$B,$C,$D)"}
+      ]
+    },
+    {
+      "name": "QL2P1",
+      "description": "Plucker points of the ordered complete quadrilateral.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlPlucker"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "qlPlucker"}
+      ]
+    },
+    {
+      "name": "QL2P2",
+      "description": "Mutually conjugate points on the Newton line; unreal solutions are undefined.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlNewtonPair"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "qlNewtonPair"}
+      ]
+    },
+    {
+      "name": "QL2P3",
+      "description": "Fixed points of Clawson-Schmidt conjugation.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlFixedPair"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "qlFixedPair"}
+      ]
+    },
+    {
+      "name": "QLP4",
+      "description": "Center of the Miquel circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlMiquelCenter"}
+      ]
+    },
+    {
+      "name": "QLP5",
+      "description": "Clawson center; center of the Plucker circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlClawsonCenter"}
+      ]
+    },
+    {
+      "name": "QLP6",
+      "description": "Midpoint of the Miquel and Clawson centers.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlDimidiumCenter"}
+      ]
+    },
+    {
+      "name": "QLP20",
+      "description": "Newton-line intersection with the tangent at the Miquel point to its conjugate circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qlp20"}
+      ]
+    },
+    {
+      "name": "QLCi3",
+      "description": "Miquel circle through the four component circumcenters.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "circle", "builder": "qlMiquelCircle"}
+      ]
+    },
+    {
+      "name": "QLP3",
+      "description": "Kantor-Hervey point of the complete quadrilateral.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "2*QLP5($A,$B,$C,$D)-QLP4($A,$B,$C,$D)"}
+      ]
+    },
+    {
+      "name": "QLP7",
+      "description": "Newton-Steiner point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "Intersect(NewtonLine($A,$B,$C,$D),SteinerLineQ($A,$B,$C,$D))"}
+      ]
+    },
+    {
+      "name": "QLP19",
+      "description": "Midpoint of the Miquel and Newton-Steiner points.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "(MiquelPoint($A,$B,$C,$D)+QLP7($A,$B,$C,$D))/2"}
+      ]
+    },
+    {
+      "name": "QLP21",
+      "description": "Reflection of the Miquel point in QL-P20.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "2*QLP20($A,$B,$C,$D)-MiquelPoint($A,$B,$C,$D)"}
+      ]
+    },
+    {
+      "name": "QLCi5",
+      "description": "Plucker circle centered at the Clawson center through the Miquel point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "circle", "compose": "Circle(QLP5($A,$B,$C,$D),MiquelPoint($A,$B,$C,$D))"}
+      ]
+    },
+    {
+      "name": "QLCi6",
+      "description": "Dimidium circle centered at QL-P6 through the Miquel point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "circle", "compose": "Circle(QLP6($A,$B,$C,$D),MiquelPoint($A,$B,$C,$D))"}
+      ]
+    },
+    {
+      "name": "QLTf1",
+      "description": "Clawson-Schmidt conjugation: points, supporting lines, generalized circles and polynomial curves through degree four.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "qlTransform"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "object", "type": "lineLike"}], "returns": "conic", "builder": "qlTransform"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "object", "type": "circle"}], "returns": "conic", "builder": "qlTransform"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "object", "type": "conic"}], "returns": "implicitCurve", "builder": "qlTransform"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "object", "type": "implicitCurve"}], "returns": "implicitCurve", "builder": "qlTransform"}
+      ]
+    },
+    {
+      "name": "QLCu1",
+      "description": "Circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "qlCubic"}
+      ]
+    },
+    {
+      "name": "QACu1",
+      "description": "Circular cubic of coaxal circles through the corresponding diagonal pairs.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qaCubic"}
+      ]
+    },
+    {
+      "name": "QLQu3",
+      "description": "Schmidt quartic of coaxal circles through opposite intersection pairs.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlQuartic"}
+      ]
+    },
+    {
+      "name": "OrthopivotalCubic",
+      "description": "Orthopivotal cubic with orthopivot P; decomposed limits are retained.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "orthopivotal"}
       ]
     }
   ]

@@ -4,6 +4,8 @@ import { add, mul, matrix, transpose, product, adjugate, determinant, cross, bin
 import type { Matrix } from './expressionGeometry';
 import { TRIANGLE_BUILDERS } from './triangleBuilders';
 import { CURVE_BUILDERS } from './curveBuilders';
+import { P3_TRIANGLE_BUILDERS } from './p3TriangleBuilders';
+import { QUADRILATERAL_BUILDERS } from './quadrilateralBuilders';
 
 const conjugate = (isogonal: boolean): ExpressionBuilder => (args, allocate) => {
   const [a, b, c, p] = args.map((arg) => arg.expression);
@@ -126,6 +128,6 @@ const conicBranch: ExpressionBuilder = (args, allocate) => {
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
   brocard, anticevian, trilinearPolar, trilinearPole,
-  ...TRIANGLE_BUILDERS, ...CURVE_BUILDERS,
+  ...TRIANGLE_BUILDERS, ...CURVE_BUILDERS, ...P3_TRIANGLE_BUILDERS, ...QUADRILATERAL_BUILDERS,
 };
 

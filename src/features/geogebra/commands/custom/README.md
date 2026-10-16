@@ -59,7 +59,10 @@ or expansion produce errors; different overloads may call one another.
 
 Complex symbolic construction generators are registered in `geometryBuilders.ts`,
 with triangle/conic maps in `triangleBuilders.ts`, cubic operations in
-`curveBuilders.ts`, and shared homogeneous algebra in `expressionGeometry.ts`.
+`curveBuilders.ts`, P3 triangle maps in `p3TriangleBuilders.ts`, quadrilateral
+families in `quadrilateralBuilders.ts`, and shared homogeneous algebra in
+`expressionGeometry.ts`. `polynomialGeometry.ts` builds sparse symbolic
+polynomials; `qlCurveTransforms.ts` handles polynomial conjugation.
 They are referenced by `builder` instead of `expression`.
 Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
@@ -280,7 +283,64 @@ arbitrarily resolved: they can yield undefined/empty results. Isolated degenerat
 conics may be returned using the projective discriminant/adjugate definition of
 tangency. This is not a solver for every degenerate family.
 
+### P3 families and limits
+
+Version 0.3.0 adds 34 names and 42 overloads. Triangle tools include the three
+axes, Soddy points, Liang–Zelich polarity, Stammler/orthopolar conics,
+Cundy–Parry maps and orthopivotal cubics. `SoddyPoint(A,B,C,1)` selects the outer
+point X175; index 2 selects the inner point X176. `OrthicAxis` cancels the
+removable right-triangle factor before constructing its line.
+
+`CoTf3(P,q)` and `InvCoTf3(P,q)` take the point first. They read conic
+coefficients and use affine formulas without choosing principal axes or a
+center. The forward circle limit returns the center, the inverse rectangular
+hyperbola limit returns the center, and parabolas are supported. The inverse
+of a circle and the generic forward image under a rectangular hyperbola have
+no finite single-valued result.
+
+`QAP2` through `QAP5` refer to an unordered four-point set. `QAP2` solves the
+rectangular-conic constraints directly, without duplicating a vertex as an
+extra orthocenter constraint. `QAP4` composes conjugation and inversion before
+finite conversion, so a cyclic four-point set returns its circumcenter.
+
+QL tools take **ordered vertices A,B,C,D** of the four supporting lines
+AB, BC, CD, DA; crossed configurations are allowed. The component triangles
+are ABF, BCE, CDF, DAE, with E=AB∩CD and F=BC∩DA. The center families require
+finite component circumcenters. They do not promise all parallel-side limits.
+`QLQu3` keeps E and F homogeneous, supporting a single infinite opposite-side
+intersection without constructing an undefined affine point.
+
+`QLTf1` exchanges A with C and B with D. Its point overload uses the complex
+involution M+κ/(P−M). Line-like and circle inputs return a fixed **conic** class,
+including line limits; general conics return implicit curves. The implicit
+curve overload accepts only polynomials through degree four and checks the
+reconstructed polynomial inside GeoGebra. Images may have degree eight.
+Complex monomial coefficients cancel artificial powers of x²+y² before emitting
+the real polynomial; this also handles dynamic degree and circular limits.
+No coordinates or coefficients are read into JavaScript.
+
+`QL2P1`, `QL2P2` and `QL2P3` have two independent point outputs and an optional
+final integer index. Unreal intersections keep undefined slots; fixed points
+use a complex square root, whose two results are real plane points even for
+negative real κ. Indices do not identify global branches through collisions
+or square-root cuts.
+
+`QLCu1`, `QACu1`, `QLQu3` and `OrthopivotalCubic` use direct polynomial equations.
+Singular, decomposed and lower-degree limits retain the implicit-curve class.
+Existing cubic operations still reject noncubics. `QACu1` uses the cyclic
+coaxality formula with its middle-term sign checked independently, rather than
+copying the inconsistent displayed CT formula in the reference page.
+
 ## Verification
+
+`/scripts/geogebra-smoke.html?suite=p3` exercises all 42 P3 overloads, output XML
+classes and helper counts, conjugation identities, conic limits, supporting
+lines, dragging and export/reopen. Add `&tool=CoTf3` (or another exact tool name)
+to run just its catalog overloads. The browser suite is separate from Vitest;
+current completion and any native-engine limitations are recorded in the PLAN.
+`p3Commands.test.ts` checks expansion budgets, dispatch, independent outputs,
+Scimemi similarities, complex quartic coefficients and independent circle-pencil
+and QA-cubic identities, including a homogeneous infinite-diagonal limit.
 
 `/scripts/geogebra-smoke.html?suite=cubic` verifies both cubic polars and both
 third-intersection overloads, all ten polynomial terms, sparse coefficients,
