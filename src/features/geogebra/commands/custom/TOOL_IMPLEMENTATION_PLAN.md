@@ -336,6 +336,52 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 
 这里的“未核定”不是声称定义不存在，而是本轮没有取得足够证据将其作为稳定的公开接口。EPG 的 QA/QL 编号有公开目录意义，与已经按用户要求排除的 PoC/PoE 私有命名不同。
 
+
+### 10.2 P3 计划草案
+
+下一步实现有关三角形几何学、四边形、四点形、二次曲线、三次曲线的命令。
+
+| 名称   | 暂定输入 → 输出 | 分析 |
+|---|---|---|
+| BrocardAxis | A,B,C → line | 直线OK。  |
+| LemoineAxis | A,B,C → line | K关于外接圆的极线。或坐标也很简单。  |
+| OrthicAxis | A,B,C → line | H的三线性极线，或坐标也很简单。  |
+| SoddyPoint | A,B,C,i → point | X175 or X176 |
+| LiangZelichPerspector | A,B,C,P → point |过 I、三个旁心、P 的 conic，再取 OP 的极点。可以视为除了等心和外心都是良定的。它是一个与P的垂足三角形关于P位似的三角形与ABC的透视中心。  |
+| StammlerHyperbola | A,B,C-> conic |过 I、三个旁心、O 的 conic。是标准名称。  |
+| OrthopolarConic | A,B,C,P-> conic | 过P的直线的垂极点轨迹。 不要真的用轨迹去画（下同）。经过P的垂足三角形顶点，且中心为 (H+P)/2。 |
+| CundyParryPhi | A,B,C,P → point |   OP∩H(P*)  http://bernard-gibert.fr/Classes/cl037.html |
+| CundyParryPsi | A,B,C,P → point | O(P*)∩HP   |
+| CoTf3 | P,conic -> point | https://www.chrisvantienhoven.nl/epg/polyn-curves/conics/co-tf3/ |
+| InvCoTf3 | P,conic -> point | 上面的逆 |
+| QAP2 | A,B,C,D -> point | 经过ABCD和(ABC垂心)的圆锥曲线中心。当ABCD为垂心组时允许undefined https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/qa-items/qa-p2/ | 
+| QAP3 | A,B,C,D -> point | Reflection of PonceletPoint in the center of (A,B,C,D) (i.e., (A+B+C+D)/4)    |
+| QAP4 | A,B,C,D -> point |   Inverse of Isogonal Conjugate of Pi wrt  (circumcircle) Pj.Pk.Pl. 当四点共圆时需要能连续到圆心。可考虑先化简。 |
+| QAP5 | A,B,C,D -> point |    Reflection of the Anticomplement of QA-P1 (wrt the QA-Diagonal Triangle) in QA-P1. |
+| QL2P1 | A,B,C,D -> point*2 / point | 直径(AC),(BD)两圆的交点, plucker points|
+| QL2P2 | A,B,C,D -> point*2 / point | Intersections of Newton line and QLTf1(NewtonLine) (can be imaginary)|
+| QL2P3 | A,B,C,D -> point*2 / point | QLTf1的两个不动点。|
+| QLP3 | A,B,C,D->point | Reflection of QL-P4 in QL-P5|
+| QLP4 | A,B,C,D->point | QLCi3圆心|
+| QLP5 | A,B,C,D->circle | QLCi5圆心 |
+| QLP6 | A,B,C,D->point | Midpoint of QL-P4 and QL-P5. |
+| QLP7 | A,B,C,D->point | The Newton-Steiner Point is the intersection point of the two most prominent Quadrilateral Lines: QL-L1 The Newton Line and QL-L2 The Steiner Line. |
+| QLP19 | A,B,C,D->point | Midpoint of QL-P1 and QL-P7 |
+| QLP20 | A,B,C,D->point | QLTf1(NewtonLine)在Miquel点处切线与 Newton line 的交点|
+| QLP21 | A,B,C,D->point | Reflection of QL-P1（密克点） in QL-P20| 
+| QLTf1 | A,B,C,D, "anything" -> ... | Inverse "anything" in the circle (M, (Distance(M,A)*Distance(M,C))^.5) and reflect it through the angle bisector of AMC, where M is the Miquel point.（反演反射） |
+| QLCi3 | A,B,C,D->circle | miquel circle。我认为任取四个三角形中的三个外心作图应该任意两个都不重合。 |
+| QLCi5 | A,B,C,D->circle | 经过密克点与 plucker points的圆。 |
+| QLCi6 | A,B,C,D->circle | 经过密克点,圆心 QLP6。 |
+| QLCu1 | A,B,C,D->implicitCurve | https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-cu1/ 满足一对QLTf1点中点在牛顿线上的轨迹。可用下面的重载。 注意当ABCD含有内切圆时应该能连续退化为斜环索线。|
+| QLCu1 | A,B, l -> implicitCurve | 考虑P关于圆(A,AB)反演再关于直线AB对称至Q,若PQ中点在定直线l上，则P轨迹是一种QL-Cu1。属于圆环曲线。 |
+| QACu1 | A,B,C,D-> implicitCurve |  https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/qa-items/qa-cu1/  设D关于ABC的塞瓦三角形UVW（对角三角形）， 满足 (APU),(BPV),(CPW)三圆共轴的轨迹。属于圆环曲线。|
+| QLQu3 | A,B,C,D-> implicitCurve | https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-qu3/ 设AB∩CD=E, AC∩BD=F, 若P满足(PAC),(PBD),(PEF)三圆共轴，则P轨迹是QL-Qu3。 |
+|OrthopivotalCubic | A,B,C,P-> implicitCurve | http://www.bernard-gibert.fr/gloss/orthopivotalcubi.html  |
+
+* 暂时QL（未重载的）也均用四点输入，而不用四直线。
+* 命名先用编号。之后可以实现它们的别名。
+
 ## 11. 实现记录与验收要点
 
 1. 先实现 P1 中的中心、投影、三角形、线性变换；统一参数顺序和同类型多输出元数据。保持现有五个命令兼容。
