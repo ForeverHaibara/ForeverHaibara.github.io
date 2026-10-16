@@ -1000,7 +1000,8 @@
     },
     {
       "name": "QLCu1",
-      "description": "Circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
+      "aliases": ["DragonCubic"],
+      "description": "Loci of isogonal conjugate pairs of a complete quadrilateral. Circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "qlCubic"}

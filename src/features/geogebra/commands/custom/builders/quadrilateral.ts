@@ -68,7 +68,7 @@ const qlCubic: ExpressionBuilder = (args, allocate) => {
   if (args.length === 4) return withQL(args, allocate, (m, u, v, vertices) => withNewton(vertices, m, allocate, (n) => midpointCubic(m, u, v, n)));
   const [a, b] = args.map((arg) => arg.expression);
   return bind([`(${b})-(${a})`, ...homogeneous(args[2])], allocate, ([e, nx, ny, c]) =>
-    `If(Distance(${a},${b})!=0,${midpointCubic(a, `(x(${e})^2-y(${e})^2)`, `(2*x(${e})*y(${e}))`, [nx, ny, `${c}+${nx}*x(${a})+${ny}*y(${a})`])})`);
+    `${midpointCubic(a, `(x(${e})^2-y(${e})^2)`, `(2*x(${e})*y(${e}))`, [nx, ny, `${c}+${nx}*x(${a})+${ny}*y(${a})`])}`);
 };
 
 const qlQuartic: ExpressionBuilder = (args, allocate) => {
