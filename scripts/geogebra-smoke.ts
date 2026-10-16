@@ -4,6 +4,7 @@ import { readFileTools } from '../src/features/geogebra/commands/custom/commandE
 import { createFileToolCompletionProvider } from '../src/features/geogebra/commands/completion/fileToolCompletionProvider';
 import { verifyP1, verifyRadicalAxis } from './geogebra-p1-smoke';
 import { verifyP2 } from './geogebra-p2-smoke';
+import { verifyCubic } from './geogebra-cubic-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -58,6 +59,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'cubic') {
+      await verifyCubic(engine, report);
+      report('COMPLETE');
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('suite') === 'radical') {
       await verifyRadicalAxis(engine, report);
       report('COMPLETE');

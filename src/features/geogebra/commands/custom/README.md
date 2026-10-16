@@ -198,12 +198,19 @@ Native `Polar(P,conic)` and `Polar(line,conic)` retain their original meanings.
 the constant and lower-degree terms. There is no `PolarLine` alias.
 
 The builders take `LeftSide(F)-RightSide(F)` as a native two-variable function.
-Its partial derivatives at (0,0), divided by factorials, yield the ten cubic
-coefficients. Native `AreEqual` compares the reconstructed polynomial with the
-function, and a nonzero third-degree part is required. Noncubic inputs are
-undefined dynamically; comparisons inherit GeoGebra's polynomial tolerance.
-`Coefficients` does not accept implicit curves, so it is not used here. No free
-curve points, numeric sampling or JavaScript coefficient snapshots are needed.
+They substitute `(x,x^4)`, encoding each cubic monomial `x^i*y^j` as the distinct
+power `x^(i+4j)`. Native `Coefficients(f(x,x^4)+0*x)` reads this **univariate
+function**, rather than the implicit curve or a two-variable function. Reversing
+the list and padding with zeros preserves sparse coefficients as the curve
+changes. Native `AreEqual` compares the reconstructed **bivariate** polynomial
+with the full original function, and a nonzero third-degree part is required.
+This rejects noncubics, including higher-degree terms that collide under the
+substitution. Comparisons inherit GeoGebra's polynomial tolerance.
+
+The former `Derivative(...)(0,0)` expressions were rejected by the native
+parser. Coefficient extraction now uses the native polynomial expansion path,
+without derivatives, CAS evaluation, interpolation, free curve points,
+numeric sampling or JavaScript coefficient snapshots.
 
 `ThirdIntersection(F,P,Q)` assumes distinct known curve points P and Q; it
 removes the roots 0 and 1 from F(P+t(Q-P)) using Vieta's sum.
@@ -274,6 +281,12 @@ conics may be returned using the projective discriminant/adjugate definition of
 tangency. This is not a solver for every degenerate family.
 
 ## Verification
+
+`/scripts/geogebra-smoke.html?suite=cubic` verifies both cubic polars and both
+third-intersection overloads, all ten polynomial terms, sparse coefficients,
+vertical secants, inflections, noncubic rejection (including encoding collisions),
+dynamic degree changes, native triangle cubics, pivotal cubics, nine-point cubics,
+coefficient updates and export/reopen. This is separate from the complete P2 suite.
 
 `nativeCommands.test.ts` checks the final expressions for every catalog overload
 against the saved native command index, with explicit scalar/coordinate functions

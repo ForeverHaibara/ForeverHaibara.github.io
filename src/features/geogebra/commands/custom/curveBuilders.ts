@@ -5,25 +5,23 @@ import { add, mul, bind, coefficientLine, triangleAreas, matrix } from './expres
 export const CUBIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
 const power = (value: string, degree: number) => degree === 0 ? '1' : degree === 1 ? value : `(${value})^${degree}`;
 const term = (coefficient: string, x: string, y: string, i: number, j: number) => mul(coefficient, power(x, i), power(y, j));
-const factorial = [1, 1, 2, 6];
+/** Encode x^i*y^j as x^(i+4j); cubic monomials have distinct exponents. */
+export const CUBIC_COEFFICIENT_INDICES: readonly number[] = CUBIC_MONOMIALS.map(([i, j]) => i + 4 * j + 1);
 
-/** Exact native Taylor coefficients, not fitted values or JavaScript samples. */
+/** Native univariate polynomial coefficients, without CAS or point sampling. */
 const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
-  bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) => {
-    const derivatives = CUBIC_MONOMIALS.map(([i, j]) => {
-      let derivative = f;
-      if (i) derivative = `Derivative(${derivative},x,${i})`;
-      if (j) derivative = `Derivative(${derivative},y,${j})`;
-      return `${derivative}(0,0)/${factorial[i] * factorial[j]}`;
-    });
-    return bind(derivatives, allocate, (coefficients) => {
-      const polynomial = add(coefficients.map((coefficient, k) => term(coefficient, 'x', 'y', ...CUBIC_MONOMIALS[k])));
-      const cubicPart = coefficients.slice(6).map((coefficient) => `(${coefficient})^2`).join('+');
-      // AreEqual on native polynomial functions compares coefficients. It does
-      // not merely check the curve at a finite collection of sample points.
-      return `If(AreEqual(${f},${polynomial})&&(${cubicPart})!=0,${body(coefficients)})`;
-    });
-  });
+  bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
+    // Coefficients accepts a one-variable function, not an implicit curve or
+    // a two-variable function. Keep a formal x even for constant restrictions;
+    // reverse and pad so missing high-degree terms read as zero dynamically.
+    bind([`Join(Reverse(Coefficients(${f}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`], allocate, ([encoded]) =>
+      bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate, (coefficients) => {
+        const polynomial = add(coefficients.map((coefficient, k) => term(coefficient, 'x', 'y', ...CUBIC_MONOMIALS[k])));
+        const cubicPart = coefficients.slice(6).map((coefficient) => `(${coefficient})^2`).join('+');
+        // The encoding is injective only through degree three. Compare the full
+        // bivariate polynomial too, rejecting higher-degree terms and collisions.
+        return `If(AreEqual(${f},${polynomial})&&(${cubicPart})!=0,${body(coefficients)})`;
+      })));
 
 /** Homogeneous gradient at (p,q,1): the second polar line. */
 export const cubicPolarLine = (coefficients: string[], p: string, q: string): string[] => [0, 1, 2].map((axis) =>

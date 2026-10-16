@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS } from './curveBuilders';
+import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS, CUBIC_COEFFICIENT_INDICES } from './curveBuilders';
 import { isoconjugateWeights, crosspointWeights, cevapointWeights, cevaConjugateWeights, crossConjugateWeights, cyclocevianWeights, antigonalWeights, orthotransversalCoordinates, centeredConicShape, commonTangentNormal } from './triangleBuilders';
 
 // Evaluate the scalar algebra emitted by the builders. No geometry engine is
@@ -98,6 +98,23 @@ describe('homogeneous cubic algebra', () => {
     const [i, j] = CUBIC_MONOMIALS[k];
     return sum + a * x ** i * y ** j * z ** (3 - i - j);
   }, 0);
+
+  it('encodes every cubic monomial without collisions and preserves sparse trailing zeros', () => {
+    expect(new Set(CUBIC_COEFFICIENT_INDICES).size).toBe(10);
+    for (const coefficients of [c, [0, 0, 0, 0, 0, 0, 2, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 3]]) {
+      const encoded = Array<number>(13).fill(0);
+      coefficients.forEach((value, i) => { encoded[CUBIC_COEFFICIENT_INDICES[i] - 1] = value; });
+      // Coefficients returns descending powers and omits zero leading terms.
+      while (encoded.length > 1 && encoded.at(-1) === 0) encoded.pop();
+      const padded = [...encoded, ...Array<number>(13).fill(0)];
+      expect(CUBIC_COEFFICIENT_INDICES.map((index) => padded[index - 1])).toEqual(coefficients);
+      for (const x of [-2, -0.5, 0, 1.25]) {
+        const restricted = encoded.reduce((sum, value, exponent) => sum + value * x ** exponent, 0);
+        const original = coefficients.reduce((sum, value, i) => sum + value * x ** CUBIC_MONOMIALS[i][0] * (x ** 4) ** CUBIC_MONOMIALS[i][1], 0);
+        expect(restricted).toBeCloseTo(original, 9);
+      }
+    }
+  });
 
   it('satisfies Euler polarity identities, including the constant and lower-degree terms', () => {
     const p = [1.2, -0.4];

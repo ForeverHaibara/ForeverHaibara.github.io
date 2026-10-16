@@ -19,7 +19,7 @@ describe('P2 type dispatch and symbolic construction boundaries', () => {
     expect(compile('Polar(l,q)')).toBe('Polar(l,q)');
     expect(compile('Incenter(Polar(l,q),B,C)')).toContain('TriangleCenter');
     expect(compile('Polar(P,Cubic(A,B,C,1))')).toContain('LeftSide');
-    expect(compile('PolarConic(P,ImplicitCurve(x^3+y^3-1))')).toContain('Derivative');
+    expect(compile('PolarConic(P,ImplicitCurve(x^3+y^3-1))')).toContain('Coefficients');
     expect(() => compile('PolarConic(P,q)')).toThrow('No overload');
     expect(() => compile('IsogonalConjugate(A,B,C,f)')).toThrow('No overload');
   });
@@ -50,14 +50,15 @@ describe('P2 type dispatch and symbolic construction boundaries', () => {
     }
   });
 
-  it('uses native differential coefficients and a dynamic cubic-degree guard, never nine sampled path points', () => {
+  it('uses univariate coefficient encoding and a dynamic cubic-degree guard without CAS or sampled path points', () => {
     for (const source of ['Polar(P,f)', 'PolarConic(P,f)', 'ThirdIntersection(f,P)', 'ThirdIntersection(f,P,B)']) {
       const expression = compile(source);
       expect(expression).toContain('LeftSide');
       expect(expression).toContain('RightSide');
-      expect(expression).toContain('Derivative');
+      expect(expression).toMatch(/Reverse\(Coefficients\(v\d+\(x,x\^4\)\+0\*x\)\)/u);
+      expect(expression).toContain('{0,0,0,0,0,0,0,0,0,0,0,0,0}');
       expect(expression).toContain('AreEqual');
-      expect(expression).not.toMatch(/Point\(|Intersect\(|Cubic\(/u);
+      expect(expression).not.toMatch(/Derivative\(|Point\(|Intersect\(|Cubic\(/u);
       expect(expression.length, source).toBeLessThan(20_000);
     }
     const cubic = compile('Cubic(A,B,C,D,P,X,Y,(1,2),(3,4))');

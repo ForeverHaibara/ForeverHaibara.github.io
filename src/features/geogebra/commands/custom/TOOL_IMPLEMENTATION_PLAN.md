@@ -373,6 +373,15 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 - 前一版（SteinerLineQ 复用根轴时）已在实际嵌入式 GeoGebra 运行此专项脚本并得到 **COMPLETE**，包括根轴经过同心退化后恢复，以及其他受影响重载的拖动／导出重开。该版 Vitest **9 个文件、97 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告既有 MarkdownRenderer、TriplesPage 错误。此次专项验收不替代完整 P2 验收。
 - 后续按审阅意见将 SteinerLineQ 四点版改为上述直接坐标方程，并补充方程与两直径圆幂差的代数一致性测试，包含水平／竖直和同心退化；相关自动测试 **4 个文件、48 项通过**，按用户要求不再运行真实引擎验收。
 
+### 三次曲线调用兼容性修复（2026-10-16）
+
+- 实机复现 `Polar`、`PolarConic`、两个 `ThirdIntersection` 重载共用的 `Derivative(...)(0,0)` 写法被原生解析器拒绝。命令名出现在指令表中不能证明这种命令结果后缀调用合法；导数构造还涉及 CAS 计算，原检查只覆盖命令名，未覆盖这层语法。
+- `library.json` 升至 **0.2.2**。共享系数提取改为原生一元多项式展开：对 `f=LeftSide(F)-RightSide(F)` 作符号代入 `f(x,x^4)+0*x`，将三次单项式 `x^i y^j` 编码为互异的 `x^(i+4j)`，再由 `Coefficients` 提取。该命令只接收一元函数，不直接接收 implicitCurve 或二元函数；原生实现的多项式展开分支不需要 CAS。没有采样曲线点、插值或 JavaScript 系数快照。
+- 将降幂系数表 Reverse 后补零，支持稀疏多项式及动态最高项消失。仍用 `AreEqual` 比较重建二元多项式与完整原函数，并要求三次项非零；例如 `x^4-y+x^3` 的高次项在代入时相消，仍会被完整二元比较拒绝。
+- 专项入口为 `/scripts/geogebra-smoke.html?suite=cubic`。自动测试覆盖编码无碰撞、稀疏系数补零、表达式中不再包含 Derivative；实机脚本覆盖四个重载、全部十个系数、竖直割线／拐点、非三次输入、动态次数、三种构造来源及导出重开。完整 P2 验收仍单独记录。
+- 本轮专项实机脚本已得到 **COMPLETE**，系数变动与导出重开后的依赖检查通过。Vitest **9 个文件、99 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告原有 MarkdownRenderer、TriplesPage 错误。
+- 源码核对：[CmdCoefficients](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/cas/CmdCoefficients.java)、[AlgoCoefficients](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoCoefficients.java)、[AlgoLeftRightSide](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoLeftRightSide.java)。
+
 
 ## 12. 参考资料与本轮查阅情况
 
