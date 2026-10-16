@@ -1,6 +1,6 @@
 # Custom geometry tools — implementation review plan
 
-状态：**P1、P2 已实现；P1 已人工运行实际 GeoGebra 引擎验证，P2 实机验证待运行**。按最新人工审阅后的计划完成 P2，明确暂不实现的项目继续保留。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
+状态：**P1、P2 已实现；P3 仅完成接口及算法规划，尚未实现**。P1 已人工运行实际 GeoGebra 引擎验证，完整 P2 实机验证待运行；后续兼容性专项验收另见第 11 节。P3 按 `022fa18` 的人工草案补充，见第 10.2 节；本轮只修改本文，不修改工具代码。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
 
 ## 1. 范围、来源和取舍
 
@@ -15,6 +15,7 @@
 - **Implemented (P2)**：第二批工具，自动测试通过；原生引擎验收脚本已补充但本会话未运行。
 - **Implemented (compatibility)**：内置指令核对后补充的兼容性实现，验收范围见第 11 节。
 - **Native**：使用 GeoGebra 内置功能，不新增同义工具。
+- **Planned (P3)**：已列出新增接口和候选算法；推导、表达式预算与实机验收仍须在实现阶段完成，不能视为已上线。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
 下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `geometryBuilders.ts`、`triangleBuilders.ts`、`curveBuilders.ts` 为准，共用表达式原语见 `expressionGeometry.ts`。
@@ -31,7 +32,7 @@
 | #23 Three Mixtilinear Incircles | 多输出包含外心 E，而第三个圆的圆心 G 不在宏输出中。新接口只输出三个圆，圆心由 Center 取得。 |
 | #385 Orthic Triangle / #386 Orthic Circle | 实际分别是第四个点的垂足三角形／垂足圆。标准 orthic triangle 只需 A、B、C。分别并入 PedalTriangle、PedalCircle，另提供真正的 OrthicTriangle。 |
 | #87 NinePoint Conic | 四直线先取循环交点，再作该四点的中点圆锥曲线，依赖直线排列；不是四直线的无序对称不变量。仅保留明确的四点版本。 |
-| #89 / #444 Isogonal Center | 一个输入四直线，一个输入三角形加点，数学含义不同；不能因名称相同合并。均暂缓核定。 |
+| #89 / #444 Isogonal Center | 一个输入四直线，一个输入三角形加点，不能因名称相同合并。#444 的点版几何定义在 P3 以 QAP4 接纳；#89 的四线旧接口继续暂缓。 |
 | #90 / #458 Poncelet Point；#88 / #459 Pseudocircumcenter | 四直线与四点版本不是可随意互换的对象。先分别记录，暂不猜测统一定义。 |
 | #439 补点 / #440 反补点 | 前者实际为 `3G−2P`（Anticomplement），后者为 `(3G−P)/2`（Complement）。按实际数学含义纠正。 |
 | #465 Isotocomplementary | 帮助文字说“补点的等截共轭”，步骤却是“等截共轭的补点”。两种复合一般不交换；不保留此含混名字。 |
@@ -256,7 +257,7 @@
 
 P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为了读取曲线而在曲线上创建九个自由点**。固定类型并不意味着所有 implicitCurve 都是三次；次数条件在 GeoGebra 内动态检查，不满足时结果 undefined，移动后可恢复。
 
-具体读取 `LeftSide(F)−RightSide(F)` 的原生二元函数，用零点处偏导数除以阶乘得到十个次数≤3系数。用原生 AreEqual 检查重建多项式与原函数一致，并要求三次部分非零；所有导数、比较和数值容差均属于 GeoGebra。不能直接使用 Coefficients(F)：当前原生命令不接受 implicitCurve。此方式没有取曲线上样点，也没有将系数读取到 JavaScript。
+具体读取 `LeftSide(F)−RightSide(F)` 的原生二元函数 f，以 `f(x,x^4)+0*x` 编码三次单项式，再对一元函数用 Coefficients 提取并补零，取得十个次数≤3系数。用原生 AreEqual 检查重建二元多项式与完整原函数一致，并要求三次部分非零；比较和容差均属于 GeoGebra。不能直接使用 Coefficients(F)：当前原生命令不接受 implicitCurve。此前零点处偏导方案已由第 11 节的兼容性修复替换；没有曲线上取样或 JavaScript 数值快照。P3 若支持四次输入，必须扩展编码和全多项式核对，不能越过现有三次守卫。
 
 不保留 `CubicThirdIntersection2`、`CubicPolarLine2` 等后缀名字。九个点先构造成一个有标签的曲线，再传给操作；这种分步使用便于复用，避免每次重复展开九个大型行列式。若将来确有需要，可在相同名字下增加“九点＋作用点”的按个数重载，但本计划不优先实现这种长签名。
 
@@ -301,7 +302,9 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 
 ## 10. 暂缓定义与专题工具
 
-这些工具不在 P1/P2 实现清单中。下表给出原有输入／输出和已知构造含义，供审阅时决定是否提升优先级；**未核定的定义明确标为未核定**，不编造算法。
+### 10.1 P1/P2 时的暂缓记录
+
+这些工具不在 P1/P2 实现清单中。下表保留当时的暂缓理由，作为审计历史；**其中提升至 P3 的项目，以第 10.2 节的新接口、算法和边界为准**。未被 P3 明确接纳的旧别名、四线接口、anti／double 变体继续暂缓，不能因一个相关工具入选而全部恢复。未核定的定义明确标为未核定。
 
 | 源名称 / 暂定英文标识 | 源输入 → 输出 | 暂缓理由及已知信息 | Source |
 |---|---|---|---|
@@ -337,50 +340,170 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 这里的“未核定”不是声称定义不存在，而是本轮没有取得足够证据将其作为稳定的公开接口。EPG 的 QA/QL 编号有公开目录意义，与已经按用户要求排除的 PoC/PoE 私有命名不同。
 
 
-### 10.2 P3 计划草案
+### 10.2 P3 接口与算法计划（2026-10-16）
 
-下一步实现有关三角形几何学、四边形、四点形、二次曲线、三次曲线的命令。
+本节承接人工草案的全部新增工具，阶段均为 **Planned (P3)**。公式是算法设计，不是已被 GeoGebra 接受的最终命令。优先采用短几何复合；只有中间对象的无穷远／重合会破坏最终有限极限时，才改用约分后的齐次公式。所有退化判断留在 GeoGebra 内动态计算，不在 JavaScript 读取坐标、挑选分支或缓存数值。
 
-| 名称   | 暂定输入 → 输出 | 分析 |
+#### 10.2.1 接入规则和参考结构
+
+- 新工具最终进入 `library.json`，英文名称、英文 description、参数类型、返回类型、可选编号须一起定义。三选一：原生短式用 `expression`；调用网站工具用 `compose`；符号消元／系数生成用 `builder`。`expression` 内写 `QAP2(...)` 等网站名字不会递归展开。Builder 只收表达式、类型和卫生变量分配器，不接收引擎。
+- 模板 `locals` 是文本展开；真正共用 O、H、重心坐标、M、κ、外心等量，使用现有 `bind` 的原生匿名单元素 Zip。顶层只产生承诺的独立输出，不产生命名辅助点、列表、宏或脚本。参数名避免与 `TriangleCurve` 自带的 A/B/C 多项式变量混淆。
+- QA 的 `A,B,C,D` 表示四点组；目标对象应核验 24 种排列的不变性。QL 的 `A,B,C,D` 表示四条支撑线 `AB,BC,CD,DA` 的循环交点，允许交叉四边形，不要求凸性或顺／逆时针。循环移位及反序对应同一组线；其他排列通常改变四线结构，不能承诺同一结果。本批暂不新增四线重载，也不恢复含混的 PonceletPoint、SteinerCircle 等旧名字。
+- QL 中统一记 `E=AB∩CD`、`F=BC∩DA`，三对对顶点为 `(A,C),(B,D),(E,F)`。`AC∩BD` 是另一对象，**不能替代 F**；这修正人工草案 QLQu3 的配对。四个分量三角形固定为 `ABF,BCE,CDF,DAE`，不是任取四点中的三个。一般位置要求四条线互异、无三线共点、相关交点有限；平行的可去极点能约则约，不能用换一组三角形的动态选路掩盖缺失定义。
+- 下文 `P*` 专指 ABC 中的等角共轭，使用有向面积重心 `(a²qr:b²rp:c²pq)`。外点不取绝对值；直线求交不使用斜率；有向角由向量／复数给出，不用 `Angle` 的无向值选择内外角平分线。线段／射线参数仍取无限支撑线，取点只用有限内部路径参数 1/4、1/2。
+- `QL2P1/QL2P2/QL2P3(A,B,C,D[,i])` 固定两点槽，末尾 `i=1,2`；无实点时 undefined，相切时允许两槽重合。复数只作内部代数，不把虚点包装成实 point。两个槽不承诺绕过分支碰撞、根号割线或闭合参数回路后仍保留全局身份；不按坐标排序、去重或压缩列表。
+- `CoTf3(P,q)` 与 `InvCoTf3(P,q)` 按草案采用被作用点在前、conic 在后；这是新接口，不兼容地继承源宏 `conic,P` 顺序没有必要。`QLP5` 改正为 `point`，因为它是圆心。目录编号先作正式命令名，别名留待以后。
+
+#### 10.2.2 三角形工具
+
+这里 `S_A=(b²+c²−a²)/2`，其余循环；`X,Y,Z` 表示重心变量，不是世界坐标。
+
+| English name / signature → output | English description | 候选算法、连续性与复杂度 |
 |---|---|---|
-| BrocardAxis | A,B,C → line | 直线OK。  |
-| LemoineAxis | A,B,C → line | K关于外接圆的极线。或坐标也很简单。  |
-| OrthicAxis | A,B,C → line | H的三线性极线，或坐标也很简单。  |
-| SoddyPoint | A,B,C,i → point | X175 or X176 |
-| LiangZelichPerspector | A,B,C,P → point |过 I、三个旁心、P 的 conic，再取 OP 的极点。可以视为除了等心和外心都是良定的。它是一个与P的垂足三角形关于P位似的三角形与ABC的透视中心。  |
-| StammlerHyperbola | A,B,C-> conic |过 I、三个旁心、O 的 conic。是标准名称。  |
-| OrthopolarConic | A,B,C,P-> conic | 过P的直线的垂极点轨迹。 不要真的用轨迹去画（下同）。经过P的垂足三角形顶点，且中心为 (H+P)/2。 |
-| CundyParryPhi | A,B,C,P → point |   OP∩H(P*)  http://bernard-gibert.fr/Classes/cl037.html |
-| CundyParryPsi | A,B,C,P → point | O(P*)∩HP   |
-| CoTf3 | P,conic -> point | https://www.chrisvantienhoven.nl/epg/polyn-curves/conics/co-tf3/ |
-| InvCoTf3 | P,conic -> point | 上面的逆 |
-| QAP2 | A,B,C,D -> point | 经过ABCD和(ABC垂心)的圆锥曲线中心。当ABCD为垂心组时允许undefined https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/qa-items/qa-p2/ | 
-| QAP3 | A,B,C,D -> point | Reflection of PonceletPoint in the center of (A,B,C,D) (i.e., (A+B+C+D)/4)    |
-| QAP4 | A,B,C,D -> point |   Inverse of Isogonal Conjugate of Pi wrt  (circumcircle) Pj.Pk.Pl. 当四点共圆时需要能连续到圆心。可考虑先化简。 |
-| QAP5 | A,B,C,D -> point |    Reflection of the Anticomplement of QA-P1 (wrt the QA-Diagonal Triangle) in QA-P1. |
-| QL2P1 | A,B,C,D -> point*2 / point | 直径(AC),(BD)两圆的交点, plucker points|
-| QL2P2 | A,B,C,D -> point*2 / point | Intersections of Newton line and QLTf1(NewtonLine) (can be imaginary)|
-| QL2P3 | A,B,C,D -> point*2 / point | QLTf1的两个不动点。|
-| QLP3 | A,B,C,D->point | Reflection of QL-P4 in QL-P5|
-| QLP4 | A,B,C,D->point | QLCi3圆心|
-| QLP5 | A,B,C,D->circle | QLCi5圆心 |
-| QLP6 | A,B,C,D->point | Midpoint of QL-P4 and QL-P5. |
-| QLP7 | A,B,C,D->point | The Newton-Steiner Point is the intersection point of the two most prominent Quadrilateral Lines: QL-L1 The Newton Line and QL-L2 The Steiner Line. |
-| QLP19 | A,B,C,D->point | Midpoint of QL-P1 and QL-P7 |
-| QLP20 | A,B,C,D->point | QLTf1(NewtonLine)在Miquel点处切线与 Newton line 的交点|
-| QLP21 | A,B,C,D->point | Reflection of QL-P1（密克点） in QL-P20| 
-| QLTf1 | A,B,C,D, "anything" -> ... | Inverse "anything" in the circle (M, (Distance(M,A)*Distance(M,C))^.5) and reflect it through the angle bisector of AMC, where M is the Miquel point.（反演反射） |
-| QLCi3 | A,B,C,D->circle | miquel circle。我认为任取四个三角形中的三个外心作图应该任意两个都不重合。 |
-| QLCi5 | A,B,C,D->circle | 经过密克点与 plucker points的圆。 |
-| QLCi6 | A,B,C,D->circle | 经过密克点,圆心 QLP6。 |
-| QLCu1 | A,B,C,D->implicitCurve | https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-cu1/ 满足一对QLTf1点中点在牛顿线上的轨迹。可用下面的重载。 注意当ABCD含有内切圆时应该能连续退化为斜环索线。|
-| QLCu1 | A,B, l -> implicitCurve | 考虑P关于圆(A,AB)反演再关于直线AB对称至Q,若PQ中点在定直线l上，则P轨迹是一种QL-Cu1。属于圆环曲线。 |
-| QACu1 | A,B,C,D-> implicitCurve |  https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/qa-items/qa-cu1/  设D关于ABC的塞瓦三角形UVW（对角三角形）， 满足 (APU),(BPV),(CPW)三圆共轴的轨迹。属于圆环曲线。|
-| QLQu3 | A,B,C,D-> implicitCurve | https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-qu3/ 设AB∩CD=E, AC∩BD=F, 若P满足(PAC),(PBD),(PEF)三圆共轴，则P轨迹是QL-Qu3。 |
-|OrthopivotalCubic | A,B,C,P-> implicitCurve | http://www.bernard-gibert.fr/gloss/orthopivotalcubi.html  |
+| `BrocardAxis(A,B,C) → line` | Line joining the circumcenter and symmedian point. | 短 `compose`：连接 O 与 K=X(6)。普通等腰位置仍有效；正三角形 O=K，方向随趋近方式变化，不补造轴。只需两个中心和一条线。 |
+| `LemoineAxis(A,B,C) → line` | Polar of the symmedian point in the circumcircle. | 原生 `Polar(K,Circle(A,B,C))`，或重心线系数 `(b²c²,c²a²,a²b²)`。优先短构造；K=O 时极线在无穷远，没有普通 line 输出。不要以一组可能平行的切线交点构造。 |
+| `OrthicAxis(A,B,C) → line` | Trilinear polar of the orthocenter, with its right-triangle limit. | 直接发重心直线 `S_A X+S_B Y+S_C Z=0`，转换为世界线系数。H 的重心为 `(S_B S_C:S_C S_A:S_A S_B)`，先约掉三线极线中的公共因子 `S_A S_B S_C`，因此直角时仍有明确极限；不能直接 compose `TrilinearPolar(...,H)` 而留下 0/0。等边时为无穷远线。 |
+| `SoddyPoint(A,B,C,i) → point` | Outer (i=1, X175) or inner (i=2, X176) Soddy point. | 在引擎中以整数 i 选择 `TriangleCenter(...,175)`／`TriangleCenter(...,176)`；不解三个相切圆或按半径排序。[ETC](https://faculty.evansville.edu/ck6/encyclopedia/) 确认 X175 为外、X176 为内，仍须核验所用引擎支持。外 Soddy 圆退化为直线时中心可去无穷远，不强求有限；正三角形等特殊位置检查中心约定。 |
+| `LiangZelichPerspector(A,B,C,P) → point` | Pole of OP in the conic through P and the in/excenters. | 以草案的极点构造为公开定义。P 的有向三线坐标为 `(u:v:w)=(p/a:q/b:r/c)`，过 I 和三个旁心的 conic 可写 `d1 α²+d2 β²+d3 γ²=0`，其中 `d=(v²−w²,w²−u²,u²−v²)`。转为重心对角矩阵 `diag(d1/a²,d2/b²,d3/c²)`，求 OP 的齐次极点 `adj(Q)·l`，约公共因子后才有限化。避免构造四旁心和五点拟合。P=I 或任一旁心时 d 全零，P=O 时 OP 未给方向；退化 conic、极点在无穷远也需单独识别，不能声称“除了 I、O 一概良定”。透视解释及位似倍率仍须独立核验，不能把另一篇 Liang–Zelich 定理里的 Carnot 透视中心直接等同此点。 |
+| `StammlerHyperbola(A,B,C) → conic` | Stammler rectangular hyperbola through the in/excenters and circumcenter. | 用重心二次型 `(b²−c²)X²/a²+(c²−a²)Y²/b²+(a²−b²)Z²/c²=0`，原生六系数 Conic 后仿射变换。不依赖切线三角形或 O 是否与某辅助点重合。非等边等腰时连续成为两直线；等边时所有系数为零，族不唯一。它也可由过 I、三个旁心、O 定义，但不以五点拟合作稳定后端。 |
+| `OrthopolarConic(A,B,C,P) → conic` | Conic traced by orthopoles of lines through P. | 用下述二倍角参数消元；中心 N=(H+P)/2，并核验经过 P 的三个垂足。不使用 AP/BP/CP 作为三条采样线，否则 P 在顶点、边上时会丢失方向或产生重复点。主要开销是一个固定 2×2 线性解和二次系数。 |
+| `CundyParryPhi(A,B,C,P) → point` | Cundy–Parry Phi image: OP intersected with H(P*). | 将 P* 保持为齐次重心 q，直接 `(O×p)×(H×q)`；不先输出可能在无穷远的 P*。对整个多项式三元组约公共因子，特别核查 P 在外接圆、Euler line 及 P=O/H 的极限。只有最终三元组全零或在无穷远才 undefined，不能见到中间共轭无穷远就退出。 |
+| `CundyParryPsi(A,B,C,P) → point` | Cundy–Parry Psi image: O(P*) intersected with HP. | 同一 builder 的另一组 join/meet：`(O×q)×(H×p)`。一般位置应满足 `Psi(P)=Phi(P*)`，并检查各自的对合关系。不要与 orthopivotal 文献中同样记作 Ψ 的另一变换混用；无法约去的重合连线不任取交点。 |
 
-* 暂时QL（未重载的）也均用四点输入，而不用四直线。
-* 命名先用编号。之后可以实现它们的别名。
+**OrthopolarConic 的消参草图。** 取由 AB 决定的正交局部坐标，不按世界水平／竖直方向选稳定分支。对单位法向 `n=(cos θ,sin θ)`，过 P 的线中 A 的投影为 `A+n nᵀ(P−A)`，其 orthopole T 满足
+
+```text
+(C−B)·T = (C−B)·[A+n nᵀ(P−A)]
+(A−C)·T = (A−C)·[B+n nᵀ(P−B)] .
+```
+
+两行法向对非共线 ABC 独立。利用 `n nᵀ=I/2+[[cos 2θ,sin 2θ],[sin 2θ,−cos 2θ]]/2`，一次求出 `T=N+U cos 2θ+V sin 2θ`；这是恒等式推导，无自由点／数值采样。令 `J=[U V]`，候选方程为 `‖adj(J)(X−N)‖²−det(J)²=0`，直接输出 conic 系数。rank 2 时为椭圆，rank 1 的代数极限是双直线，不能把实际参数像的一段线段宣称为整个轨迹；rank 0 时该式全零，需从解析系数确认是否存在唯一点圆极限再承诺支持。等边、直角及 P 为顶点必须核验，不能靠选五个点规避此事。
+
+两种 Cundy–Parry 定义已对照 [ETC extended glossary](https://faculty.evansville.edu/ck6/encyclopedia/ext_glossary.html)；CL037 直连本轮返回 502，不把它当作已阅读全文。Stammler 的五点定义另见 [Steve Phelps 的构造说明](https://www.geogebra.org/m/rSgkR6MP)；上表对角二次型由四个 in/excenter 的三线坐标平方相同独立推导。
+
+#### 10.2.3 Co-Tf3 与逆变换：不选主轴的统一公式
+
+[EPG Co-Tf3](https://www.chrisvantienhoven.nl/co-tf3) 将其定义为 Scimemi transformation，并明确给出圆、直角双曲线及抛物线的极限。源宏的主轴／交点构造在轴上会变成重合线，不能直接复制。以下系数公式由其轴向定义独立推导；它还自然消除了 Center 和主轴选择。
+
+按 [原生 Coefficients(q) 的顺序](https://geogebra.github.io/docs/manual/en/commands/Coefficients/)，写
+
+```text
+q(X) = Xᵀ S X + 2 dᵀ X + f,
+S = [[a,dxy/2],[dxy/2,b]],  d=(ex/2,fy/2),
+Coefficients(q) = {a,b,f,dxy,ex,fy}.
+t=tr(S), R=t I−2S, Δ=(a−b)²+dxy²;  R²=Δ I.
+
+CoTf3(P,q)    = (R P−2d)/t
+InvCoTf3(P,q) = R(t P+2d)/Δ .
+```
+
+| English name / signature → output | English description | 连续性与实现 |
+|---|---|---|
+| `CoTf3(P,q:conic) → point` | Scimemi image of P with respect to q. | 一个六系数读取及 2×2 仿射式；不依赖 f、半轴长度或特征向量。圆时 R=0，返回圆心；抛物线无需特殊分支，例如 `y=x²` 给 `(-Px,Py+1)`。t=0 的直角双曲线一般无有限像；中心等 0/0 位置不编造连续值。 |
+| `InvCoTf3(P,q:conic) → point` | Inverse Scimemi image of P, including finite limits. | 同一系数块共用 R、t、Δ。直角双曲线 Δ≠0 时直接得到中心；圆时 Δ=0，无单值逆。抛物线例为 `(-Px,Py−1)`。一般位置验证两次复合为恒等，圆／直角双曲线处仅称极限映射，不称可逆。 |
+
+公式对整体非零系数倍乘不变，也不要求固定系数正号。对点圆、双线和相交线对，先验证该系数延拓与目录的退化约定是否一致；不假定任意奇异 conic 都有标准的 Scimemi 逆。整个二次部分为零时没有二次曲线前提，应 undefined；类型判断和 t、Δ 的零检验均在原生表达式内，禁止固定 epsilon 或按主轴长度选式。
+
+#### 10.2.4 QA 四点工具
+
+统一 `G4=(A+B+C+D)/4`；齐次对角点 `U=AD∩BC,V=BD∩CA,W=CD∩AB`，即 D 的 cevian 三角形，顺序只用于公式。不要把 QAP2 与 QL-P2 混为一谈。
+
+| English name / signature → output | English description | 候选算法、连续性与复杂度 |
+|---|---|---|
+| `QAP2(A,B,C,D) → point` | Euler–Poncelet point of the four-point set. | 直接求过四点的直角双曲线：在平移、尺度归一化坐标中取四行 `(x²−y²,2xy,x,y,1)` 的 4×5 矩阵，用五个 4×4 余子式得核向量 `(u,v,l,m,k)`。曲线为 `u(x²−y²)+2vxy+lx+my+k=0`；中心由 `2[[u,v],[v,−u]]N=−(l,m)` 得到。无须额外取 H(ABC)，因此直角三角形不会因 H 与顶点重合而丢约束。rank<4（含垂心四点组的非唯一曲线族）或没有有限唯一中心时 undefined。不作 SVD 数值快照；若预算过大，改推导同一约束的短重心式。 |
+| `QAP3(A,B,C,D) → point` | Gergonne–Steiner point of the four-point set. | 短 `compose`：`2G4−QAP2(...)`。依赖方向单一，无需重建最小离心率圆锥曲线；QAP2 本质未定时此式不补造值。 |
+| `QAP4(A,B,C,D) → point` | Isogonal center of the four-point set. | D 对 ABC 的等角共轭保持齐次世界坐标 q。以 O 为原点写 q=(qx:qy:qw)，直接做外接圆反演的齐次合成 `(R² qw qx:R² qw qy:qx²+qy²)`，最后才有限化并平移回 O。D 在外接圆上一般使 qw=0、(qx,qy)≠0，因此结果**连续返回 O**，不经过 undefined 的仿射共轭。q=O 时反演无有限像；共轭基点全零须看约分后是否仍未定。核验换掉被排除顶点后结果不变。 |
+| `QAP5(A,B,C,D) → point` | Isotomic center of the four-point set. | 草案的反补再反射化简为 `4G4−U−V−W`。三个对角点有限时只有求交和线性组合。也可直接用 D 的重心 `(p:q:r)` 给输出权重 `qr(q+r)(2p+q+r)` 及循环项；该多项式不先除 `q+r` 等量，优先用来处理对角点去无穷远的可约情形。最终权重和零、三元组全零区分无穷远与未定，不能把平行四边形中心随意当成结果。 |
+
+QAP2 的余子式法只作为固定尺寸精确代数方案：绑定归一化四点及低阶单项式，避免同一余子式在中心分子／分母反复展开。QAP4 需要内部的齐次共轭原语，不能仅 `compose Reflect(IsogonalConjugate(...),Circle(...))`。本组定义与 [QA-P2](https://www.chrisvantienhoven.nl/qa-p2)、[QA-P3](https://www.chrisvantienhoven.nl/qa-p3)、[QA-P4](https://www.chrisvantienhoven.nl/qa-p4)、[QA-P5](https://www.chrisvantienhoven.nl/qa-p5) 对照；QA-P5 多项式作为几何公式的独立验证路径。
+
+#### 10.2.5 QL 共用内核：复数对合及广义圆
+
+取 M=`MiquelPoint(A,B,C,D)`。以 M 为复原点，记 `κ=(A−M)(C−M)=u+iv`，同时核验等于 `(B−M)(D−M)`。则草案的反演加角平分线反射化简为
+
+```text
+T(z)=M+κ/(z−M).
+```
+
+这里两个复数都须显式 ToComplex；没有根号、绝对值或角平分线内／外分支。反演与反射的两次反向作用合成上述直接 Möbius 对合，不能误写成 `κ/conjugate(z−M)`。此式固定 A↔C、B↔D 的有向约定。κ=0 或 M 无有限唯一值是参考结构退化，不换另一顺序重算。
+
+在相同实坐标中记 `w=X−M`，`ρ=w·w`，`K=[[u,v],[v,−u]]`，则 `T(X)−M=Kw/ρ`，`K²=|κ|²I`。原广义圆 `aρ+b·w+c=0` 的像为
+
+```text
+cρ+(K b)·w+a|κ|²=0 .
+```
+
+这是对整个对象的代数像，不能反演线段的两个端点后仍返回线段，也不能把普通 conic 的反演像称作 conic。
+
+| English name / signature → output | English description | 候选算法及类型契约 |
+|---|---|---|
+| `QLTf1(A,B,C,D,P:point) → point` | Clawson–Schmidt conjugate of P. | 上述复数短式／等价实有理式。P=M 没有普通有限像；两次复合应回到 P。不调用 `Reflect` 对未知类型猜测输出。 |
+| `QLTf1(A,B,C,D,l:lineLike) → conic` | Generalized-circle image of the supporting line. | 将 l 写成相对 M 的 `b·w+c=0`，代入广义圆式；返回原生六系数 Conic。过 M 的直线仍为直线型退化 conic，避免拖动时 circle/line 返回类型改变。 |
+| `QLTf1(A,B,C,D,c:circle) → conic` | Generalized-circle image of the circle. | 同一系数核；圆过 M 时退化为直线，保留 conic 元数据。必须比 `conic` 参数重载更具体。不能用三个像点定圆，否则其中点恰到 M 会失效。 |
+| `QLTf1(A,B,C,D,q:conic) → implicitCurve` | Algebraic image of a conic under the conjugation. | 用齐次二次代换 `(wx:wy:1)→((Kw)x:(Kw)y:ρ)`，得到至多四次方程；原 conic 的六系数直接读取。圆型输入走上一个强类型重载，不能让同一签名随位置改类型。对圆形状但元数据为一般 conic 的输入，在系数层消掉可证明的公共 ρ，仍输出 implicitCurve。 |
+| `QLTf1(A,B,C,D,F:implicitCurve) → implicitCurve` | Algebraic image of a polynomial curve of degree at most four. | 将 “anything” 收敛为可验证的多项式重载：在原生中提取并核对至多四次的 15 项，齐次代换后至多八次。扩展现有三次系数提取器的符号编码，不能把它直接当通用接口；以基数 5 编码并比较重建的完整二元多项式，拒绝非多项式及更高次。公共 ρ 只在代数上证实整除时消去，真实分量与重数保留。需先满足表达式预算和实机性能再发布此重载，不能以 `unknown` 兜底。 |
+
+点、支撑线、圆、conic、至多四次隐式多项式覆盖本批有用的 “anything”；number、text、list、polygon、任意 function 不接受。不新增宽泛动态返回类型。所有代数曲线像采用闭包语义，可能包含在变换极点出现的极限点；不声称每个闭包点都有有限原像。定义对照 [EPG QL-Tf1](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-tf1/)。
+
+#### 10.2.6 QL 点对、圆及圆心
+
+记四个分量三角形的外心依次为 `O1=O(ABF),O2=O(BCE),O3=O(CDF),O4=O(DAE)`，`ΣO=O1+O2+O3+O4`。它们与 M 共圆，见 [QL-Ci3](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-ci3/)。一般位置中，任意两个分量圆共用一个顶点；若外心也相同则两圆重合，从而一个圆含三个互异共线交点，矛盾。因此外心两两不同，任取三个可唯一作圆；证明依赖“一般位置”，不能延伸到三线共点或平行配置。
+
+| English name / signature → output | English description | 候选算法、连续性与复杂度 |
+|---|---|---|
+| `QL2P1(A,B,C,D[,i]) → point × 2 / point` | Plücker points of the complete quadrilateral. | 作 AC、BD 直径圆，取它们根轴（亦为 SteinerLineQ）与第一个圆的两交点。可用“圆心投影到根轴 ± 有向单位切向量×弦半长”显式二根；弦半长负平方值时两槽 undefined，零时重合。不使用循环边的无向长度来判断交点顺序。 |
+| `QL2P2(A,B,C,D[,i]) → point × 2 / point` | Conjugate pair on the Newton line. | Newton line 相对 M 写成 `n·w+c=0`，其 T 像的方程是 `cρ+(K n)·w=0`。固定线参数 `w=w0+t d` 后解一个实二次方程，或原生线/conic 求交；不拟合三点圆。若像为直线，仍保留两输出槽；重合导致无限解时不任取两点，有限实根／无穷远根按原生行为核验。 |
+| `QL2P3(A,B,C,D[,i]) → point × 2 / point` | Fixed points of the Clawson–Schmidt conjugation. | 解 `(z−M)²=κ`，输出 `M±ToPoint(sqrt(κ))`；平方根运算必须在复数域。κ≠0 时总有两个实平面点，负实 κ 也不代表“虚点”；切勿用实数 sqrt 误删它们。点对无序，分支割线处不承诺逐槽全局连续。 |
+| `QLCi3(A,B,C,D) → circle` | Miquel circle through the four component circumcenters. | 短几何构造：`Circle(O1,O2,O3)`；O4 及 M 仅作为验收冗余条件。不新增旧名 SteinerCircle，也不取 ABC、BCD、CDA 三个外心冒充分量外心。 |
+| `QLP4(A,B,C,D) → point` | Center of the Miquel circle. | `Center(QLCi3(...))`；先允许 compose。如展开重复，内部绑定 O1,O2,O3 后调用原生外心即可，不绕回 QLP4 引起循环依赖。 |
+| `QLP5(A,B,C,D) → point` | Clawson center, the center of the Plücker circle. | 由 [QL-P5](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-p5/) 的共用 `(Oi+Hi)/2` 定义化简为 `ΣO/2−QLP4`。不从两个可能无实解／重合的 Plücker 点拟合圆心。返回类型纠正为 point。 |
+| `QLP3(A,B,C,D) → point` | Kantor–Hervey point of the complete quadrilateral. | `2QLP5−QLP4`，短 compose；无需作四个外心三角形的垂心圆。 |
+| `QLP6(A,B,C,D) → point` | Midpoint of the Miquel and Clawson centers. | `(QLP4+QLP5)/2=ΣO/4`，优先直接取四外心平均，省去两次圆心依赖；此化简也便于检查反射关系。 |
+| `QLP7(A,B,C,D) → point` | Newton–Steiner point. | `Intersect(NewtonLine(...),SteinerLineQ(...))`；两条线用已实现的简式。平行而不重合则无有限结果，重合则不唯一；不靠非常接近的点估计交点。 |
+| `QLP19(A,B,C,D) → point` | Midpoint of the Miquel and Newton–Steiner points. | `(M+QLP7)/2`。若最终齐次式能约去依赖的公共因子，可在 builder 中合成；本质无穷远不取截断坐标。 |
+| `QLP20(A,B,C,D) → point` | Intersection of the Newton line and the tangent at M to its conjugate circle. | Newton line 为 `n·w+c=0`；其像在 M 的切线为 `(K n)·w=0`，直接求这两线交点。不必先创建 QLTf1 的 conic，也不在圆的重根处调用 Intersect。c=0 时像成为直线，该切线式仍是自然延拓；两线重合仍未定。见 [QL-P20](https://www.chrisvantienhoven.nl/ql-p20) 供独立性质核验。 |
+| `QLP21(A,B,C,D) → point` | Reflection of the Miquel point in QL-P20. | `2QLP20−M`。无需重复极线、圆或三次曲线操作。 |
+| `QLCi5(A,B,C,D) → circle` | Plücker circle centered at the Clawson center through M. | `Circle(QLP5,M)`；不用 `Circle(M,Plucker1,Plucker2)`，所以 Plücker 点无实解时仍能得到实圆。检查在点对有实时二点都在此圆上；零半径按原生圆语义。 |
+| `QLCi6(A,B,C,D) → circle` | Dimidium circle centered at QL-P6 through M. | `Circle(QLP6,M)`。圆心直接用 ΣO/4，避免源宏中的嵌套密克点构造；不伪装成一般 conic 返回。 |
+
+QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派生 P5/P3/P6 和两个圆。多次引用不会因写进 `locals` 自动缓存。对 E/F 去无穷远但目标仍可能有极限的配置，应先化简整体式；不能承诺简单外心链已经覆盖所有平行特例。点对定义另见 [QL-2P1](https://www.chrisvantienhoven.nl/ql-2p1)、[QL-2P2](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-2p2/)、[QL-2P3](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-2p3/)。
+
+#### 10.2.7 隐式曲线：直接方程，不采样拟合
+
+以下始终返回 `implicitCurve`，容许其代数族出现结点、分解或降次，不因显示形状变化切换类型；零多项式表示未唯一指定曲线，不能显示为整个平面。曲线的完整代数闭包与原始作图中因三点共线而缺失的点分别说明。三次操作 `Polar/PolarConic/ThirdIntersection` 的“输入须为三次”条件仍保留；尤其不能对 QLQu3 或一般 QLTf1 四／八次像调用三次剩余根公式。
+
+| English name / signature → output | English description | 候选算法、连续性与复杂度 |
+|---|---|---|
+| `QLCu1(A,B,C,D) → implicitCurve` | Quasi-isogonal cubic of the ordered quadrilateral. | 在 M 局部坐标中，Newton line 为 `n·w+c=0`，直接输出 `F(w)=(n·w+2c)ρ+n·K w=0`。由 `(X+T(X))/2` 在线上清一次分母得到，通常只有十个以内单项式；不调用 Locus 或九点 Cubic。四边有内切圆时照算同一式，允许出现结点／斜环索线，不加“非奇异三次”守卫。用内心是结点及其梯度为零核验该连续族。 |
+| `QLCu1(A,B,l:lineLike) → implicitCurve` | Circular cubic whose conjugate-pair midpoints lie on l. | A 为反演中心，`r²=Distance(A,B)²`，反射轴 AB。令 `e=B−A`、`w=X−A`，无需单位化即可取 `K=2e eᵀ−r²I`；l 在 A 局部为 `n·w+c=0`，复用上一 F。B≠A；不能令 A=B 后还从遗失的轴猜一个方向。描述写明这是广义的同类圆环三次族，不保证任意 A/B/l 都来自某个实非退化四线配置。 |
+| `QACu1(A,B,C,D) → implicitCurve` | Circular cubic of coaxal circles through corresponding diagonal pairs. | 取 D 的重心 `(p:q:r)`；令 `T_a=a²(p+q)(p+r)−b²p(p+q)−c²p(p+r)`，T_b、T_c 循环。候选式为 `a²T_a YZ(rY−qZ)+b²T_b ZX(pZ−rX)+c²T_c XY(qX−pY)=0`，用 TriangleCurve 发出，无中间 cevian 除法。须与下述三圆共轴恒等式核对，尤其第二循环项符号；网页 CT 式中间项按原样抄写与独立例子不符，暂以几何定义为准。三角形共线未定，某个迹在无穷远时通过多项式处理极限。 |
+| `QLQu3(A,B,C,D) → implicitCurve` | Schmidt quartic of coaxal circles through opposite intersection pairs. | 正确配对为 `(A,C),(B,D),(E,F)`，E=AB∩CD、F=BC∩DA。为三个含变量 P 的圆生成齐次系数行 `(s,d,e,f)`，用 `det[[s1,d1,e1],[s2,d2,e2],[s3,d3,e3]]=0` 消元；它们已共用 P，故圆心共线等价于共轴。消去恒等相消的最高项后为四次，不生成“圆心函数求交”的长有理式，不用十四点拟合。E/F 先齐次保留，参考参数公共因子须预先约掉，不能在平行处由全零行列式产生伪曲线。 |
+| `OrthopivotalCubic(A,B,C,P) → implicitCurve` | Orthopivotal cubic with orthopivot P. | P 的重心为 `(p:q:r)`，按 Gibert 的共线定义 `P,X,oc(X)` 及现有 Orthocorrespondent 齐次式得到三次；候选短式为 `Σ_cyclic X[(c²p−2S_B r)Y²−(b²p−2S_C q)Z²]=0`，原生 TriangleCurve。只有六项，避免真实轨迹和九点拟合。P=O 对照 Neuberg cubic；P=G 时容许 Kiepert 双曲线加无穷远线的射影退化，其仿射方程可降为二次，不因总次数变化造出辅助点补三次。 |
+
+**共轴消元的可复用小原语。** 对固定有限 U,V 和变量 P=(x,y)，圆方程可由下列 3×4 矩阵的带符号 3×3 余子式直接取得：
+
+```text
+[ x²+y²   x   y   1 ]
+[ U·U     Ux  Uy  1 ]   -> (s,d,e,f),
+[ V·V     Vx  Vy  1 ]      s(X²+Y²)+dX+eY+f=0 .
+```
+
+三圆共同经过 P，故只需前三个系数的 3×3 行列式检查同属一个圆束；无需除以 s 得圆心。QACu1 用 `(A,U),(B,V),(C,W)`，三条固定弦所在直线交于 D，最高次项进一步相消为三次；QLQu3 通常为四次。对 U/V/W 等无穷远点，齐次行写为 `(Ux²+Uy²,UxUw,UyUw,Uw²)`，但**不能认为清分母就自动解决了所有退化**：必须预先去掉只依赖参考点的可约因子，并核查多项式是否仍非零。此原语用于推导／验证；实际生成优先使用已简化的十项／十五项系数，不反复内联大行列式。
+
+本轮用精确有理数例 `A=(0,0),B=(4,0),C=(3,3),D=(−1,2)`，独立计算三圆系数，确认 QACu1 共轴式总次数为 3、QLQu3 为 4；上述 QACu1 循环式与共轴式相差非零常数，而网页 CT 式中间项按其显示符号使用则不成比例。这只是排除符号错误的一个独立例子，**尚不构成一般恒等式证明或实机验收**；实现时须对符号参数和更多一般位置验证。同例还通过 QAP2/QAP4/QAP5/QACu1 的 24 种排列检查、QAP2 在四个九点圆上、QL 的两组对顶点复数积相等及四外心与 M 共圆检查；CoTf3／InvCoTf3 的互逆关系已作一般系数的符号恒等式检查。Orthopolar 二倍角式另以 `ABC=(0,0),(4,0),(3,3)`、`P=(1,1)` 精确检查中心及三垂足代入残差为零。上述均为一次性离线推导校验，本轮未新增工具代码或测试文件。
+
+定义来源：[QL-Cu1](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-cu1/) 的共轭中点条件、[QA-Cu1](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/qa-items/qa-cu1/) 的目录方程、[QL-Qu3](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-qu3/) 的三对相对交点及圆心共线定义、[Gibert orthopivotal](https://bernard-gibert.fr/gloss/orthopivotalcubi.html) 的短式与退化例。网页中的四次长式有排版缺项风险，优先独立消元。Orthopivotal 的 S_A/S_B/S_C 必须与本节定义一致，不混用二倍余弦量。
+
+#### 10.2.8 表达式预算、实施顺序与验收约定
+
+本节给的是候选复杂度与验收要求，本轮没有生成 P3 最终命令，也没有运行 P3 实机测试。
+
+1. **先实现小原语和短式家族**：三轴、Soddy、CoTf3 两式、QA 四点，再建 QL 的 M/κ／广义圆系数与四外心共用块。随后派生 QL 点对、圆、中心；最后接曲线及 QLTf1 多项式重载。OrthopolarConic 的二倍角消元和 LiangZelich 的专名／透视解释单独复核。不能因后一重载尚待预算而阻挡已满足定义与验收的独立工具。
+2. **预算看最终展开表达式**：短 compose 目标为几百到数千字符；中等 builder 尽量控制在约 10k 字符内；QAP2／QLTf1 曲线等可先设 30k 字符的审阅线。这些是设计目标，不是新的编译器硬限制。记录代表性标识符和长嵌套调用的字符数、匿名绑定数、原生几何操作数及生成耗时；若超过审阅线，先绑定复用、改为六／十／十五系数或 ApplyMatrix，再决定是否需要更大预算。不能把符号上的一个 `det`、一个 compose 当成恒定成本。
+3. **一般位置与有向性**：内外点、锐／钝／直角、顺逆方向、镜像、旋转、平移、大坐标与小尺度；QA 全排列、QL 循环／反序及改变线结构的非等价排列。几何残差用相对尺度；不以固定坐标 epsilon 判重。线段／射线与支撑线一致，且不因端点反序换错定义。
+4. **有限极限和真正未定分别验收**：OrthicAxis 穿越直角、Stammler 非等边等腰线对、CoTf3 圆／抛物线／直角双曲线及中心／轴上输入、QAP4 四点共圆返回共同圆心、QAP2 垂心四点组、Orthopolar 在 P 为顶点／边上、QL 相切点对与虚实转换、Newton line 过 M、四边有内切圆时 QLCu1 的结点；无穷远和无限解族保留 undefined。对尚未证明可去的基点不承诺连续扩张。
+5. **独立数学交叉校验**：QAP2 四个九点圆同过一点；QAP4 四种排除顶点方式一致；P5 的反补反射式与重心多项式一致；T(A)=C、T(B)=D、T²=id；QL2P3 固定、QL2P2 互换；四外心及 M 在 QLCi3、QL2P1 在 QLCi5；Orthopolar 参数恒等式、LiangZelich 极点关系、曲线方程与共轴／共线条件对应。不要只把生成公式原样拷到测试中自证。
+6. **后端和持久依赖**：静态测试检查重载匹配、独立输出和 i、卫生变量、最终原生命令名、无命名辅助对象、无 Locus／采样拟合、预算；实际嵌入引擎检查原生语法／签名、conic 的 XML 类、动态定义恢复、拖动、导出重开后的依赖。增加 P3 专项入口，仍不替代完整 P2 验收。网页公式核实、离线代数校验、编译器测试、实机测试的结论分别记录。
 
 ## 11. 实现记录与验收要点
 
@@ -432,8 +555,8 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 ## 12. 参考资料与本轮查阅情况
 
 - [ETC glossary](https://faculty.evansville.edu/ck6/encyclopedia/glossary.html)：用于核对 triangle、conjugate、pole 等术语；其坐标默认是三线坐标。
-- [Bernard Gibert glossary](https://bernard-gibert.fr/glossary.html)：本轮直接请求返回 502，未将其未读取内容作为已验证依据。编号曲线暂缓项需后续补查目录原方程。
-- [Encyclopedia of Poly Geometry](https://www.chrisvantienhoven.nl/epg/) 与 [QL-Cu1 条目](https://www.chrisvantienhoven.nl/epg/n-geometry/quadri-figures/ql-items/ql-cu1/)：用于确认目录名称存在；不代表本轮已核实全部 QA/QL 条目。
+- [Bernard Gibert glossary](https://bernard-gibert.fr/glossary.html)：早期直接请求返回 502。本次 P3 的 [Orthopivotal 页面](https://bernard-gibert.fr/gloss/orthopivotalcubi.html) 通过搜索索引读到定义、短方程及 P=O/G 退化例；CL037 直连仍失败，Cundy–Parry 定义由 ETC extended glossary 交叉核对。未读取部分不视为已验证。
+- [Encyclopedia of Poly Geometry](https://www.chrisvantienhoven.nl/epg/)：P3 本次实际读取 Co-Tf3、QL-Tf1、QA-P2/P3/P4/P5、QL-P5/P20、QL-Ci3、QL-2P1/2P2/2P3、QA-Cu1、QL-Cu1 和 QL-Qu3 的页面内容，具体链接及采用条件在第 10.2 节就近给出；部分旧长路径超时后由站内短链接读取。不代表全部 QA/QL 条目已核实，也不代表目录的每个显示公式均无排版问题。
 - GeoGebra 官方手册：[TriangleCenter](https://geogebra.github.io/docs/manual/en/commands/TriangleCenter/)、[Cubic](https://geogebra.github.io/docs/manual/en/commands/Cubic/)、[ImplicitCurve](https://geogebra.github.io/docs/manual/en/commands/ImplicitCurve/)、[TriangleCurve](https://geogebra.github.io/docs/manual/en/commands/TriangleCurve/)、[Polar](https://geogebra.github.io/docs/manual/en/commands/Polar/)、[Tangent](https://geogebra.github.io/docs/manual/en/commands/Tangent/)。
 
 
@@ -491,11 +614,11 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S083 | Miquel Point | 2 / 1 | Implemented (P2): `MiquelPoint(A,B,C,D) → point`; Implemented (P2): `MiquelPoint(l1,l2,l3,l4) → point` |
 | S084 | Newton Line | 2 / 1 | Implemented (P1): `NewtonLine(A,B,C,D) → line`; Implemented (P1): `NewtonLine(l1,l2,l3,l4) → line` |
 | S085 | Steiner Line | 2 / 1 | Implemented (P2): `SteinerLineQ(A,B,C,D) → line`; Implemented (P2): `SteinerLineQ(l1,l2,l3,l4) → line` |
-| S086 | Steiner Circle | 2 / 1 | Defer: `SteinerCircle(l1,l2,l3,l4) → circle` |
+| S086 | Steiner Circle | 2 / 1 | Planned (P3): `QLCi3 (four-point interface only)`; see section 10.2 |
 | S087 | NinePoint Conic | 2 / 1 | Defer: See deferred-definition notes |
-| S088 | Pseudocircumcenter | 3 / 2; variants S088, S459 | Defer: See deferred-definition notes |
-| S089 | Isogonal Center | 3 / 2; variants S089, S444 | Defer: See deferred-definition notes |
-| S090 | Poncelet Point | 3 / 2; variants S090, S458 | Defer: See deferred-definition notes |
+| S088 | Pseudocircumcenter | 3 / 2; variants S088, S459 | Planned (P3): `QAP3; legacy line variant remains deferred`; see section 10.2 |
+| S089 | Isogonal Center | 3 / 2; variants S089, S444 | Planned (P3): S444 point construction via `QAP4`; S089 line interface remains deferred |
+| S090 | Poncelet Point | 3 / 2; variants S090, S458 | Planned (P3): `QAP2; legacy line variant remains deferred`; see section 10.2 |
 | S091 | Complete Quadrilateral | 2 / 1 | Implemented (P1): `DiagonalPoints(A,B,C,D[,i]) → point × 3 / point` |
 | S092 | Circumcevian Triangle | 2 / 1 | Implemented (P1): `CircumcevianTriangle(A,B,C,P[,i]) → point × 3 / point`; Implemented (P1): `CircumcevianPoint(A,B,C,P) → point` |
 | S093 | Intersection | 2 / 1 | Native: Intersection |
@@ -550,12 +673,12 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S402 | Steiner Exellipse | 1 / 1 | Implemented (P2): `SteinerCircumellipse(A,B,C) → conic` |
 | S403 | Harmonious Conjugate | 1 / 1 | Implemented (P1): `HarmonicConjugate(A,B,P) → point` |
 | S404 | Anticevian Triangle | 1 / 1 | Implemented (P1): `AnticevianTriangle(A,B,C,P[,i]) → point × 3 / point` |
-| S405 | Orthopolar Conic | 1 / 1 | Defer: See deferred-definition notes |
+| S405 | Orthopolar Conic | 1 / 1 | Planned (P3): `OrthopolarConic`; see section 10.2 |
 | S406 | Cevian Affine Mapping | 1 / 1 | Implemented (P2): `CevianAffineMap(A,B,C,X,P) → point` |
 | S407 | Gergonne Conic | 1 / 1 | Defer: See deferred-definition notes |
 | S408 | Cevapoint | 1 / 1 | Implemented (P2): `Cevapoint(A,B,C,P,Q) → point` |
 | S409 | Cevaconjugate | 1 / 1 | Implemented (P2): `CevaConjugate(A,B,C,X,P) → point` |
-| S410 | Stammler Hyperbola | 1 / 1 | Defer: See deferred-definition notes |
+| S410 | Stammler Hyperbola | 1 / 1 | Planned (P3): `StammlerHyperbola`; see section 10.2 |
 | S411 | Anticomplementary | 1 / 1 | Implemented (P1): `Anticomplement(A,B,C,P) → point` |
 | S412 | Crosspoint | 1 / 1 | Implemented (P2): `Crosspoint(A,B,C,P,Q) → point` |
 | S413 | Crossconjugate | 1 / 1 | Implemented (P2): `CrossConjugate(A,B,C,X,P) → point` |
@@ -566,9 +689,9 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S418 | Cyclocevian Conjugate | 1 / 1 | Implemented (P2): `CyclocevianConjugate(A,B,C,P) → point` |
 | S419 | Orthocorrespondence | 1 / 1 | Implemented (P2): `Orthocorrespondent(A,B,C,P) → point` |
 | S420 | Excenters Rectangular Hyperbola | 1 / 1 | Defer: See deferred-definition notes |
-| S421 | Orthopivotal Cubic | 2 / 2; variants S421, S450 | Defer: See deferred-definition notes |
-| S422 | Cundy-Parry-Phi Transform | 1 / 1 | Defer: See deferred-definition notes |
-| S423 | Cundy-Parry-Psi Transform | 1 / 1 | Defer: See deferred-definition notes |
+| S421 | Orthopivotal Cubic | 2 / 2; variants S421, S450 | Planned (P3): `OrthopivotalCubic (direct equation; old variants not copied)`; see section 10.2 |
+| S422 | Cundy-Parry-Phi Transform | 1 / 1 | Planned (P3): `CundyParryPhi`; see section 10.2 |
+| S423 | Cundy-Parry-Psi Transform | 1 / 1 | Planned (P3): `CundyParryPsi`; see section 10.2 |
 | S424 | Cubic | 1 / 1 | Implemented (P2): `Cubic(P1,...,P9) → implicitCurve` |
 | S425 | K003 McCAY | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S426 | K004 Darboux | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
@@ -589,13 +712,13 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S441 | 九点三次曲线 | 1 / 1 | Implemented (P2): `Cubic(P1,...,P9) → implicitCurve` |
 | S442 | 十四点四次曲线 | 1 / 1 | Native: `ImplicitCurve({P1,...,P14}) → implicitCurve` |
 | S443 | IsogonalComplementary | 1 / 1 | Implemented (P1): `IsogonalComplement(A,B,C,P) → point` |
-| S445 | QA-Cu1 | 1 / 1 | Defer: See deferred-definition notes |
-| S446 | QL-Cu1 | 1 / 1 | Defer: See deferred-definition notes |
-| S447 | QL-Isogonal Pair | 1 / 1 | Defer: See deferred-definition notes |
-| S448 | QL-P21 | 1 / 1 | Defer: See deferred-definition notes |
+| S445 | QA-Cu1 | 1 / 1 | Planned (P3): `QACu1`; see section 10.2 |
+| S446 | QL-Cu1 | 1 / 1 | Planned (P3): `QLCu1 (four-point interface only)`; see section 10.2 |
+| S447 | QL-Isogonal Pair | 1 / 1 | Planned (P3): `QL2P2 (four-point interface only)`; see section 10.2 |
+| S448 | QL-P21 | 1 / 1 | Planned (P3): `QLP21 (four-point interface only)`; see section 10.2 |
 | S449 | QL-Cu1-Double | 1 / 1 | Defer: See deferred-definition notes |
 | S451 | QL-Quartic1 | 1 / 1 | Defer: See deferred-definition notes |
-| S452 | Dimidium Circle | 1 / 1 | Defer: See deferred-definition notes |
+| S452 | Dimidium Circle | 1 / 1 | Planned (P3): `QLCi6 (four-point interface only)`; see section 10.2 |
 | S453 | QL-P17 | 1 / 1 | Defer: See deferred-definition notes |
 | S454 | Tf1-QLP17 | 1 / 1 | Defer: See deferred-definition notes |
 | S455 | Spiral Similarity | 1 / 1 | Implemented (P1): `DirectSimilarity(A,B,C,D) → point`; Implemented (P1): `DirectSimilarity(A,B,C,D,E) → point` |
@@ -609,7 +732,7 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S465 | Isotocomplementary | 1 / 1 | Defer: `ComplementOfIsotomicConjugate(A,B,C,P) → point` |
 | S466 | Jerabek Hyperbola | 1 / 1 | Implemented (P2): `JerabekHyperbola(A,B,C) → conic` |
 | S467 | Antigonal Conjugate | 1 / 1 | Implemented (P2): `AntigonalConjugate(A,B,C,P) → point` |
-| S468 | LiangZelich Perspector | 1 / 1 | Defer: See deferred-definition notes |
+| S468 | LiangZelich Perspector | 1 / 1 | Planned (P3): `LiangZelichPerspector (polarity definition; perspectivity interpretation pending)`; see section 10.2 |
 | S469 | K007 Lucas | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S470 | Tangent Conic | 1 / 1 | Implemented (P2): `InconicWithCenter(A,B,C,P) → conic` |
 | S471 | Isogonal Pair with Center | 1 / 1 | Implemented (P2): `IsogonalPairWithMidpoint(A,B,C,P[,i]) → point × 2 / point` |
@@ -623,8 +746,8 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S479 | Cubic Polar Conic | 1 / 1 | Implemented (P2): `PolarConic(P,F:implicitCurve) → conic` |
 | S480 | K073 | 1 / 1 | Defer: K028; K073; Q002 |
 | S481 | Strophoid | 1 / 1 | Defer: See deferred-definition notes |
-| S482 | CoTf3 | 1 / 1 | Defer: See deferred-definition notes |
-| S483 | AntiCoTf3 | 1 / 1 | Defer: See deferred-definition notes |
+| S482 | CoTf3 | 1 / 1 | Planned (P3): `CoTf3(P,q)`; see section 10.2 |
+| S483 | AntiCoTf3 | 1 / 1 | Planned (P3): `InvCoTf3(P,q)`; see section 10.2 |
 | S484 | Inverse in Hagge Circle | 1 / 1 | Implemented (P2): `HaggeInverse(A,B,C,P) → point` |
 | S485 | Hagge Infinity Cubic | 1 / 1 | Defer: See deferred-definition notes |
 | S486 | QL-Cu1Vertical | 1 / 1 | Defer: See deferred-definition notes |
