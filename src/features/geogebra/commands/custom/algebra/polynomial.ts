@@ -1,4 +1,4 @@
-import { add, mul } from './expressionGeometry';
+import { add, mul } from './homogeneous';
 
 /** Sparse symbolic polynomials. Values are engine expressions, never snapshots. */
 export type Polynomial = Map<string, string>;

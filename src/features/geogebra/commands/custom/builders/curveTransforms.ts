@@ -1,4 +1,4 @@
-import { add, bind, mul } from './expressionGeometry';
+import { add, bind, mul } from '../algebra/homogeneous';
 
 type Allocate = () => string;
 export const QUARTIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = Array.from({ length: 5 }, (_, n) =>

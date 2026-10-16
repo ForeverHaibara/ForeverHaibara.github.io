@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "tools": [
     {
       "name": "Incenter",
@@ -362,30 +362,18 @@
     },
     {
       "name": "ArcMidpoint",
+      "aliases": ["SouthPole"],
       "description": "Midpoint of the BC arc not containing A on the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$A+($B-$A)/Distance($A,$B)+($C-$A)/Distance($A,$C))"}
       ]
     },
     {
-      "name": "SouthPole",
-      "description": "Midpoint of the BC arc not containing A; alias of ArcMidpoint.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "ArcMidpoint($A,$B,$C)"}
-      ]
-    },
-    {
       "name": "OppositeArcMidpoint",
+      "aliases": ["NorthPole"],
       "description": "Midpoint of the BC arc containing A on the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "Antipode(Circle($A,$B,$C),ArcMidpoint($A,$B,$C))"}
-      ]
-    },
-    {
-      "name": "NorthPole",
-      "description": "Midpoint of the BC arc containing A; alias of OppositeArcMidpoint.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "OppositeArcMidpoint($A,$B,$C)"}
       ]
     },
     {

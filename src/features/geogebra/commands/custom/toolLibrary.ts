@@ -1,17 +1,22 @@
 import definitions from './library.json';
-import { GEOMETRY_BUILDERS } from './geometryBuilders';
-import type { GeometryType, ParameterType, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
+import { GEOMETRY_BUILDERS } from './builders';
+import type { GeometryType, ParameterType, ResolvedToolLibrary, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
 
 const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine']);
 const resultTypes = new Set([...parameterTypes].filter((type) => !['lineLike', 'pointOrLine'].includes(type)));
+const validName = (name: unknown): name is string => typeof name === 'string' && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name);
 
 export const validateToolLibrary = (value: unknown): ToolLibrary => {
   const library = value as ToolLibrary;
   if (library?.schemaVersion !== 1 || !library.id || !library.version || !Array.isArray(library.tools)) throw new Error('Invalid tool library header.');
   const names = new Set<string>();
   for (const tool of library.tools) {
-    if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(tool.name) || names.has(tool.name.toLowerCase()) || !tool.description || !tool.overloads?.length) throw new Error(`Invalid or duplicate tool: ${tool.name}`);
-    names.add(tool.name.toLowerCase());
+    if (!validName(tool.name) || !tool.description || !tool.overloads?.length) throw new Error(`Invalid tool: ${tool.name}`);
+    if (tool.aliases !== undefined && !Array.isArray(tool.aliases)) throw new Error(`Invalid aliases for tool: ${tool.name}`);
+    for (const name of [tool.name, ...(tool.aliases ?? [])]) {
+      if (!validName(name) || names.has(name.toLowerCase())) throw new Error(`Invalid or duplicate tool name or alias: ${String(name)}`);
+      names.add(name.toLowerCase());
+    }
     for (const overload of tool.overloads) {
       if (!Array.isArray(overload.params) || overload.variadic && overload.params.length === 0) throw new Error(`Invalid parameters: ${tool.name}`);
       const parameters = new Set(overload.params.map((param) => param.name));
@@ -31,7 +36,22 @@ export const validateToolLibrary = (value: unknown): ToolLibrary => {
   return library;
 };
 
-export const studioToolLibrary = validateToolLibrary(definitions);
+/** Resolve once for dispatch, completion and audits; aliases share overload identity.
+ * This also makes a composition cycle through an alias the same dependency cycle.
+ * A flat alias list on the canonical entry cannot form alias chains.
+ */
+export const resolveToolAliases = (value: unknown): ResolvedToolLibrary => {
+  const library = validateToolLibrary(value);
+  return {
+    ...library,
+    tools: library.tools.flatMap(({ aliases = [], ...tool }) => [tool.name, ...aliases].map((name) => ({ ...tool, name, canonicalName: tool.name }))),
+  };
+};
+
+/** Editable canonical definitions, retaining alias lists. */
+export const studioToolCatalog = validateToolLibrary(definitions);
+/** All callable names, including aliases, with the same shape used by consumers. */
+export const studioToolLibrary = resolveToolAliases(studioToolCatalog);
 export const studioTools = new Map(studioToolLibrary.tools.map((tool) => [tool.name.toLowerCase(), tool]));
 
 const scoreType = (expected: ParameterType, actual: GeometryType): number => {

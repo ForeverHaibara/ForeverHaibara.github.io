@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { compileStudioCommand } from './commandCompiler';
-import { normalizeGeometryType, readCommandEnvironment } from './commandEnvironment';
-import type { GeoGebraEngine } from '../../types';
-import type { CommandEnvironment, GeometryType } from './types';
+import { compileStudioCommand } from '../commandCompiler';
+import { normalizeGeometryType, readCommandEnvironment } from '../commandEnvironment';
+import type { GeoGebraEngine } from '../../../types';
+import type { CommandEnvironment, GeometryType } from '../types';
 
 const scope = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([['A', 'point'], ['B', 'point'], ['C', 'point'], ['D', 'point'], ['P', 'point'], ['X', 'point'], ['Y', 'point'], ['l', 'line'], ['s', 'segment'], ['r', 'ray'], ['q', 'conic'], ['c', 'circle'], ['f', 'implicitCurve']]),
@@ -10,7 +10,7 @@ const scope = (): CommandEnvironment => ({
 });
 const compile = (source: string) => compileStudioCommand(source, scope());
 
-describe('P2 type dispatch and symbolic construction boundaries', () => {
+describe('Geometry type dispatch and symbolic construction boundaries', () => {
   it('recognizes implicit curve constructors and preserves native Cubic and Polar forms', () => {
     for (const type of ['implicitpoly', 'ImplicitCurve', 'GeoImplicitCurve']) expect(normalizeGeometryType(type)).toBe('implicitCurve');
     expect(normalizeGeometryType('implicitpoly3d')).toBe('unknown');
@@ -67,7 +67,7 @@ describe('P2 type dispatch and symbolic construction boundaries', () => {
     expect(cubic).toContain('Translate(Dilate(');
   });
 
-  it('emits fixed independent output slots and dynamic selection for P2 families', () => {
+  it('emits fixed independent output slots and dynamic selection for geometry families', () => {
     for (const [source, count] of [['CommonTangents(c,c,1)', 2], ['MixtilinearIncircles(A,B,C)', 3], ['MixtilinearExcircles(A,B,C)', 3], ['ApolloniusCircles(A,B,C)', 3], ['SteinerFoci(A,B,C)', 2], ['IsogonalPairWithMidpoint(A,B,C,P)', 2]] as const) {
       const outputs = compile(`Result=${source}`).split('\n');
       expect(outputs, source).toHaveLength(count);

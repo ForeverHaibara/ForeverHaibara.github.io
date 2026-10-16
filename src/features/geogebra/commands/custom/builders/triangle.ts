@@ -1,5 +1,5 @@
-import type { ExpressionBuilder } from './types';
-import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, independentOutputs } from './expressionGeometry';
+import type { ExpressionBuilder } from '../types';
+import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint } from '../algebra/homogeneous';
 
 type Weights = (coordinates: string[][], vertices: string[]) => string[];
 
@@ -118,44 +118,71 @@ const inconicCenter: ExpressionBuilder = (args, allocate) => {
 const steinerInellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['1', '1', '1', '-2', '-2', '-2']);
 const steinerCircumellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['0', '0', '0', '1', '1', '1']);
 
-export const centeredConicShape = (rows: string[][]) => cross(rows[1].map((value, i) => sub(value, rows[0][i])), rows[2].map((value, i) => sub(value, rows[0][i])));
-
-const ninePointConic: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, d] = args.map((arg) => arg.expression);
-  return bind([`((${a})+(${b})+(${c})+(${d}))/4`], allocate, ([center]) =>
-    bind([`((${a})+(${b}))/2-${center}`, `((${a})+(${c}))/2-${center}`, `((${a})+(${d}))/2-${center}`], allocate, (points) => {
-      const rows = points.map((p) => [`x(${p})^2`, `y(${p})^2`, `x(${p})*y(${p})`]);
-      return bind(centeredConicShape(rows), allocate, (shape) => {
-        const constant = `-${add(shape.map((coefficient, i) => mul(coefficient, rows[0][i])))}`;
-        return `Translate(Conic({${shape[0]},${shape[1]},${constant},${shape[2]},0,0}),Vector(${center}))`;
-      });
-    }));
-};
-
 const apollonius: ExpressionBuilder = (args, allocate) => {
   const [a, b, c] = args.map((arg) => arg.expression);
   return bind([`Distance(${c},${a})^2`, `Distance(${a},${b})^2`, `x(${c})-x(${b})`, `y(${c})-y(${b})`], allocate, ([u, v, dx, dy]) =>
     `Translate(Conic({${u}-${v},${u}-${v},-${v}*(${dx}^2+${dy}^2),0,2*${v}*${dx},2*${v}*${dy}}),Vector(${b}))`);
 };
 
-export const commonTangentNormal = (dx: string, dy: string, difference: string, squared: string, height: string, sign: number) => [
-  `(${difference}*${dx}-(${sign})*${height}*${dy})/${squared}`,
-  `(${difference}*${dy}+(${sign})*${height}*${dx})/${squared}`,
-];
+const expressions = (args: Parameters<ExpressionBuilder>[0]) => args.map((arg) => arg.expression);
 
-const commonTangents: ExpressionBuilder = (args, allocate) => {
-  const [c1, c2, s] = args.map((arg) => arg.expression);
-  const output = (sign: number) => bind([`Center(${c1})`, `Center(${c2})`, `Radius(${c1})`, `Radius(${c2})`], allocate, ([o1, o2, r1, r2]) =>
-    bind([`x(${o2})-x(${o1})`, `y(${o2})-y(${o1})`, `${r1}-(${s})*${r2}`], allocate, ([dx, dy, difference]) =>
-      bind([`${dx}^2+${dy}^2`, `sqrt(${dx}^2+${dy}^2-${difference}^2)`], allocate, ([squared, height]) =>
-        bind(commonTangentNormal(dx, dy, difference, squared, height, sign), allocate, ([nx, ny]) =>
-          `If((${s})^2==1,${coefficientLine([nx, ny, `-${r1}-${nx}*x(${o1})-${ny}*y(${o1})`], allocate)})`))));
-  return independentOutputs([output(1), output(-1)], args[3]?.expression);
+const orthicAxis: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.map(homogeneous);
+  return bind(triangleSideSquares(expressions(args)), allocate, (s) => {
+    const weights = s.map((v, i) => `(${s[(i + 1) % 3]}+${s[(i + 2) % 3]}-${v})`);
+    const lines = vertices.map((_, i) => cross(vertices[(i + 1) % 3], vertices[(i + 2) % 3]));
+    return `If(!AreCollinear(${expressions(args).join(',')}),${coefficientLine([0, 1, 2].map((j) => add(weights.map((w, i) => mul(w, lines[i][j])))), allocate)})`;
+  });
+};
+
+const stammler: ExpressionBuilder = (args, allocate) => bind(triangleSideSquares(expressions(args)), allocate, (s) =>
+  barycentricConic(expressions(args), [...s.map((v, i) => `((${s[(i + 1) % 3]})-(${s[(i + 2) % 3]}))/(${v})`), '0', '0', '0']));
+
+const liangZelich: ExpressionBuilder = (args, allocate) => {
+  const vertices = expressions(args).slice(0, 3);
+  return bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args)), `TriangleCenter(${vertices.join(',')},3)`], allocate, (values) => {
+    const s = values.slice(0, 3); const p = values.slice(3, 6); const o = values[6];
+    return bind(p.map((v, i) => `(${v})^2/${s[i]}`), allocate, (squares) =>
+      bind(squares.map((_, i) => `((${squares[(i + 1) % 3]})-(${squares[(i + 2) % 3]}))/${s[i]}`), allocate, (q) => {
+        const l = cross([`x(${o})`, `y(${o})`, '1'], homogeneous(args[3]));
+        return bind(vertices.map((v) => add([mul(l[0], `x(${v})`), mul(l[1], `y(${v})`), l[2]])), allocate, (line) =>
+          `If(!AreCollinear(${vertices.join(',')}),${barycentricPoint(vertices, q.map((_, i) => mul(line[i], q[(i + 1) % 3], q[(i + 2) % 3])))})`);
+      }));
+  });
+};
+
+const cundyParry = (psi: boolean): ExpressionBuilder => (args, allocate) => {
+  const vertices = expressions(args).slice(0, 3);
+  return bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args)), `TriangleCenter(${vertices.join(',')},3)`, `TriangleCenter(${vertices.join(',')},4)`], allocate, (values) => {
+    const s = values.slice(0, 3); const p = values.slice(3, 6); const o = values[6]; const h = values[7];
+    return bind(s.map((v, i) => mul(v, p[(i + 1) % 3], p[(i + 2) % 3])), allocate, (weights) =>
+      bind([add(weights.map((w, i) => mul(w, `x(${vertices[i]})`))), add(weights.map((w, i) => mul(w, `y(${vertices[i]})`))), add(weights)], allocate, (q) => {
+        const input = homogeneous(args[3]);
+        return bind([...cross([`x(${o})`, `y(${o})`, '1'], psi ? q : input), ...cross([`x(${h})`, `y(${h})`, '1'], psi ? input : q)], allocate, (lines) =>
+          `If(!AreCollinear(${vertices.join(',')}),${coordinatesToPoint(cross(lines.slice(0, 3), lines.slice(3)))})`);
+      }));
+  });
+};
+const orthopolar: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c, p] = expressions(args);
+  const xy = (v: string) => [`x(${v})`, `y(${v})`];
+  const dot = (u: string[], v: string[]) => add(u.map((x, i) => mul(x, v[i])));
+  return bind([`(${c})-(${b})`, `(${a})-(${c})`, `(${p})-(${a})`, `(${p})-(${b})`, `(TriangleCenter(${a},${b},${c},4)+(${p}))/2`], allocate, ([l, m, pa, pb, n]) => {
+    const determinant = `x(${l})*y(${m})-y(${l})*x(${m})`;
+    const solve = (v: string[]) => [`((${v[0]})*y(${m})-y(${l})*(${v[1]}))/(2*(${determinant}))`, `(x(${l})*(${v[1]})-(${v[0]})*x(${m}))/(2*(${determinant}))`];
+    const cos = [dot(xy(l), [`x(${pa})`, `-y(${pa})`]), dot(xy(m), [`x(${pb})`, `-y(${pb})`])];
+    const sin = [dot(xy(l), [`y(${pa})`, `x(${pa})`]), dot(xy(m), [`y(${pb})`, `x(${pb})`])];
+    return bind([...solve(cos), ...solve(sin)], allocate, ([ux, uy, vx, vy]) => {
+      const det = `(${ux}*${vy}-${uy}*${vx})`;
+      return `Translate(Conic({${vy}^2+${uy}^2,${vx}^2+${ux}^2,-${det}^2,-2*(${vx}*${vy}+${ux}*${uy}),0,0}),Vector(${n}))`;
+    });
+  });
 };
 
 export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isoconjugate, crosspoint, cevapoint, cevaConjugate, crossConjugate, cyclocevian, antigonal,
   cevianAffine: affineMap(false), pedalAffine: affineMap(true), orthotransversal, orthocorrespondent,
   isogonalLine: lineConjugate(true), isotomicLine: lineConjugate(false),
-  inconicCenter, steinerInellipse, steinerCircumellipse, ninePointConic, apollonius, commonTangents,
+  inconicCenter, steinerInellipse, steinerCircumellipse, apollonius,
+  orthicAxis, stammler, liangZelich, cundyPhi: cundyParry(false), cundyPsi: cundyParry(true), orthopolar,
 };

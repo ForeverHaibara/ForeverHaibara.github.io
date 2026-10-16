@@ -2,10 +2,10 @@ import { GeoGebraEmbeddingAdapter } from '../src/features/geogebra/adapters/GeoG
 import { executeCommandPipeline } from '../src/features/geogebra/commands/commandPipeline';
 import { readFileTools } from '../src/features/geogebra/commands/custom/commandEnvironment';
 import { createFileToolCompletionProvider } from '../src/features/geogebra/commands/completion/fileToolCompletionProvider';
-import { verifyP1, verifyRadicalAxis } from './geogebra-p1-smoke';
-import { verifyP2 } from './geogebra-p2-smoke';
+import { verifyBasicGeometry, verifyRadicalAxis } from './geogebra-basic-geometry-smoke';
+import { verifyConstructions } from './geogebra-constructions-smoke';
 import { verifyCubic } from './geogebra-cubic-smoke';
-import { verifyP3 } from './geogebra-p3-smoke';
+import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -60,8 +60,8 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
-    if (new URLSearchParams(window.location.search).get('suite') === 'p3') {
-      await verifyP3(engine, report);
+    if (new URLSearchParams(window.location.search).get('suite') === 'algebraic') {
+      await verifyAlgebraicGeometry(engine, report);
       report('COMPLETE');
       return;
     }
@@ -75,13 +75,13 @@ button.onclick = async () => {
       report('COMPLETE');
       return;
     }
-    if (new URLSearchParams(window.location.search).get('suite') === 'p1') {
-      await verifyP1(engine, report);
+    if (new URLSearchParams(window.location.search).get('suite') === 'basic') {
+      await verifyBasicGeometry(engine, report);
       report('COMPLETE');
       return;
     }
-    if (new URLSearchParams(window.location.search).get('suite') === 'p2') {
-      await verifyP2(engine, report);
+    if (new URLSearchParams(window.location.search).get('suite') === 'constructions') {
+      await verifyConstructions(engine, report);
       report('COMPLETE');
       return;
     }

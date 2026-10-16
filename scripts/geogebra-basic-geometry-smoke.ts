@@ -66,8 +66,8 @@ export const verifyRadicalAxis = async (engine: GeoGebraEngine, report: (message
   report('PASS radical-axis dependencies survive dragging and export/reopen');
 };
 
-/** Real-engine checks; open geogebra-smoke.html?suite=p1 and run verification. */
-export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string) => void) => {
+/** Real-engine checks; open geogebra-smoke.html?suite=basic and run verification. */
+export const verifyBasicGeometry = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const value = async (expression: string) => Number(await api('getValue', expression));
   const check = (condition: boolean, message: string) => { if (!condition) throw new Error(message); report(`PASS ${message}`); };
@@ -78,7 +78,7 @@ export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string)
     return result;
   };
   await run('A=(0,0)\nB=(6,0)\nC=(1,4)\nP=(2,1)\nD=(-2,3)\nE=(5,2)\nPointAlpha=(2,1)\nellipse:x^2/9+y^2/4=1\ncircleOne=Circle(A,2)\ncircleTwo=Circle(B,1.5)\ncircleThree=Circle(C,1.2)\nsideOne=Line(A,B)\nsideTwo=Line(B,C)\nsideThree=Line(C,D)\nsideFour=Line(D,A)');
-  const p1Names = new Set([
+  const basicToolNames = new Set([
     'AnticevianTriangle', 'Anticomplement', 'AntipedalTriangle', 'Antipode', 'ArcMidpoint',
     'BrocardCircle', 'BrocardPoints', 'CarnotTriangle', 'Centroid', 'CevianTriangle',
     'Circumcenter', 'CircumcevianPoint', 'CircumcevianTriangle', 'Complement', 'DiagonalPoints',
@@ -92,7 +92,7 @@ export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string)
     'TrilinearPole', 'TrisectionPoint',
   ]);
   let serial = 0;
-  for (const tool of studioToolLibrary.tools.filter((tool) => p1Names.has(tool.name))) {
+  for (const tool of studioToolLibrary.tools.filter((tool) => basicToolNames.has(tool.name))) {
     for (const overload of tool.overloads) {
       const arguments_ = overload.params.map((param) => {
         if (param.type === 'point') return param.name;
@@ -146,7 +146,7 @@ export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string)
   await near('Distance(MovingPole,P)', 'composed point dependencies update after dragging');
   await near('Distance(Center(Moving),TriangleCenter(A,B,C,5))', 'composed circle center updates after dragging');
   const file = await engine.exportGgb();
-  await engine.importGgb(new File([file], 'p1-smoke.ggb'));
+  await engine.importGgb(new File([file], 'basic-geometry-smoke.ggb'));
   await api('setCoords', 'C', 1, 5);
   await near('Distance(MovingPole,P)', 'composition survives export and reopening');
   await near('Distance(Center(Moving),TriangleCenter(A,B,C,5))', 'reopened circle retains its native dependencies');

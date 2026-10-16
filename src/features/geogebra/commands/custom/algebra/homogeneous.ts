@@ -1,8 +1,11 @@
-import type { TypedExpression } from './types';
+import type { TypedExpression } from '../types';
 
 export type Matrix = string[][];
 export const add = (terms: string[]) => `(${terms.join('+')})`;
 export const mul = (...terms: string[]) => `(${terms.map((term) => `(${term})`).join('*')})`;
+export const squaredNorm = (values: string[]) => add(values.map((value) => `(${value})^2`));
+export const coordinatesToPoint = ([x, y, z]: string[]) => `((${x})/(${z}),(${y})/(${z}))`;
+export const triangleSideSquares = ([a, b, c]: string[]) => [b, c, a].map((p, i) => `Distance(${p},${[c, a, b][i]})^2`);
 export const sub = (a: string, b: string) => `((${a})-(${b}))`;
 export const matrix = (m: Matrix) => `{${m.map((row) => `{${row.join(',')}}`).join(',')}}`;
 export const transpose = (m: Matrix): Matrix => m[0].map((_, j) => m.map((row) => row[j]));

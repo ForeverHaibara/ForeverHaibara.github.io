@@ -5,6 +5,25 @@ The native input bar and object scripts are unchanged. No site macros, scripts,
 named temporary objects, update callbacks, or sampled coordinates are installed
 in the construction. Exported results retain native dependencies.
 
+The library is still unpublished and uses version **0.1.0**. Development
+milestones in the implementation notes are not release versions.
+
+## Directory layout
+
+The root contains the compiler, syntax/environment handling, types and catalog.
+Implementation files are grouped by responsibility:
+
+| Location | Responsibility |
+|---|---|
+| `builders/index.ts` | Registers builders and implements general point/conic constructions. |
+| `builders/triangle.ts`, `builders/triangleCurves.ts` | Triangle maps, axes, conics and triangle-based polynomial curves. |
+| `builders/conics.ts`, `builders/curves.ts` | Conic transformations, common tangents and cubic coefficient/polar/intersection operations. |
+| `builders/quadrangle.ts`, `builders/quadrilateral.ts` | Unordered four-point and ordered four-line geometry respectively. |
+| `builders/curveTransforms.ts` | Polynomial curve conjugation. |
+| `algebra/` | Homogeneous coordinates, matrices, anonymous bindings and sparse polynomials. |
+| `tests/` | Compiler, catalog, alias, type-contract and algebra tests. |
+| [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
+
 ## Manage the library
 
 `library.json` is the versioned, declarative source for names, descriptions,
@@ -14,6 +33,7 @@ spelling review. Adding an expression tool normally needs only a catalog entry:
 ```json
 {
   "name": "MyMidpoint",
+  "aliases": ["HalfwayPoint", "CenterBetween"],
   "description": "The midpoint of A and B.",
   "overloads": [{
     "params": [{ "name": "A", "type": "point" }, { "name": "B", "type": "point" }],
@@ -22,6 +42,27 @@ spelling review. Adding an expression tool normally needs only a catalog entry:
   }]
 }
 ```
+
+### Aliases
+
+Declare additional names in the canonical entry's optional `aliases` array, as
+in the example above. Do not copy implementations or create forwarding commands
+for aliases. Every alias automatically shares the canonical description, all
+overloads, return types and output behavior. Variants with different interfaces
+or definitions remain separate commands.
+
+`studioToolCatalog` contains the editable canonical definitions;
+`studioToolLibrary` and `studioTools` expose all callable names to dispatch,
+completion and audits. Expansion shares overload objects, so cycles through an
+alias are detected by the existing composition guard. Names must be unique
+case-insensitively across canonical commands and aliases; self-aliases, duplicate
+aliases and malformed names are rejected. Flat lists avoid alias chains. File
+macros retain priority at the call site, including when they own only an alias.
+
+The catalog currently has **135 canonical commands and 137 callable names**:
+`SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases `OppositeArcMidpoint`.
+
+### Implementations and composition
 
 Parameters and optional `locals: [{name, expression}]` use `$name` placeholders.
 Locals may reference parameters and earlier locals, and expand as expressions;
@@ -57,12 +98,9 @@ inside dependencies stay native; already compiled caller arguments are not
 expanded a second time. Direct/indirect dependency cycles and excessive nesting
 or expansion produce errors; different overloads may call one another.
 
-Complex symbolic construction generators are registered in `geometryBuilders.ts`,
-with triangle/conic maps in `triangleBuilders.ts`, cubic operations in
-`curveBuilders.ts`, P3 triangle maps in `p3TriangleBuilders.ts`, quadrilateral
-families in `quadrilateralBuilders.ts`, and shared homogeneous algebra in
-`expressionGeometry.ts`. `polynomialGeometry.ts` builds sparse symbolic
-polynomials; `qlCurveTransforms.ts` handles polynomial conjugation.
+Complex symbolic construction generators are registered in `builders/index.ts`.
+Their domain modules are listed above; shared expression operations live in
+`algebra/homogeneous.ts`, and `algebra/polynomial.ts` builds sparse polynomials.
 They are referenced by `builder` instead of `expression`.
 Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
@@ -146,14 +184,14 @@ chord. Algebraically, restricting the quadratic to `P+t*(Q-P)` gives
 `t*(H*t+L)=0`; midpoint reflection selects `t=-L/H` without a square root or a
 numerical intersection branch. It returns P at ordinary tangency, and remains
 dynamic when an ellipse changes into a circle or a supported degenerate conic.
-The P2 overload `SecondIntersection(conic,P,l:lineLike)` uses the same midpoint
+The line-like overload `SecondIntersection(conic,P,l:lineLike)` uses the same midpoint
 reflection with the unbounded supporting line l. P must lie on both l and the
 conic. In the point overload, P=Q is undefined. A contained line or a second
 intersection at infinity is undefined as an
 affine point. P lying on the conic is a geometric precondition, not an extra
 projection which silently changes the problem.
 
-### P2 families and preconditions
+### Geometry families and preconditions
 
 `RadicalAxis(c1,c2)` is a site command: it is absent from GeoGebra's public
 command index. It constructs the equal-power line from the two native centers
@@ -169,7 +207,7 @@ reuse this coordinate implementation. Do not put
 
 The catalog includes triangle maps, circle tangency constructions, central
 inconics, ordered quadrilateral constructions, and cubic operations. See
-`TOOL_IMPLEMENTATION_PLAN.md` for the grouped inventory and individual algorithms.
+[the implementation plan](docs/implementation-plan.md) for the grouped inventory and individual algorithms.
 `compose` reuses earlier site commands where a short geometric construction
 preserves the required limits. Homogeneous products handle removable poles in
 the conjugations; all rank/degree guards and output selection run dynamically
@@ -283,9 +321,9 @@ arbitrarily resolved: they can yield undefined/empty results. Isolated degenerat
 conics may be returned using the projective discriminant/adjugate definition of
 tangency. This is not a solver for every degenerate family.
 
-### P3 families and limits
+### Special constructions and quadrilateral limits
 
-Version 0.3.0 adds 34 names and 42 overloads. Triangle tools include the three
+Triangle tools include the three
 axes, Soddy points, Liang–Zelich polarity, Stammler/orthopolar conics,
 Cundy–Parry maps and orthopivotal cubics. `SoddyPoint(A,B,C,1)` selects the outer
 point X175; index 2 selects the inner point X176. `OrthicAxis` cancels the
@@ -333,12 +371,12 @@ copying the inconsistent displayed CT formula in the reference page.
 
 ## Verification
 
-`/scripts/geogebra-smoke.html?suite=p3` exercises all 42 P3 overloads, output XML
+`/scripts/geogebra-smoke.html?suite=algebraic` exercises all 42 algebraic-geometry overloads, output XML
 classes and helper counts, conjugation identities, conic limits, supporting
 lines, dragging and export/reopen. Add `&tool=CoTf3` (or another exact tool name)
 to run just its catalog overloads. The browser suite is separate from Vitest;
 current completion and any native-engine limitations are recorded in the PLAN.
-`p3Commands.test.ts` checks expansion budgets, dispatch, independent outputs,
+`tests/constructionContracts.test.ts` checks expansion budgets, dispatch, independent outputs,
 Scimemi similarities, complex quartic coefficients and independent circle-pencil
 and QA-cubic identities, including a homogeneous infinite-diagonal limit.
 
@@ -346,9 +384,9 @@ and QA-cubic identities, including a homogeneous infinite-diagonal limit.
 third-intersection overloads, all ten polynomial terms, sparse coefficients,
 vertical secants, inflections, noncubic rejection (including encoding collisions),
 dynamic degree changes, native triangle cubics, pivotal cubics, nine-point cubics,
-coefficient updates and export/reopen. This is separate from the complete P2 suite.
+coefficient updates and export/reopen. This is separate from the constructions suite.
 
-`nativeCommands.test.ts` checks the final expressions for every catalog overload
+`tests/nativeCommands.test.ts` checks the final expressions for every catalog overload
 against the saved native command index, with explicit scalar/coordinate functions
 and generated anonymous local calls. It covers builders, composed dependencies,
 independent outputs and input type families. This catches missing native names;
@@ -360,23 +398,24 @@ path parameters 1/4 and 1/2: `Point(line,0)` is at infinity and cannot be used
 as an ordinary affine point. The static audit rejects endpoint path parameters
 in generated expressions as well as unknown command names.
 
-The P1/P2 tools are in `library.json`; the full catalog is not duplicated here.
-For P1 real-engine verification, open
-`/scripts/geogebra-smoke.html?suite=p1` and click **Run verification**. It checks
+The canonical tools and alias lists are in `library.json`; the full catalog is not duplicated here.
+For basic real-engine verification, open
+`/scripts/geogebra-smoke.html?suite=basic` and click **Run verification**. It checks
 every new overload, scalar output types, helper counts, harmonic cross-ratios,
 similarities, conjugation/polarity identities, supporting lines, dragging and
 export/reopen dependencies. This browser suite is separate from Vitest and must
 be run against the actual embedded engine.
 
-For P2, open `/scripts/geogebra-smoke.html?suite=p2`. It covers every new
+For construction checks, open `/scripts/geogebra-smoke.html?suite=constructions`. It covers every new
 overload, XML geometry classes, helper counts, conjugation identities,
 tangencies, inconic foci, six-midpoint incidence and degenerations, cubic
 polarity/residual intersections, coefficient dragging, and export/reopen.
-This suite has been added but has **not been run in this session**: no browser
-surface was available. The P1 suite remains restricted to its original tools.
+Full construction-suite verification remains pending; the implementation plan
+records the checks that have actually run. The basic suite remains restricted
+to its original tools.
 
 Run `npm test -- --run` for parser/dispatch, hygiene, completion and adapter
-tests, including homogeneous algebra identities for the P2 builders. These
+tests, including homogeneous algebra identities for the geometry builders. These
 tests do not simulate the native engine. With `npm run dev`, open
 `/scripts/geogebra-smoke.html` and click **Run
 verification** for a disposable real-engine construction. It checks all six

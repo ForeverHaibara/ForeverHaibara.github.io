@@ -15,8 +15,14 @@ export interface ToolOverload {
 
 export interface ToolDefinition {
   name: string;
+  /** Additional callable names sharing this tool's description and all overloads. */
+  aliases?: string[];
   description: string;
   overloads: ToolOverload[];
+}
+
+export interface ResolvedToolDefinition extends Omit<ToolDefinition, 'aliases'> {
+  canonicalName: string;
 }
 
 export interface ToolLibrary {
@@ -24,6 +30,10 @@ export interface ToolLibrary {
   id: string;
   version: string;
   tools: ToolDefinition[];
+}
+
+export interface ResolvedToolLibrary extends Omit<ToolLibrary, 'tools'> {
+  tools: ResolvedToolDefinition[];
 }
 
 export interface TypedExpression extends BuiltExpression {

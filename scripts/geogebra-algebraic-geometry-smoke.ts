@@ -2,8 +2,8 @@ import type { GeoGebraEngine } from '../src/features/geogebra/types';
 import { executeCommandPipeline } from '../src/features/geogebra/commands/commandPipeline';
 import { studioToolLibrary } from '../src/features/geogebra/commands/custom/toolLibrary';
 
-/** Disposable native construction: geogebra-smoke.html?suite=p3. */
-const verifyP3Construction = async (engine: GeoGebraEngine, report: (message: string) => void) => {
+/** Disposable native construction: geogebra-smoke.html?suite=algebraic. */
+const verifyAlgebraicConstruction = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const check = (ok: boolean, message: string) => { if (!ok) throw new Error(message); report(`PASS ${message}`); };
   const value = async (expression: string) => Number(await api('getValue', expression));
@@ -23,7 +23,7 @@ const verifyP3Construction = async (engine: GeoGebraEngine, report: (message: st
   const focused = new URLSearchParams(window.location.search).get('tool');
   for (const tool of studioToolLibrary.tools.filter((t) => names.has(t.name) && (!focused || t.name === focused))) for (const overload of tool.overloads) {
     const args = overload.params.map((p) => p.type === 'number' ? '1' : p.type === 'lineLike' ? 'seg' : p.type === 'circle' ? 'circle' : p.type === 'conic' ? 'q' : p.type === 'implicitCurve' ? 'F' : p.name);
-    const label = `Pthree${++index}`;
+    const label = `AlgebraicResult${++index}`;
     const before = (await api('getAllObjectNames') as string[]).length;
     const source = `${tool.name}(${args.join(',')})`;
     await run(`${label}=${source}`);
@@ -54,14 +54,14 @@ const verifyP3Construction = async (engine: GeoGebraEngine, report: (message: st
   await api('setCoords', 'P', 2, -1);
   await near('Distance(P,QQ)+Distance(P,Unmix)', 'dependencies update after dragging');
   const blob = await engine.exportGgb();
-  await engine.importGgb(new File([blob], 'p3-smoke.ggb'));
+  await engine.importGgb(new File([blob], 'algebraic-geometry-smoke.ggb'));
   await api('setCoords', 'P', -1, 0.5);
   await near('Distance(P,QQ)+Distance(P,Unmix)', 'native dependencies survive export/reopen');
-  report('PASS all P3 overloads, geometry identities, dragging and round trip');
+  report('PASS all algebraic-geometry overloads, geometry identities, dragging and round trip');
 };
 
-export const verifyP3 = async (engine: GeoGebraEngine, report: (message: string) => void) => {
+export const verifyAlgebraicGeometry = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   await engine.callApi('setRepaintingActive', [false]);
-  try { await verifyP3Construction(engine, report); }
+  try { await verifyAlgebraicConstruction(engine, report); }
   finally { await engine.callApi('setRepaintingActive', [true]); }
 };

@@ -1,5 +1,5 @@
-import type { ExpressionBuilder } from './types';
-import { add, mul, bind, coefficientLine, triangleAreas, matrix } from './expressionGeometry';
+import type { ExpressionBuilder } from '../types';
+import { add, mul, bind, coefficientLine, triangleAreas, matrix } from '../algebra/homogeneous';
 
 /** Coefficients of x^i y^j, constant first, through total degree three. */
 export const CUBIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];

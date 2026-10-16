@@ -2,6 +2,8 @@
 
 状态：**P1、P2、P3 已实现；完整 P3 实机验收尚未完成**。P1 已人工运行实际 GeoGebra 引擎验证，完整 P2 实机验证待运行；兼容性专项和 P3 本次已验证范围见第 11 节。P3 按已确认的第 10.2 节计划实现，共新增 34 个工具名、42 个重载。工具名称和面向用户的描述使用英文；设计理由和算法说明使用中文。
 
+发布约定：全部改动尚未上传 GitHub，工具库统一为 **0.1.0**；下文 P1/P2/P3 仅是历史开发阶段，不是发行版本或代码目录分类。本文所列源码路径均相对 `custom/`；目录结构见 [README](../README.md)。
+
 ## 1. 范围、来源和取舍
 
 已读取当前 `README.md`、`library.json`、类型与环境代码，以及 `.agents/ggb_tools/001/tools.json` 中的工具元数据、构造步骤和相关 XML 对象。源文件有 **489 个条目、219 个不同显示名称、230 种忽略顶层 cmdName 后的定义**。其中 **31 个不同名称以 PoC/PoE 开头，全部排除**；余下 **188 个名称**的去向见末尾审计表。这里的源编号是 JSON 的 `index`，不是三角形中心或 EPG 编号。
@@ -16,10 +18,10 @@
 - **Implemented (compatibility)**：内置指令核对后补充的兼容性实现，验收范围见第 11 节。
 - **Native**：使用 GeoGebra 内置功能，不新增同义工具。
 - **Planned (P3)**：已列出新增接口和候选算法；推导、表达式预算与实机验收仍须在实现阶段完成，不能视为已上线。
-- **Implemented (P3)**：工具已进入版本 0.3.0，自动验证通过；实机验证仅限第 11 节记录的实际通过项目，不代表完整 P3 验收通过。
+- **Implemented (P3)**：工具已进入版本 0.1.0，自动验证通过；实机验证仅限第 11 节记录的实际通过项目，不代表完整 P3 验收通过。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
-下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `geometryBuilders.ts`、`triangleBuilders.ts`、`curveBuilders.ts` 为准，共用表达式原语见 `expressionGeometry.ts`。
+下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `builders/index.ts`、`builders/triangle.ts`、`builders/curves.ts` 为准，共用表达式原语见 `algebra/homogeneous.ts`。
 
 ### 已确认的源工具问题
 
@@ -58,6 +60,7 @@
 - 不新增 point+circle+line 的混合输出。Circle 的圆心用 Center，其他辅助对象单独调用。输出契约变更必须在实现时扩充现有输出元数据，不能仅填写一个误导性的 `returns: list`。
 - `i` 是离散编号，不是可连续拖动的几何实参。无实解时保留固定数量的 undefined 槽；不能排序后删掉空槽而让其他对象改名。
 - 不返回 Geogebra 内置的 Zip 型等列表型对象。因为这类集合型变量中的单个元素无法在交互界面中拆分选中。
+- 纯别名在规范命令的 `aliases: string[]` 中集中声明，自动共享英文描述、全部重载及输出语义，不复制实现或增加转发 compose。大小写不敏感地校验所有规范名和别名，禁止自别名、重复名与名称冲突。`SouthPole`、`NorthPole` 已迁移到相应弧中点命令的 aliases 中。
 
 ### 2.2 共用数学原语
 
@@ -182,9 +185,9 @@
 | 阶段 | English name / signature → output | English description | 大致算法与边界 | Source |
 |---|---|---|---|---|
 | Implemented (P1) | `ArcMidpoint(A,B,C) → point` | Midpoint of the BC arc not containing A on the circumcircle. | 从 A 沿内部角平分线方向取外接圆的第二点；用单位方向 `u=(B−A)/c+(C−A)/b` 和圆的已知根公式，不需要 I≠A 或求交编号。两相邻点对径等临界位置由 A 所在半平面定义。 | S018 |
-| Implemented (P1) | `SouthPole(A,B,C) → point` | South pole of triangle ABC. | 与上一条相同，SouthPole是三角形几何学中常用俗称。| S018 |
+| Implemented (P1) | `SouthPole(A,B,C) → point` | Midpoint of the BC arc not containing A on the circumcircle. | ArcMidpoint 的 aliases 中统一声明，SouthPole 是三角形几何学中常用俗称；没有单独的实现或重载。 | S018 |
 | Implemented (P1) | `OppositeArcMidpoint(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | 对上一点作关于 O 的中心对称。 | S019 |
-| Implemented (P1) | `NorthPole(A,B,C) → point` | North pole of triangle ABC. | 与上一条相同，NorthPole是三角形几何学中常用俗称。| S019 |
+| Implemented (P1) | `NorthPole(A,B,C) → point` | Midpoint of the BC arc containing A on the circumcircle. | OppositeArcMidpoint 的 aliases 中统一声明，NorthPole 是三角形几何学中常用俗称；没有单独的实现或重载。 | S019 |
 | Implemented (P1) | `Antipode(q:conic,P) → point`; `Antipode(A,B,C) → point` | Antipode of P on a central conic, or of A on the triangle circumcircle. | 二次曲线版作 P 关于 Center(q) 的中心反射，前提 P∈q；支持圆、椭圆、双曲线，抛物线无有限中心。三点版复用此命令求 A 的外接圆对径点。 | S020 |
 | Implemented (P1) | `CircumcevianPoint(A,B,C,P) → point` | Second intersection of AP with the triangle circumcircle. | A 是已知根，用 SecondIntersection；此命令是 CircumcevianTriangle 的 A 分量，便于只取一个输出。 | S092 |
 | Defer | `CircumsymmedianPoint(A,B,C) → point` | Second intersection of the A-symmedian with the circumcircle. | 不实现。请查看 HarmonicConjugate。 | S026 |
@@ -343,9 +346,9 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 
 ### 10.2 P3 接口与算法计划（2026-10-16）
 
-本节承接人工草案的全部新增工具，现为 **Implemented (P3)**；表中保留设计理由与原候选方案，实际采用的简化及验收范围见第 11 节。公式用于解释算法，最终表达式以版本 0.3.0 的工具库及 builder 为准。优先采用短几何复合；只有中间对象的无穷远／重合会破坏最终有限极限时，才改用约分后的齐次公式。所有退化判断留在 GeoGebra 内动态计算，不在 JavaScript 读取坐标、挑选分支或缓存数值。
+本节承接人工草案的全部新增工具，现为 **Implemented (P3)**；表中保留设计理由与原候选方案，实际采用的简化及验收范围见第 11 节。公式用于解释算法，最终表达式以版本 0.1.0 的工具库及 builder 为准。优先采用短几何复合；只有中间对象的无穷远／重合会破坏最终有限极限时，才改用约分后的齐次公式。所有退化判断留在 GeoGebra 内动态计算，不在 JavaScript 读取坐标、挑选分支或缓存数值。
 
-#### 10.2.1 接入规则和参考结构
+#### 10.1.0 接入规则和参考结构
 
 - 新工具最终进入 `library.json`，英文名称、英文 description、参数类型、返回类型、可选编号须一起定义。三选一：原生短式用 `expression`；调用网站工具用 `compose`；符号消元／系数生成用 `builder`。`expression` 内写 `QAP2(...)` 等网站名字不会递归展开。Builder 只收表达式、类型和卫生变量分配器，不接收引擎。
 - 模板 `locals` 是文本展开；真正共用 O、H、重心坐标、M、κ、外心等量，使用现有 `bind` 的原生匿名单元素 Zip。顶层只产生承诺的独立输出，不产生命名辅助点、列表、宏或脚本。参数名避免与 `TriangleCurve` 自带的 A/B/C 多项式变量混淆。
@@ -355,7 +358,7 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 - `QL2P1/QL2P2/QL2P3(A,B,C,D[,i])` 固定两点槽，末尾 `i=1,2`；无实点时 undefined，相切时允许两槽重合。复数只作内部代数，不把虚点包装成实 point。两个槽不承诺绕过分支碰撞、根号割线或闭合参数回路后仍保留全局身份；不按坐标排序、去重或压缩列表。
 - `CoTf3(P,q)` 与 `InvCoTf3(P,q)` 按草案采用被作用点在前、conic 在后；这是新接口，不兼容地继承源宏 `conic,P` 顺序没有必要。`QLP5` 改正为 `point`，因为它是圆心。目录编号先作正式命令名，别名留待以后。
 
-#### 10.2.2 三角形工具
+#### 10.1.0 三角形工具
 
 这里 `S_A=(b²+c²−a²)/2`，其余循环；`X,Y,Z` 表示重心变量，不是世界坐标。
 
@@ -508,16 +511,25 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 
 ## 11. 实现记录与验收要点
 
+### 目录、别名与初始版本整理（2026-10-16）
+
+- 根目录只保留编译器、语法／环境、类型、工具库、JSON 目录及 README。构造器按数学职责进入 `builders/`，表达式代数进入 `algebra/`，测试进入 `tests/`，本文移至 `docs/implementation-plan.md`。三角形构造、圆锥变换、无序四点形、三角形曲线各自归位；不再以开发阶段命名源文件或测试文件。
+- 原生验收脚本也改用职责名称：`geogebra-basic-geometry-smoke.ts`、`geogebra-constructions-smoke.ts`、`geogebra-algebraic-geometry-smoke.ts`。对应 suite 参数为 `basic`、`constructions`、`algebraic`；`radical`、`cubic` 专项保留。公开几何命令的名称与签名保留。
+- `library.json` 只保存 **135 个规范定义及 2 个别名**，仍暴露 **137 个可调用名称**。别名集中在规范定义的 aliases 数组；规范目录由 `studioToolCatalog` 导出，解析后的 `studioToolLibrary`／`studioTools` 供编译、补全、拼写和全库检查共用。共享 overload 对象也让既有循环检测自然覆盖别名。
+- 新增 `tests/aliases.test.ts`：多别名及多重载、与规范名展开一致、非法／自引用／大小写重名、嵌套和独立输出、通过别名形成的组合循环、文件宏优先及补全描述与签名。数学构造公式在此次整理中没有改变，未重跑原生几何验收；上一次实机通过与待验收范围仍按下节记录。
+- 整理后自动检查：Vitest **11 个文件、114 项通过**，`npx tsc --noEmit` 与 `npm run build` 均通过；构建仍有既有 Gradio Node 模块外置及大包提示。构造契约测试现遍历完整工具库及其别名，不再固定开发阶段的工具清单。
+- 由于以上开发改动均未上传 GitHub，工具库统一回退并保持 **0.1.0**，schemaVersion 仍为 1；既往开发阶段的数量与验收记录保留，取消其递增发行版本的表述。后续真实发布后再按接口及格式变化递增版本。
+
 ### P3 实现记录（2026-10-16）
 
-- `library.json` 升至 **0.3.0**，从 103 增至 **137 个工具名**，P3 新增 **34 名／42 重载**，包含 QLTf1 的五种强类型重载和三组点对的可选编号。工具补全、文件宏优先、独立输出与原生持久依赖沿用现有编译器；没有安装宏、命名辅助对象、脚本或 JavaScript 坐标快照。
-- 新增 `p3TriangleBuilders.ts`、`quadrilateralBuilders.ts`、`polynomialGeometry.ts`、`qlCurveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
+- 本开发阶段从 103 增至 **137 个工具名**，P3 新增 **34 名／42 重载**，包含 QLTf1 的五种强类型重载和三组点对的可选编号。工具补全、文件宏优先、独立输出与原生持久依赖沿用现有编译器；没有安装宏、命名辅助对象、脚本或 JavaScript 坐标快照。
+- 新增 `builders/triangle.ts`、`builders/conics.ts`、`builders/quadrangle.ts`、`builders/triangleCurves.ts`、`builders/quadrilateral.ts`、`algebra/polynomial.ts`、`builders/curveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
 - QLTf1 曲线变换先将实系数转换为 `z^i conjugate(z)^j` 系数。反演交换相应幂，原生动态选 `m=max(i,j)` 后清分母，恰好消去人工引入的所有 `rho=(x−Mx)²+(y−My)²` 因子；随后将共轭项合并为实多项式。不需要符号 CAS、曲线采样或数值多项式插值。输入至多四次时输出至多八次，使用基数 5 编码与原生完整多项式相等检查，支持动态次数／圆型极限。
 - QL-Qu3 保留 E、F 的齐次坐标，将固定点转换为圆方程行 `(Ux²+Uy²,UxUw,UyUw,Uw²)`。各圆系数先匿名绑定，再作稀疏多项式行列式；恒等为零的五次项直接去除。一对边平行时无需生成无穷远仿射交点，第三个圆允许作为直线型代数极限；多个约束同时消失、全零多项式仍 undefined。QL 圆心链仍要求有限的分量三角形外心，不宣称全部平行配置都有有限结果。
 - 点对编号重载直接将 i 传入原生交点指令，或直接用符号 `(3−2i)` 选择复平方根分支，避免先求两个完整分支再从匿名列表抽取。双输出仍是两个独立对象；无实交点保留 undefined 槽。
 - 最终展开预算（代表性长输入标签）：QLQu3 **9,327 字符**，QLTf1 四次多项式重载 **4,618 字符**，其他重载均不足 2k 字符；全部低于 30k 审阅线。此长度检查不证明原生求值或绘制耗时。
-- 自动检查：新增 `p3Commands.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
-- 实机入口为 `/scripts/geogebra-smoke.html?suite=p3`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
+- 自动检查：新增 `tests/constructionContracts.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
+- 实机入口为 `/scripts/geogebra-smoke.html?suite=algebraic`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
 - **已取得的实机证据**：整批运行前 20 项通过，包括三轴、Soddy、LiangZelich、Stammler／Orthopolar、Cundy–Parry、两种 Co-Tf3、QAP2/3/4/5、Plücker／Newton 点对重载和固定点双输出的类型／对象数检查。CoTf3 专项及修订后的 QL2P3 双输出／编号单输出专项分别得到 **COMPLETE**。
 - **尚未完成的实机验收**：整批运行及 QLTf1 曲线专项随后遇到浏览器 CDP 控制超时，无法读取最终状态；这不是明确的几何失败，也不能据此确认通过。QL 中心／圆、各曲线重载、完整几何残差、动态恢复及导出重开仍需完成整批专项。特别是高次曲线变换的实际引擎性能尚未验证；本轮未发布、提交或部署这些改动。
 
@@ -532,26 +544,26 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 
 ### P1 实现记录
 
-- `library.json` 已升至 0.1.0，新增 **52 个命令、70 个重载**；原有 5 个命令保留。明确写了“不实现”的 ComplementOfIsotomicConjugate、CircumsymmedianPoint 未加入；其他 P2 项目未提前实现。
+- 本开发阶段新增 **52 个命令、70 个重载**；原有 5 个命令保留。明确写了“不实现”的 ComplementOfIsotomicConjugate、CircumsymmedianPoint 未加入；其他 P2 项目未提前实现。
 - 新增显式 `compose` 定义。可复用其他自定义工具、原生命令及按顺序声明的局部表达式；`expression` 仍只调用原生命令。按重载检测循环依赖，保留嵌套及 500,000 字符上限；文件同名宏不改变内部依赖，调用入口仍尊重文件工具优先级。
 - 多输出直接发出独立几何表达式；匿名列表或 Zip 只作内部实现，不返回列表对象。末尾整数 i 在 GeoGebra 中动态选取，不读取数值到 JavaScript。
 - SpiekerCenter 使用 X(10)；HarmonicConjugate 使用圆上／直线统一的复数交比公式；两个 Similarity 均完成四点、五点重载；Antipode 接受中心二次曲线。X(13) 的英文描述也已纠正，它不是 first isodynamic point；FermatPoint 仍为 P2。
-- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=p1`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，已人工运行。
+- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=basic`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，已人工运行。
 
 ### P2 实现记录
 
-- `library.json` 已升至 **0.2.0**，新增 **45 个命令名、59 个重载**（含 IsogonalConjugate、IsotomicConjugate、SecondIntersection 三个既有命令的新增重载），工具库现有 102 个命令名。SteinerCircle、InvolutionFixedPoints、PolarLine、TangentialPoint 按审阅意见未添加。
-- 保留并使用 P1 的 `compose` 跨工具复用；Hagge、mixtilinear、inconic、四边形抛物线等复用已有自定义工具和原生命令。复杂齐次代数集中到三角形／曲线 builder，共用匿名绑定与矩阵原语抽出至 `expressionGeometry.ts`。
+- 本开发阶段新增 **45 个命令名、59 个重载**（含 IsogonalConjugate、IsotomicConjugate、SecondIntersection 三个既有命令的新增重载），工具库现有 102 个命令名。SteinerCircle、InvolutionFixedPoints、PolarLine、TangentialPoint 按审阅意见未添加。
+- 保留并使用 P1 的 `compose` 跨工具复用；Hagge、mixtilinear、inconic、四边形抛物线等复用已有自定义工具和原生命令。复杂齐次代数集中到三角形／曲线 builder，共用匿名绑定与矩阵原语抽出至 `algebra/homogeneous.ts`。
 - 所有几何分支、次数／秩检查、索引选择均在 GeoGebra 表达式内部动态计算。JavaScript 只根据固定对象类型与参数个数选择重载、生成表达式；没有坐标快照或采样拟合。多输出保持独立对象。CyclocevianConjugate、Orthocorrespondent 特别在齐次层复合，避免中间无穷远对象中断有限结果。
 - 自动测试覆盖共轭对合、Ceva／cross 关系、有向外点、边上及中间无穷远极限、六中点曲线和平行四边形退化、公切线等半径／相切极限、齐次极化、剩余根、类型映射、原生重载兼容及表达式预算。Vitest 全套 **8 个文件、94 项通过**；生产构建通过。TypeScript 全量检查仍有 P1 已记录的未改动文件错误。
-- 实机入口：`/scripts/geogebra-smoke.html?suite=p2`。脚本包含全部 59 个新增重载、几何类 XML、辅助对象计数、共轭关系、相切／焦点性质、直角／等腰／平行四边形退化、三次次数检查、拖动及导出重开。本会话浏览器清单为空，**尚未运行此脚本，不能将自动表达式测试视作原生引擎已验收**。
+- 实机入口：`/scripts/geogebra-smoke.html?suite=constructions`。脚本包含全部 59 个新增重载、几何类 XML、辅助对象计数、共轭关系、相切／焦点性质、直角／等腰／平行四边形退化、三次次数检查、拖动及导出重开。本会话浏览器清单为空，**尚未运行此脚本，不能将自动表达式测试视作原生引擎已验收**。
 
 ### 内置指令兼容性审计（2026-10-16）
 
 - 以本地 `GEOGEBRA_COMMAND_NAMES`、[官方 All Commands](https://geogebra.github.io/docs/manual/en/commands/All_Commands/) 和 [Commands.java](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java) 核对原生命令名。`RadicalAxis` 不在公开命令表中，也不是 Commands 枚举中的输入命令；本计划此前将它列为 Native 是错误的。
-- `library.json` 升至 **0.2.1**，新增 `RadicalAxis(circle,circle)`，工具库现有 **103 个命令名**。`RadicalCenter` 改为 compose 展开根轴。四点 `SteinerLineQ` 最终直接使用坐标线性方程，四线 SteinerLineQ 及两个 TangentParabola 重载复用此坐标实现。`expression` 不展开自定义工具的规则保持不变。
+- 本开发阶段新增 `RadicalAxis(circle,circle)`，工具库现有 **103 个命令名**。`RadicalCenter` 改为 compose 展开根轴。四点 `SteinerLineQ` 最终直接使用坐标线性方程，四线 SteinerLineQ 及两个 TangentParabola 重载复用此坐标实现。`expression` 不展开自定义工具的规则保持不变。
 - 实机进一步发现 `Point(l,0)` 对完整直线给出无穷远点，不能把射线／线段上参数 0 有限的约定直接用于 lineLike。支撑线提取统一使用参数 **1/4、1/2**，修复 SecondIntersection、Orthopole、NewtonLine、AntiSteinerPoint、MiquelPoint、SteinerLineQ、TangentParabola 的相应重载；共用齐次 builder 的线段／射线提取同步使用这组参数。依据见 [PathParameter 官方映射](https://geogebra.github.io/docs/manual/en/commands/PathParameter/)。
-- `nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
+- `tests/nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
 - 专项实机入口：`/scripts/geogebra-smoke.html?suite=radical`，覆盖相离／相交／内外相切／竖直圆心线／同心重合、根心等幂关系、两个 SteinerLineQ 与 TangentParabola 重载，以及其他受影响的支撑线工具和 line/segment/ray 一致性、拖动和导出重开。完整 P2 验收状态仍按上节记录。
 - 前一版（SteinerLineQ 复用根轴时）已在实际嵌入式 GeoGebra 运行此专项脚本并得到 **COMPLETE**，包括根轴经过同心退化后恢复，以及其他受影响重载的拖动／导出重开。该版 Vitest **9 个文件、97 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告既有 MarkdownRenderer、TriplesPage 错误。此次专项验收不替代完整 P2 验收。
 - 后续按审阅意见将 SteinerLineQ 四点版改为上述直接坐标方程，并补充方程与两直径圆幂差的代数一致性测试，包含水平／竖直和同心退化；相关自动测试 **4 个文件、48 项通过**，按用户要求不再运行真实引擎验收。
@@ -559,7 +571,7 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 ### 三次曲线调用兼容性修复（2026-10-16）
 
 - 实机复现 `Polar`、`PolarConic`、两个 `ThirdIntersection` 重载共用的 `Derivative(...)(0,0)` 写法被原生解析器拒绝。命令名出现在指令表中不能证明这种命令结果后缀调用合法；导数构造还涉及 CAS 计算，原检查只覆盖命令名，未覆盖这层语法。
-- `library.json` 升至 **0.2.2**。共享系数提取改为原生一元多项式展开：对 `f=LeftSide(F)-RightSide(F)` 作符号代入 `f(x,x^4)+0*x`，将三次单项式 `x^i y^j` 编码为互异的 `x^(i+4j)`，再由 `Coefficients` 提取。该命令只接收一元函数，不直接接收 implicitCurve 或二元函数；原生实现的多项式展开分支不需要 CAS。没有采样曲线点、插值或 JavaScript 系数快照。
+- 共享系数提取改为原生一元多项式展开：对 `f=LeftSide(F)-RightSide(F)` 作符号代入 `f(x,x^4)+0*x`，将三次单项式 `x^i y^j` 编码为互异的 `x^(i+4j)`，再由 `Coefficients` 提取。该命令只接收一元函数，不直接接收 implicitCurve 或二元函数；原生实现的多项式展开分支不需要 CAS。没有采样曲线点、插值或 JavaScript 系数快照。
 - 将降幂系数表 Reverse 后补零，支持稀疏多项式及动态最高项消失。仍用 `AreEqual` 比较重建二元多项式与完整原函数，并要求三次项非零；例如 `x^4-y+x^3` 的高次项在代入时相消，仍会被完整二元比较拒绝。
 - 专项入口为 `/scripts/geogebra-smoke.html?suite=cubic`。自动测试覆盖编码无碰撞、稀疏系数补零、表达式中不再包含 Derivative；实机脚本覆盖四个重载、全部十个系数、竖直割线／拐点、非三次输入、动态次数、三种构造来源及导出重开。完整 P2 验收仍单独记录。
 - 本轮专项实机脚本已得到 **COMPLETE**，系数变动与导出重开后的依赖检查通过。Vitest **9 个文件、99 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告原有 MarkdownRenderer、TriplesPage 错误。

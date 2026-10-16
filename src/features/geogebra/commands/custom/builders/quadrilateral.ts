@@ -1,7 +1,7 @@
-import type { ExpressionBuilder, TypedExpression } from './types';
-import { add, bind, cross, homogeneous, independentOutputs, coefficientLine } from './expressionGeometry';
-import { circlePairRow, polynomialDeterminant, polynomialExpression } from './polynomialGeometry';
-import { conjugateConic, conjugatePolynomial } from './qlCurveTransforms';
+import type { ExpressionBuilder, TypedExpression } from '../types';
+import { add, bind, cross, homogeneous, independentOutputs, coefficientLine } from '../algebra/homogeneous';
+import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../algebra/polynomial';
+import { conjugateConic, conjugatePolynomial } from './curveTransforms';
 
 type Allocate = () => string;
 type QLBody = (m: string, u: string, v: string, vertices: string[]) => string;

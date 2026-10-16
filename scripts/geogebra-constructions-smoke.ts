@@ -3,8 +3,8 @@ import { executeCommandPipeline } from '../src/features/geogebra/commands/comman
 import { readCommandEnvironment } from '../src/features/geogebra/commands/custom/commandEnvironment';
 import { studioToolLibrary } from '../src/features/geogebra/commands/custom/toolLibrary';
 
-/** Disposable native-engine checks: geogebra-smoke.html?suite=p2. */
-export const verifyP2 = async (engine: GeoGebraEngine, report: (message: string) => void) => {
+/** Disposable native-engine checks: geogebra-smoke.html?suite=constructions. */
+export const verifyConstructions = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const value = async (expression: string) => Number(await api('getValue', expression));
   const check = (condition: boolean, message: string) => { if (!condition) throw new Error(message); report(`PASS ${message}`); };
@@ -112,7 +112,7 @@ export const verifyP2 = async (engine: GeoGebraEngine, report: (message: string)
   await near('x(SecantThird)+1', 'residual-root construction updates with cubic coefficients');
   await near('y(TangentThird)^2-x(TangentThird)^3+x(TangentThird)-curveOffset', 'tangent residual stays on the moving cubic');
   const file = await engine.exportGgb();
-  await engine.importGgb(new File([file], 'p2-smoke.ggb'));
+  await engine.importGgb(new File([file], 'constructions-smoke.ggb'));
   await api('setValue', 'curveOffset', 3);
   await near('y(TangentThird)^2-x(TangentThird)^3+x(TangentThird)-curveOffset', 'native cubic operations survive export/reopen');
 };
