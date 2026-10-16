@@ -1,10 +1,10 @@
 
 import React, { useState, useCallback } from 'react';
-import { GRADIO_TRIPLES_URL } from '../../constants';
-import { callTriplesGradioApi } from '../../services/triplesService';
-import type { GradioServiceCallResult, TriplesOutput } from '../../types'; // Updated import
-import LoadingSpinner from '../../components/LoadingSpinner';
-import AlertMessage from '../../components/AlertMessage';
+import { GRADIO_TRIPLES_URL } from '../constants';
+import { callTriplesGradioApi } from '../services/triplesService';
+import type { GradioServiceCallResult } from '../types';
+import LoadingSpinner from '../components/LoadingSpinner';
+import AlertMessage from '../components/AlertMessage';
 
 const TriplesSolverPage: React.FC = () => {
   const [expression, setExpression] = useState<string>('');

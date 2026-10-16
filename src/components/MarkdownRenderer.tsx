@@ -38,7 +38,7 @@ interface PreChildProps {
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdownContent, className }) => {
   const isApiMethodHeading = (children: React.ReactNode) =>
     React.Children.toArray(children).some((child) => {
-      if (!React.isValidElement(child)) return false;
+      if (!React.isValidElement<{ 'data-api-method-heading'?: string }>(child)) return false;
       return child.type === 'span' && child.props['data-api-method-heading'] === 'true';
     });
 
