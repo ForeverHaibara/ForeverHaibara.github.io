@@ -4,26 +4,11 @@
   "version": "0.1.0",
   "tools": [
     {
-      "name": "Incenter",
-      "description": "Triangle incenter; uses the native triangle-center construction.",
+      "name": "SecondIntersection",
+      "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
-      ]
-    },
-    {
-      "name": "IsogonalConjugate",
-      "description": "Isogonal image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isogonalLine"}
-      ]
-    },
-    {
-      "name": "IsotomicConjugate",
-      "description": "Isotomic image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isotomicLine"}
+        {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"},
+        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Reflect($P,Intersect($support,ConjugateDiameter($support,$q)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}]}
       ]
     },
     {
@@ -37,11 +22,10 @@
       ]
     },
     {
-      "name": "SecondIntersection",
-      "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
+      "name": "Incenter",
+      "description": "Triangle incenter; uses the native triangle-center construction.",
       "overloads": [
-        {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"},
-        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Reflect($P,Intersect($support,ConjugateDiameter($support,$q)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}]}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
       ]
     },
     {
@@ -155,6 +139,22 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Excenter($A,$B,$C)", "Excenter($B,$C,$A)", "Excenter($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Excenter($A,$B,$C),Excenter($B,$C,$A),Excenter($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "IsogonalConjugate",
+      "description": "Isogonal image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isogonalLine"}
+      ]
+    },
+    {
+      "name": "IsotomicConjugate",
+      "description": "Isotomic image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isotomicLine"}
       ]
     },
     {
