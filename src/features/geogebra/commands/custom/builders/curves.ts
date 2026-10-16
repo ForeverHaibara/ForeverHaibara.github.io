@@ -1,5 +1,6 @@
 import type { ExpressionBuilder } from '../types';
-import { add, mul, bind, coefficientLine, triangleAreas, matrix } from '../algebra/homogeneous';
+import { add, mul, bind, coefficientLine, triangleAreas, matrix, barycentricVariables, coefficientList } from '../algebra/homogeneous';
+import { polynomialCurve } from '../algebra/polynomial';
 
 /** Coefficients of x^i y^j, constant first, through total degree three. */
 export const CUBIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
@@ -57,7 +58,7 @@ const polar: ExpressionBuilder = (args, allocate) => {
 };
 const polarConic: ExpressionBuilder = (args, allocate) => {
   const [p, curve] = args.map((arg) => arg.expression);
-  return withCubic(curve, allocate, (coefficients) => `Conic({${cubicPolarConic(coefficients, `x(${p})`, `y(${p})`).join(',')}})`);
+  return `Conic(${withCubic(curve, allocate, (coefficients) => coefficientList(cubicPolarConic(coefficients, `x(${p})`, `y(${p})`)))})`;
 };
 const thirdIntersection: ExpressionBuilder = (args, allocate) => {
   const [curve, p, q] = args.map((arg) => arg.expression);
@@ -74,11 +75,14 @@ const thirdIntersection: ExpressionBuilder = (args, allocate) => {
 
 const pivotal: ExpressionBuilder = (args, allocate) => {
   const [a, b, c] = args.map((arg) => arg.expression);
-  return bind([...triangleAreas(args.map((arg) => arg.expression)), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
-    ([p, q, r, aa, bb, cc]) => `TriangleCurve(${a},${b},${c},${add([
-      mul(r, bb, 'A^2', 'C'), `-${mul(r, aa, 'B^2', 'C')}`, `-${mul(q, cc, 'A^2', 'B')}`,
-      mul(q, aa, 'B', 'C^2'), mul(p, cc, 'A', 'B^2'), `-${mul(p, bb, 'A', 'C^2')}`,
-    ])}=0)`);
+  const [u, v, w] = barycentricVariables([a, b, c]);
+  const polynomial = bind([...triangleAreas(args.map((arg) => arg.expression)), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
+    ([p, q, r, aa, bb, cc]) => add([
+      mul(r, bb, `${u}^2`, w), `-${mul(r, aa, `${v}^2`, w)}`, `-${mul(q, cc, `${u}^2`, v)}`,
+      mul(q, aa, v, `${w}^2`), mul(p, cc, u, `${v}^2`), `-${mul(p, bb, u, `${w}^2`)}`,
+    ]));
+  const valid = `${args.map((arg) => `IsDefined(${arg.expression})`).join('&&')}&&!AreCollinear(${a},${b},${c})`;
+  return `If(${valid},${polynomialCurve(`If(${valid},${polynomial},1+0*x+0*y)`)})`;
 };
 
 const cubicThroughPoints: ExpressionBuilder = (args, allocate) => {

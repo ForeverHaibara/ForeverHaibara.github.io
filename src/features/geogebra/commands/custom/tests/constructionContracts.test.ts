@@ -50,7 +50,7 @@ describe('Construction catalog, type contracts and expansion budgets', () => {
     expect(() => compile('QLTf1(A,B,C,D,1)')).toThrow('No overload');
     expect(compile('QLTf1(A,B,C,D,F)')).toContain('AreEqual');
     expect(compile('QLTf1(A,B,C,D,F)')).toMatch(/Coefficients\(v\d+\(x,x\^5\)/u);
-    for (const l of ['l', 's', 'r']) expect(compile(`QLTf1(A,B,C,D,${l})`)).toContain('Conic');
+    for (const l of ['l', 's', 'r', 'c']) expect(compile(`QLTf1(A,B,C,D,${l})`)).toContain('Reflect(Reflect(');
     expect(compile('Line(QLP5(A,B,C,D),P)')).toContain('TriangleCenter');
   });
 

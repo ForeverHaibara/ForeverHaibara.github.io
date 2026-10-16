@@ -62,9 +62,7 @@ describe('Geometry type dispatch and symbolic construction boundaries', () => {
       expect(expression.length, source).toBeLessThan(20_000);
     }
     const cubic = compile('Cubic(A,B,C,D,P,X,Y,(1,2),(3,4))');
-    expect(cubic).toContain('MatrixRank');
-    expect(cubic).toContain('ImplicitCurve');
-    expect(cubic).toContain('Translate(Dilate(');
+    expect(cubic).toBe('ImplicitCurve((A),(B),(C),(D),(P),(X),(Y),((1,2)),((3,4)))');
   });
 
   it('emits fixed independent output slots and dynamic selection for geometry families', () => {

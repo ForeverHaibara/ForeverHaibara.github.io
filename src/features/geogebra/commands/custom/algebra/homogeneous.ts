@@ -25,12 +25,15 @@ export const bind = (values: string[], allocate: () => string, body: (names: str
   return `Element(Zip(${body(names)},${names.map((name, i) => `${name},{${values[i]}}`).join(',')}),1)`;
 };
 
+export const supportingLine = (arg: TypedExpression) => arg.type === 'line' ? arg.expression
+  : `Line(Point(${arg.expression},0.25),Point(${arg.expression},0.5))`;
+
 export const homogeneous = (arg: TypedExpression): string[] => {
   const e = arg.expression;
   if (arg.type === 'point') return [`x(${e})`, `y(${e})`, '1'];
   // Interior normalized path parameters are finite on lines, rays and segments.
   // In particular, Point(line,0) is at infinity, as is Point(ray,1).
-  const line = arg.type === 'line' ? e : `Line(Point(${e},0.25),Point(${e},0.5))`;
+  const line = supportingLine(arg);
   return [`x(${line})`, `y(${line})`, `z(${line})`];
 };
 
@@ -48,6 +51,21 @@ export const coefficientLine = (coefficients: string[], allocate: () => string) 
   `Line((-${a}*${c}/(${a}^2+${b}^2),-${b}*${c}/(${a}^2+${b}^2)),Vector((${b},-${a})))`);
 
 /** Homogeneous barycentrics -> a native conic in the world plane. */
-export const barycentricConic = (vertices: string[], coefficients: string[]) =>
-  `If(!AreCollinear(${vertices.join(',')}),ApplyMatrix({{${vertices.map((p) => `x(${p})`).join(',')}},{${vertices.map((p) => `y(${p})`).join(',')}},{1,1,1}},Conic({${coefficients.join(',')}})))`;
+export const barycentricConic = (vertices: string[], coefficients: string[] | string) =>
+  `If(!AreCollinear(${vertices.join(',')}),ApplyMatrix({{${vertices.map((p) => `x(${p})`).join(',')}},{${vertices.map((p) => `y(${p})`).join(',')}},{1,1,1}},Conic(${typeof coefficients === 'string' ? coefficients : coefficientList(coefficients)})))`;
+
+export const coefficientList = (coefficients: string[]) => `{${coefficients.join(',')}}`;
+
+/** Translate a conic by its center, retaining a native GeoConic at line limits. */
+export const translatedConicCoefficients = ([a, b, f, h, d, e]: string[], center: string): string[] => {
+  const x = `x(${center})`; const y = `y(${center})`;
+  return [a, b, `${f}+(${a})*${x}^2+(${b})*${y}^2+(${h})*${x}*${y}-(${d})*${x}-(${e})*${y}`, h,
+    `(${d})-2*(${a})*${x}-(${h})*${y}`, `(${e})-(${h})*${x}-2*(${b})*${y}`];
+};
+
+/** Signed homogeneous barycentrics of the variable point (x,y), with linear cross products. */
+export const barycentricVariables = (vertices: string[]): string[] => vertices.map((_, i) => {
+  const a = vertices[(i + 1) % 3]; const b = vertices[(i + 2) % 3];
+  return `((y(${a})-y(${b}))*x+(x(${b})-x(${a}))*y+x(${a})*y(${b})-y(${a})*x(${b}))`;
+});
 

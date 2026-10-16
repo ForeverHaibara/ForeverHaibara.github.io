@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 
-import { add, mul, matrix, transpose, product, adjugate, determinant, cross, bind, homogeneous, triangleAreas, barycentricPoint, independentOutputs } from '../algebra/homogeneous';
+import { add, mul, transpose, product, adjugate, determinant, cross, bind, homogeneous, triangleAreas, barycentricPoint, independentOutputs, coefficientList } from '../algebra/homogeneous';
 import type { Matrix } from '../algebra/homogeneous';
 import { TRIANGLE_BUILDERS } from './triangle';
 import { CURVE_BUILDERS } from './curves';
@@ -79,14 +79,20 @@ const conic: ExpressionBuilder = (args, allocate) => {
       return bind([...extra.flat(), ...tangentVectors.flat()], allocate, (values) => {
         const extraRows = extra.map((_, i) => values.slice(3 * i, 3 * i + 3));
         const tangentRows = tangents.map((_, i) => values.slice(extra.length * 3 + i * 3, extra.length * 3 + i * 3 + 3));
-        const output = ([a, b, c]: string[]) => {
-          // Delegate the projective transform to the native conic algorithm,
-          // rather than expanding every entry of M^-T Q M^-1 into scalar trees.
-          const world = `ApplyMatrix(${matrix(frame)},Conic({0,0,0,${c},${b},${a}}))`;
-          const emit = (m: Matrix) => `Conic({${[m[0][0], m[1][1], m[2][2], mul('2', m[0][1]), mul('2', m[0][2]), mul('2', m[1][2])].join(',')}})`;
-          if (!dual) return world;
-          return bind([world], allocate, ([curve]) => bind(Array.from({ length: 6 }, (_, i) => `Element(Coefficients(${curve}),${i + 1})`), allocate, ([u, v, w, r, s, t]) => emit(adjugate([[u, `(${r})/2`, `(${s})/2`], [`(${r})/2`, v, `(${t})/2`], [`(${s})/2`, `(${t})/2`, w]]))));
-        };
+        // Transport only numbers through the bindings. In the dual case
+        // adj(M^-T Q M^-1) is proportional to M adj(Q) M^T: no temporary
+        // world conic, coefficient extraction, or numerical matrix inversion.
+        const output = (parameters: string[]) => bind(parameters, allocate, ([a, b, c]) => {
+          const q = dual
+            ? [[`-${a}^2`, `${a}*${b}`, `${a}*${c}`], [`${a}*${b}`, `-${b}^2`, `${b}*${c}`], [`${a}*${c}`, `${b}*${c}`, `-${c}^2`]]
+            : [['0', c, b], [c, '0', a], [b, a, '0']];
+          const left = dual ? frame : transpose(inverse);
+          const right = transpose(left);
+          return bind(product(left, q).flat(), allocate, (entries) => {
+            const m = product([entries.slice(0, 3), entries.slice(3, 6), entries.slice(6, 9)], right);
+            return coefficientList([m[0][0], m[1][1], m[2][2], mul('2', m[0][1]), mul('2', m[0][2]), mul('2', m[1][2])]);
+          });
+        });
         if (extraRows.length === 2) return `If(${determinant(frame)}!=0,${output(cross(extraRows[0], extraRows[1]))})`;
         const charts = [0, 1, 2].map((fixed) => {
           const free = [0, 1, 2].filter((i) => i !== fixed);
@@ -110,11 +116,13 @@ const conic: ExpressionBuilder = (args, allocate) => {
       });
     });
   });
-  if (points.length === 0) return expression;
+  if (points.length === 0) return `Conic(${expression})`;
+  const coefficients = allocate();
+  const curves = `Zip(Conic(${coefficients}),${coefficients},${expression})`;
   // A conic sentinel gives Element a fixed GeoConic output type even when
   // the real-solution list is initially empty. It is never a labeled object.
   return {
-    expression: `Join({Conic({1,1,0/0,0,0,0})},${expression})`,
+    expression: `Join({Conic({1,1,0/0,0,0,0})},${curves})`,
     outputCount: points.length === 1 || points.length === 4 ? 2 : 4,
     outputOffset: 1,
   };

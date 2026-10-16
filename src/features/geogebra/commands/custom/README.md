@@ -260,11 +260,11 @@ double root instead. Ordinary inflections return P; singular points, contained
 lines and residual points at infinity can be undefined. On-curve incidence is
 a caller precondition. Use the two-argument form for tangent contact.
 
-`Cubic(P1,...,P9)` normalizes the nine coordinates inside GeoGebra, requires rank
-9 of the native 9-by-10 monomial matrix, then transforms native `ImplicitCurve`
-back to world coordinates. Rank-deficient inputs remain undefined instead of
-silently selecting a lower-degree curve. Native triangle/index `Cubic` forms
-still work. `PivotalIsogonalCubic` directly emits a `TriangleCurve` equation.
+`Cubic(P1,...,P9)` delegates interpolation to native `ImplicitCurve`; uniqueness
+and degenerate input behavior follow the engine. Native triangle/index `Cubic`
+forms still work. `PivotalIsogonalCubic`, `QACu1` and `OrthopivotalCubic` use
+Cartesian `ImplicitCurve` equations, substituting signed homogeneous area
+coordinates for the barycentric variables without dividing by triangle area.
 
 ### Mixed Conic
 
@@ -353,8 +353,21 @@ involution M+κ/(P−M). Line-like and circle inputs return a fixed **conic** cl
 including line limits; general conics return implicit curves. The implicit
 curve overload accepts only polynomials through degree four and checks the
 reconstructed polynomial inside GeoGebra. Images may have degree eight.
-Complex monomial coefficients cancel artificial powers of x²+y² before emitting
-the real polynomial; this also handles dynamic degree and circular limits.
+For ordinary conics/polynomials it uses native reflection in the line MS followed
+by inversion in the circle (M,S), where S=M+sqrt(κ). These transformations
+commute; the chosen order avoids the engine's reflection offset on an
+inversion-generated line. A conic input is lifted to an implicit curve first
+so its output class remains fixed when the input becomes a circle.
+Native inversion can retain artificial radial factors on circular polynomials.
+Those cases use the reduced complex-monomial equation, cancelling the factors
+before constructing the curve. The original degree-four validation remains.
+Each branch guards its input/function before constructing the image. The
+inactive native source is undefined; the inactive equation is the constant
+nonzero polynomial `1+0*x+0*y`, whose zero set is empty and whose two formal
+variables preserve the function type. Final validity checks remain on the curve.
+Line-like and circle overloads use the native transformation pair directly;
+native inversion preserves their conic class even at a line limit. Segments
+and rays are converted to their full supporting lines first.
 No coordinates or coefficients are read into JavaScript.
 
 `QL2P1`, `QL2P2` and `QL2P3` have two independent point outputs and an optional
@@ -369,7 +382,37 @@ Existing cubic operations still reject noncubics. `QACu1` uses the cyclic
 coaxality formula with its middle-term sign checked independently, rather than
 copying the inconsistent displayed CT formula in the reference page.
 
+### Curve evaluation structure
+
+Local bindings for conic coefficients carry numeric lists. `Conic` and any
+coordinate transform sit outside those bindings. This applies to mixed `Conic`,
+`PolarConic`, `NinePointConic`, line conjugates, central inconics, Apollonius,
+Stammler and orthopolar conics. Mixed `Conic` retains three projective root
+charts and fixed independent output slots; its chart-intersection conics are
+still necessary, but final world conics are created only after solving for
+their six coefficients. Dual transport uses M adj(Q) M^T directly.
+
+`QLQu3` uses nine radial coefficients rather than expanding a generic sparse
+quartic determinant. Its normalized frame, homogeneous opposite intersections,
+and all-zero guard remain. Both this tool and the reduced `QLTf1` path pass only
+numeric image data through their nested bindings, assembling the polynomial in
+one outer function binding. Passing a function through every binding can also
+be expensive, even when `ImplicitCurve` itself has been moved outside.
+
+Keep the all-zero test outside `ImplicitCurve`: the engine can mark a curve
+defined even when its input function is everywhere undefined. The same outer
+guard rejects undefined inputs and lets the object recover after dragging.
+Do not blindly insert `Polynomial` between `Element/Zip` and `ImplicitCurve`:
+an undefined element can lose its function type and make that command reject
+the construction. The direct `ImplicitCurve` boundary retains undefined slots.
+
 ## Verification
+
+`/scripts/geogebra-curve-optimization-smoke.html` checks the changed families.
+Choose `group=curves`, `mixed`, `transform`, `polynomial-transform`, `cubic`,
+`native-primitives` or `zero`. It uses a fixed 800×480 parent container and
+bounded logs; the applet must not size itself from the growing document body.
+These are mathematical/type/dependency checks, not a drag-performance benchmark.
 
 The disposable `/scripts/geogebra-qlcu1-benchmark.html` compares the original
 four-point QLCu1 implementation with a fully substituted coordinate equation.

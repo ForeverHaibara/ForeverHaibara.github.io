@@ -1,5 +1,5 @@
 import type { ExpressionBuilder } from '../types';
-import { add, mul, sub, cross, bind, triangleAreas, barycentricPoint, matrix, triangleSideSquares } from '../algebra/homogeneous';
+import { add, mul, sub, cross, bind, triangleAreas, barycentricPoint, matrix, triangleSideSquares, coefficientList, translatedConicCoefficients } from '../algebra/homogeneous';
 
 const expressions = (args: Parameters<ExpressionBuilder>[0]) => args.map((arg) => arg.expression);
 
@@ -37,14 +37,15 @@ export const centeredConicShape = (rows: string[][]) => cross(rows[1].map((value
 
 const ninePointConic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, d] = args.map((arg) => arg.expression);
-  return bind([`((${a})+(${b})+(${c})+(${d}))/4`], allocate, ([center]) =>
+  const coefficients = bind([`((${a})+(${b})+(${c})+(${d}))/4`], allocate, ([center]) =>
     bind([`((${a})+(${b}))/2-${center}`, `((${a})+(${c}))/2-${center}`, `((${a})+(${d}))/2-${center}`], allocate, (points) => {
       const rows = points.map((p) => [`x(${p})^2`, `y(${p})^2`, `x(${p})*y(${p})`]);
       return bind(centeredConicShape(rows), allocate, (shape) => {
         const constant = `-${add(shape.map((coefficient, i) => mul(coefficient, rows[0][i])))}`;
-        return `Translate(Conic({${shape[0]},${shape[1]},${constant},${shape[2]},0,0}),Vector(${center}))`;
+        return coefficientList(translatedConicCoefficients([shape[0], shape[1], constant, shape[2], '0', '0'], center));
       });
     }));
+  return `Conic(${coefficients})`;
 };
 
 export const QUADRANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { qap2, qap4, qap5, ninePointConic };

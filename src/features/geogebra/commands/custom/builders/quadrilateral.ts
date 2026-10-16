@@ -1,7 +1,8 @@
 import type { ExpressionBuilder, TypedExpression } from '../types';
-import { add, bind, cross, homogeneous, independentOutputs, coefficientLine } from '../algebra/homogeneous';
-import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../algebra/polynomial';
-import { conjugateConic, conjugatePolynomial } from './curveTransforms';
+import { add, bind, cross, homogeneous, independentOutputs, coefficientLine, coefficientList, supportingLine } from '../algebra/homogeneous';
+import { circlePairRow, //polynomialExpression, polynomialDeterminant,
+   coaxalQuarticCoefficients, radialQuarticExpression, polynomialCurve } from '../algebra/polynomial';
+import { conjugateConicData, conjugatePolynomialData, conjugateImagePolynomial, nativePolynomialEligible } from './curveTransforms';
 
 type Allocate = () => string;
 type QLBody = (m: string, u: string, v: string, vertices: string[]) => string;
@@ -21,18 +22,34 @@ const withNewton = (vertices: string[], m: string, allocate: Allocate, body: (n:
 const translatedConic = (m: string, coefficients: string[]) => `Translate(Conic({${coefficients.join(',')}}),Vector(${m}))`;
 const imageLine = ([nx, ny, c]: string[], u: string, v: string) => [c, c, '0', '0', `${u}*${nx}+${v}*${ny}`, `${v}*${nx}-${u}*${ny}`];
 
-const qlTransform: ExpressionBuilder = (args, allocate) => withQL(args, allocate, (m, u, v) => {
+const qlTransform: ExpressionBuilder = (args, allocate) => {
   const object = args[4]; const p = object.expression;
-  if (object.type === 'point') return `(${m})+ToPoint(ToComplex((${u},${v}))/ToComplex((${p})-(${m})))`;
-  if (['line', 'segment', 'ray'].includes(object.type)) return bind(homogeneous(object), allocate, ([a, b, c]) =>
-    translatedConic(m, imageLine([a, b, `${c}+${a}*x(${m})+${b}*y(${m})`], u, v)));
-  if (object.type === 'circle') return bind([`Center(${p})`, `Radius(${p})`], allocate, ([o, r]) =>
-    bind([`x(${o})-x(${m})`, `y(${o})-y(${m})`], allocate, ([x, y]) => {
-      const constant = `(${x}^2+${y}^2-${r}^2)`;
-      return translatedConic(m, [constant, constant, `${u}^2+${v}^2`, '0', `-2*(${u}*${x}+${v}*${y})`, `-2*(${v}*${x}-${u}*${y})`]);
-    }));
-  return object.type === 'conic' ? conjugateConic(p, m, u, v, allocate) : conjugatePolynomial(p, m, u, v, allocate);
-});
+  if (object.type === 'point') return withQL(args, allocate, (m, u, v) => `(${m})+ToPoint(ToComplex((${u},${v}))/ToComplex((${p})-(${m})))`);
+  // Only the two points defining the transformation pass through local bindings.
+  // The square-root sign changes neither its axis nor its inversion circle.
+  const m = withQL(args, allocate, (m) => m);
+  const fixed = withQL(args, allocate, (m, u, v) => `(${m})+ToPoint(sqrt(ToComplex((${u},${v}))))`);
+  const support = ['segment', 'ray'].includes(object.type) ? supportingLine(object) : p;
+  const implicit = object.type === 'conic' ? `ImplicitCurve(LeftSide(${p})-RightSide(${p}))` : support;
+  // Reflection and inversion commute here. Reflection first avoids the engine's
+  // reflection bug on a line produced by circle inversion.
+  const transform = (source: string) => `Reflect(Reflect(${source},Line(${m},${fixed})),Circle(${m},${fixed}))`;
+  // Native line/circle inversion has a fixed GeoConic class, including single lines.
+  if (['line', 'segment', 'ray', 'circle'].includes(object.type)) return transform(implicit);
+  const eligible = object.type === 'conic'
+    ? bind([`Coefficients(${p})`], allocate, ([cs]) => `Element(${cs},1)!=Element(${cs},2)||Element(${cs},4)!=0`)
+    : nativePolynomialEligible(p, allocate);
+  const sourceValid = object.type === 'conic' ? `IsDefined(${p})` : nativePolynomialEligible(p, allocate, true);
+  const valid = `IsDefined(${m})&&IsDefined(${fixed})&&(${sourceValid})`;
+  const reduced = withQL(args, allocate, (m, u, v) => object.type === 'conic'
+    ? conjugateConicData(p, m, u, v, allocate) : conjugatePolynomialData(p, m, u, v, allocate));
+  // Guard the inputs, not just the selected result: GeoGebra otherwise updates
+  // both expensive image curves even when one branch is never displayed.
+  const native = transform(`If(${eligible},${implicit})`);
+  const polynomial = conjugateImagePolynomial(reduced, object.type === 'conic' ? 2 : 4, allocate);
+  const reducedCurve = polynomialCurve(`If(!(${eligible})&&(${valid}),${polynomial},1+0*x+0*y)`);
+  return `If(${valid},If(${eligible},${native},${reducedCurve}))`;
+};
 
 const qlPair = (kind: number): ExpressionBuilder => (args, allocate) => {
   const output = (index: number | string) => withQL(args, allocate, (m, u, v, vertices) => {
@@ -60,10 +77,11 @@ const qlp20: ExpressionBuilder = (args, allocate) => withQL(args, allocate, (m, 
   withNewton(vertices, m, allocate, ([a, b], line) =>
     `Intersect(${line},${coefficientLine([`${u}*${a}+${v}*${b}`, `${v}*${a}-${u}*${b}`, `-(${u}*${a}+${v}*${b})*x(${m})-(${v}*${a}-${u}*${b})*y(${m})`], allocate)})`));
 
-const midpointCubic = (m: string, u: string, v: string, [a, b, c]: string[]) => {
+const midpointPolynomial = (m: string, u: string, v: string, [a, b, c]: string[]) => {
   const x = `(x-x(${m}))`; const y = `(y-y(${m}))`;
-  return `ImplicitCurve((${a}*${x}+${b}*${y}+2*(${c}))*(${x}^2+${y}^2)+${a}*(${u}*${x}+${v}*${y})+${b}*(${v}*${x}-${u}*${y}))`;
+  return `(${a}*${x}+${b}*${y}+2*(${c}))*(${x}^2+${y}^2)+${a}*(${u}*${x}+${v}*${y})+${b}*(${v}*${x}-${u}*${y})`;
 };
+const midpointCubic = (m: string, u: string, v: string, n: string[]) => `ImplicitCurve(${midpointPolynomial(m, u, v, n)})`;
 /** Directed angles APB = DPC (mod pi): cross(PA,PB)*dot(PD,PC) - cross(PD,PC)*dot(PA,PB).
  * Expand each cross product to degree one; no auxiliary geometry or denominators.
  */
@@ -79,13 +97,44 @@ const qlCubicCoordinates: ExpressionBuilder = (args) => {
 const qlCubic: ExpressionBuilder = (args, allocate) => {
   if (args.length === 4) return withQL(args, allocate, (m, u, v, vertices) => withNewton(vertices, m, allocate, (n) => midpointCubic(m, u, v, n)));
   const [a, b] = args.map((arg) => arg.expression);
-  return bind([`(${b})-(${a})`, ...homogeneous(args[2])], allocate, ([e, nx, ny, c]) =>
-    `${midpointCubic(a, `(x(${e})^2-y(${e})^2)`, `(2*x(${e})*y(${e}))`, [nx, ny, `${c}+${nx}*x(${a})+${ny}*y(${a})`])}`);
+  const valid = `IsDefined(${a})&&IsDefined(${b})&&IsDefined(${supportingLine(args[2])})`;
+  const polynomial = bind([`(${b})-(${a})`, ...homogeneous(args[2])], allocate, ([e, nx, ny, c]) =>
+    midpointPolynomial(a, `(x(${e})^2-y(${e})^2)`, `(2*x(${e})*y(${e}))`, [nx, ny, `${c}+${nx}*x(${a})+${ny}*y(${a})`]));
+  return `If(${valid},${polynomialCurve(`If(${valid},${polynomial},1+0*x+0*y)`)})`;
 };
+
+// const qlQuartic: ExpressionBuilder = (args, allocate) => {
+//   const vs = args.slice(0, 4).map((arg) => arg.expression);
+//   return bind([`${add(vs)}/4`], allocate, ([origin]) =>
+//     bind([`sqrt((${vs.map((p) => `Distance(${p},${origin})^2`).join('+')})/4)`], allocate, ([scale]) =>
+//       bind(vs.map((p) => `((${p})-${origin})/${scale}`), allocate, (normalized) =>
+//         bind(normalized.flatMap((p) => [`x(${p})`, `y(${p})`]), allocate, (values) => {
+//           const ps = Array.from({ length: 4 }, (_, i) => [...values.slice(2 * i, 2 * i + 2), '1']);
+//           return bind(ps.flatMap((p, i) => i < 2 ? cross(p, ps[i + 1]) : []), allocate, (adjacent) => {
+//             const ab = adjacent.slice(0, 3); const bc = adjacent.slice(3, 6);
+//             return bind([...cross(ab, cross(ps[2], ps[3])), ...cross(bc, cross(ps[3], ps[0]))], allocate, (opposite) => {
+//               const rows = [circlePairRow(ps[0].slice(0, 2), ps[2].slice(0, 2)), circlePairRow(ps[1].slice(0, 2), ps[3].slice(0, 2)), circlePairRow(opposite.slice(0, 3), opposite.slice(3))];
+//               // Bind scalar row coefficients before multiplying the polynomial rows.
+//               const entriesByRow = rows.map((row) => row.map((p) => [...p]));
+//               return bind(entriesByRow.flatMap((row) => row.flatMap((p) => p.map(([, c]) => c))), allocate, (cs) => {
+//                 let cursor = 0;
+//                 const bound = entriesByRow.map((row) => row.map((p) => new Map(p.map(([key]) => [key, cs[cursor++]]))));
+//                 const determinant = polynomialDeterminant(bound);
+//                 // All three circles contain X. Degree-five terms cancel identically.
+//                 const entries = [...determinant].filter(([k]) => k.split(',').map(Number).reduce((s, v) => s + v, 0) <= 4);
+//                 return bind(entries.map(([, v]) => v), allocate, (coefficients) => {
+//                   const poly = polynomialExpression(new Map(entries.map(([key], i) => [key, coefficients[i]])));
+//                   return `If(${add(coefficients.map((v) => `${v}^2`))}!=0,Translate(Dilate(ImplicitCurve(${poly}),${scale},(0,0)),Vector(${origin})))`;
+//                 });
+//               });
+//             });
+//           });
+//         }))));
+// };
 
 const qlQuartic: ExpressionBuilder = (args, allocate) => {
   const vs = args.slice(0, 4).map((arg) => arg.expression);
-  return bind([`${add(vs)}/4`], allocate, ([origin]) =>
+  const data = bind([`${add(vs)}/4`], allocate, ([origin]) =>
     bind([`sqrt((${vs.map((p) => `Distance(${p},${origin})^2`).join('+')})/4)`], allocate, ([scale]) =>
       bind(vs.map((p) => `((${p})-${origin})/${scale}`), allocate, (normalized) =>
         bind(normalized.flatMap((p) => [`x(${p})`, `y(${p})`]), allocate, (values) => {
@@ -94,23 +143,26 @@ const qlQuartic: ExpressionBuilder = (args, allocate) => {
             const ab = adjacent.slice(0, 3); const bc = adjacent.slice(3, 6);
             return bind([...cross(ab, cross(ps[2], ps[3])), ...cross(bc, cross(ps[3], ps[0]))], allocate, (opposite) => {
               const rows = [circlePairRow(ps[0].slice(0, 2), ps[2].slice(0, 2)), circlePairRow(ps[1].slice(0, 2), ps[3].slice(0, 2)), circlePairRow(opposite.slice(0, 3), opposite.slice(3))];
-              // Bind scalar row coefficients before multiplying the polynomial rows.
-              const entriesByRow = rows.map((row) => row.map((p) => [...p]));
-              return bind(entriesByRow.flatMap((row) => row.flatMap((p) => p.map(([, c]) => c))), allocate, (cs) => {
-                let cursor = 0;
-                const bound = entriesByRow.map((row) => row.map((p) => new Map(p.map(([key]) => [key, cs[cursor++]]))));
-                const determinant = polynomialDeterminant(bound);
-                // All three circles contain X. Degree-five terms cancel identically.
-                const entries = [...determinant].filter(([k]) => k.split(',').map(Number).reduce((s, v) => s + v, 0) <= 4);
-                return bind(entries.map(([, v]) => v), allocate, (coefficients) => {
-                  const poly = polynomialExpression(new Map(entries.map(([key], i) => [key, coefficients[i]])));
-                  return `If(${add(coefficients.map((v) => `${v}^2`))}!=0,Translate(Dilate(ImplicitCurve(${poly}),${scale},(0,0)),Vector(${origin})))`;
-                });
-              });
+              const data = rows.map(([s, d, e]) => [s.get('1,0')!, s.get('0,1')!, s.get('0,0')!, d.get('0,1')!, d.get('0,0')!, e.get('0,0')!]);
+              return bind(data.flat(), allocate, (cs) =>
+                bind(coaxalQuarticCoefficients([cs.slice(0, 6), cs.slice(6, 12), cs.slice(12, 18)]), allocate, (coefficients) => {
+                  return coefficientList([...coefficients, `x(${origin})`, `y(${origin})`, scale]);
+                }));
             });
           });
         }))));
+  // One function binding outside the entire numerical pipeline. Returning a
+  // function through every nested Zip still triggers expensive symbolic copies.
+  const nonzero = bind([data], allocate, ([list]) => `${add(Array.from({ length: 9 }, (_, i) => `Element(${list},${i + 1})^2`))}!=0`);
+  const polynomial = bind([data], allocate, ([list]) => {
+    const values = Array.from({ length: 12 }, (_, i) => `Element(${list},${i + 1})`);
+    const cs = values.slice(0, 9);
+    return `If(${add(cs.map((v) => `${v}^2`))}!=0,${radialQuarticExpression(cs, `((x-${values[9]})/${values[11]})`, `((y-${values[10]})/${values[11]})`)},1+0*x+0*y)`;
+  });
+  return `If(${vs.map((p) => `IsDefined(${p})`).join('&&')}&&(${nonzero}),${polynomialCurve(polynomial)})`;
 };
+
+
 
 export const QUADRILATERAL_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   qlTransform, qlPlucker: qlPair(1), qlNewtonPair: qlPair(2), qlFixedPair: qlPair(3),
