@@ -14,9 +14,21 @@ export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string)
     return result;
   };
   await run('A=(0,0)\nB=(6,0)\nC=(1,4)\nP=(2,1)\nD=(-2,3)\nE=(5,2)\nPointAlpha=(2,1)\nellipse:x^2/9+y^2/4=1\ncircleOne=Circle(A,2)\ncircleTwo=Circle(B,1.5)\ncircleThree=Circle(C,1.2)\nsideOne=Line(A,B)\nsideTwo=Line(B,C)\nsideThree=Line(C,D)\nsideFour=Line(D,A)');
-  const original = new Set(['Incenter', 'IsogonalConjugate', 'IsotomicConjugate', 'Conic', 'SecondIntersection']);
+  const p1Names = new Set([
+    'AnticevianTriangle', 'Anticomplement', 'AntipedalTriangle', 'Antipode', 'ArcMidpoint',
+    'BrocardCircle', 'BrocardPoints', 'CarnotTriangle', 'Centroid', 'CevianTriangle',
+    'Circumcenter', 'CircumcevianPoint', 'CircumcevianTriangle', 'Complement', 'DiagonalPoints',
+    'DirectSimilarity', 'EulerLine', 'Excenter', 'Excenters', 'Excircle',
+    'Excircles', 'FuhrmannCircle', 'GergonnePoint', 'GoldenSectionPoint', 'HarmonicConjugate',
+    'IntouchTriangle', 'IsodynamicPoint', 'IsogonalComplement', 'MedialTriangle', 'Mittenpunkt',
+    'NagelPoint', 'NewtonLine', 'NinePointCenter', 'NinePointCircle', 'NorthPole',
+    'OppositeArcMidpoint', 'OppositeSimilarity', 'OrthicTriangle', 'Orthocenter', 'Orthopole',
+    'PedalCircle', 'PedalTriangle', 'RadicalCenter', 'SimilarityCenter', 'SouthPole',
+    'SpiekerCenter', 'SymmedianPoint', 'TangentialTriangle', 'TransferRatio', 'TrilinearPolar',
+    'TrilinearPole', 'TrisectionPoint',
+  ]);
   let serial = 0;
-  for (const tool of studioToolLibrary.tools.filter((tool) => !original.has(tool.name))) {
+  for (const tool of studioToolLibrary.tools.filter((tool) => p1Names.has(tool.name))) {
     for (const overload of tool.overloads) {
       const arguments_ = overload.params.map((param) => {
         if (param.type === 'point') return param.name;

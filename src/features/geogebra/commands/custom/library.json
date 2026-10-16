@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "tools": [
     {
       "name": "Incenter",
@@ -12,16 +12,18 @@
     },
     {
       "name": "IsogonalConjugate",
-      "description": "Isogonal conjugate in triangle ABC, using homogeneous barycentric products.",
+      "description": "Isogonal image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isogonalLine"}
       ]
     },
     {
       "name": "IsotomicConjugate",
-      "description": "Isotomic conjugate in triangle ABC, using signed barycentric products.",
+      "description": "Isotomic image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isotomicLine"}
       ]
     },
     {
@@ -38,7 +40,8 @@
       "name": "SecondIntersection",
       "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
       "overloads": [
-        {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"}
+        {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"},
+        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Reflect($P,Intersect($support,ConjugateDiameter($support,$q)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}]}
       ]
     },
     {
@@ -421,6 +424,332 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "Line(($A+$C)/2,($B+$D)/2)"},
         {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "Line((Intersect($s1,$s2)+Intersect($s3,$s4))/2,(Intersect($s1,$s4)+Intersect($s2,$s3))/2)", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+      ]
+    },
+    {
+      "name": "FermatPoint",
+      "description": "First isogonic center X(13), including its algebraic continuation for angles beyond 120 degrees.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,13)"}
+      ]
+    },
+    {
+      "name": "FeuerbachPoint",
+      "description": "Feuerbach contact point of the incircle and nine-point circle, X(11).",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,11)"}
+      ]
+    },
+    {
+      "name": "SimsonLine",
+      "description": "Line joining the projections of P onto AB and AC; the Simson line when P is on the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "compose": "Line(($P+Reflect($P,Line($A,$B)))/2,($P+Reflect($P,Line($A,$C)))/2)"}
+      ]
+    },
+    {
+      "name": "SteinerLine",
+      "description": "Line joining the reflections of P in AB and AC; the triangle Steiner line when P is on the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "compose": "Line(Reflect($P,Line($A,$B)),Reflect($P,Line($A,$C)))"}
+      ]
+    },
+    {
+      "name": "AntiSteinerPoint",
+      "description": "Circumcircle point whose triangle Steiner line has the direction of l.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(Reflect($throughH,Line($A,$B)),Reflect($throughH,Line($A,$C)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}, {"name": "throughH", "expression": "Line(Orthocenter($A,$B,$C),$support)"}]}
+      ]
+    },
+    {
+      "name": "Orthotransversal",
+      "description": "Line through the sideline traces of the perpendiculars to AP, BP and CP through P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "builder": "orthotransversal"}
+      ]
+    },
+    {
+      "name": "Orthocorrespondent",
+      "description": "Trilinear pole of the orthotransversal of P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "orthocorrespondent"}
+      ]
+    },
+    {
+      "name": "TaylorCircle",
+      "description": "Taylor circle of triangle ABC, with center X(389).",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(TriangleCenter($A,$B,$C,389),($foot+Reflect($foot,Line($A,$B)))/2)", "locals": [{"name": "foot", "expression": "OrthicTriangle($A,$B,$C,1)"}]}
+      ]
+    },
+    {
+      "name": "AntigonalConjugate",
+      "description": "Antigonal image of P, with homogeneous continuation on the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "antigonal"}
+      ]
+    },
+    {
+      "name": "CevianAffineMap",
+      "description": "Affine image of P under the map from ABC to the cevian triangle of X.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cevianAffine"}
+      ]
+    },
+    {
+      "name": "PedalAffineMap",
+      "description": "Affine image of P under the map from ABC to the pedal triangle of X.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "pedalAffine"}
+      ]
+    },
+    {
+      "name": "Isoconjugate",
+      "description": "Diagonal reciprocal isoconjugation fixing X (five points), or sending X to Y (six points).",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "Y", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"}
+      ]
+    },
+    {
+      "name": "Crosspoint",
+      "description": "Crosspoint of P and Q with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "crosspoint"}
+      ]
+    },
+    {
+      "name": "Cevapoint",
+      "description": "Cevapoint of P and Q with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "cevapoint"}
+      ]
+    },
+    {
+      "name": "CevaConjugate",
+      "description": "X-Ceva conjugate of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cevaConjugate"}
+      ]
+    },
+    {
+      "name": "CrossConjugate",
+      "description": "X-cross conjugate of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "crossConjugate"}
+      ]
+    },
+    {
+      "name": "CyclocevianConjugate",
+      "description": "Cyclocevian conjugate of P with respect to triangle ABC.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cyclocevian"}
+      ]
+    },
+    {
+      "name": "CommonTangents",
+      "description": "Direct (s=1) or transverse (s=-1) common tangents of two circles; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "s", "type": "number"}], "returns": "line", "builder": "commonTangents"},
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "s", "type": "number"}, {"name": "i", "type": "number"}], "returns": "line", "builder": "commonTangents"}
+      ]
+    },
+    {
+      "name": "MixtilinearIncircle",
+      "description": "Circle tangent to rays AB and AC and internally tangent to the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,$contact)", "locals": [{"name": "reference", "expression": "Incenter($A,$B,$C)"}, {"name": "bisector", "expression": "Line($A,$reference)"}, {"name": "contact", "expression": "Intersect(Line($A,$B),PerpendicularLine($reference,$bisector))"}, {"name": "center", "expression": "Intersect($bisector,PerpendicularLine($contact,Line($A,$B)))"}]}
+      ]
+    },
+    {
+      "name": "MixtilinearIncircles",
+      "description": "Circle tangent to rays AB and AC and internally tangent to the circumcircle. Outputs follow A, B, C; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["MixtilinearIncircle($A,$B,$C)", "MixtilinearIncircle($B,$C,$A)", "MixtilinearIncircle($C,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({MixtilinearIncircle($A,$B,$C),MixtilinearIncircle($B,$C,$A),MixtilinearIncircle($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "MixtilinearExcircle",
+      "description": "Circle tangent to rays AB and AC and externally tangent to the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,$contact)", "locals": [{"name": "reference", "expression": "Excenter($A,$B,$C)"}, {"name": "bisector", "expression": "Line($A,$reference)"}, {"name": "contact", "expression": "Intersect(Line($A,$B),PerpendicularLine($reference,$bisector))"}, {"name": "center", "expression": "Intersect($bisector,PerpendicularLine($contact,Line($A,$B)))"}]}
+      ]
+    },
+    {
+      "name": "MixtilinearExcircles",
+      "description": "Circle tangent to rays AB and AC and externally tangent to the circumcircle. Outputs follow A, B, C; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["MixtilinearExcircle($A,$B,$C)", "MixtilinearExcircle($B,$C,$A)", "MixtilinearExcircle($C,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({MixtilinearExcircle($A,$B,$C),MixtilinearExcircle($B,$C,$A),MixtilinearExcircle($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "MixtilinearContactPoint",
+      "description": "Contact point of the A-mixtilinear incircle with the circumcircle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "(Radius($circum)*Center($mixt)-Radius($mixt)*Center($circum))/(Radius($circum)-Radius($mixt))", "locals": [{"name": "circum", "expression": "Circle($A,$B,$C)"}, {"name": "mixt", "expression": "MixtilinearIncircle($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "HaggeCircle",
+      "description": "Hagge circle of P, through the orthocenter with center the reflection of its isogonal conjugate in the nine-point center.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(Reflect(IsogonalConjugate($A,$B,$C,$P),NinePointCenter($A,$B,$C)),Orthocenter($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "HaggeInverse",
+      "description": "Inverse of P in its Hagge circle.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "Reflect($P,HaggeCircle($A,$B,$C,$P))"}
+      ]
+    },
+    {
+      "name": "ApolloniusCircle",
+      "description": "Generalized Apollonius circle PB/PC = AB/AC; an equal ratio gives a line represented as a degenerate conic.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "apollonius"}
+      ]
+    },
+    {
+      "name": "ApolloniusCircles",
+      "description": "A-, B- and C-Apollonius generalized circles; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": ["ApolloniusCircle($A,$B,$C)", "ApolloniusCircle($B,$C,$A)", "ApolloniusCircle($C,$A,$B)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "conic", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({ApolloniusCircle($A,$B,$C),ApolloniusCircle($B,$C,$A),ApolloniusCircle($C,$A,$B)},$i))"}
+      ]
+    },
+    {
+      "name": "KiepertHyperbola",
+      "description": "Kiepert rectangular circumhyperbola, the isogonal image of the Brocard axis.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "IsogonalConjugate($A,$B,$C,Line(Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C)))"}
+      ]
+    },
+    {
+      "name": "JerabekHyperbola",
+      "description": "Jerabek rectangular circumhyperbola through ABC, the circumcenter and symmedian point.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "Conic($A,$B,$C,Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C))"}
+      ]
+    },
+    {
+      "name": "FeuerbachHyperbola",
+      "description": "Feuerbach rectangular circumhyperbola through ABC, I and the orthocenter of BCI.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "Conic($A,$B,$C,$incenter,TriangleCenter($A,$B,$C,7))", "locals": [{"name": "incenter", "expression": "Incenter($A,$B,$C)"}]}
+      ]
+    },
+    {
+      "name": "SteinerInellipse",
+      "description": "Ellipse tangent to the triangle sidelines at their midpoints.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "steinerInellipse"}
+      ]
+    },
+    {
+      "name": "SteinerCircumellipse",
+      "description": "Circumellipse of ABC centered at its centroid.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "steinerCircumellipse"}
+      ]
+    },
+    {
+      "name": "SteinerFoci",
+      "description": "Foci of the Steiner inellipse; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Element({Focus(SteinerInellipse($A,$B,$C))},1)", "Element({Focus(SteinerInellipse($A,$B,$C))},2)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=2,Element({Element({Focus(SteinerInellipse($A,$B,$C))},1),Element({Focus(SteinerInellipse($A,$B,$C))},2)},$i))"}
+      ]
+    },
+    {
+      "name": "InconicWithFocus",
+      "description": "Ellipse tangent to the three sidelines with interior point P as a focus; exterior inputs are outside this contract.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "compose": "Ellipse($P,$other,Distance(Reflect($P,Line($B,$C)),$other)/2)", "locals": [{"name": "other", "expression": "IsogonalConjugate($A,$B,$C,$P)"}]}
+      ]
+    },
+    {
+      "name": "InconicWithCenter",
+      "description": "Conic tangent to the three sidelines with center P; may be elliptic, hyperbolic or degenerate.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "inconicCenter"}
+      ]
+    },
+    {
+      "name": "IsogonalPairWithMidpoint",
+      "description": "Foci of the real central inconic centered at P; an isogonal pair when that conic has real foci. Optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Element({Focus(InconicWithCenter($A,$B,$C,$P))},1)", "Element({Focus(InconicWithCenter($A,$B,$C,$P))},2)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=2,Element({Element({Focus(InconicWithCenter($A,$B,$C,$P))},1),Element({Focus(InconicWithCenter($A,$B,$C,$P))},2)},$i))"}
+      ]
+    },
+    {
+      "name": "MiquelPoint",
+      "description": "Miquel point of the complete quadrilateral with ordered vertices ABCD, or of four supporting lines.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($B-$A)*ToComplex($D-$A)/ToComplex($B+$D-$C-$A))"},
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "point", "compose": "MiquelPoint(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+      ]
+    },
+    {
+      "name": "SteinerLineQ",
+      "description": "Radical axis of the circles with diameters AC and BD; contains the four component-triangle orthocenters.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "RadicalAxis(Circle(($A+$C)/2,$A),Circle(($B+$D)/2,$B))"},
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "SteinerLineQ(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+      ]
+    },
+    {
+      "name": "TangentParabola",
+      "description": "Parabola tangent to the four ordered quadrilateral sidelines AB, BC, CD, DA, or to four supporting lines.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "conic", "compose": "Parabola(MiquelPoint($A,$B,$C,$D),SteinerLineQ($A,$B,$C,$D))"},
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "conic", "compose": "TangentParabola(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+      ]
+    },
+    {
+      "name": "NinePointConic",
+      "description": "Conic through the six pairwise midpoints of ABCD, including degenerate configurations.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "conic", "builder": "ninePointConic"}
+      ]
+    },
+    {
+      "name": "Cubic",
+      "description": "Cubic through nine points; native triangle/index forms retain their original meaning.",
+      "overloads": [
+        {"params": [{"name": "P1", "type": "point"}, {"name": "P2", "type": "point"}, {"name": "P3", "type": "point"}, {"name": "P4", "type": "point"}, {"name": "P5", "type": "point"}, {"name": "P6", "type": "point"}, {"name": "P7", "type": "point"}, {"name": "P8", "type": "point"}, {"name": "P9", "type": "point"}], "returns": "implicitCurve", "builder": "cubicThroughPoints"}
+      ]
+    },
+    {
+      "name": "Polar",
+      "description": "Second polar line of a point with respect to a cubic; native conic polar and pole overloads are preserved.",
+      "overloads": [
+        {"params": [{"name": "P", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "cubicPolar"}
+      ]
+    },
+    {
+      "name": "PolarConic",
+      "description": "First homogeneous polar conic of a point with respect to a cubic.",
+      "overloads": [
+        {"params": [{"name": "P", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "conic", "builder": "cubicPolarConic"}
+      ]
+    },
+    {
+      "name": "ThirdIntersection",
+      "description": "Residual cubic intersection after two known secant intersections, or after tangent contact at one smooth point.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "thirdIntersection"},
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "thirdIntersection"}
+      ]
+    },
+    {
+      "name": "PivotalIsogonalCubic",
+      "description": "Locus where a point, its isogonal conjugate and pivot P are collinear.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotal"}
       ]
     }
   ]

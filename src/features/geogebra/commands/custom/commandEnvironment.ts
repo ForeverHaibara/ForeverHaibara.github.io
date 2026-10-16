@@ -6,6 +6,7 @@ export const normalizeGeometryType = (type: unknown): GeometryType => {
   if (['point', 'pointonpath', 'pointinregion'].includes(value)) return 'point';
   if (['numeric', 'angle', 'number', 'integer'].includes(value)) return 'number';
   if (value === 'functionnvar') return 'function';
+  if (['implicitpoly', 'implicitcurve'].includes(value)) return 'implicitCurve';
   // GeoConic's API type string changes with its classification, even though
   // the underlying object and all of its dependencies remain a conic.
   if (['ellipse', 'hyperbola', 'parabola', 'conic', 'conicpart', 'intersectinglines', 'parallellines', 'doubleline', 'emptyset'].includes(value)) return 'conic';
@@ -67,7 +68,16 @@ export const readCommandEnvironment = async (engine: GeoGebraEngine): Promise<Co
   const raw = await engine.callApi('getAllObjectNames', []);
   const names: string[] = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',').filter(Boolean) : [];
   const [pairs, tools] = await Promise.all([
-    Promise.all(names.map(async (name): Promise<[string, GeometryType]> => [name, normalizeGeometryType(await engine.callApi('getObjectType', [name]))])),
+    Promise.all(names.map(async (name): Promise<[string, GeometryType]> => {
+      const type = normalizeGeometryType(await engine.callApi('getObjectType', [name]));
+      // A GeoConic may report "line" or "point" after degenerating. Its XML
+      // element class remains conic; preserve that class for typed dispatch.
+      if (type === 'line' || type === 'point') {
+        const xml = String(await engine.callApi('getXML', [name]));
+        if (/<element\b[^>]*\btype=["']conic["']/u.test(xml)) return [name, 'conic'];
+      }
+      return [name, type];
+    })),
     readFileTools(engine),
   ]);
   return { objects: new Map(pairs), macros: new Set(tools.map((tool) => tool.name.toLowerCase())), macroTypes: new Map(tools.map((tool) => [tool.name.toLowerCase(), tool.returns])) };

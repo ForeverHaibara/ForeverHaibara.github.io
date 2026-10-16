@@ -3,6 +3,7 @@ import { executeCommandPipeline } from '../src/features/geogebra/commands/comman
 import { readFileTools } from '../src/features/geogebra/commands/custom/commandEnvironment';
 import { createFileToolCompletionProvider } from '../src/features/geogebra/commands/completion/fileToolCompletionProvider';
 import { verifyP1 } from './geogebra-p1-smoke';
+import { verifyP2 } from './geogebra-p2-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -59,6 +60,11 @@ button.onclick = async () => {
     await api('newConstruction');
     if (new URLSearchParams(window.location.search).get('suite') === 'p1') {
       await verifyP1(engine, report);
+      report('COMPLETE');
+      return;
+    }
+    if (new URLSearchParams(window.location.search).get('suite') === 'p2') {
+      await verifyP2(engine, report);
       report('COMPLETE');
       return;
     }

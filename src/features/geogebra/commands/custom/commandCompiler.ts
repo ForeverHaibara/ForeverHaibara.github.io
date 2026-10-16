@@ -10,6 +10,8 @@ const nativeReturns: Record<string, GeometryType> = {
   line: 'line', perpendicularline: 'line', parallel: 'line', polar: 'line',
   segment: 'segment', ray: 'ray', vector: 'vector', circle: 'circle', incircle: 'circle',
   ellipse: 'conic', hyperbola: 'conic', parabola: 'conic', conic: 'conic',
+  implicitcurve: 'implicitCurve', cubic: 'implicitCurve', trianglecurve: 'implicitCurve',
+  leftside: 'function', rightside: 'function', derivative: 'function',
   distance: 'number', length: 'number', angle: 'number', x: 'number', y: 'number', z: 'number',
   abs: 'number', sqrt: 'number', sin: 'number', cos: 'number', radius: 'number', affineratio: 'number',
   sequence: 'list', zip: 'list', join: 'list', solutions: 'list',

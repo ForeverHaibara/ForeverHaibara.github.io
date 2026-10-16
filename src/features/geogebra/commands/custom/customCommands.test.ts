@@ -94,7 +94,7 @@ describe('custom command syntax and dispatch', () => {
     scope.objects.set('ellipse', 'conic');
     expect(compile('SecondIntersection(circle,A,B)')).toBe('Reflect((A),Intersect(Line((A),(B)),ConjugateDiameter(Line((A),(B)),(circle))))');
     expect(compile('SecondIntersection(ellipse,A,B)', scope)).toContain('ConjugateDiameter(Line((A),(B)),(ellipse))');
-    expect(studioTools.get('secondintersection')?.overloads).toHaveLength(1);
+    expect(studioTools.get('secondintersection')?.overloads).toHaveLength(2);
   });
 
   it('extends segments and rays to supporting lines without creating named objects', () => {
@@ -236,13 +236,15 @@ describe('reusable tool definitions and P1 outputs', () => {
     }
   });
 
-  it('implements every approved P1 signature and excludes the explicitly rejected tools', () => {
+  it('compiles every catalog signature and excludes the explicitly rejected tools', () => {
+    const scope = environment();
+    scope.objects.set('curve', 'implicitCurve');
     for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
       if (['conic', 'conicBranch'].includes(overload.builder ?? '')) continue;
-      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', circle: 'circle', conic: 'circle', lineLike: 's', number: '1' };
+      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1' };
       const arguments_ = overload.params.map((param) => fixtures[param.type]);
       expect(arguments_.every(Boolean), tool.name).toBe(true);
-      expect(() => compile(`${tool.name}(${arguments_.join(',')})`), tool.name).not.toThrow();
+      expect(() => compile(`${tool.name}(${arguments_.join(',')})`, scope), tool.name).not.toThrow();
     }
     expect(studioTools.has('complementofisotomicconjugate')).toBe(false);
     expect(studioTools.has('circumsymmedianpoint')).toBe(false);
@@ -270,6 +272,7 @@ describe('command execution boundary', () => {
     const callApi = vi.fn(async (method: string, args: unknown[]) => {
       if (method === 'getAllObjectNames') return [...scope.objects.keys()];
       if (method === 'getObjectType') return scope.objects.get(String(args[0]));
+      if (method === 'getXML') return `<element type="${scope.objects.get(String(args[0]))}" label="${args[0]}"/>`;
       if (method === 'getFileJSON') return { archive: [] };
       throw new Error(`Unexpected mutation or numeric sampling: ${method}`);
     });
@@ -290,7 +293,7 @@ describe('command execution boundary', () => {
     expect(executeCommand).toHaveBeenCalledWith('I=TriangleCenter((A),(B),(C),1)');
     expect(result.command).toBe('I=Incenter(A,B,C)');
     expect(result.expandedCommand).toContain('TriangleCenter');
-    expect(callApi.mock.calls.every(([name]) => ['getAllObjectNames', 'getObjectType', 'getFileJSON'].includes(name))).toBe(true);
+    expect(callApi.mock.calls.every(([name]) => ['getAllObjectNames', 'getObjectType', 'getXML', 'getFileJSON'].includes(name))).toBe(true);
   });
 
   it('resolves later batch statements after earlier construction mutations', async () => {

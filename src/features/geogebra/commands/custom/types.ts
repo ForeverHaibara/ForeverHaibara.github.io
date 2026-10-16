@@ -1,4 +1,4 @@
-export type GeometryType = 'point' | 'line' | 'segment' | 'ray' | 'circle' | 'conic' | 'number' | 'list' | 'vector' | 'function' | 'unknown';
+export type GeometryType = 'point' | 'line' | 'segment' | 'ray' | 'circle' | 'conic' | 'implicitCurve' | 'number' | 'list' | 'vector' | 'function' | 'unknown';
 export type ParameterType = GeometryType | 'lineLike' | 'pointOrLine';
 
 export interface ToolOverload {

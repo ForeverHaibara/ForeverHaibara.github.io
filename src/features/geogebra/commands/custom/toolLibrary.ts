@@ -2,7 +2,7 @@ import definitions from './library.json';
 import { GEOMETRY_BUILDERS } from './geometryBuilders';
 import type { GeometryType, ParameterType, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
 
-const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine']);
+const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine']);
 const resultTypes = new Set([...parameterTypes].filter((type) => !['lineLike', 'pointOrLine'].includes(type)));
 
 export const validateToolLibrary = (value: unknown): ToolLibrary => {

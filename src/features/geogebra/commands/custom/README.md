@@ -57,8 +57,10 @@ inside dependencies stay native; already compiled caller arguments are not
 expanded a second time. Direct/indirect dependency cycles and excessive nesting
 or expansion produce errors; different overloads may call one another.
 
-Complex symbolic construction generators
-live in `geometryBuilders.ts`, referenced by `builder` instead of `expression`.
+Complex symbolic construction generators are registered in `geometryBuilders.ts`,
+with triangle/conic maps in `triangleBuilders.ts`, cubic operations in
+`curveBuilders.ts`, and shared homogeneous algebra in `expressionGeometry.ts`.
+They are referenced by `builder` instead of `expression`.
 Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
 backends without changing the command names or signatures.
@@ -96,6 +98,11 @@ is a wildcard, and an optional final variadic parameter may match repeated
 arguments. Equally specific matches are errors. Native command names fall
 through when no site overload matches, preserving e.g. both coefficient forms
 of `Conic`. Pure site commands report the inferred and accepted signatures.
+
+`implicitCurve` recognizes the engine's `implicitpoly`/`implicitcurve` class and
+the native `ImplicitCurve`, `Cubic`, and `TriangleCurve` constructors. A conic
+can report API type `line` or `point` when it degenerates; object XML preserves
+its underlying conic class for dispatch. This inspection reads metadata only.
 
 The balanced lexical compiler preserves strings, comments, `()`/`[]`, lists,
 assignments, nested calls and function declaration heads. It does not attempt
@@ -136,9 +143,68 @@ chord. Algebraically, restricting the quadratic to `P+t*(Q-P)` gives
 `t*(H*t+L)=0`; midpoint reflection selects `t=-L/H` without a square root or a
 numerical intersection branch. It returns P at ordinary tangency, and remains
 dynamic when an ellipse changes into a circle or a supported degenerate conic.
-P=Q, a contained line, or a second intersection at infinity is undefined as an
+The P2 overload `SecondIntersection(conic,P,l:lineLike)` uses the same midpoint
+reflection with the unbounded supporting line l. P must lie on both l and the
+conic. In the point overload, P=Q is undefined. A contained line or a second
+intersection at infinity is undefined as an
 affine point. P lying on the conic is a geometric precondition, not an extra
 projection which silently changes the problem.
+
+### P2 families and preconditions
+
+The catalog includes triangle maps, circle tangency constructions, central
+inconics, ordered quadrilateral constructions, and cubic operations. See
+`TOOL_IMPLEMENTATION_PLAN.md` for the grouped inventory and individual algorithms.
+`compose` reuses earlier site commands where a short geometric construction
+preserves the required limits. Homogeneous products handle removable poles in
+the conjugations; all rank/degree guards and output selection run dynamically
+inside GeoGebra, without JavaScript coordinate reads.
+`CyclocevianConjugate` composes its reciprocal maps in homogeneous coordinates;
+`Orthocorrespondent` takes the pole before converting the orthotransversal to an
+affine line. These preserve finite results across intermediate points/lines at
+infinity instead of expanding through undefined affine objects.
+
+`InconicWithFocus` promises an ellipse for a strictly interior focus.
+`InconicWithCenter` can return an ellipse, hyperbola or degenerate conic;
+`IsogonalPairWithMidpoint` extracts its real foci when available. The generalized
+`ApolloniusCircle` keeps a conic object at equal side lengths, where its equation
+reduces to a line. `NinePointConic` uses a centered quadratic through three
+opposite midpoint pairs, including the intersecting-line parallelogram limit.
+
+Four-point `MiquelPoint`, `SteinerLineQ`, and `TangentParabola` use ordered
+sidelines AB, BC, CD, DA. Their line overloads normalize all supporting lines
+and use consecutive intersections; adjacent parallel sides may therefore yield
+undefined affine vertices. `SimsonLine` and `SteinerLine` always use the AB/AC
+projection/reflection pair, including off-circumcircle inputs as documented
+extensions. `FermatPoint` means X(13), including obtuse triangles.
+
+### Cubic coefficients and residual intersections
+
+`Polar(P,F:implicitCurve)` is the second homogeneous polar line of a cubic.
+Native `Polar(P,conic)` and `Polar(line,conic)` retain their original meanings.
+`PolarConic` is the first homogeneous polar conic, including contributions from
+the constant and lower-degree terms. There is no `PolarLine` alias.
+
+The builders take `LeftSide(F)-RightSide(F)` as a native two-variable function.
+Its partial derivatives at (0,0), divided by factorials, yield the ten cubic
+coefficients. Native `AreEqual` compares the reconstructed polynomial with the
+function, and a nonzero third-degree part is required. Noncubic inputs are
+undefined dynamically; comparisons inherit GeoGebra's polynomial tolerance.
+`Coefficients` does not accept implicit curves, so it is not used here. No free
+curve points, numeric sampling or JavaScript coefficient snapshots are needed.
+
+`ThirdIntersection(F,P,Q)` assumes distinct known curve points P and Q; it
+removes the roots 0 and 1 from F(P+t(Q-P)) using Vieta's sum.
+`ThirdIntersection(F,P)` uses the gradient tangent direction and removes its
+double root instead. Ordinary inflections return P; singular points, contained
+lines and residual points at infinity can be undefined. On-curve incidence is
+a caller precondition. Use the two-argument form for tangent contact.
+
+`Cubic(P1,...,P9)` normalizes the nine coordinates inside GeoGebra, requires rank
+9 of the native 9-by-10 monomial matrix, then transforms native `ImplicitCurve`
+back to world coordinates. Rank-deficient inputs remain undefined instead of
+silently selecting a lower-degree curve. Native triangle/index `Cubic` forms
+still work. `PivotalIsogonalCubic` directly emits a `TriangleCurve` equation.
 
 ### Mixed Conic
 
@@ -196,7 +262,7 @@ tangency. This is not a solver for every degenerate family.
 
 ## Verification
 
-The P1 tools are in `library.json`; the full catalog is not duplicated here.
+The P1/P2 tools are in `library.json`; the full catalog is not duplicated here.
 For P1 real-engine verification, open
 `/scripts/geogebra-smoke.html?suite=p1` and click **Run verification**. It checks
 every new overload, scalar output types, helper counts, harmonic cross-ratios,
@@ -204,8 +270,17 @@ similarities, conjugation/polarity identities, supporting lines, dragging and
 export/reopen dependencies. This browser suite is separate from Vitest and must
 be run against the actual embedded engine.
 
+For P2, open `/scripts/geogebra-smoke.html?suite=p2`. It covers every new
+overload, XML geometry classes, helper counts, conjugation identities,
+tangencies, inconic foci, six-midpoint incidence and degenerations, cubic
+polarity/residual intersections, coefficient dragging, and export/reopen.
+This suite has been added but has **not been run in this session**: no browser
+surface was available. The P1 suite remains restricted to its original tools.
+
 Run `npm test -- --run` for parser/dispatch, hygiene, completion and adapter
-tests. With `npm run dev`, open `/scripts/geogebra-smoke.html` and click **Run
+tests, including homogeneous algebra identities for the P2 builders. These
+tests do not simulate the native engine. With `npm run dev`, open
+`/scripts/geogebra-smoke.html` and click **Run
 verification** for a disposable real-engine construction. It checks all six
 point/line counts against known circle solutions, every returned incidence and
 tangency equation, segment/ray normalization, conjugation involutions and a
