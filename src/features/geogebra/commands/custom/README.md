@@ -59,7 +59,7 @@ case-insensitively across canonical commands and aliases; self-aliases, duplicat
 aliases and malformed names are rejected. Flat lists avoid alias chains. File
 macros retain priority at the call site, including when they own only an alias.
 
-The catalog currently has **135 canonical commands and 137 callable names**:
+The catalog currently has **136 canonical commands and 138 callable names**:
 `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases `OppositeArcMidpoint`.
 
 ### Implementations and composition
@@ -159,6 +159,10 @@ GeoGebra scripts this is not an atomic transaction, and earlier results survive
 a later error. Returned diagnostics retain the original and expanded input.
 
 ## Geometry implementations
+
+`Intersect(A,B,C,D)` emits `Intersect(Line(A,B),Line(C,D))` for four points,
+using the infinite supporting lines. All other signatures fall through to the
+native `Intersect` command without restricting its argument types or arities.
 
 `Incenter(A,B,C)` emits `TriangleCenter(A,B,C,1)`.
 

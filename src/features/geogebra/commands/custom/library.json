@@ -4,6 +4,21 @@
   "version": "0.1.0",
   "tools": [
     {
+      "name": "Intersect",
+      "description": "Four points intersect the infinite lines AB and CD. All other signatures use the native Intersect command.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "Intersect(Line($A,$B),Line($C,$D))"}
+      ]
+    },
+    {
+      "name": "Pedal",
+      "description": "Projection of a point to a line.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "(($A)+Reflect($A,Line($B,$C)))/2"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "expression": "(($A)+Reflect($A,$l))/2"}
+      ]
+    },
+    {
       "name": "SecondIntersection",
       "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
       "overloads": [

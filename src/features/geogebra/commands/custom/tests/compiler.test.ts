@@ -54,6 +54,21 @@ describe('custom command syntax and dispatch', () => {
     expect(compile('SecondIntersection(Conic(A,B,C,D,E),A,B)')).toContain('ConjugateDiameter');
   });
 
+  it('intersects the supporting lines of four points and supports nested point inputs', () => {
+    expect(compile('Intersect(A,B,C,D)')).toBe('Intersect(Line((A),(B)),Line((C),(D)))');
+    expect(compile('Intersect[(1,2),B,Midpoint(C,D),P]')).toBe('Intersect(Line(((1,2)),(B)),Line((Midpoint(C,D)),(P)))');
+    expect(compile('Incenter(Intersect(A,B,C,D),B,C)')).toBe('TriangleCenter((Intersect(Line((A),(B)),Line((C),(D)))),(B),(C),1)');
+  });
+
+  it('preserves native Intersect signatures and file macro priority', () => {
+    for (const source of ['Intersect(l,m)', 'Intersect(l,circle,1)', 'Intersect(circle,l,P)', 'Intersect(f,g,0,1)', 'Intersect(A,B,C,1)']) {
+      expect(compile(source)).toBe(source);
+    }
+    const scope = environment();
+    scope.macros.add('intersect');
+    expect(compile('Intersect(A,B,C,D)', scope)).toBe('Intersect(A,B,C,D)');
+  });
+
   it('selects mixed Conic overloads in every point/line order', () => {
     const tool = studioTools.get('conic')!;
     for (let mask = 0; mask < 32; mask += 1) {
