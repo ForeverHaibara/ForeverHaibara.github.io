@@ -13,6 +13,7 @@
 - **Existing**：当前网站已实现，保留接口；本轮不重写。
 - **Implemented (P1)**：首批工具，自动测试通过，用户已人工运行原生引擎验收脚本。
 - **Implemented (P2)**：第二批工具，自动测试通过；原生引擎验收脚本已补充但本会话未运行。
+- **Implemented (compatibility)**：内置指令核对后补充的兼容性实现，验收范围见第 11 节。
 - **Native**：使用 GeoGebra 内置功能，不新增同义工具。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
@@ -196,7 +197,8 @@
 |---|---|---|---|---|
 | Existing | `Conic(o1:pointOrLine,...,o5:pointOrLine[,i]) → conic(s)` | Conics satisfying five point and tangent-line constraints. | 保留当前混合约束算法与输出槽；不新增 Conic0P5L 等组合名。所有直线类取支撑线。 | S079 S080 S081 S082 |
 | Existing | `SecondIntersection(q,P,Q) → point` | Other intersection of q with line PQ, given P on q. | 保留当前共轭直径求弦中点后反射的算法；普通相切返回 P。包含直线或第二点在无穷远时允许 undefined。 | S104 |
-| Implemented (P1) | `RadicalCenter(c1,c2,c3) → point` | Radical center of three circles. | 取两组原生根轴再求交，或将归一化圆幂方程相减解 2×2 线性系统；共轴时不唯一、根轴平行时在无穷远。 | S221 S366 |
+| Implemented (compatibility) | `RadicalAxis(c1,c2) → line` | Line of equal powers to two circles. | GeoGebra 的公开命令表没有 RadicalAxis，不能直接发给原生输入栏。设圆心 O1、O2、半径 r1、r2，作过 `(O1+O2)/2+(r1²−r2²)(O2−O1)/(2 Distance(O1,O2)²)` 且垂直 O1O2 的直线。相离、相交、相切均有效；同心时没有唯一有限根轴，undefined。四点输入先显式构造两个圆。 | S220 S365 S431 |
+| Implemented (P1) | `RadicalCenter(c1,c2,c3) → point` | Radical center of three circles. | 通过 compose 展开两个自定义 RadicalAxis 后用原生 Intersect 求交；共轴时不唯一、根轴平行时在无穷远。 | S221 S366 |
 | Implemented (P1) | `SimilarityCenter(c1,c2,s) → point` | External (s=1) or internal (s=-1) center of similitude of two circles. | O1,O2 半径 r1,r2，输出 `(r1 O2−s r2 O1)/(r1−s r2)`。s 仅允许 ±1；外位似等半径时一般在无穷远，内位似中心正常。不要通过任意圆上点确定相似。 | S361 S362 |
 | Implemented (P2) | `CommonTangents(c1,c2,s[,i]) → line × 2 / line` | Common direct (s=1) or transverse (s=-1) tangents of two circles. | 以单位法向 n 写 `n·(O2−O1)=r1−s r2`，由中心差方向及其 90°方向构造两个 n，线为 `n·(X−O1)=r1`。平方根只用于真正的二分支；等半径外公切线仍有限。普通相切两槽可重合，不以无穷远位似中心为前提。需要全部公切线时直接用原生 Tangent。尽量考虑能否推广到二次曲线。 | S222 S223 S363 S364 |
 | Implemented (P2) | `MixtilinearIncircle(A,B,C) → circle` | Circle tangent to rays AB and AC and internally tangent to the circumcircle. | 用短几何构造：I 为内心，e=AI；F=AB 与过 I 垂直 e 的线的交点，X=e 与过 F 垂直 AB 的线的交点；返回 Circle(X,F)。等价于角平分线单位向量 u、k=sin(A/2) 下 `X=A+t u`、`t=2((O−A)·u−Rk)/(1−k²)` 的非零根，无需实际展开该式。非退化 ABC 中两次交点均唯一。 | S022 |
@@ -240,7 +242,7 @@
 | Implemented (P2) | `MiquelPoint(l1,l2,l3,l4) → point` | Miquel point of four supporting lines. | 支撑线交点依次 A=l4∩l1、B=l1∩l2、C=l2∩l3、D=l3∩l4，调用四点版；相邻平行且交点在无穷远时不承诺普通 point。 | S083 |
 | Implemented (P1) | `NewtonLine(A,B,C,D) → line` | Newton line of the quadrilateral with ordered vertices ABCD. | 四点为循环顶点，输出 AC 与 BD 中点的连线；对应四线 AB、BC、CD、DA 版本。 | S084 |
 | Implemented (P1) | `NewtonLine(l1,l2,l3,l4) → line` | Line through the midpoints of the three diagonals of a complete quadrilateral. | 取两组互补直线交点作为对角端点，算三个对角中点；只固定取其中两个。不讨论中点是否重合。 | S084 |
-| Implemented (P2) | `SteinerLineQ(A,B,C,D) → line` | Line containing the orthocenters of the four component triangles. | 由于参数一样，不与三角形版本重载。因此改名为 SteinerLineQ。 应该是(AC),(BD)直径圆的根轴。避免垂心重合的退化。  | S085 |
+| Implemented (P2) | `SteinerLineQ(A,B,C,D) → line` | Line containing the orthocenters of the four component triangles. | 不与三角形版本重载。直接发出 `(Bx+Dx−Ax−Cx)x+(By+Dy−Ay−Cy)y+A·C−B·D=0`，等价于 AC、BD 直径圆的幂差为零；不构造圆、不调用 RadicalAxis。 | S085 |
 | Implemented (P2) | `SteinerLineQ(l1,l2,l3,l4) → line` | Line containing the orthocenters of the four component triangles. | 重载。同上。 | S085 |
 | Defer | `SteinerCircle(l1,l2,l3,l4) → circle` | Circle through the circumcenters of the four component triangles. | 按审阅意见暂不实现，等待更好的算法。 | S086 |
 | Implemented (P2) | `TangentParabola(A,B,C,D) → conic` | Parabola tangent to the ordered sidelines AB, BC, CD and DA. | 使用 MiquelPoint 为焦点、SteinerLineQ 为准线的原生 Parabola 构造。 | S099 |
@@ -295,7 +297,6 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | Native | Pedal | 垂足直接用原生最近点／点到直线投影；若需要展开，使用本文点积原语。不额外占用 Pedal 名称。 | S103 |
 | Native | Intersection | Intersect(Line(A,B),Line(C,D))。不新增与原生 Intersect 平行的 Intersection。 | S093 |
 | Native | Pole | 原生 Polar(l,q)。原宏任取线上的两个自由点再交极线没有必要；Pole 与 TrilinearPole 是不同对象。 | S105 |
-| Native | Radical Axis / 根轴 | 原生 RadicalAxis(c1,c2)；四点版先 Circle(A,B)、Circle(C,D)。不保留附送垂足 H' 的混合输出。 | S220 S365 S431 |
 | Native | Triangle Center X_57; Bevan Point; Schiffler Point | 直接 TriangleCenter 的 X(57)、X(40)、X(21)。这些非高频别名暂不增加库体积。 | S100 S101 S107 |
 
 ## 10. 暂缓定义与专题工具
@@ -361,6 +362,16 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 - 所有几何分支、次数／秩检查、索引选择均在 GeoGebra 表达式内部动态计算。JavaScript 只根据固定对象类型与参数个数选择重载、生成表达式；没有坐标快照或采样拟合。多输出保持独立对象。CyclocevianConjugate、Orthocorrespondent 特别在齐次层复合，避免中间无穷远对象中断有限结果。
 - 自动测试覆盖共轭对合、Ceva／cross 关系、有向外点、边上及中间无穷远极限、六中点曲线和平行四边形退化、公切线等半径／相切极限、齐次极化、剩余根、类型映射、原生重载兼容及表达式预算。Vitest 全套 **8 个文件、94 项通过**；生产构建通过。TypeScript 全量检查仍有 P1 已记录的未改动文件错误。
 - 实机入口：`/scripts/geogebra-smoke.html?suite=p2`。脚本包含全部 59 个新增重载、几何类 XML、辅助对象计数、共轭关系、相切／焦点性质、直角／等腰／平行四边形退化、三次次数检查、拖动及导出重开。本会话浏览器清单为空，**尚未运行此脚本，不能将自动表达式测试视作原生引擎已验收**。
+
+### 内置指令兼容性审计（2026-10-16）
+
+- 以本地 `GEOGEBRA_COMMAND_NAMES`、[官方 All Commands](https://geogebra.github.io/docs/manual/en/commands/All_Commands/) 和 [Commands.java](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java) 核对原生命令名。`RadicalAxis` 不在公开命令表中，也不是 Commands 枚举中的输入命令；本计划此前将它列为 Native 是错误的。
+- `library.json` 升至 **0.2.1**，新增 `RadicalAxis(circle,circle)`，工具库现有 **103 个命令名**。`RadicalCenter` 改为 compose 展开根轴。四点 `SteinerLineQ` 最终直接使用坐标线性方程，四线 SteinerLineQ 及两个 TangentParabola 重载复用此坐标实现。`expression` 不展开自定义工具的规则保持不变。
+- 实机进一步发现 `Point(l,0)` 对完整直线给出无穷远点，不能把射线／线段上参数 0 有限的约定直接用于 lineLike。支撑线提取统一使用参数 **1/4、1/2**，修复 SecondIntersection、Orthopole、NewtonLine、AntiSteinerPoint、MiquelPoint、SteinerLineQ、TangentParabola 的相应重载；共用齐次 builder 的线段／射线提取同步使用这组参数。依据见 [PathParameter 官方映射](https://geogebra.github.io/docs/manual/en/commands/PathParameter/)。
+- `nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
+- 专项实机入口：`/scripts/geogebra-smoke.html?suite=radical`，覆盖相离／相交／内外相切／竖直圆心线／同心重合、根心等幂关系、两个 SteinerLineQ 与 TangentParabola 重载，以及其他受影响的支撑线工具和 line/segment/ray 一致性、拖动和导出重开。完整 P2 验收状态仍按上节记录。
+- 前一版（SteinerLineQ 复用根轴时）已在实际嵌入式 GeoGebra 运行此专项脚本并得到 **COMPLETE**，包括根轴经过同心退化后恢复，以及其他受影响重载的拖动／导出重开。该版 Vitest **9 个文件、97 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告既有 MarkdownRenderer、TriplesPage 错误。此次专项验收不替代完整 P2 验收。
+- 后续按审阅意见将 SteinerLineQ 四点版改为上述直接坐标方程，并补充方程与两直径圆幂差的代数一致性测试，包含水平／竖直和同心退化；相关自动测试 **4 个文件、48 项通过**，按用户要求不再运行真实引擎验收。
 
 
 ## 12. 参考资料与本轮查阅情况
@@ -452,7 +463,7 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S128 | Three Mixtilinear Circumcircles | 2 / 1 | Defer: See deferred-definition notes |
 | S130 | Mixtilinear Excircle | 2 / 1 | Implemented (P2): `MixtilinearExcircle(A,B,C) → circle` |
 | S131 | Three Mixtilinear Excircles | 2 / 1 | Implemented (P2): `MixtilinearExcircles(A,B,C[,i]) → circle × 3 / circle` |
-| S220 | Radical Axis | 2 / 2; variants S220, S365 | Native: Radical Axis / 根轴 |
+| S220 | Radical Axis | 2 / 2; variants S220, S365 | Implemented (compatibility): `RadicalAxis(c1,c2) → line` |
 | S221 | Radical Center | 2 / 2; variants S221, S366 | Implemented (P1): `RadicalCenter(c1,c2,c3) → point` |
 | S222 | Outer Tangent | 2 / 2; variants S222, S363 | Implemented (P2): `CommonTangents(c1,c2,s[,i]) → line × 2 / line` |
 | S223 | Inner tangent | 1 / 1 | Implemented (P2): `CommonTangents(c1,c2,s[,i]) → line × 2 / line` |
@@ -510,7 +521,7 @@ P2 已补齐 `implicitCurve` 类型和原生多项式系数获取。**禁止为�
 | S428 | K001 Neuberg | 1 / 1 | Native: Neuberg Cubic / K001 Neuberg |
 | S429 | K002 Thomson | 1 / 1 | Native: K002 Thomson; K003 McCAY; K004 Darboux; K005 Napolean; K007 Lucas |
 | S430 | Quartic | 1 / 1 | Native: `ImplicitCurve({P1,...,P14}) → implicitCurve` |
-| S431 | 根轴 | 1 / 1 | Native: Radical Axis / 根轴 |
+| S431 | 根轴 | 1 / 1 | Implemented (compatibility): `RadicalAxis(c1,c2) → line` |
 | S432 | 内切圆 | 1 / 1 | Implemented (P1): `IntouchTriangle(A,B,C[,i]) → point × 3 / point`; Native: Incircle / 内切圆 |
 | S433 | 旁切圆 | 1 / 1 | Implemented (P1): `Excircle(A,B,C) → circle` |
 | S434 | 三点重心 | 1 / 1 | Implemented (P1): `Centroid(A,B,C) → point` |

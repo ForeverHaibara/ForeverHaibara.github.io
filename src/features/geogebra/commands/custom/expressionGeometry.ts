@@ -25,9 +25,9 @@ export const bind = (values: string[], allocate: () => string, body: (names: str
 export const homogeneous = (arg: TypedExpression): string[] => {
   const e = arg.expression;
   if (arg.type === 'point') return [`x(${e})`, `y(${e})`, '1'];
-  // A ray's parameter 1 is its point at infinity. 0 and 1/2 are finite
-  // for both segments and rays; the resulting supporting line is unbounded.
-  const line = arg.type === 'line' ? e : `Line(Point(${e},0),Point(${e},0.5))`;
+  // Interior normalized path parameters are finite on lines, rays and segments.
+  // In particular, Point(line,0) is at infinity, as is Point(ray,1).
+  const line = arg.type === 'line' ? e : `Line(Point(${e},0.25),Point(${e},0.5))`;
   return [`x(${line})`, `y(${line})`, `z(${line})`];
 };
 

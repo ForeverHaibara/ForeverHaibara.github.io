@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "studio.geometry",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "tools": [
     {
       "name": "Incenter",
@@ -41,7 +41,7 @@
       "description": "Other intersection of a conic and Line(P,Q), with P on the conic. Reflects P in the chord midpoint from the conjugate diameter. One formula covers circles, ellipses, hyperbolas and parabolas; returns P at tangency.",
       "overloads": [
         {"params": [{"name": "conic", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "expression": "Reflect($P,Intersect(Line($P,$Q),ConjugateDiameter(Line($P,$Q),$conic)))"},
-        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Reflect($P,Intersect($support,ConjugateDiameter($support,$q)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}]}
+        {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Reflect($P,Intersect($support,ConjugateDiameter($support,$q)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}]}
       ]
     },
     {
@@ -278,7 +278,7 @@
       "name": "Orthopole",
       "description": "Orthopole of the supporting line l with respect to triangle ABC.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(PerpendicularLine(($A+Reflect($A,$support))/2,Line($B,$C)),PerpendicularLine(($B+Reflect($B,$support))/2,Line($C,$A)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}]}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(PerpendicularLine(($A+Reflect($A,$support))/2,Line($B,$C)),PerpendicularLine(($B+Reflect($B,$support))/2,Line($C,$A)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}]}
       ]
     },
     {
@@ -397,10 +397,17 @@
       ]
     },
     {
+      "name": "RadicalAxis",
+      "description": "Line of equal powers to two circles. Works for disjoint and tangent circles; concentric circles have no unique finite radical axis.",
+      "overloads": [
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}], "returns": "line", "expression": "PerpendicularLine(($o1+$o2)/2+($r1^2-$r2^2)/(2*Distance($o1,$o2)^2)*($o2-$o1),Line($o1,$o2))", "locals": [{"name": "o1", "expression": "Center($c1)"}, {"name": "o2", "expression": "Center($c2)"}, {"name": "r1", "expression": "Radius($c1)"}, {"name": "r2", "expression": "Radius($c2)"}]}
+      ]
+    },
+    {
       "name": "RadicalCenter",
       "description": "Radical center of three circles.",
       "overloads": [
-        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "c3", "type": "circle"}], "returns": "point", "expression": "Intersect(RadicalAxis($c1,$c2),RadicalAxis($c1,$c3))"}
+        {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "c3", "type": "circle"}], "returns": "point", "compose": "Intersect(RadicalAxis($c1,$c2),RadicalAxis($c1,$c3))"}
       ]
     },
     {
@@ -423,7 +430,7 @@
       "description": "Newton line of the quadrilateral with ordered vertices ABCD, or of four supporting lines.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "Line(($A+$C)/2,($B+$D)/2)"},
-        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "Line((Intersect($s1,$s2)+Intersect($s3,$s4))/2,(Intersect($s1,$s4)+Intersect($s2,$s3))/2)", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "Line((Intersect($s1,$s2)+Intersect($s3,$s4))/2,(Intersect($s1,$s4)+Intersect($s2,$s3))/2)", "locals": [{"name": "s1", "expression": "Line(Point($l1,0.25),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0.25),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0.25),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0.25),Point($l4,0.5))"}]}
       ]
     },
     {
@@ -458,7 +465,7 @@
       "name": "AntiSteinerPoint",
       "description": "Circumcircle point whose triangle Steiner line has the direction of l.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(Reflect($throughH,Line($A,$B)),Reflect($throughH,Line($A,$C)))", "locals": [{"name": "support", "expression": "Line(Point($l,0),Point($l,0.5))"}, {"name": "throughH", "expression": "Line(Orthocenter($A,$B,$C),$support)"}]}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(Reflect($throughH,Line($A,$B)),Reflect($throughH,Line($A,$C)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}, {"name": "throughH", "expression": "Line(Orthocenter($A,$B,$C),$support)"}]}
       ]
     },
     {
@@ -690,15 +697,15 @@
       "description": "Miquel point of the complete quadrilateral with ordered vertices ABCD, or of four supporting lines.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($B-$A)*ToComplex($D-$A)/ToComplex($B+$D-$C-$A))"},
-        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "point", "compose": "MiquelPoint(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "point", "compose": "MiquelPoint(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0.25),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0.25),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0.25),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0.25),Point($l4,0.5))"}]}
       ]
     },
     {
       "name": "SteinerLineQ",
       "description": "Radical axis of the circles with diameters AC and BD; contains the four component-triangle orthocenters.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "RadicalAxis(Circle(($A+$C)/2,$A),Circle(($B+$D)/2,$B))"},
-        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "SteinerLineQ(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "($nx*x+$ny*y+$k=0)", "locals": [{"name": "nx", "expression": "x($B)+x($D)-x($A)-x($C)"}, {"name": "ny", "expression": "y($B)+y($D)-y($A)-y($C)"}, {"name": "k", "expression": "x($A)*x($C)+y($A)*y($C)-x($B)*x($D)-y($B)*y($D)"}]},
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "SteinerLineQ(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0.25),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0.25),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0.25),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0.25),Point($l4,0.5))"}]}
       ]
     },
     {
@@ -706,7 +713,7 @@
       "description": "Parabola tangent to the four ordered quadrilateral sidelines AB, BC, CD, DA, or to four supporting lines.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "conic", "compose": "Parabola(MiquelPoint($A,$B,$C,$D),SteinerLineQ($A,$B,$C,$D))"},
-        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "conic", "compose": "TangentParabola(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0),Point($l4,0.5))"}]}
+        {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "conic", "compose": "TangentParabola(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0.25),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0.25),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0.25),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0.25),Point($l4,0.5))"}]}
       ]
     },
     {

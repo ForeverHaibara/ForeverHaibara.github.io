@@ -99,8 +99,8 @@ describe('custom command syntax and dispatch', () => {
 
   it('extends segments and rays to supporting lines without creating named objects', () => {
     const expression = compile('Conic(A,s,B,t,C)');
-    expect(expression).toContain('Line(Point(s,0),Point(s,0.5))');
-    expect(expression).toContain('Line(Point(t,0),Point(t,0.5))');
+    expect(expression).toContain('Line(Point(s,0.25),Point(s,0.5))');
+    expect(expression).toContain('Line(Point(t,0.25),Point(t,0.5))');
     expect(expression).toContain('RemoveUndefined');
   });
 

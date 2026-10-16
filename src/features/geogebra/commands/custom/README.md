@@ -152,6 +152,18 @@ projection which silently changes the problem.
 
 ### P2 families and preconditions
 
+`RadicalAxis(c1,c2)` is a site command: it is absent from GeoGebra's public
+command index. It constructs the equal-power line from the two native centers
+and radii, using `PerpendicularLine` through the point
+`(O1+O2)/2+(r1²-r2²)*(O2-O1)/(2*Distance(O1,O2)²)`.
+Disjoint and tangent circles are supported; concentric circles have no unique
+finite axis. `RadicalCenter` uses `compose` to expand this dependency.
+`SteinerLineQ(A,B,C,D)` directly emits the equivalent linear equation
+`(Bx+Dx-Ax-Cx)*x+(By+Dy-Ay-Cy)*y+A·C-B·D=0`, without constructing circles
+or calling `RadicalAxis`. Its line overload and both `TangentParabola` overloads
+reuse this coordinate implementation. Do not put
+`RadicalAxis(...)` in a native `expression` template.
+
 The catalog includes triangle maps, circle tangency constructions, central
 inconics, ordered quadrilateral constructions, and cubic operations. See
 `TOOL_IMPLEMENTATION_PLAN.md` for the grouped inventory and individual algorithms.
@@ -210,8 +222,9 @@ still work. `PivotalIsogonalCubic` directly emits a `TriangleCurve` equation.
 
 `Conic(a,b,c,d,e)` accepts five point or line-like constraints in any order.
 Segments/rays mean **unbounded supporting lines**, not finite contact domains;
-their orientation has no effect. Path parameters 0 and 1/2 are used because a
-ray's parameter 1 represents infinity. Five points retain native behavior;
+their orientation has no effect. Path parameters 1/4 and 1/2 stay finite on
+lines, rays and segments; parameter 0 is at infinity for a full line, and
+parameter 1 is at infinity for a ray. Five points retain native behavior;
 five lines return one conic. Mixed input creates **independently selectable
 conic objects**, with two output slots for four points/one line or one point/
 four lines, and four slots for three points/two lines or two points/three lines.
@@ -261,6 +274,18 @@ conics may be returned using the projective discriminant/adjugate definition of
 tangency. This is not a solver for every degenerate family.
 
 ## Verification
+
+`nativeCommands.test.ts` checks the final expressions for every catalog overload
+against the saved native command index, with explicit scalar/coordinate functions
+and generated anonymous local calls. It covers builders, composed dependencies,
+independent outputs and input type families. This catches missing native names;
+it does not verify native signatures or replace real-engine geometry checks.
+The focused `/scripts/geogebra-smoke.html?suite=radical` suite checks circle powers,
+tangencies, concentric cases, dependent tools, line/segment/ray supporting-line
+overloads, dragging, and export/reopen. Supporting-line extraction uses interior
+path parameters 1/4 and 1/2: `Point(line,0)` is at infinity and cannot be used
+as an ordinary affine point. The static audit rejects endpoint path parameters
+in generated expressions as well as unknown command names.
 
 The P1/P2 tools are in `library.json`; the full catalog is not duplicated here.
 For P1 real-engine verification, open

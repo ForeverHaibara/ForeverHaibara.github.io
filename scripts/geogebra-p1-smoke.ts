@@ -2,6 +2,70 @@ import type { GeoGebraEngine } from '../src/features/geogebra/types';
 import { executeCommandPipeline } from '../src/features/geogebra/commands/commandPipeline';
 import { studioToolLibrary } from '../src/features/geogebra/commands/custom/toolLibrary';
 
+/** Focused regression; geogebra-smoke.html?suite=radical. */
+export const verifyRadicalAxis = async (engine: GeoGebraEngine, report: (message: string) => void) => {
+  const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
+  const check = (condition: boolean, message: string) => { if (!condition) throw new Error(message); report(`PASS ${message}`); };
+  const near = async (expression: string, message: string) => check(Math.abs(Number(await api('getValue', expression))) < 1e-7, message);
+  const run = async (source: string) => {
+    const result = await executeCommandPipeline(engine, source);
+    if (!result.success) throw new Error(`${source}: ${result.error}\n${result.expandedCommand}`);
+    return result;
+  };
+  await run('A=(0,0)\nB=(6,0)\nC=(1,4)\nD=(-2,3)\nc1=Circle(A,2)\nc2=Circle(B,1.5)\nc3=Circle(C,1.2)\nl1=Line(A,B)\nl2=Line(B,C)\nl3=Line(C,D)\nl4=Line(D,A)');
+  for (const [label, circle, point] of [
+    ['Disjoint', 'c2', '(151/48,0)'],
+    ['Intersecting', 'Circle((2,0),2)', '(1,0)'],
+    ['ExternalTouch', 'Circle((4,0),2)', '(2,0)'],
+    ['InternalTouch', 'Circle((1,0),1)', '(2,0)'],
+    ['Vertical', 'Circle((0,6),2)', '(0,3)'],
+  ]) {
+    const before = (await api('getAllObjectNames') as string[]).length;
+    await run(`${label}=RadicalAxis(c1,${circle})`);
+    check((await api('getAllObjectNames') as string[]).length === before + 1, `${label}: no helper labels`);
+    check(await api('isDefined', label) === true && await api('getObjectType', label) === 'line', `${label}: defined native line`);
+    await near(`Distance(${point},${label})`, `${label}: equal-power point lies on axis`);
+    await near(`x(${label})*x(Line(A,Center(${circle})))+y(${label})*y(Line(A,Center(${circle})))`, `${label}: axis is perpendicular to center line`);
+  }
+  await run('Z=(3,0)\nMovingAxis=RadicalAxis(c1,Circle(Z,1))\nConcentric=RadicalAxis(c1,Circle(A,1))\nCoincident=RadicalAxis(c1,c1)\nRC=RadicalCenter(c1,c2,c3)\nQS=SteinerLineQ(A,B,C,D)\nQSL=SteinerLineQ(l1,l2,l3,l4)\nTP=TangentParabola(A,B,C,D)\nTPL=TangentParabola(l1,l2,l3,l4)');
+  check(!await api('isDefined', 'Concentric') && !await api('isDefined', 'Coincident'), 'concentric and coincident circles have no unique finite axis');
+  await api('setCoords', 'Z', 0, 0);
+  check(!await api('isDefined', 'MovingAxis'), 'radical axis becomes undefined when centers coincide');
+  await api('setCoords', 'Z', 3, 0);
+  check(await api('isDefined', 'MovingAxis') === true, 'radical axis recovers when centers separate again');
+  await near('Distance((2,0),MovingAxis)', 'recovered radical axis has the expected equal-power point');
+  await run('sideSegment=Segment(A,B)\nsideRay=Ray(A,B)\nSecondLine=SecondIntersection(Circle(A,B,C),A,l1)\nSecondSegment=SecondIntersection(Circle(A,B,C),A,sideSegment)\nSecondRay=SecondIntersection(Circle(A,B,C),A,sideRay)\nOrthoLine=Orthopole(A,B,C,l1)\nOrthoSegment=Orthopole(A,B,C,sideSegment)\nOrthoRay=Orthopole(A,B,C,sideRay)\nAntiLine=AntiSteinerPoint(A,B,C,l1)\nAntiSegment=AntiSteinerPoint(A,B,C,sideSegment)\nAntiRay=AntiSteinerPoint(A,B,C,sideRay)\nMiquelPoints=MiquelPoint(A,B,C,D)\nMiquelLines=MiquelPoint(l1,l2,l3,l4)\nNewtonPoints=NewtonLine(A,B,C,D)\nNewtonLines=NewtonLine(l1,l2,l3,l4)');
+  for (const label of ['RC', 'QS', 'QSL', 'TP', 'TPL']) check(await api('isDefined', label) === true, `${label}: downstream result is defined`);
+  const checkDependencies = async () => {
+    await near('Distance(RC,A)^2-Radius(c1)^2-Distance(RC,B)^2+Radius(c2)^2', 'radical center has equal powers to c1 and c2');
+    await near('Distance(RC,A)^2-Radius(c1)^2-Distance(RC,C)^2+Radius(c3)^2', 'radical center has equal powers to c1 and c3');
+    for (const triple of [['l1', 'l2', 'l3'], ['l1', 'l2', 'l4'], ['l1', 'l3', 'l4'], ['l2', 'l3', 'l4']]) {
+      const [u, v, w] = triple.map((line, i) => `Intersect(${line},${triple[(i + 1) % 3]})`);
+      const orthocenter = `Intersect(PerpendicularLine(${u},Line(${v},${w})),PerpendicularLine(${v},Line(${u},${w})))`;
+      await near(`Distance(${orthocenter},QS)`, `SteinerLineQ contains orthocenter of ${triple.join('/')}`);
+    }
+    await near('Distance(Point(QS,0.25),QSL)+Distance(Point(QS,0.5),QSL)', 'point and line SteinerLineQ overloads agree');
+    await near('Distance(SecondLine,B)+Distance(SecondSegment,B)+Distance(SecondRay,B)', 'second intersections agree for line, segment and ray supports');
+    await near('Distance(OrthoLine,OrthoSegment)+Distance(OrthoLine,OrthoRay)', 'orthopoles agree for line, segment and ray supports');
+    await near('Distance(AntiLine,AntiSegment)+Distance(AntiLine,AntiRay)', 'AntiSteinerPoint agrees for line, segment and ray supports');
+    await near('Distance(MiquelPoints,MiquelLines)', 'point and line MiquelPoint overloads agree');
+    await near('Distance(Point(NewtonPoints,0.25),NewtonLines)+Distance(Point(NewtonPoints,0.5),NewtonLines)', 'point and line NewtonLine overloads agree');
+    for (const conic of ['TP', 'TPL']) for (const line of ['l1', 'l2', 'l3', 'l4']) {
+      await near(`Distance(Reflect(Focus(${conic}),${line}),Directrix(${conic}))`, `${conic}: focus reflected in ${line} lies on directrix`);
+    }
+  };
+  // For a parabola, the reflection of its focus in a tangent lies on the directrix.
+  // Check that incidence directly rather than relying on intersection multiplicity.
+  await checkDependencies();
+  await api('setCoords', 'B', 7, 1);
+  await checkDependencies();
+  const file = await engine.exportGgb();
+  await engine.importGgb(new File([file], 'radical-smoke.ggb'));
+  await api('setCoords', 'B', 6, 0);
+  await checkDependencies();
+  report('PASS radical-axis dependencies survive dragging and export/reopen');
+};
+
 /** Real-engine checks; open geogebra-smoke.html?suite=p1 and run verification. */
 export const verifyP1 = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
