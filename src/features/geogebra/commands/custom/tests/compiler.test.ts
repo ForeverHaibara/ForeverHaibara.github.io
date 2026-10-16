@@ -130,7 +130,8 @@ describe('tool library and completion', () => {
     const value = structuredClone(studioToolLibrary);
     value.tools[0].overloads[0].expression = '$missing';
     expect(() => validateToolLibrary(value)).toThrow('Unknown or forward local');
-    const tool = structuredClone(studioToolLibrary.tools[0]);
+    // Catalog ordering is editable; this check needs a known three-point signature.
+    const tool = structuredClone(studioToolLibrary.tools.find((entry) => entry.name === 'Incenter')!);
     tool.overloads.push(tool.overloads[0]);
     expect(() => selectOverload(tool, ['A', 'B', 'C'].map((expression) => ({ expression, type: 'point' })))).toThrow('Ambiguous');
   });

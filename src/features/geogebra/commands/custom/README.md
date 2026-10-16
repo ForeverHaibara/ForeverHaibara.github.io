@@ -371,6 +371,12 @@ copying the inconsistent displayed CT formula in the reference page.
 
 ## Verification
 
+The disposable `/scripts/geogebra-qlcu1-benchmark.html` compares the current
+four-point QLCu1 implementation with a fully substituted coordinate equation.
+See [the timing report and raw data](docs/benchmarks/qlcu1-performance.md) for
+the setup, bracket regression, equivalence checks and measured limitations.
+The candidate equation is experimental and is not registered in the catalog.
+
 `/scripts/geogebra-smoke.html?suite=algebraic` exercises all 42 algebraic-geometry overloads, output XML
 classes and helper counts, conjugation identities, conic limits, supporting
 lines, dragging and export/reopen. Add `&tool=CoTf3` (or another exact tool name)

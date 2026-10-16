@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>QLCu1 timing comparison</title>
+<style>body{font:14px system-ui;margin:16px}button,input{padding:8px}pre{white-space:pre-wrap;background:#f3f7fa;padding:10px;max-height:160px;overflow:auto}.view{width:800px;height:480px;border:1px solid #ccc}#status{font-weight:bold}</style>
+<h1>QLCu1 timing comparison</h1>
+<p>Disposable native construction; production QLCu1 stays unchanged. Fixed 800×480 view, algebra panel closed. Timings exclude site compilation and applet/module loading.</p>
+<label>Rounds <input id="rounds" type="number" value="3" min="1" max="8"></label>
+<label>Updates per case <input id="steps" type="number" value="12" min="2" max="120"></label>
+<button id="run">Run comparison</button>
+<p id="status">Ready</p>
+<pre id="results">Ready</pre>
+<div class="view"><div id="canvas"></div></div>
+<details><summary>Raw results</summary><pre id="raw"></pre></details>
+<script type="module" src="./geogebra-qlcu1-benchmark.ts"></script>
+</html>

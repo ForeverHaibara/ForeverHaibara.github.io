@@ -62,7 +62,7 @@ const qlp20: ExpressionBuilder = (args, allocate) => withQL(args, allocate, (m, 
 
 const midpointCubic = (m: string, u: string, v: string, [a, b, c]: string[]) => {
   const x = `(x-x(${m}))`; const y = `(y-y(${m}))`;
-  return `ImplicitCurve((${a}*${x}+${b}*${y}+2*${c})*(${x}^2+${y}^2)+${a}*(${u}*${x}+${v}*${y})+${b}*(${v}*${x}-${u}*${y}))`;
+  return `ImplicitCurve((${a}*${x}+${b}*${y}+2*(${c}))*(${x}^2+${y}^2)+${a}*(${u}*${x}+${v}*${y})+${b}*(${v}*${x}-${u}*${y}))`;
 };
 const qlCubic: ExpressionBuilder = (args, allocate) => {
   if (args.length === 4) return withQL(args, allocate, (m, u, v, vertices) => withNewton(vertices, m, allocate, (n) => midpointCubic(m, u, v, n)));
