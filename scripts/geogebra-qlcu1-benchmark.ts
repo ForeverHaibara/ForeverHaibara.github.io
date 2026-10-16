@@ -1,6 +1,7 @@
 import { GeoGebraEmbeddingAdapter } from '../src/features/geogebra/adapters/GeoGebraEmbeddingAdapter';
 import { compileStudioCommand } from '../src/features/geogebra/commands/custom/commandCompiler';
 import { createQLCu1Equation } from './geogebra-qlcu1-equation';
+import { QUADRILATERAL_BUILDERS } from '../src/features/geogebra/commands/custom/builders/quadrilateral';
 
 const engine = new GeoGebraEmbeddingAdapter();
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -10,8 +11,11 @@ const raw = document.querySelector<HTMLElement>('#raw')!;
 const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
 const yieldTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const paint = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+// Keep the recorded experiment's original construction even when the catalog switches builders.
+let localIndex = 0;
+const construction = QUADRILATERAL_BUILDERS.qlCubic(['A', 'B', 'C', 'D'].map((expression) => ({ expression, type: 'point' })), () => `v${++localIndex}`);
 const variants = {
-  existing: compileStudioCommand('QLCu1(A,B,C,D)', { objects: new Map(['A', 'B', 'C', 'D'].map((p) => [p, 'point'])), macros: new Set() }),
+  existing: typeof construction === 'string' ? construction : construction.expression,
   direct: createQLCu1Equation().expression,
 };
 type Variant = keyof typeof variants;

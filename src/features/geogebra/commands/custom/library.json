@@ -697,7 +697,7 @@
       "name": "Cubic",
       "description": "Cubic through nine points; native triangle/index forms retain their original meaning.",
       "overloads": [
-        {"params": [{"name": "P1", "type": "point"}, {"name": "P2", "type": "point"}, {"name": "P3", "type": "point"}, {"name": "P4", "type": "point"}, {"name": "P5", "type": "point"}, {"name": "P6", "type": "point"}, {"name": "P7", "type": "point"}, {"name": "P8", "type": "point"}, {"name": "P9", "type": "point"}], "returns": "implicitCurve", "builder": "cubicThroughPoints"}
+        {"params": [{"name": "P1", "type": "point"}, {"name": "P2", "type": "point"}, {"name": "P3", "type": "point"}, {"name": "P4", "type": "point"}, {"name": "P5", "type": "point"}, {"name": "P6", "type": "point"}, {"name": "P7", "type": "point"}, {"name": "P8", "type": "point"}, {"name": "P9", "type": "point"}], "returns": "implicitCurve", "expression": "ImplicitCurve($P1,$P2,$P3,$P4,$P5,$P6,$P7,$P8,$P9)"}
       ]
     },
     {
@@ -1003,7 +1003,7 @@
       "aliases": ["DragonCubic"],
       "description": "Loci of isogonal conjugate pairs of a complete quadrilateral. Circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlCubicCoordinates"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "qlCubic"}
       ]
     },

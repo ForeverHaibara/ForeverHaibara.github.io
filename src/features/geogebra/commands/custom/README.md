@@ -371,11 +371,17 @@ copying the inconsistent displayed CT formula in the reference page.
 
 ## Verification
 
-The disposable `/scripts/geogebra-qlcu1-benchmark.html` compares the current
+The disposable `/scripts/geogebra-qlcu1-benchmark.html` compares the original
 four-point QLCu1 implementation with a fully substituted coordinate equation.
 See [the timing report and raw data](docs/benchmarks/qlcu1-performance.md) for
 the setup, bracket regression, equivalence checks and measured limitations.
-The candidate equation is experimental and is not registered in the catalog.
+That report's long candidate remains experimental. For manual testing, the
+four-point QLCu1 overload now selects the shorter directed-angle equation via
+`builder: "qlCubicCoordinates"` in `library.json`. Change only that entry to
+`"qlCubic"` to restore the original construction; the three-parameter overload
+uses `qlCubic` throughout. Recreate the curve after switching: existing objects
+retain their native definitions. The recorded benchmark explicitly keeps the
+original construction and long candidate, independently of this selection.
 
 `/scripts/geogebra-smoke.html?suite=algebraic` exercises all 42 algebraic-geometry overloads, output XML
 classes and helper counts, conjugation identities, conic limits, supporting

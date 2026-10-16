@@ -64,6 +64,18 @@ const midpointCubic = (m: string, u: string, v: string, [a, b, c]: string[]) => 
   const x = `(x-x(${m}))`; const y = `(y-y(${m}))`;
   return `ImplicitCurve((${a}*${x}+${b}*${y}+2*(${c}))*(${x}^2+${y}^2)+${a}*(${u}*${x}+${v}*${y})+${b}*(${v}*${x}-${u}*${y}))`;
 };
+/** Directed angles APB = DPC (mod pi): cross(PA,PB)*dot(PD,PC) - cross(PD,PC)*dot(PA,PB).
+ * Expand each cross product to degree one; no auxiliary geometry or denominators.
+ */
+const qlCubicCoordinates: ExpressionBuilder = (args) => {
+  const [a, b, c, d] = args.map(({ expression: p }) => [`x(${p})`, `y(${p})`]);
+  const angle = ([ax, ay]: string[], [bx, by]: string[]) => [
+    `((${ay}-${by})*x+(${bx}-${ax})*y+${ax}*${by}-${ay}*${bx})`,
+    `(x^2+y^2-(${ax}+${bx})*x-(${ay}+${by})*y+${ax}*${bx}+${ay}*${by})`,
+  ];
+  const [lab, qab] = angle(a, b); const [ldc, qdc] = angle(d, c);
+  return `ImplicitCurve(${lab}*${qdc}-${ldc}*${qab})`;
+};
 const qlCubic: ExpressionBuilder = (args, allocate) => {
   if (args.length === 4) return withQL(args, allocate, (m, u, v, vertices) => withNewton(vertices, m, allocate, (n) => midpointCubic(m, u, v, n)));
   const [a, b] = args.map((arg) => arg.expression);
@@ -103,5 +115,5 @@ const qlQuartic: ExpressionBuilder = (args, allocate) => {
 export const QUADRILATERAL_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   qlTransform, qlPlucker: qlPair(1), qlNewtonPair: qlPair(2), qlFixedPair: qlPair(3),
   qlMiquelCircle: miquelCircle, qlMiquelCenter: qlCenters(4), qlClawsonCenter: qlCenters(5), qlDimidiumCenter: qlCenters(6),
-  qlp20, qlCubic, qlQuartic,
+  qlp20, qlCubic, qlCubicCoordinates, qlQuartic,
 };
