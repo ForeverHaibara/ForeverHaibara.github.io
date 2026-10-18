@@ -5,24 +5,26 @@ import type {
   EngineEventListener,
   GeoGebraEngine,
   GeometryEvent,
+  GeometryInteractionEvent,
 } from '../types';
 import { API_METHODS } from '../types';
 import { loadGeoGebraScript } from './GeoGebraScriptLoader';
 
+type ClientEvent = string | { type?: string; target?: string | null };
 type GeoGebraApi = Record<string, (...args: any[]) => any> & {
   registerAddListener?: (listener: (name: string) => void) => void;
   registerRemoveListener?: (listener: (name: string) => void) => void;
   registerRenameListener?: (listener: (oldName: string, newName: string) => void) => void;
   registerUpdateListener?: (listener: (name: string) => void) => void;
   registerClearListener?: (listener: () => void) => void;
-  registerClientListener?: (listener: (event: string | { type?: string }) => void) => void;
+  registerClientListener?: (listener: (event: ClientEvent) => void) => void;
   registerStoreUndoListener?: (listener: () => void) => void;
   unregisterAddListener?: (listener: (name: string) => void) => void;
   unregisterRemoveListener?: (listener: (name: string) => void) => void;
   unregisterRenameListener?: (listener: (oldName: string, newName: string) => void) => void;
   unregisterUpdateListener?: (listener: (name: string) => void) => void;
   unregisterClearListener?: (listener: () => void) => void;
-  unregisterClientListener?: (listener: (event: string | { type?: string }) => void) => void;
+  unregisterClientListener?: (listener: (event: ClientEvent) => void) => void;
   unregisterStoreUndoListener?: (listener: () => void) => void;
   getBase64?: (callback: (base64: string) => void) => void;
   setBase64?: (base64: string, callback?: () => void) => void;
@@ -54,6 +56,8 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   private applet: GeoGebraApi | null = null;
   private container: HTMLElement | null = null;
   private listeners = new Set<EngineEventListener>();
+  private interactionListeners = new Set<(event: GeometryInteractionEvent) => void>();
+  private selectionWriteDepth = 0;
   private registeredListeners: Array<() => void> = [];
   private resizeObserver: ResizeObserver | null = null;
   private observedLayoutElements: HTMLElement[] = [];
@@ -206,12 +210,42 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     return () => this.listeners.delete(listener);
   }
 
+  subscribeInteraction(listener: (event: GeometryInteractionEvent) => void): () => void {
+    this.interactionListeners.add(listener);
+    return () => { this.interactionListeners.delete(listener); };
+  }
+
+  async selectObjects(names: readonly string[]): Promise<void> {
+    // Labels are references, never arbitrary command fragments. This accepts
+    // ordinary, Unicode, indexed and primed GeoGebra labels.
+    if (names.some((name) => !/^[\p{L}_][\p{L}\p{N}_{}'′]*$/u.test(name))) {
+      throw new Error('This object label cannot be selected from Analysis.');
+    }
+    const existing = await this.callApi('getAllObjectNames', []) as string[];
+    const safeNames = names.filter((name) => existing.includes(name));
+    const focused = typeof document !== 'undefined' ? document.activeElement : null;
+    this.selectionWriteDepth += 1;
+    try {
+      // Action-only commands can return false despite successfully changing
+      // selection (they create no output objects). Only thrown errors fail.
+      await this.callApi('evalCommand', [`SelectObjects(${safeNames.join(',')})`]);
+    } finally {
+      // SelectObjects focuses GeoGebra. Keep keyboard users in the Analysis
+      // control they activated, including focusable SVG graph nodes.
+      if (focused?.isConnected && 'focus' in focused && focused !== document.activeElement) {
+        (focused as HTMLElement | SVGElement).focus({ preventScroll: true });
+      }
+      this.selectionWriteDepth -= 1;
+    }
+  }
+
   dispose(): void {
     this.lifecycle += 1;
     for (const unregister of this.registeredListeners.splice(0)) {
       unregister();
     }
     this.listeners.clear();
+    this.interactionListeners.clear();
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.observedLayoutElements = [];
@@ -279,9 +313,13 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const onClear = () => emit('clear');
     // Native style edits may not emit an object update. Undo records cover these
     // user actions too, so draft persistence sees the final construction state.
-    const onStoreUndo = () => emit('update');
-    const onClientEvent = (event: string | { type?: string }) => {
+    const onStoreUndo = () => { if (this.selectionWriteDepth === 0) emit('update'); };
+    const onClientEvent = (event: ClientEvent) => {
       const eventName = typeof event === 'string' ? event : event.type ?? '';
+      if ((eventName === 'select' || eventName === 'deselect') && this.selectionWriteDepth === 0) {
+        const objectName = typeof event !== 'string' && typeof event.target === 'string' ? event.target : undefined;
+        this.interactionListeners.forEach((listener) => listener({ type: eventName, objectName }));
+      }
       if (/dragstart|drag_start|dragStart/u.test(eventName)) emit('dragStart');
       if (/dragend|drag_end|dragEnd/u.test(eventName)) emit('dragEnd');
       if (['addMacro', 'removeMacro', 'renameMacro'].includes(eventName)) emit('toolsChanged');

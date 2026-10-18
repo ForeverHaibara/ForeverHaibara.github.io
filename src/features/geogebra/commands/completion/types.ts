@@ -13,6 +13,8 @@ export interface CompletionItem {
   label: string;
   kind: 'command' | 'api' | 'custom' | 'object';
   description?: string;
+  /** GeoGebra's concrete type; kept separate from the provider category. */
+  objectType?: string;
   signatures?: readonly string[];
   aliases?: readonly string[];
   /** Defaults to the label. Text only: never executed when a completion is accepted. */

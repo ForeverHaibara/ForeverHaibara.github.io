@@ -39,11 +39,47 @@ it('reports native style undo records so autosave also sees edits without object
   expect(unregisterStoreUndoListener).toHaveBeenCalledWith(onUndo);
 });
 
+it('uses native selection without style edits and prevents selection feedback loops', async () => {
+  let client!: (event: { type: string; target?: string }) => void;
+  let storeUndo!: () => void;
+  const evalCommand = vi.fn(() => { client({ type: 'deselect' }); client({ type: 'select', target: 'A' }); storeUndo(); return false; });
+  const { container } = mockEmbedding({
+    getAllObjectNames: () => ['A'], evalCommand,
+    registerClientListener: (listener: typeof client) => { client = listener; },
+    registerStoreUndoListener: (listener: () => void) => { storeUndo = listener; },
+  });
+  const engine = new GeoGebraEmbeddingAdapter();
+  const interaction = vi.fn(), construction = vi.fn();
+  engine.subscribeInteraction(interaction);
+  engine.subscribe(construction);
+  await engine.initialize(container);
+  await engine.selectObjects(['A']);
+  expect(evalCommand).toHaveBeenCalledWith('SelectObjects(A)');
+  expect(interaction).not.toHaveBeenCalled();
+  expect(construction).not.toHaveBeenCalled();
+  client({ type: 'select', target: 'A' });
+  expect(interaction).toHaveBeenCalledWith({ type: 'select', objectName: 'A' });
+  await expect(engine.selectObjects(['A)\nDelete(A'])).rejects.toThrow();
+  expect(evalCommand).toHaveBeenCalledTimes(1);
+  engine.dispose();
+});
+
 const engineWith = (applet: Record<string, unknown>) => {
   const engine = new GeoGebraEmbeddingAdapter();
   Object.assign(engine, { applet });
   return engine;
 };
+
+it('keeps keyboard focus in Analysis after a native selection preview', async () => {
+  const focus = vi.fn();
+  const original = { isConnected: true, focus };
+  const documentMock = { activeElement: original as unknown };
+  vi.stubGlobal('document', documentMock);
+  const engine = engineWith({ getAllObjectNames: () => ['A'], evalCommand: () => { documentMock.activeElement = {}; return false; } });
+  await engine.selectObjects(['A']);
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  engine.dispose();
+});
 
 describe('GeoGebra command module loading', () => {
   it('removes the applet on disposal so reset cannot retain its imported tools', () => {

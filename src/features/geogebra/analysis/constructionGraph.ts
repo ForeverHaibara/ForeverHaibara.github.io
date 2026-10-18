@@ -61,12 +61,14 @@ export const buildDependencyGraph = (objects: readonly ConstructionObjectInput[]
 
 export interface GraphProjectionOptions {
   visibleTypes: Set<string> | 'all';
+  visibleObjectNames?: ReadonlySet<string>;
   includeRoot?: boolean;
   compressHidden?: boolean;
 }
 
 const isVisible = (node: GraphNode, graph: DependencyGraph, options: GraphProjectionOptions): boolean => {
   if (node.id === graph.rootId) return options.includeRoot !== false;
+  if (options.visibleObjectNames?.has(node.name)) return true;
   return options.visibleTypes === 'all' || (node.objectType !== null && options.visibleTypes.has(node.objectType));
 };
 

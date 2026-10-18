@@ -9,6 +9,7 @@ import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, 
 import type { DependencyGraph } from '../analysis/graphTypes';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 import type { GgbPreferences } from '../settings/types';
+import { useObjectLink } from '../interaction/useObjectLink';
 import './geogebra-studio.css';
 
 interface GeoGebraStudioShellProps {
@@ -53,7 +54,12 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const analysisHidden = settings.sidePanelCollapsed || focusMode;
   const commandsHidden = settings.commandBarCollapsed || focusMode;
   const floating = fullscreen && settings.commandBarFloating;
+  const objectLink = useObjectLink(engine, ready);
   const closeSettings = () => { setSettingsOpen(false); settingsButtonRef.current?.focus(); };
+
+  useEffect(() => {
+    if (analysisHidden || settingsOpen) objectLink.hover(null);
+  }, [analysisHidden, settingsOpen, objectLink.hover]);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.inert = settingsOpen;
@@ -132,7 +138,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
             {loadingMessage && <div className="ggb-canvas-overlay" aria-live="polite"><div className="ggb-loading-card"><span className="ggb-spinner" /><strong>{loadingMessage}</strong></div></div>}
           </main>
           {fullscreen && !analysisHidden && <button type="button" className="geogebra-panel-backdrop absolute inset-0 z-20 bg-slate-900/20 lg:hidden" onClick={hideAnalysis} aria-label="Close analysis panel" />}
-          <GeoGebraSidePanel collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
+          <GeoGebraSidePanel objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
         </div>
         <div id="geogebra-command-dock" hidden={commandsHidden} className="geogebra-command-dock">
           <GeoGebraCommandBar engine={engine} ready={ready} onResult={onCommandResult} />

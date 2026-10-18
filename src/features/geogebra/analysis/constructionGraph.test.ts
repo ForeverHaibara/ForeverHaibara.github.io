@@ -22,6 +22,28 @@ describe('GeoGebra construction parser', () => {
     expect(parsed.diagnostics.length).toBeGreaterThan(0);
     expect(parsed.ast).not.toBeNull();
   });
+
+  it('parses GeoGebra implicit multiplication and Unicode mathematical notation', () => {
+    for (const expression of ['2B-C', 'If(B ≠ C, B² + 2C³, 2(B-C))', '(x(B),y(C))']) {
+      const parsed = parseConstruction(expression, ['B', 'C']);
+      expect(parsed.status, expression).toBe('parsed');
+      expect(parsed.dependencies, expression).toEqual(['B', 'C']);
+      expect(parsed.diagnostics).toEqual([]);
+    }
+  });
+
+  it('keeps known references even when an unsupported operator prevents a complete AST', () => {
+    const parsed = parseConstruction('B ⊗ C', ['B', 'C']);
+    expect(parsed.status).toBe('failed');
+    expect(parsed.dependencies).toEqual(['B', 'C']);
+  });
+
+  it('preserves mathematical symbols inside quoted text and recognizes primed object labels', () => {
+    const parsed = parseConstruction('Text("B² ≠ C", A\')', ["A'", 'B', 'C']);
+    expect(parsed.dependencies).toEqual(["A'"]);
+    expect(parsed.diagnostics).toEqual([]);
+    expect(JSON.stringify(parsed.ast)).toContain('B² ≠ C');
+  });
 });
 
 describe('GeoGebra dependency graph', () => {
@@ -48,6 +70,12 @@ describe('GeoGebra dependency graph', () => {
     expect(projected.nodes.map((node) => node.name)).toEqual(expect.arrayContaining(['a', 'c', FREE_OBJECT_ROOT_ID]));
     expect(projected.edges).toContainEqual(expect.objectContaining({ source: objectNodeId('a'), target: objectNodeId('c') }));
     expect(projected.edges.every((edge) => edge.source !== edge.target)).toBe(true);
+  });
+
+  it('keeps a linked selected object visible without changing the type filter', () => {
+    const graph = buildDependencyGraph([{ name: 'n', objectType: 'numeric', commandString: '' }]);
+    const projected = projectGraph(graph, { visibleTypes: new Set(['point']), visibleObjectNames: new Set(['n']) });
+    expect(projected.nodes.some((node) => node.name === 'n')).toBe(true);
   });
 });
 

@@ -36,6 +36,12 @@ export interface EngineEventListener {
   (event: GeometryEvent): void;
 }
 
+/** Transient UI interactions are separate from construction changes/autosave. */
+export interface GeometryInteractionEvent {
+  type: 'select' | 'deselect';
+  objectName?: string;
+}
+
 export interface GeoGebraEngine {
   initialize(container: HTMLElement): Promise<void>;
   executeCommand(command: string): Promise<CommandResult>;
@@ -44,6 +50,8 @@ export interface GeoGebraEngine {
   exportGgb(): Promise<Blob>;
   getCapabilities(): EngineCapabilities;
   subscribe(listener: EngineEventListener): () => void;
+  subscribeInteraction?(listener: (event: GeometryInteractionEvent) => void): () => void;
+  selectObjects?(names: readonly string[]): Promise<void>;
   dispose(): void;
 }
 

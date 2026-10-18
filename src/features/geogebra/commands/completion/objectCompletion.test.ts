@@ -32,12 +32,18 @@ describe('construction object completion', () => {
   });
 
   it('reads current engine names, supports array and string results, and never inserts parentheses', async () => {
-    const callApi = vi.fn().mockResolvedValueOnce(['A', 'A_1', '', null]).mockResolvedValueOnce('B, C');
+    let namesRead = 0;
+    const callApi = vi.fn(async (method: string, args: unknown[]) => {
+      if (method === 'getAllObjectNames') return namesRead++ === 0 ? ['A', 'A_1', '', null] : 'B, C';
+      if (method === 'getObjectType') return 'point';
+      return `${args[0]} = (1, 2)`;
+    });
     const provider = createObjectCompletionProvider({ callApi } as unknown as GeoGebraEngine);
     const first = await provider.provide(context('A'), signal());
     expect(first.map((item) => item.label)).toEqual(['A', 'A_1']);
     expect(first.every((item) => item.callable === false && item.kind === 'object')).toBe(true);
-    expect((await provider.provide(context('B'), signal())).map((item) => item.label)).toEqual(['B', 'C']);
+    expect(first[0]).toMatchObject({ objectType: 'point', description: 'A = (1, 2)' });
+    expect((await provider.provide(context('B'), signal())).map((item) => item.label)).toEqual(['B']);
     expect(callApi).toHaveBeenCalledWith('getAllObjectNames', []);
   });
 
@@ -59,9 +65,24 @@ describe('construction object completion', () => {
     const provider = createObjectCompletionProvider({ subscribe: (callback: EngineEventListener) => { listener = callback; return unsubscribe; } } as unknown as GeoGebraEngine);
     const update = vi.fn();
     const dispose = provider.subscribe!(update);
-    for (const type of ['add', 'remove', 'clear', 'update', 'dragStart', 'dragEnd'] as const) listener({ type, timestamp: 0 });
-    expect(update).toHaveBeenCalledTimes(3);
+    for (const type of ['add', 'remove', 'rename', 'clear', 'update', 'dragStart', 'dragEnd'] as const) listener({ type, timestamp: 0 });
+    expect(update).toHaveBeenCalledTimes(5);
     dispose();
     expect(unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it('keeps suggestions when an object definition is unavailable and cancels obsolete metadata work', async () => {
+    const callApi = vi.fn(async (method: string) => {
+      if (method === 'getAllObjectNames') return ['c'];
+      if (method === 'getObjectType') return 'conic';
+      throw new Error('Object was redefined');
+    });
+    const provider = createObjectCompletionProvider({ callApi } as unknown as GeoGebraEngine);
+    expect(await provider.provide(context('c'), signal())).toEqual([expect.objectContaining({ label: 'c', objectType: 'conic', description: undefined })]);
+    const abort = new AbortController();
+    abort.abort();
+    callApi.mockClear();
+    expect(await provider.provide(context('c'), abort.signal)).toEqual([]);
+    expect(callApi).not.toHaveBeenCalled();
   });
 });

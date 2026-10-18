@@ -11,6 +11,13 @@ const isIdentifierCharacter = (value: string | undefined): boolean => Boolean(va
 const sortNamesForMatching = (names: readonly string[]): string[] =>
   [...new Set(names.filter(Boolean))].sort((left, right) => right.length - left.length);
 
+const MATH_OPERATORS: Record<string, string> = { '≠': '!=', '≤': '<=', '≥': '>=', '×': '*', '·': '*', '÷': '/', '−': '-', '∧': '&&', '∨': '||' };
+const SUPERSCRIPTS: Record<string, string> = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁺': '+', '⁻': '-' };
+const normalizeMathNotation = (source: string): string => source.replace(
+  /"(?:\\.|[^"\\])*"|[≠≤≥×·÷−∧∨]|[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]+/gu,
+  (token) => token.startsWith('"') ? token : MATH_OPERATORS[token] ?? `^(${[...token].map((symbol) => SUPERSCRIPTS[symbol]).join('')})`,
+);
+
 const tokenize = (source: string, objectNames: readonly string[], diagnostics: ParseDiagnostic[]): Token[] => {
   const tokens: Token[] = [];
   const sortedObjectNames = sortNamesForMatching(objectNames);
@@ -27,7 +34,9 @@ const tokenize = (source: string, objectNames: readonly string[], diagnostics: P
       if (!source.startsWith(candidate, index)) return false;
       const before = source[index - 1];
       const after = source[index + candidate.length];
-      return !isIdentifierCharacter(before) && !isIdentifierCharacter(after);
+      const previous = tokens.at(-1);
+      const followsNumber = previous?.kind === 'number' && previous.position + previous.value.length === index;
+      return (!isIdentifierCharacter(before) || followsNumber) && !isIdentifierCharacter(after);
     });
     if (objectName) {
       tokens.push({ kind: 'object', value: objectName, position: index });
@@ -137,11 +146,13 @@ class ExpressionParser {
     let left = this.parsePrefix();
     while (true) {
       const token = this.peek();
-      const precedence = token.kind === 'operator' ? PRECEDENCE[token.value] : undefined;
+      const implicitProduct = token.kind === 'object' || token.kind === 'identifier' || token.kind === 'number' || token.value === '(';
+      const operator = implicitProduct ? '*' : token.value;
+      const precedence = implicitProduct ? PRECEDENCE['*'] : token.kind === 'operator' ? PRECEDENCE[token.value] : undefined;
       if (precedence === undefined || precedence < minPrecedence) break;
-      this.advance();
-      const right = this.parseExpression(token.value === '^' || token.value === '**' ? precedence : precedence + 1);
-      left = { kind: 'binary', operator: token.value, left, right, raw: this.rawBetween(left, right) };
+      if (!implicitProduct) this.advance();
+      const right = this.parseExpression(operator === '^' || operator === '**' ? precedence : precedence + 1);
+      left = { kind: 'binary', operator, left, right, raw: this.rawBetween(left, right) };
     }
     return left;
   }
@@ -156,9 +167,13 @@ class ExpressionParser {
     if (token.kind === 'object') return this.parsePostfix({ kind: 'reference', name: token.value, raw: token.value });
     if (token.kind === 'identifier') return this.parsePostfix({ kind: 'identifier', name: token.value, raw: token.value });
     if (token.value === '(') {
-      const expression = this.parseExpression(0);
+      const items = [this.parseExpression(0)];
+      while (this.peek().value === ',') {
+        this.advance();
+        items.push(this.parseExpression(0));
+      }
       this.consumeClosing(')');
-      return this.parsePostfix(expression);
+      return this.parsePostfix(items.length === 1 ? items[0] : { kind: 'sequence', items, raw: items.map((item) => item.raw).join(', ') });
     }
     if (token.value === '[' || token.value === '{') {
       const closing = token.value === '[' ? ']' : '}';
@@ -212,6 +227,7 @@ const collectDependencies = (node: ExpressionNode | null, result: Set<string>): 
   if (!node) return;
   if (node.kind === 'reference') result.add(node.name);
   if (node.kind === 'call') {
+    if (node.callee.kind === 'reference') collectDependencies(node.callee, result);
     node.args.forEach((argument) => collectDependencies(argument, result));
     return;
   }
@@ -224,7 +240,7 @@ const collectDependencies = (node: ExpressionNode | null, result: Set<string>): 
 };
 
 export const parseConstruction = (source: string | null | undefined, objectNames: readonly string[] = []): ParsedConstruction => {
-  const normalized = source?.trim() ?? '';
+  const normalized = normalizeMathNotation(source?.trim() ?? '');
   if (!normalized) return { ast: null, dependencies: [], diagnostics: [], status: 'empty', source: source ?? '' };
 
   const diagnostics: ParseDiagnostic[] = [];
@@ -240,6 +256,9 @@ export const parseConstruction = (source: string | null | undefined, objectNames
 
   const dependencies = new Set<string>();
   collectDependencies(ast, dependencies);
+  // The AST is best effort. Even unsupported syntax must not discard known
+  // object references and incorrectly turn a dependent object into a free one.
+  tokens.filter((token) => token.kind === 'object').forEach((token) => dependencies.add(token.value));
   const filteredDependencies = [...dependencies].filter((name) => objectNames.includes(name));
   const status = diagnostics.some((diagnostic) => diagnostic.severity === 'error')
     ? 'failed'
