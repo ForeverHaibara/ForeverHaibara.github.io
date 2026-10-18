@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { triangleCenterFixture } from '../__fixtures__/triangleCenters';
 import { buildDependencyGraph } from '../constructionGraph';
 import { detectGeometryRelations } from '../geometryRelations';
-import { DEFAULT_DISCOVERY_OPTIONS } from './catalog';
+import { DEFAULT_DISCOVERY_OPTIONS, DiscoveryBudget } from './catalog';
 import type { GeometryRelationKind } from './catalog';
 import type { ConstructionObjectInput } from '../graphTypes';
+import { buildGeometryScene } from '../scene/geometryScene';
+import { detectMetricRelations } from './metricRelations';
+import { formatRelation } from '../presentation/formatRelation';
 
 const point = (name: string, x: number, y: number): ConstructionObjectInput => ({ name, objectType: 'point', commandString: '', coordinates: { x, y } });
 const discover = (points: ConstructionObjectInput[], enabledKinds: GeometryRelationKind[], compressConsequences = true) => detectGeometryRelations(buildDependencyGraph(points), 0, { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds, compressConsequences });
@@ -98,6 +101,32 @@ describe('new elementary observations and bounded search', () => {
     const result = discover([point('A', 0, 2), point('B', -1, 0), point('C', 1, 0)], ['equal-lengths', 'equal-angles']);
     expect(result.relations.some((r) => r.kind === 'equal-lengths')).toBe(true);
     expect(result.relations.some((r) => r.kind === 'equal-angles')).toBe(true);
+  });
+  it.each([1e-12, 1, 1e12])('excludes zero and near-zero distances from equal lengths at scale %s', (scale) => {
+    const points = [point('I', 0, 0), point('Alias', 0, 0), point('Near', 1e-10, 0), point('Q', 1, 0), point('X', 0, 1)]
+      .map((p) => ({ ...p, coordinates: { x: p.coordinates!.x * scale, y: p.coordinates!.y * scale } }));
+    const result = discover(points, ['equal-lengths']);
+    expect(result.relations).toHaveLength(1);
+    expect(result.relations[0].witnesses[0].segments).toEqual([['I', 'Q'], ['I', 'X']]);
+    // In |I·Q|, the length bars resemble the point name I and · resembles
+    // multiplication. Explicit distance notation avoids both ambiguities.
+    expect(formatRelation(result.relations[0])).toBe('dist(I, Q) = dist(I, X)');
+    expect(discover(points.slice(0, 3), ['equal-lengths']).relations).toEqual([]);
+  });
+  it('validates equal-length candidates against endpoints rather than accepting cached lengths', () => {
+    const scene = buildGeometryScene(buildDependencyGraph([point('A', 0, 0), point('B', 1, 0), point('C', 0, 1)]), []);
+    const length = scene.pairs[0].length;
+    scene.pairs.push({ left: 0, right: 0, angle: 0, length }, { ...scene.pairs[0] },
+      { ...scene.pairs[0], left: 1, right: 0 });
+    // Also cover distinct names at one position and non-finite coordinates.
+    scene.points.push({ name: 'Alias', aliases: ['Alias'], coordinates: scene.points[0].coordinates },
+      { name: 'Invalid', aliases: ['Invalid'], coordinates: { x: NaN, y: 0 } });
+    scene.pairs.push({ left: 0, right: 3, angle: 0, length }, { left: 0, right: 4, angle: 0, length });
+    scene.pairs.find((pair) => pair.left === 1 && pair.right === 2)!.length = length;
+    const options = { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: ['equal-lengths'] as GeometryRelationKind[] };
+    const result = detectMetricRelations(scene, [], options, new DiscoveryBudget([]));
+    expect(result).toHaveLength(1);
+    expect(result[0].witness.segments).toEqual([['A', 'B'], ['A', 'C']]);
   });
   it('never identifies a 30-degree ordinary angle with its 150-degree supplement', () => {
     const result = discover([point('O', 0, 0), point('A', 1, 0), point('B', Math.sqrt(3) / 2, 0.5), point('P', 4, 0), point('Q', 5, 0), point('R', 4 - Math.sqrt(3) / 2, 0.5)], ['equal-angles']);

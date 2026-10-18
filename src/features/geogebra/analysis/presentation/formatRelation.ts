@@ -9,7 +9,7 @@ export const formatRelation = (relation: GeometryRelation, witness: RelationWitn
   if (relation.model) return `${relation.model.members.length} lines · ${relation.model.generators.length} generators + π`;
   if (witness.triangles) return witness.triangles.slice(0, 8).map((triangle) => `△(${names(triangle)})`).join(relation.kind === 'congruent-triangles' ? ' ≅ ' : ' ∼ ');
   if (witness.angles) return summary(witness.angles.map((angle) => `∠(${names(angle)})`));
-  if (witness.segments) return summary(witness.segments.map((segment) => `|${names(segment)}|`));
+  if (witness.segments) return summary(witness.segments.map(([a, b]) => `dist(${a}, ${b})`));
   if (relation.kind === 'coincident-points') return `${summary(relation.pointNames)} (numerically coincident)`;
   if (relation.kind === 'perpendicular' && witness.lineFamilies?.length === 2) return `(${family(witness.lineFamilies[0])}) ⊥ (${family(witness.lineFamilies[1])})`;
   if (relation.kind === 'parallel' && witness.lineFamilies?.length === 1) return family(witness.lineFamilies[0]);

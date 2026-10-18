@@ -41,7 +41,20 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
 
   if (enabled.has('equal-lengths')) {
     const epsilon = 4e-7;
-    const groups = groupNearValues(scene.pairs, {
+    // Validate the geometric quantity before taking its logarithm. Self
+    // distances and collapsed segments have no place in the positive-length
+    // multiplicative domain, even if a candidate carries a cached length.
+    const seen = new Set<string>();
+    const positiveLengths = scene.pairs.flatMap((pair) => {
+      const left = scene.points[pair.left]; const right = scene.points[pair.right];
+      if (!left || !right || pair.left === pair.right || left.name === right.name) return [];
+      const length = Math.hypot(right.coordinates.x - left.coordinates.x, right.coordinates.y - left.coordinates.y);
+      const id = segmentId(pair.left, pair.right);
+      if (!Number.isFinite(length) || length <= scene.tolerance.minimumLength || seen.has(id)) return [];
+      seen.add(id);
+      return [{ ...pair, length }];
+    });
+    const groups = groupNearValues(positiveLengths, {
       bucket: (pair) => [Math.floor(Math.log(pair.length) / epsilon)],
       matches: (a, b) => Math.abs(Math.log(a.length / b.length)) <= epsilon,
     }, budget, 'Length comparisons', options.maxComparisons);
