@@ -1,10 +1,11 @@
 export type GeoGebraEngineStatus = 'loading' | 'ready' | 'error' | 'disposed';
 
-export type GeometryEventType = 'add' | 'remove' | 'update' | 'clear' | 'dragStart' | 'dragEnd' | 'toolsChanged';
+export type GeometryEventType = 'add' | 'remove' | 'rename' | 'update' | 'clear' | 'dragStart' | 'dragEnd' | 'toolsChanged';
 
 export interface GeometryEvent {
   type: GeometryEventType;
   objectName?: string;
+  previousName?: string;
   timestamp: number;
 }
 
@@ -64,6 +65,7 @@ export interface StudioSettings {
   sidePanelCollapsed: boolean;
   sidePanelWidth: number;
   commandBarCollapsed: boolean;
+  commandBarFloating: boolean;
 }
 
 export interface GeometryProjectRecord {
@@ -72,6 +74,7 @@ export interface GeometryProjectRecord {
   ggbBase64: string;
   settings: StudioSettings;
   updatedAt: number;
+  managedStyles?: import('./settings/types').ManagedStyles;
 }
 
 export interface GeoGebraDebugApi {

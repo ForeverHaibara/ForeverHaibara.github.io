@@ -11,6 +11,7 @@ import { createObjectCompletionProvider } from '../commands/completion/objectCom
 import { createFileToolCompletionProvider } from '../commands/completion/fileToolCompletionProvider';
 import { useCommandSpelling } from '../commands/useCommandSpelling';
 import GeoGebraSpellingReview from './GeoGebraSpellingReview';
+import StudioIcon from './StudioIcon';
 
 interface GeoGebraCommandBarProps {
   engine: GeoGebraEngine | null;
@@ -39,6 +40,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
     if (!engine || !value.trim() || busy) return;
     completion.dismiss();
     spelling.dismiss();
+    setApiResult(null);
     setBusy(true);
     const input = value;
     historyRef.current.push(input);
@@ -48,9 +50,11 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
         const call = parseApiCall(input);
         const result = await engine.callApi(call.method, call.args);
         setApiResult({ input, output: formatApiResult(result) });
+        onResult({ success: true, command: input, labels: [], timestamp: Date.now() });
         setValue('');
       } catch (error) {
         setApiResult({ input, error: error instanceof Error ? error.message : 'API call failed.' });
+        onResult({ success: false, command: input, labels: [], error: error instanceof Error ? error.message : 'API call failed.', timestamp: Date.now() });
         spelling.check(input);
       } finally {
         setBusy(false);
@@ -74,17 +78,9 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
   };
 
   return (
-    <section className="border-t border-slate-200/80 bg-white/85 p-3 backdrop-blur-xl" aria-label="GeoGebra command input">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-800">GGB Command Bar</h2>
-          <p className="text-xs text-slate-500">Type an object, command or !API method to see suggestions.</p>
-        </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${ready ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-          {ready ? 'Engine ready' : 'Waiting for engine'}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
+    <section className="ggb-command-bar" aria-label="GeoGebra command input">
+      <div className="ggb-command-input-row">
+        <span className="ggb-command-prompt" title={ready ? 'Engine ready' : 'Waiting for engine'} aria-hidden="true">›</span>
         <textarea
           ref={inputRef}
           value={value}
@@ -139,25 +135,28 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
           aria-controls={completion.state ? completion.listId : undefined}
           aria-activedescendant={completion.state ? `${completion.listId}-${completion.state.activeIndex}` : undefined}
           aria-describedby={helpId}
-          placeholder={'A = (0, 0)\nB = (4, 0)\nCircle(A, B, (1, 3))\n!getObjectType("A")'}
-          className="min-h-12 min-w-0 flex-1 resize-y rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+          placeholder="Enter a command or !API call…"
+          rows={1}
+          className="ggb-command-textarea"
           data-testid="geogebra-command-input"
         />
         <button
           type="button"
           onClick={() => void execute()}
           disabled={!ready || busy || !value.trim()}
-          className="rounded-2xl bg-gradient-to-br from-blue-700 to-sky-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+          className="ggb-command-run"
+          title="Run command (Ctrl+Enter)"
+          aria-label={busy ? 'Running command' : 'Run command'}
         >
-          {busy ? 'Running...' : 'Run command'}
+          {busy ? <span className="ggb-spinner" /> : <StudioIcon name="run" size={19} />}
         </button>
       </div>
       {spelling.review && <GeoGebraSpellingReview corrections={spelling.review.corrections} onChoose={spelling.choose} onAccept={spelling.accept} onDismiss={spelling.dismiss} />}
-      <p id={helpId} className="mt-2 text-[11px] text-slate-400">Tab / Enter complete · Ctrl+Space suggestions · Ctrl+Enter run · Shift+Enter new line</p>
+      <p id={helpId} className="sr-only">Tab or Enter to complete. Ctrl+Space for suggestions. Ctrl+Enter to run. Shift+Enter for a new line.</p>
       {completion.state && inputRef.current && <GeoGebraCompletionMenu anchor={inputRef.current} listId={completion.listId} items={completion.state.items} prefix={completion.state.context.prefix} activeIndex={completion.state.activeIndex} onAccept={completion.accept} onActiveIndexChange={completion.setActiveIndex} onDismiss={completion.dismiss} />}
       {apiResult && (
         <div className={`mt-2 rounded-xl border px-3 py-2 font-mono text-xs ${apiResult.error ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} data-testid="geogebra-command-result">
-          <p className="font-semibold">{apiResult.input}</p>
+          <p className="truncate font-semibold" title={apiResult.input}>{apiResult.input}</p>
           <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap">{apiResult.error ?? apiResult.output}</pre>
         </div>
       )}

@@ -11,4 +11,5 @@ export const DEFAULT_STUDIO_SETTINGS = {
   sidePanelCollapsed: false,
   sidePanelWidth: 350,
   commandBarCollapsed: false,
+  commandBarFloating: true,
 };

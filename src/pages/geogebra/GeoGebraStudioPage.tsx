@@ -7,6 +7,9 @@ import { base64ToFile, blobToDownload } from '../../features/geogebra/persistenc
 import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, GeometryProjectRecord, StudioSettings } from '../../features/geogebra/types';
 import { useDependencyGraph } from '../../features/geogebra/analysis/useDependencyGraph';
 import { useGeometryRelations } from '../../features/geogebra/analysis/useGeometryRelations';
+import { PreferenceController } from '../../features/geogebra/settings/PreferenceController';
+import { readPreferences, savePreferences } from '../../features/geogebra/settings/preferenceStore';
+import type { GgbPreferences } from '../../features/geogebra/settings/types';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -36,6 +39,10 @@ const GeoGebraStudioPage: React.FC = () => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<StudioSettings>(readSettings);
+  const [preferences, setPreferences] = useState(readPreferences);
+  const preferencesRef = useRef(preferences);
+  const [preferenceError, setPreferenceError] = useState<string | null>(null);
+  const preferenceControllerRef = useRef<PreferenceController | null>(null);
   const [capabilities, setCapabilities] = useState<EngineCapabilities>(engine.getCapabilities());
   const [events, setEvents] = useState<GeometryEvent[]>([]);
   const [lastResult, setLastResult] = useState<CommandResult | null>(null);
@@ -46,6 +53,20 @@ const GeoGebraStudioPage: React.FC = () => {
   const resettingRef = useRef(false);
   const dependencyGraphState = useDependencyGraph(engine, ready);
   const geometryRelations = useGeometryRelations(dependencyGraphState.graph, dependencyGraphState.status);
+
+  useEffect(() => () => {
+    preferenceControllerRef.current?.dispose();
+    preferenceControllerRef.current = null;
+    restoredRef.current = false;
+    loadOperationRef.current += 1;
+  }, []);
+
+  const handlePreferencesChange = useCallback((next: GgbPreferences) => {
+    preferencesRef.current = next;
+    setPreferences(next);
+    setPreferenceError(savePreferences(next) ? null : 'Browser storage is unavailable; changes last for this session.');
+    void preferenceControllerRef.current?.update(next);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
@@ -103,12 +124,13 @@ const GeoGebraStudioPage: React.FC = () => {
     loadOperationRef.current += 1;
     resettingRef.current = true;
     setLoadingMessage(null);
+    preferenceControllerRef.current?.dispose();
+    preferenceControllerRef.current = null;
 
-    // GeoGebra's reset() only changes the view. Recreate the embedding so the
-    // document itself returns to a fresh, empty initial state.
+    // reset() restores the applet's loaded file. A new embedding also removes
+    // imported macros and returns to a genuinely empty document.
     engine.dispose();
     await store.clear().catch(() => undefined);
-    setSettings({ ...DEFAULT_STUDIO_SETTINGS });
     setReady(false);
     setError(null);
     setEvents([]);
@@ -126,17 +148,22 @@ const GeoGebraStudioPage: React.FC = () => {
     setCapabilities(engine.getCapabilities());
     if (restoredRef.current) return;
     restoredRef.current = true;
+    const controller = new PreferenceController(engine, preferencesRef.current, setPreferenceError);
+    preferenceControllerRef.current = controller;
     if (resettingRef.current) {
       resettingRef.current = false;
+      void controller.loadDocument(async () => undefined);
       return;
     }
     const operationId = ++loadOperationRef.current;
     setLoadingMessage('Restoring your last GeoGebra draft...');
     void store.getLatest().then(async (project) => {
-      if (!project?.ggbBase64 || operationId !== loadOperationRef.current) return;
-      await engine.importGgb(base64ToFile(project.ggbBase64));
+      if (operationId !== loadOperationRef.current) return;
+      await controller.loadDocument(async () => {
+        if (project?.ggbBase64) await engine.importGgb(base64ToFile(project.ggbBase64));
+      }, project?.managedStyles);
       dependencyGraphState.refresh();
-    }).catch(() => undefined).finally(() => {
+    }).catch(() => controller.loadDocument(async () => undefined)).finally(() => {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
     });
   }, [dependencyGraphState.refresh, engine, store]);
@@ -150,8 +177,10 @@ const GeoGebraStudioPage: React.FC = () => {
   const handleSettingsChange = useCallback((nextSettings: StudioSettings) => setSettings(nextSettings), []);
 
   const saveDraft = useCallback(async () => {
-    if (!ready) return;
+    if (!ready || loadingMessage || resettingRef.current) return;
+    const operationId = loadOperationRef.current;
     try {
+      const managedStyles = await preferenceControllerRef.current?.snapshot();
       const blob = await engine.exportGgb();
       const record: GeometryProjectRecord = {
         id: GEOGEBRA_LATEST_PROJECT_ID,
@@ -159,13 +188,15 @@ const GeoGebraStudioPage: React.FC = () => {
         ggbBase64: await blobToBase64(blob),
         settings,
         updatedAt: Date.now(),
+        managedStyles,
       };
+      if (operationId !== loadOperationRef.current) return;
       await store.save(record);
       setHasUnsavedChanges(false);
     } catch {
       // Some browser privacy modes disable IndexedDB; no user action should be blocked.
     }
-  }, [engine, ready, settings, store]);
+  }, [engine, ready, settings, preferences, store, loadingMessage]);
 
   useEffect(() => {
     if (!ready) return undefined;
@@ -182,7 +213,9 @@ const GeoGebraStudioPage: React.FC = () => {
     const operationId = ++loadOperationRef.current;
     setLoadingMessage(`Opening ${file.name}...`);
     try {
-      await engine.importGgb(file);
+      const controller = preferenceControllerRef.current;
+      if (controller) await controller.loadDocument(() => engine.importGgb(file));
+      else await engine.importGgb(file);
       dependencyGraphState.refresh();
       if (operationId !== loadOperationRef.current) return;
       setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
@@ -203,7 +236,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} geometryRelations={geometryRelations} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
+  return <GeoGebraStudioShell preferences={preferences} preferenceError={preferenceError} onPreferencesChange={handlePreferencesChange} onApplyPreferences={() => preferenceControllerRef.current?.applyToAll() ?? Promise.resolve()} engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} geometryRelations={geometryRelations} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;

@@ -1,5 +1,697 @@
+.geogebra-studio-shell {
+  --ggb-accent: #2563eb;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1900px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #dce3ec;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 36px #1e3a5f0b, 0 1px 3px #1e3a5f06;
+  color: #334155;
+}
+
+.geogebra-studio-header {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e5eaf0;
+  background: #fbfcfe;
+}
+
+.geogebra-studio-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.ggb-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #dbe7fc;
+  border-radius: 12px;
+  background: #eff5ff;
+  color: #2563eb;
+}
+
+.geogebra-studio-title h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -.025em;
+  color: #1e293b;
+}
+
+.geogebra-studio-title h1 span {
+  font-weight: 400;
+  color: #64748b;
+}
+
+.geogebra-studio-title p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #8793a5;
+}
+
+.ggb-workspace-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ggb-icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  list-style: none;
+}
+
+.ggb-icon-button::-webkit-details-marker {
+  display: none;
+}
+
+.ggb-icon-button:hover {
+  background: #edf1f6;
+  color: #1e293b;
+}
+
+.ggb-icon-button[aria-expanded='true'], .ggb-icon-button[aria-pressed='true'], .ggb-files-menu[open] > summary {
+  color: #2563eb;
+  background: #eaf1fe;
+}
+
+.ggb-icon-button:disabled {
+  opacity: .4;
+  cursor: wait;
+}
+
+.ggb-icon-button:focus-visible, .ggb-settings-panel button:focus-visible, .ggb-file-actions button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.ggb-fullscreen-button {
+  margin-left: 3px;
+  border-color: #dce3ec;
+  background: #fff;
+}
+
+.ggb-toolbar-divider {
+  width: 1px;
+  height: 19px;
+  margin: 0 6px;
+  background: #e0e6ee;
+}
+
+.ggb-button-alert {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  background: #e97439;
+  border-radius: 50%;
+}
+
+.ggb-files-menu {
+  position: static;
+}
+
+.ggb-files-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 12px;
+  width: min(285px, calc(100% - 24px));
+  padding: 14px 8px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  background: white;
+  box-shadow: 0 16px 48px #0f172a21, 0 4px 12px #0f172a08;
+}
+
+.ggb-eyebrow {
+  display: block;
+  color: #8b98aa;
+  font-size: 9px;
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+
+.ggb-files-popover > .ggb-eyebrow {
+  padding: 0 11px 8px;
+}
+
+.ggb-file-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ggb-file-actions button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #475569;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ggb-file-actions button:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+}
+
+.ggb-file-actions button > svg {
+  flex-shrink: 0;
+  color: #8290a4;
+}
+
+.ggb-file-actions small {
+  display: block;
+  margin-top: 3px;
+  color: #748297;
+  font-size: 10px;
+}
+
+.ggb-file-actions hr {
+  border: 0;
+  border-top: 1px solid #eef1f5;
+  margin: 6px 9px;
+}
+
+.ggb-file-extension {
+  margin-left: auto;
+  color: #748297;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.ggb-file-actions .ggb-file-reset:hover {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.ggb-file-error {
+  padding: 8px;
+  color: #b91c1c;
+  font-size: 11px;
+}
+
+.ggb-workspace-content {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .geogebra-studio-canvas {
   min-height: min(82vh, 980px);
+}
+
+.ggb-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f1f5f9b8;
+  backdrop-filter: blur(2px);
+}
+
+.ggb-loading-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  max-width: 380px;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 10px 40px #0f172a0d;
+  font-size: 13px;
+}
+
+.ggb-loading-card p {
+  margin: 0;
+  color: #748297;
+  font-size: 12px;
+}
+
+.ggb-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: ggb-spin .8s linear infinite;
+}
+
+@keyframes ggb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.geogebra-command-dock {
+  flex-shrink: 0;
+  border-top: 1px solid #e5eaf0;
+  background: #fff;
+}
+
+.geogebra-command-dock[hidden] {
+  display: none;
+}
+
+.ggb-command-bar {
+  padding: 9px 14px;
+}
+
+.ggb-command-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ggb-command-prompt {
+  flex-shrink: 0;
+  color: #3b82f6;
+  font: 28px/1 monospace;
+}
+
+.ggb-command-textarea {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  max-height: 180px;
+  padding: 9px 4px;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #334155;
+  font: 13px/20px ui-monospace, SFMono-Regular, Consolas, monospace;
+  field-sizing: content;
+}
+
+.ggb-command-textarea::placeholder {
+  color: #748297;
+}
+
+.ggb-command-input-row:focus-within .ggb-command-prompt {
+  color: #1d4ed8;
+}
+
+.ggb-command-run {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.ggb-command-run:hover {
+  background: #1d4ed8;
+}
+
+.ggb-command-run:disabled {
+  background: #eef2f7;
+  color: #a3afc0;
+  cursor: default;
+}
+
+.ggb-command-run:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+.ggb-command-status {
+  overflow: hidden;
+  padding: 0 15px 9px 36px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 10px/1.5 ui-monospace, Consolas, monospace;
+  color: #748297;
+}
+
+.ggb-command-status.error {
+  color: #b91c1c;
+}
+
+.ggb-status-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  margin-right: 6px;
+}
+
+.ggb-status-dot.error {
+  background: #ef4444;
+}
+
+.ggb-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  border: 0;
+  background: #0f172a26;
+  backdrop-filter: blur(1px);
+  cursor: default;
+}
+
+.ggb-settings-panel {
+  position: absolute;
+  z-index: 50;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: min(380px, calc(100% - 20px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dce3ec;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: -10px 10px 60px #0f172a26;
+  overflow: hidden;
+  text-align: left;
+}
+
+.ggb-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 21px 22px 17px;
+}
+
+.ggb-settings-heading h2 {
+  margin: 5px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -.025em;
+}
+
+.ggb-settings-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  margin: 0 22px 4px;
+  padding: 4px;
+  border: 1px solid #e9edf3;
+  border-radius: 9px;
+  background: #f5f7fa;
+}
+
+.ggb-settings-tabs button {
+  flex: 1;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8390a3;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ggb-settings-tabs button[aria-selected='true'] {
+  background: #fff;
+  color: #2563eb;
+  box-shadow: 0 1px 4px #0f172a12;
+}
+
+.ggb-settings-content {
+  flex: 1;
+  min-height: 0;
+  padding: 0 22px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.ggb-settings-content section {
+  padding: 21px 0 14px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.ggb-settings-content section:last-child {
+  border-bottom: 0;
+}
+
+.ggb-settings-content h3 {
+  margin: 0 0 12px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+
+.ggb-settings-content p {
+  margin: -4px 0 12px;
+  color: #748297;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.ggb-settings-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 37px;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.ggb-settings-row > input[role='switch'] {
+  position: absolute;
+  width: 32px;
+  height: 19px;
+  right: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ggb-switch {
+  width: 30px;
+  height: 17px;
+  padding: 2px;
+  border-radius: 12px;
+  background: #dce3ec;
+  transition: background .15s;
+}
+
+.ggb-switch::before {
+  content: '';
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px #0002;
+  transition: transform .15s;
+}
+
+.ggb-settings-row input:checked + .ggb-switch {
+  background: #3b82f6;
+}
+
+.ggb-settings-row input:checked + .ggb-switch::before {
+  transform: translateX(13px);
+}
+
+.ggb-settings-row input:focus-visible + .ggb-switch {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+.ggb-settings-row select {
+  width: 62px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #f8fafc;
+  font-size: 11px;
+}
+
+.ggb-settings-row input[type='color'] {
+  width: 32px;
+  height: 25px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.ggb-range-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ggb-range-control input {
+  width: 108px;
+  height: 4px;
+  accent-color: #3b82f6;
+}
+
+.ggb-range-control output {
+  min-width: 16px;
+  text-align: right;
+  font: 11px ui-monospace, Consolas, monospace;
+}
+
+.ggb-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.ggb-palette-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 5px 9px;
+  border: 1px solid #e7ecf2;
+  border-radius: 8px;
+  background: white;
+  color: #748297;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.ggb-palette-grid button[aria-pressed='true'] {
+  border-color: #93b7fa;
+  background: #f5f9ff;
+  color: #2563eb;
+}
+
+.ggb-palette-sample {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ggb-palette-sample i:first-child {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.ggb-palette-sample i:last-child {
+  width: 22px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+.ggb-policy-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 9px 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.ggb-policy-option:has(input:checked) {
+  border-color: #aac7fd;
+  background: #f8fbff;
+}
+
+.ggb-policy-option input {
+  margin-top: 3px;
+  accent-color: #2563eb;
+}
+
+.ggb-policy-option strong {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ggb-policy-option small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #748297;
+}
+
+.ggb-apply-button {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #dbe7fc;
+  border-radius: 8px;
+  background: #eff5ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ggb-apply-button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+.ggb-settings-footer {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 14px 20px;
+  border-top: 1px solid #edf1f5;
+  background: #fbfcfe;
+  color: #748297;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .geogebra-studio-fullscreen {
@@ -17,16 +709,21 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  backdrop-filter: none;
 }
 
 .geogebra-studio-fullscreen .geogebra-studio-header {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  padding-top: max(10px, env(safe-area-inset-top));
+  padding: 8px 16px;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.geogebra-studio-fullscreen .geogebra-studio-title p {
+  display: none;
+}
+
+.geogebra-studio-fullscreen .ggb-brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
 }
 
 .geogebra-studio-fullscreen .geogebra-studio-body {
@@ -52,25 +749,45 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.geogebra-studio-fullscreen [data-floating-commands='true'] .geogebra-command-dock {
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 35;
+  width: min(720px, calc(100% - 36px));
+  transform: translateX(-50%);
+  border: 1px solid #dce3ecc9;
+  border-radius: 14px;
+  background: #ffffffed;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 12px 40px #0f172a1a, 0 2px 8px #0f172a08;
+}
+
 .geogebra-studio-fullscreen[data-focus-mode='true'] .geogebra-studio-header {
   display: none;
 }
 
 .geogebra-focus-controls {
+  position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom));
   right: max(16px, env(safe-area-inset-right));
+  z-index: 40;
+  display: flex;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fffffff0;
+  box-shadow: 0 8px 30px #0f172a12;
 }
 
 @media (min-width: 1024px) {
   .geogebra-studio-body {
     height: min(82vh, 980px);
   }
-
-  .geogebra-studio-canvas,
-  .geogebra-analysis-panel {
+  .geogebra-studio-canvas, .geogebra-analysis-panel {
     min-height: 0;
   }
-
   .geogebra-analysis-panel {
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -83,26 +800,48 @@
     inset: 0 0 0 auto;
     z-index: 30;
     width: min(var(--side-panel-width), 90%);
-    box-shadow: -12px 0 32px rgb(15 23 42 / 12%);
+    box-shadow: -12px 0 32px #0f172a1f;
   }
 }
 
-@media (max-width: 639px), (max-height: 500px) {
+@media (max-width: 639px) {
+  .geogebra-studio-header {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .ggb-workspace-toolbar {
+    margin-left: auto;
+    gap: 2px;
+  }
+  .ggb-toolbar-divider {
+    margin: 0 3px;
+  }
+  .geogebra-studio-title p {
+    display: none;
+  }
   .geogebra-studio-fullscreen .geogebra-studio-title {
     display: none;
   }
-
+  .geogebra-studio-fullscreen .ggb-workspace-toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
   .geogebra-studio-fullscreen .geogebra-studio-header {
     padding: 8px;
     padding-top: max(8px, env(safe-area-inset-top));
   }
-
-  .geogebra-studio-fullscreen .geogebra-studio-header button,
-  .geogebra-studio-fullscreen .geogebra-studio-header summary {
-    padding: 7px 8px;
-  }
-
   .geogebra-studio-fullscreen .geogebra-command-dock {
     max-height: 44%;
+  }
+  .geogebra-studio-fullscreen [data-floating-commands='true'] .geogebra-command-dock {
+    width: calc(100% - 20px);
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geogebra-studio-shell * {
+    transition: none;
   }
 }

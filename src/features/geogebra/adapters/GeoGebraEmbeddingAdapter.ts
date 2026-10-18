@@ -12,14 +12,18 @@ import { loadGeoGebraScript } from './GeoGebraScriptLoader';
 type GeoGebraApi = Record<string, (...args: any[]) => any> & {
   registerAddListener?: (listener: (name: string) => void) => void;
   registerRemoveListener?: (listener: (name: string) => void) => void;
+  registerRenameListener?: (listener: (oldName: string, newName: string) => void) => void;
   registerUpdateListener?: (listener: (name: string) => void) => void;
   registerClearListener?: (listener: () => void) => void;
   registerClientListener?: (listener: (event: string | { type?: string }) => void) => void;
+  registerStoreUndoListener?: (listener: () => void) => void;
   unregisterAddListener?: (listener: (name: string) => void) => void;
   unregisterRemoveListener?: (listener: (name: string) => void) => void;
+  unregisterRenameListener?: (listener: (oldName: string, newName: string) => void) => void;
   unregisterUpdateListener?: (listener: (name: string) => void) => void;
   unregisterClearListener?: (listener: () => void) => void;
   unregisterClientListener?: (listener: (event: string | { type?: string }) => void) => void;
+  unregisterStoreUndoListener?: (listener: () => void) => void;
   getBase64?: (callback: (base64: string) => void) => void;
   setBase64?: (base64: string, callback?: () => void) => void;
   setSize?: (width: number, height: number) => void;
@@ -46,6 +50,7 @@ const base64ToBlob = (base64: string): Blob => {
 };
 
 export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
+  private lifecycle = 0;
   private applet: GeoGebraApi | null = null;
   private container: HTMLElement | null = null;
   private listeners = new Set<EngineEventListener>();
@@ -60,7 +65,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   };
 
   async initialize(container: HTMLElement): Promise<void> {
+    const lifecycle = ++this.lifecycle;
     await loadGeoGebraScript();
+    // React Strict Mode can dispose an initialization before the script loads.
+    if (lifecycle !== this.lifecycle) return;
     const Applet = window.GGBApplet;
     if (!Applet) {
       throw new Error('GeoGebra embedding API is unavailable.');
@@ -91,9 +99,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
           width: appletWidth,
           height: appletHeight,
           showToolBar: true,
-          showAlgebraInput: true,
+          showAlgebraInput: false,
           showMenuBar: true,
-          showResetIcon: true,
+          showResetIcon: false,
+          perspective: 'G',
           enableRightClick: true,
           enableLabelDrags: true,
           allowStyleBar: true,
@@ -104,6 +113,11 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
             if (settled) return;
             settled = true;
             window.clearTimeout(timeout);
+            if (lifecycle !== this.lifecycle) {
+              api.remove?.();
+              resolve();
+              return;
+            }
             this.applet = api;
             this.refreshCapabilities();
             this.registerListeners();
@@ -193,6 +207,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   }
 
   dispose(): void {
+    this.lifecycle += 1;
     for (const unregister of this.registeredListeners.splice(0)) {
       unregister();
     }
@@ -200,6 +215,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.observedLayoutElements = [];
+    this.applet?.remove?.();
     this.applet = null;
     this.container?.replaceChildren();
     this.container = null;
@@ -252,14 +268,18 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const applet = this.applet;
     if (!applet) return;
 
-    const emit = (type: GeometryEvent['type'], objectName?: string) => {
-      const event: GeometryEvent = { type, objectName, timestamp: Date.now() };
+    const emit = (type: GeometryEvent['type'], objectName?: string, previousName?: string) => {
+      const event: GeometryEvent = { type, objectName, previousName, timestamp: Date.now() };
       this.listeners.forEach((listener) => listener(event));
     };
     const onAdd = (name: string) => emit('add', name);
     const onRemove = (name: string) => emit('remove', name);
+    const onRename = (oldName: string, newName: string) => emit('rename', newName, oldName);
     const onUpdate = (name: string) => emit('update', name);
     const onClear = () => emit('clear');
+    // Native style edits may not emit an object update. Undo records cover these
+    // user actions too, so draft persistence sees the final construction state.
+    const onStoreUndo = () => emit('update');
     const onClientEvent = (event: string | { type?: string }) => {
       const eventName = typeof event === 'string' ? event : event.type ?? '';
       if (/dragstart|drag_start|dragStart/u.test(eventName)) emit('dragStart');
@@ -275,6 +295,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
       applet.registerRemoveListener(onRemove);
       this.registeredListeners.push(() => applet.unregisterRemoveListener?.(onRemove));
     }
+    if (applet.registerRenameListener) {
+      applet.registerRenameListener(onRename);
+      this.registeredListeners.push(() => applet.unregisterRenameListener?.(onRename));
+    }
     if (applet.registerUpdateListener) {
       applet.registerUpdateListener(onUpdate);
       this.registeredListeners.push(() => applet.unregisterUpdateListener?.(onUpdate));
@@ -286,6 +310,10 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     if (applet.registerClientListener) {
       applet.registerClientListener(onClientEvent);
       this.registeredListeners.push(() => applet.unregisterClientListener?.(onClientEvent));
+    }
+    if (applet.registerStoreUndoListener) {
+      applet.registerStoreUndoListener(onStoreUndo);
+      this.registeredListeners.push(() => applet.unregisterStoreUndoListener?.(onStoreUndo));
     }
   }
 }

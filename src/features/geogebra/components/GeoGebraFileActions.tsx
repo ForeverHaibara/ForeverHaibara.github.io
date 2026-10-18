@@ -1,23 +1,31 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import StudioIcon from './StudioIcon';
 
 interface GeoGebraFileActionsProps {
   onImport(file: File): Promise<void>;
   onExport(): Promise<void>;
   onClearDraft(): Promise<void>;
   onResetInitial(): Promise<void>;
+  onAction(): void;
 }
 
-const GeoGebraFileActions: React.FC<GeoGebraFileActionsProps> = ({ onImport, onExport, onClearDraft, onResetInitial }) => {
+const GeoGebraFileActions: React.FC<GeoGebraFileActionsProps> = ({ onImport, onExport, onClearDraft, onResetInitial, onAction }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <input ref={inputRef} type="file" accept=".ggb,application/vnd.geogebra.file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void onImport(file); event.target.value = ''; }} />
-      <button type="button" onClick={() => inputRef.current?.click()} className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-sky-300 hover:text-sky-700">Open .ggb</button>
-      <button type="button" onClick={() => void onExport()} className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-sky-300 hover:text-sky-700">Export .ggb</button>
-      <button type="button" onClick={() => void onClearDraft()} className="rounded-xl border border-transparent px-3 py-2 text-xs text-slate-400 hover:bg-rose-50 hover:text-rose-600">Clear draft</button>
-      <button type="button" onClick={() => void onResetInitial()} className="rounded-xl border border-transparent px-3 py-2 text-xs text-slate-400 hover:bg-amber-50 hover:text-amber-700">Reset initial</button>
-    </div>
-  );
+  const [error, setError] = useState<string | null>(null);
+  const run = async (action: () => Promise<void>) => {
+    setError(null);
+    try { await action(); onAction(); }
+    catch (e) { setError(e instanceof Error ? e.message : 'File operation failed.'); }
+  };
+  return <div className="ggb-file-actions">
+    <input ref={inputRef} type="file" accept=".ggb,application/vnd.geogebra.file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void run(() => onImport(file)); event.target.value = ''; }} />
+    <button type="button" aria-label="Open construction" onClick={() => inputRef.current?.click()}><StudioIcon name="open" /><span>Open construction<small>Import a .ggb file</small></span><span className="ggb-file-extension">.ggb</span></button>
+    <button type="button" aria-label="Export construction" onClick={() => void run(onExport)}><StudioIcon name="download" /><span>Export construction<small>Save a copy to your device</small></span></button>
+    <hr />
+    <button type="button" aria-label="Clear saved draft" onClick={() => void run(onClearDraft)}><StudioIcon name="trash" /><span>Clear saved draft<small>Remove the browser backup</small></span></button>
+    <button type="button" aria-label="Reset initial" className="ggb-file-reset" onClick={() => void run(onResetInitial)}><StudioIcon name="reset" /><span>Reset initial<small>Fresh file · Keep your preferences</small></span></button>
+    {error && <p role="alert" className="ggb-file-error">{error}</p>}
+  </div>;
 };
 
 export default GeoGebraFileActions;
