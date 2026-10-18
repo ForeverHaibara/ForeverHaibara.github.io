@@ -42,6 +42,26 @@ export const circularDistance = (left: number, right: number, period: number): n
   return Math.min(difference, period - difference);
 };
 
+/** Circular bounded-diameter partition, avoiding quadratic dense-bucket unions. */
+export const groupCircularValues = (values: readonly number[], tolerance: number, period: number): number[][] => {
+  if (!values.length) return [];
+  const sorted = values.map((value, index) => ({ value: ((value % period) + period) % period, index })).sort((a, b) => a.value - b.value || a.index - b.index);
+  let start = 0; let largestGap = -1;
+  sorted.forEach((item, index) => {
+    const gap = (index + 1 < sorted.length ? sorted[index + 1].value : sorted[0].value + period) - item.value;
+    if (gap > largestGap) { largestGap = gap; start = (index + 1) % sorted.length; }
+  });
+  const groups: number[][] = [];
+  let anchor = -Infinity;
+  for (let offset = 0; offset < sorted.length; offset += 1) {
+    const index = (start + offset) % sorted.length;
+    const value = sorted[index].value + (index < start ? period : 0);
+    if (value - anchor > tolerance) { groups.push([]); anchor = value; }
+    groups[groups.length - 1].push(sorted[index].index);
+  }
+  return groups;
+};
+
 export const clusterByBuckets = (
   values: readonly number[],
   tolerance: number,

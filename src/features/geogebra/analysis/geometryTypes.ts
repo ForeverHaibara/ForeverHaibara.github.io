@@ -1,6 +1,7 @@
 import type { PointCoordinate } from './graphTypes';
 
-export type GeometryRelationKind = 'parallel' | 'perpendicular' | 'collinear' | 'concyclic';
+import type { GeometryRelationKind } from './relations/catalog';
+export type { GeometryRelationKind } from './relations/catalog';
 
 export interface GeometryPoint {
   name: string;
@@ -21,6 +22,17 @@ export interface RelationWitness {
   points: string[];
   segments?: Array<[string, string]>;
   lineFamilies?: string[][][];
+  angles?: Array<[string, string, string]>;
+  triangles?: Array<[string, string, string]>;
+  triangleSymmetryOrder?: number;
+}
+
+export interface DirectionModel {
+  anchor: [string, string];
+  generators: Array<[string, string]>;
+  members: Array<{ line: [string, string]; coefficients: number[]; denominator: number; constant: number; residual: number }>;
+  pointCover: string[];
+  constraintRank: number;
 }
 
 export interface DependencySeparation {
@@ -41,6 +53,10 @@ export interface GeometryRelation {
   nonTriviality: number;
   explanation: string;
   metric: DependencySeparation;
+  model?: DirectionModel;
+  derived?: boolean;
+  derivedFrom?: string[];
+  baseNonTriviality?: number;
 }
 
 export interface GeometryRelationResult {

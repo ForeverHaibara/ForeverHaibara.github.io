@@ -1,6 +1,8 @@
 # 关系发现：几何量、数值域与代数搜索架构
 
-状态：设计接口与算法，尚未实施。配套 [实施计划与关系目录](./relation-discovery-plan.md)、[UI 规格](./relation-discovery-ui.md)。本文件中的 TypeScript 与目录是概念草图，不是本轮新增的运行时代码。
+状态：整体架构目标；2026-10-19 首批实现与后续调整见 [生成关系空间](./generator-spaces.md)。配套 [实施计划与关系目录](./relation-discovery-plan.md)、[UI 规格](./relation-discovery-ui.md)。本文件中的 TypeScript 与目录仍是概念草图，不能据此认为所有阶段已完成。
+
+当前主路线已升级为“先建带来源的低复杂度生成约束，再约化角／log 量的搜索”；相似／全等提前，面积下沉到向量叉乘，切触以后按圆幂／极线视角接入。完整整数 lattice、LLL 和时间轮转调度仍是后续工作。
 
 ## 1. 层次与依赖方向
 

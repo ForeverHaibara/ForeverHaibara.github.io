@@ -1,6 +1,6 @@
 # 发现面板：计算、显示、筛选与价值颜色
 
-状态：交互与视觉规格，尚未实施。对应 [扩展计划](./relation-discovery-plan.md)、[架构](./relation-discovery-architecture.md)。本轮没有修改现有前端。
+状态：完整交互目标。2026-10-19 已交付计算／显示开关、自动／单次／停止、预算档位、显示筛选及统一分数配色；更细的类型进度、范围预设等仍待实施，详见 [当前实现](./generator-spaces.md)。对应 [扩展计划](./relation-discovery-plan.md)、[架构](./relation-discovery-architecture.md)。
 
 ## 1. 当前问题与目标
 
