@@ -91,7 +91,7 @@ const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({ graph, status
     if (next.has(type)) next.delete(type); else next.add(type);
     return next;
   });
-  const objectButton = (node: GraphNode) => <button key={node.id} type="button" className="ggb-object-chip" aria-pressed={selectedIds.has(node.id)} onClick={() => objectLink.select(node.name)} onPointerEnter={() => objectLink.hover(node.name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.hover(node.name)} onBlur={() => objectLink.hover(null)}>{node.label}</button>;
+  const objectButton = (node: GraphNode) => <button key={node.id} type="button" className="ggb-object-chip" aria-pressed={selectedIds.has(node.id)} onClick={() => objectLink.select(node.name)} onPointerEnter={() => objectLink.hover(node.name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(node.name)} onBlur={() => objectLink.focus(null)}>{node.label}</button>;
 
   if (status === 'idle') return <p className="p-4 text-xs text-slate-500">Waiting for GeoGebra to become ready...</p>;
   if (status === 'loading' && !graph) return <p className="p-4 text-xs text-slate-500">Reading construction objects...</p>;
@@ -123,7 +123,7 @@ const DependencyGraphView: React.FC<DependencyGraphViewProps> = ({ graph, status
           return <g key={node.id} ref={(element) => { if (element) nodeRefs.current.set(node.id, element); else nodeRefs.current.delete(node.id); }} className={node.isSentinel ? '' : 'ggb-graph-node'} data-object-name={node.isSentinel ? undefined : node.name} data-selected={selected} data-preview={hovered} transform={`translate(${point.x - NODE_WIDTH / 2},${point.y - NODE_HEIGHT / 2})`} opacity={active ? 1 : 0.35} role={node.isSentinel ? undefined : 'button'} tabIndex={node.isSentinel ? undefined : 0} aria-label={node.isSentinel ? 'Free objects' : `Select ${node.label}`} aria-pressed={node.isSentinel ? undefined : selected}
             onClick={node.isSentinel ? undefined : () => objectLink.select(node.name)}
             onPointerEnter={node.isSentinel ? undefined : () => objectLink.hover(node.name)} onPointerLeave={node.isSentinel ? undefined : () => objectLink.hover(null)}
-            onFocus={node.isSentinel ? undefined : () => objectLink.hover(node.name)} onBlur={node.isSentinel ? undefined : () => objectLink.hover(null)}
+            onFocus={node.isSentinel ? undefined : () => objectLink.focus(node.name)} onBlur={node.isSentinel ? undefined : () => objectLink.focus(null)}
             onKeyDown={(event) => { if (!node.isSentinel && ['Enter', ' '].includes(event.key)) { event.preventDefault(); objectLink.select(node.name); } }}>
             <title>{node.label}{node.commandString ? `: ${node.commandString}` : ''}</title>
             <rect width={NODE_WIDTH} height={NODE_HEIGHT} rx="9" fill={selected ? '#e0f2fe' : hovered ? '#f0fdfa' : node.isSentinel ? '#dbeafe' : '#ffffff'} stroke={hovered ? '#0d9488' : selected ? '#0284c7' : '#cbd5e1'} strokeWidth={selected || hovered ? 2 : 1} strokeDasharray={hovered && !selected ? '4 2' : undefined} />

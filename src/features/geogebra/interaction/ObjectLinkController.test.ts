@@ -144,4 +144,50 @@ describe('linked object selection', () => {
     expect(f.selectObjects).toHaveBeenCalledTimes(1);
     f.disconnect();
   });
+
+  it('does not feed native blur/focus restoration back into X-to-Y selection writes', async () => {
+    const f = fixture();
+    f.controller.select('X');
+    await f.controller.settle();
+    // A real SelectObjects call blurs the focused graph node, then the adapter
+    // restores it. Previously these callbacks scheduled an endless microtask
+    // chain before the second mouse click could even complete.
+    f.selectObjects.mockImplementation(async () => {
+      f.controller.focus(null);
+      f.controller.focus('Y');
+    });
+    f.controller.focus('Y');
+    await f.controller.settle();
+    expect(f.selectObjects).toHaveBeenCalledTimes(2);
+    expect(f.controller.getSnapshot()).toMatchObject({ selectedNames: ['X'], hoveredName: 'Y' });
+    f.controller.select('Y');
+    await f.controller.settle();
+    expect(f.controller.getSnapshot()).toMatchObject({ selectedNames: ['Y'], hoveredName: null });
+    // Y is already the native preview: committing it must not write again.
+    expect(f.selectObjects).toHaveBeenCalledTimes(2);
+    f.controller.focus(null);
+    await f.controller.settle();
+    expect(f.selectObjects).toHaveBeenCalledTimes(2);
+    f.disconnect();
+  });
+
+  it('switches repeatedly between X and Y with native focus restoration enabled', async () => {
+    const f = fixture();
+    let focused = 'X';
+    f.selectObjects.mockImplementation(async () => {
+      f.controller.focus(null);
+      f.controller.focus(focused);
+    });
+    for (let index = 0; index < 40; index += 1) {
+      focused = index % 2 ? 'Y' : 'X';
+      f.controller.hover(focused);
+      f.controller.focus(focused);
+      await f.controller.settle();
+      f.controller.select(focused);
+      await f.controller.settle();
+      expect(f.controller.getSnapshot().selectedNames).toEqual([focused]);
+    }
+    expect(f.selectObjects.mock.calls.length).toBeLessThanOrEqual(40);
+    f.disconnect();
+  });
 });

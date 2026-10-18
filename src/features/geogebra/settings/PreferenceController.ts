@@ -1,10 +1,11 @@
 import type { GeoGebraEngine } from '../types';
 import type { GgbPreferences, ManagedStyles } from './types';
+import { readPointRole } from './pointRoles';
 
 const LINE_TYPES = /^(line|segment|ray|vector|polyline|polygon|conic|conicpart|circle|ellipse|hyperbola|parabola|function|functionnvar|curve|curvecartesian|implicitpoly|implicitcurve|locus|penstroke|turtle)$/i;
 const VIEW_KEYS = ['algebra', 'cas', 'spreadsheet', 'graphics2', 'graphics3d'] as const;
 const VIEW_CODES = ['A', 'C', 'S', 'D', 'T'];
-const OBJECT_KEYS = ['pointLabels', 'lineLabels', 'pointSize', 'pointColor', 'lineThickness', 'lineColor', 'stylePolicy'] as const;
+const OBJECT_KEYS = ['pointLabels', 'lineLabels', 'pointSize', 'pointColor', 'constrainedPointColor', 'dependentPointColor', 'pointColorMode', 'lineThickness', 'lineColor', 'stylePolicy'] as const;
 const same = (a: unknown, b: unknown) => typeof a === 'string' && typeof b === 'string' ? a.toLowerCase() === b.toLowerCase() : a === b;
 
 /** Owns preference application, never watches object updates or fights user edits. */
@@ -148,10 +149,12 @@ export class PreferenceController {
     const point = /^point/i.test(type);
     if (!point && !LINE_TYPES.test(type)) return;
     const p = this.preferences;
+    const role = point && p.pointColorMode === 'by-role' ? await readPointRole(this.engine, name) : 'free';
+    const pointColor = role === 'constrained' ? p.constrainedPointColor : role === 'dependent' ? p.dependentPointColor : p.pointColor;
     const desired = {
       label: point ? p.pointLabels : p.lineLabels,
       size: point ? p.pointSize : p.lineThickness,
-      color: point ? p.pointColor : p.lineColor,
+      color: point ? pointColor : p.lineColor,
     };
     const getters = { label: 'getLabelVisible', size: point ? 'getPointSize' : 'getLineThickness', color: 'getColor' };
     const setters = { label: 'setLabelVisible', size: point ? 'setPointSize' : 'setLineThickness', color: 'setColor' };

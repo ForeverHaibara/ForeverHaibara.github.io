@@ -5,13 +5,14 @@ export const DEFAULT_GGB_PREFERENCES: Readonly<GgbPreferences> = Object.freeze({
   axes: false, grid: false, pointLabels: true, lineLabels: false,
   algebra: false, cas: false, spreadsheet: false, graphics2: false, graphics3d: false,
   inputBar: false, decimals: 5, pointSize: 5, pointColor: '#2563eb',
+  constrainedPointColor: '#0891b2', dependentPointColor: '#334155', pointColorMode: 'by-role',
   lineThickness: 3, lineColor: '#475569', palette: 'slate', stylePolicy: 'preserve',
 });
 
 export const GGB_PALETTES = [
-  { id: 'slate', name: 'Studio blue', point: '#2563eb', line: '#475569' },
-  { id: 'ink', name: 'Graphite', point: '#18181b', line: '#71717a' },
-  { id: 'forest', name: 'Botanical', point: '#059669', line: '#334155' },
-  { id: 'violet', name: 'Iris', point: '#7c3aed', line: '#64748b' },
-  { id: 'warm', name: 'Terracotta', point: '#c2410c', line: '#78716c' },
+  { id: 'slate', name: 'Studio blue', point: '#2563eb', constrained: '#0891b2', dependent: '#334155', line: '#475569', mode: 'by-role' },
+  { id: 'ink', name: 'Graphite', point: '#18181b', constrained: '#18181b', dependent: '#18181b', line: '#71717a', mode: 'uniform' },
+  { id: 'forest', name: 'Botanical', point: '#059669', constrained: '#d97706', dependent: '#334155', line: '#475569', mode: 'by-role' },
+  { id: 'violet', name: 'Iris', point: '#7c3aed', constrained: '#db2777', dependent: '#475569', line: '#64748b', mode: 'by-role' },
+  { id: 'warm', name: 'Terracotta', point: '#c2410c', constrained: '#0284c7', dependent: '#44403c', line: '#78716c', mode: 'by-role' },
 ] as const;

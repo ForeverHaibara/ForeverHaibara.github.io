@@ -4,7 +4,7 @@ import { DEFAULT_GGB_PREFERENCES } from './defaults';
 import { normalizePreferences } from './preferenceStore';
 import type { EngineEventListener, GeoGebraEngine, GeometryEvent } from '../types';
 
-type ObjectState = { type: string; label: boolean; size: number; color: string };
+type ObjectState = { type: string; label: boolean; size: number; color: string; role?: 'free' | 'constrained' | 'dependent' };
 function fixture(objects: Record<string, ObjectState> = {}) {
   const listeners = new Set<EngineEventListener>();
   const callApi = vi.fn(async (method: string, args: unknown[]) => {
@@ -12,6 +12,8 @@ function fixture(objects: Record<string, ObjectState> = {}) {
     const object = objects[String(name)];
     if (method === 'getAllObjectNames') return Object.keys(objects);
     if (method === 'getObjectType') return object?.type ?? '';
+    if (method === 'isIndependent') return !object.role || object.role === 'free';
+    if (method === 'getAlgorithmXML') return `<command name="${object.role === 'constrained' ? 'Point' : 'Intersect'}"><input a0="g"/><output a0="${name}"/></command>`;
     if (method === 'getLabelVisible') return object.label;
     if (method === 'getColor') return object.color;
     if (method === 'getPointSize' || method === 'getLineThickness') return object.size;
@@ -83,6 +85,34 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
     f.controller.dispose();
   });
 
+  it('colors points by construction role and preserves a manually customized dependent point', async () => {
+    const f = fixture({ A: point(), T: { ...point(), role: 'constrained' }, I: { ...point(), role: 'dependent' }, M: { ...point(), role: 'dependent' } });
+    await f.controller.loadDocument(async () => undefined);
+    expect(f.objects.A.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    expect(f.objects.T.color).toBe(DEFAULT_GGB_PREFERENCES.constrainedPointColor);
+    expect(f.objects.I.color).toBe(DEFAULT_GGB_PREFERENCES.dependentPointColor);
+    f.objects.I.color = '#ff0000';
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, constrainedPointColor: '#00ffff', dependentPointColor: '#111111' });
+    expect(f.objects.T.color).toBe('#00ffff');
+    expect(f.objects.M.color).toBe('#111111');
+    expect(f.objects.I.color).toBe('#ff0000');
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, pointColorMode: 'uniform' });
+    expect(f.objects.T.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    expect(f.objects.M.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    expect(f.objects.I.color).toBe('#ff0000');
+    f.controller.dispose();
+  });
+
+  it('upgrades a legacy single-color draft without replacing individual overrides', async () => {
+    const oldColor = DEFAULT_GGB_PREFERENCES.pointColor;
+    const f = fixture({ I: { ...point(), role: 'dependent', color: oldColor }, J: { ...point(), role: 'dependent', color: '#ff0000' }, T: { ...point(), role: 'constrained', color: oldColor } });
+    await f.controller.loadDocument(async () => undefined, { I: { color: oldColor }, J: { color: oldColor }, T: { color: oldColor } });
+    expect(f.objects.I.color).toBe(DEFAULT_GGB_PREFERENCES.dependentPointColor);
+    expect(f.objects.T.color).toBe(DEFAULT_GGB_PREFERENCES.constrainedPointColor);
+    expect(f.objects.J.color).toBe('#ff0000');
+    f.controller.dispose();
+  });
+
   it('normalizes a new import with current preferences, then styles new objects', async () => {
     const f = fixture();
     await f.controller.loadDocument(async () => undefined);
@@ -145,4 +175,7 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
 it('validates stored preferences and migrates missing fields without trusting invalid input', () => {
   expect(normalizePreferences({ pointSize: 99, decimals: -3, lineThickness: NaN, axes: 'false', pointColor: 'red' })).toMatchObject({ pointSize: 9, decimals: 0, lineThickness: 3, axes: false, pointColor: '#2563eb' });
   expect(normalizePreferences(null)).toEqual(DEFAULT_GGB_PREFERENCES);
+  expect(normalizePreferences({ palette: 'ink', pointColor: '#18181b' })).toMatchObject({ pointColorMode: 'uniform', constrainedPointColor: '#18181b', dependentPointColor: '#18181b' });
+  expect(normalizePreferences({ palette: 'violet', pointColor: '#7c3aed' })).toMatchObject({ pointColorMode: 'by-role', constrainedPointColor: '#db2777', dependentPointColor: '#475569' });
+  expect(normalizePreferences({ pointColor: '#ffaa33', constrainedPointColor: 'red', dependentPointColor: '#ABCDEF' })).toMatchObject({ pointColor: '#ffaa33', constrainedPointColor: DEFAULT_GGB_PREFERENCES.constrainedPointColor, dependentPointColor: '#abcdef' });
 });

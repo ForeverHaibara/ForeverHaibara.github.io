@@ -12,6 +12,9 @@ export interface GgbPreferences {
   decimals: number;
   pointSize: number;
   pointColor: string;
+  constrainedPointColor: string;
+  dependentPointColor: string;
+  pointColorMode: 'by-role' | 'uniform';
   lineThickness: number;
   lineColor: string;
   palette: string;

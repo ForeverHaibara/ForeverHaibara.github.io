@@ -232,10 +232,11 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     } finally {
       // SelectObjects focuses GeoGebra. Keep keyboard users in the Analysis
       // control they activated, including focusable SVG graph nodes.
-      if (focused?.isConnected && 'focus' in focused && focused !== document.activeElement) {
-        (focused as HTMLElement | SVGElement).focus({ preventScroll: true });
-      }
-      this.selectionWriteDepth -= 1;
+      try {
+        if (focused?.isConnected && 'focus' in focused && focused !== document.activeElement) {
+          (focused as HTMLElement | SVGElement).focus({ preventScroll: true });
+        }
+      } finally { this.selectionWriteDepth -= 1; }
     }
   }
 

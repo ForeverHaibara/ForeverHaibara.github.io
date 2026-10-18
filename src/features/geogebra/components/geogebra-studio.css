@@ -618,14 +618,14 @@
   gap: 5px;
 }
 
-.ggb-palette-sample i:first-child {
+.ggb-palette-sample i:not(:last-child) {
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
 .ggb-palette-sample i:last-child {
-  width: 22px;
+  width: 14px;
   height: 3px;
   border-radius: 3px;
 }
@@ -904,4 +904,11 @@
 .ggb-object-chip:focus-visible {
   outline: 2px solid #38bdf8;
   outline-offset: 2px;
+}
+
+.ggb-settings-row .ggb-point-color-mode {
+  width: 118px;
+}
+.ggb-settings-content .ggb-point-role-help {
+  margin-top: 10px;
 }

@@ -1,4 +1,4 @@
-import { DEFAULT_GGB_PREFERENCES } from './defaults';
+import { DEFAULT_GGB_PREFERENCES, GGB_PALETTES } from './defaults';
 import type { GgbPreferences } from './types';
 
 export const GGB_PREFERENCES_KEY = 'geogebra-studio-preferences-v1';
@@ -7,6 +7,12 @@ export function normalizePreferences(value: unknown): GgbPreferences {
   const result = { ...DEFAULT_GGB_PREFERENCES };
   if (!value || typeof value !== 'object') return result;
   const source = value as Record<string, unknown>;
+  const palette = GGB_PALETTES.find((item) => item.id === source.palette);
+  if (palette) {
+    result.constrainedPointColor = palette.constrained;
+    result.dependentPointColor = palette.dependent;
+    result.pointColorMode = palette.mode;
+  }
   for (const key of Object.keys(result) as Array<keyof GgbPreferences>) {
     if (typeof result[key] === 'boolean' && typeof source[key] === 'boolean') {
       Object.assign(result, { [key]: source[key] });
@@ -16,10 +22,11 @@ export function normalizePreferences(value: unknown): GgbPreferences {
     const n = source[key];
     if (typeof n === 'number' && Number.isFinite(n)) result[key] = Math.min(max, Math.max(min, Math.round(n)));
   }
-  for (const key of ['pointColor', 'lineColor'] as const) {
+  for (const key of ['pointColor', 'constrainedPointColor', 'dependentPointColor', 'lineColor'] as const) {
     if (typeof source[key] === 'string' && /^#[\da-f]{6}$/i.test(source[key])) result[key] = source[key].toLowerCase();
   }
   if (typeof source.palette === 'string') result.palette = source.palette;
+  if (source.pointColorMode === 'by-role' || source.pointColorMode === 'uniform') result.pointColorMode = source.pointColorMode;
   if (source.stylePolicy === 'override') result.stylePolicy = 'override';
   return result;
 }

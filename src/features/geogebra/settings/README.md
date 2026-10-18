@@ -31,3 +31,20 @@ preference controls an object property, add a getter/setter ownership mapping to
 
 API references: [Apps API](https://geogebra.github.io/docs/reference/en/GeoGebra_Apps_API/)
 and [perspectives](https://geogebra.github.io/docs/manual/en/commands/SetPerspective/).
+
+## Point colors
+
+`pointRoles.ts` classifies points using independence and the target construction
+algorithm. A `Point` on a path or `PointIn` a region is constrained; intersections,
+midpoints and other dependent constructions use the dependent color. Manually
+locking a free or path point does not change its construction role. Coordinate
+points built from lists are not mistaken for points on a path.
+
+The default `by-role` mode has separate free, constrained and dependent colors.
+`uniform` uses `pointColor` for all three. Graphite is a uniform preset; the other
+palettes distinguish roles. Individual object color overrides retain the same
+ownership rules as other styles.
+
+Existing v1 preferences acquire the new fields from their chosen palette. Old
+draft ownership baselines let formerly studio-colored points adopt role colors,
+while preserving objects whose colors the user changed individually.
