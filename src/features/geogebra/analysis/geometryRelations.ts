@@ -8,14 +8,12 @@ interface PointPair {
   right: number;
   angle: number;
   length: number;
-  offset: number;
 }
 
 interface LineGroup {
   directionRoot: number;
   points: Set<number>;
   pairs: PointPair[];
-  offset: number;
 }
 
 interface RelationSeed {
@@ -33,41 +31,79 @@ interface CircleCandidate {
   points: [number, number, number];
 }
 
+interface AnalysisPoint extends GeometryPoint {
+  aliases: string[];
+}
+
 const RELATION_ORDER: GeometryRelationKind[] = ['concyclic', 'perpendicular', 'parallel', 'collinear'];
 const MAX_WITNESSES = 8;
 const MAX_CIRCLE_CANDIDATES = 8000;
+const RELATIVE_DISTANCE = 2e-7;
+// Beyond this dynamic range, directions to a distant point cannot reliably
+// distinguish points in the main construction at our angular tolerance.
+const MAX_NORMALIZED_COORDINATE = 1 / RELATIVE_DISTANCE;
 
 const normalizeAngle = (angle: number): number => {
   const normalized = angle % Math.PI;
   return normalized < 0 ? normalized + Math.PI : normalized;
 };
 
-const buildTolerance = (points: readonly GeometryPoint[]): GeometryTolerance => {
-  if (points.length === 0) return { scale: 1, distance: 1e-8, angular: 1e-7, lineOffset: 1e-8, circleCenter: 1e-7, circleRadius: 1e-7, minimumLength: 1e-7 };
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let maxAbs = 1;
-  points.forEach(({ coordinates }) => {
-    minX = Math.min(minX, coordinates.x);
-    minY = Math.min(minY, coordinates.y);
-    maxX = Math.max(maxX, coordinates.x);
-    maxY = Math.max(maxY, coordinates.y);
-    maxAbs = Math.max(maxAbs, Math.abs(coordinates.x), Math.abs(coordinates.y));
+const buildTolerance = (scale = 1): GeometryTolerance => ({
+  scale,
+  distance: scale * RELATIVE_DISTANCE,
+  angular: RELATIVE_DISTANCE,
+  lineOffset: scale * RELATIVE_DISTANCE * 2,
+  circleCenter: scale * RELATIVE_DISTANCE * 3,
+  circleRadius: scale * RELATIVE_DISTANCE * 3,
+  minimumLength: scale * RELATIVE_DISTANCE,
+});
+
+const lowerMedian = (values: number[]): number => values.sort((a, b) => a - b)[Math.floor((values.length - 1) / 2)];
+
+const preparePoints = (input: readonly GeometryPoint[], diagnostics: string[]): { points: AnalysisPoint[]; scale: number } => {
+  // Exact aliases must not weight the scale estimate, particularly when many
+  // constructed objects happen to occupy a single position.
+  const positions = new Map<string, AnalysisPoint>();
+  input.forEach((point) => {
+    const key = `${point.coordinates.x}:${point.coordinates.y}`;
+    const existing = positions.get(key);
+    if (existing) existing.aliases.push(point.name);
+    else positions.set(key, { ...point, aliases: [point.name] });
   });
-  const diagonal = Math.hypot(maxX - minX, maxY - minY);
-  const scale = Math.max(1, maxAbs, diagonal);
-  const distanceTolerance = Math.max(1e-8, scale * 2e-7);
-  return {
-    scale,
-    distance: distanceTolerance,
-    angular: Math.max(1e-7, Math.min(2e-4, distanceTolerance / Math.max(diagonal, 1))),
-    lineOffset: distanceTolerance * 2,
-    circleCenter: distanceTolerance * 3,
-    circleRadius: distanceTolerance * 3,
-    minimumLength: Math.max(1e-7, distanceTolerance * 0.5),
+  const unique = [...positions.values()];
+  if (unique.length === 0) return { points: [], scale: 1 };
+  const origin = {
+    x: lowerMedian(unique.map((point) => point.coordinates.x)),
+    y: lowerMedian(unique.map((point) => point.coordinates.y)),
   };
+  // A median of local distance medians resists isolated huge coordinates as
+  // well as small numerical differences between otherwise coincident points.
+  const localScales = unique.flatMap((point, index) => {
+    const distances = unique.flatMap((other, otherIndex) => {
+      if (index === otherIndex) return [];
+      const distance = Math.hypot(point.coordinates.x - other.coordinates.x, point.coordinates.y - other.coordinates.y);
+      return Number.isFinite(distance) && distance > 0 ? [distance] : [];
+    });
+    return distances.length > 0 ? [lowerMedian(distances)] : [];
+  });
+  const scale = localScales.length > 0 ? lowerMedian(localScales) : 1;
+  const points: AnalysisPoint[] = [];
+  const excluded: string[] = [];
+  unique.forEach((point) => {
+    const coordinates = { x: (point.coordinates.x - origin.x) / scale, y: (point.coordinates.y - origin.y) / scale };
+    if (!Number.isFinite(coordinates.x) || !Number.isFinite(coordinates.y)
+      || Math.hypot(coordinates.x, coordinates.y) > MAX_NORMALIZED_COORDINATE) {
+      excluded.push(...point.aliases);
+      return;
+    }
+    // Compare to a fixed representative instead of transitively merging a
+    // chain of close points whose endpoints are actually distinct.
+    const existing = points.find((candidate) => Math.hypot(candidate.coordinates.x - coordinates.x, candidate.coordinates.y - coordinates.y) <= RELATIVE_DISTANCE);
+    if (existing) existing.aliases.push(...point.aliases);
+    else points.push({ ...point, coordinates });
+  });
+  if (excluded.length > 0) diagnostics.push(`Skipped points with extreme coordinate scales because their relations cannot be evaluated reliably: ${excluded.join(', ')}.`);
+  return { points, scale };
 };
 
 const pointsFromPairs = (pairs: readonly PointPair[]): Set<number> => new Set(pairs.flatMap((pair) => [pair.left, pair.right]));
@@ -87,28 +123,45 @@ const linePointNames = (line: LineGroup, points: readonly GeometryPoint[]): stri
 
 const lineFamilyNames = (lines: readonly LineGroup[], points: readonly GeometryPoint[]): string[][] => lines.map((line) => linePointNames(line, points));
 
-const groupLinePairs = (pairs: readonly PointPair[], directionRoot: number, tolerance: GeometryTolerance): LineGroup[] => {
-  const lineSet = new DisjointSet(pairs.length);
-  for (let left = 0; left < pairs.length; left += 1) {
-    for (let right = left + 1; right < pairs.length; right += 1) {
-      if (Math.abs(pairs[left].offset - pairs[right].offset) <= tolerance.lineOffset) lineSet.union(left, right);
-    }
-  }
-  return [...lineSet.groups().values()].map((indexes) => {
-    const groupPairs = indexes.map((index) => pairs[index]);
-    return { directionRoot, points: pointsFromPairs(groupPairs), pairs: groupPairs, offset: groupPairs.reduce((sum, pair) => sum + pair.offset, 0) / groupPairs.length };
-  }).filter((group) => group.points.size >= 2);
+const groupLinePairs = (pairs: readonly PointPair[], directionRoot: number, tolerance: GeometryTolerance, points: readonly GeometryPoint[]): LineGroup[] => {
+  const groups: LineGroup[] = [];
+  // Short segments provide a local reference: two almost parallel rays to a
+  // faraway point must not imply that their nearby endpoints are collinear.
+  [...pairs].sort((a, b) => a.length - b.length).forEach((pair) => {
+    const group = groups.find((candidate) => {
+      const anchor = candidate.pairs[0];
+      const origin = points[anchor.left].coordinates;
+      const end = points[anchor.right].coordinates;
+      const dx = (end.x - origin.x) / anchor.length;
+      const dy = (end.y - origin.y) / anchor.length;
+      return [pair.left, pair.right].every((index) => {
+        const point = points[index].coordinates;
+        return Math.abs(dx * (point.y - origin.y) - dy * (point.x - origin.x)) <= tolerance.lineOffset;
+      });
+    });
+    if (group) {
+      group.pairs.push(pair);
+      group.points.add(pair.left);
+      group.points.add(pair.right);
+    } else groups.push({ directionRoot, pairs: [pair], points: pointsFromPairs([pair]) });
+  });
+  return groups;
 };
 
 const createCircle = (a: PointCoordinate, b: PointCoordinate, c: PointCoordinate): { centerX: number; centerY: number; radius: number } | null => {
-  const determinant = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
-  if (Math.abs(determinant) < 1e-14) return null;
-  const aa = a.x * a.x + a.y * a.y;
-  const bb = b.x * b.x + b.y * b.y;
-  const cc = c.x * c.x + c.y * c.y;
-  const centerX = (aa * (b.y - c.y) + bb * (c.y - a.y) + cc * (a.y - b.y)) / determinant;
-  const centerY = (aa * (c.x - b.x) + bb * (a.x - c.x) + cc * (b.x - a.x)) / determinant;
-  return { centerX, centerY, radius: Math.hypot(centerX - a.x, centerY - a.y) };
+  const bx = b.x - a.x;
+  const by = b.y - a.y;
+  const cx = c.x - a.x;
+  const cy = c.y - a.y;
+  const bb = bx * bx + by * by;
+  const cc = cx * cx + cy * cy;
+  const determinant = 2 * (bx * cy - by * cx);
+  const longestSideSquared = Math.max(bb, cc, (bx - cx) ** 2 + (by - cy) ** 2);
+  if (Math.abs(determinant) <= RELATIVE_DISTANCE * longestSideSquared * 2) return null;
+  const x = (bb * cy - cc * by) / determinant;
+  const y = (cc * bx - bb * cx) / determinant;
+  const circle = { centerX: a.x + x, centerY: a.y + y, radius: Math.hypot(x, y) };
+  return Object.values(circle).every(Number.isFinite) ? circle : null;
 };
 
 const geometryPoints = (graph: DependencyGraph): GeometryPoint[] => graph.nodes
@@ -116,24 +169,36 @@ const geometryPoints = (graph: DependencyGraph): GeometryPoint[] => graph.nodes
   .map((node) => ({ name: node.name, coordinates: node.coordinates }));
 
 export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Date.now()): GeometryRelationResult => {
-  const points = geometryPoints(graph);
-  const tolerance = buildTolerance(points);
   const diagnostics: string[] = [];
+  const input = geometryPoints(graph);
+  const { points, scale } = preparePoints(input, diagnostics);
+  // All predicates run in the same translated, normalized coordinate frame.
+  const tolerance = buildTolerance();
   const pairs: PointPair[] = [];
   for (let left = 0; left < points.length; left += 1) {
     for (let right = left + 1; right < points.length; right += 1) {
       const dx = points[right].coordinates.x - points[left].coordinates.x;
       const dy = points[right].coordinates.y - points[left].coordinates.y;
       const length = Math.hypot(dx, dy);
-      if (length < tolerance.minimumLength) continue;
+      if (!Number.isFinite(length) || length <= tolerance.minimumLength) continue;
       const angle = normalizeAngle(Math.atan2(dy, dx));
-      pairs.push({ left, right, angle, length, offset: -Math.sin(angle) * points[left].coordinates.x + Math.cos(angle) * points[left].coordinates.y });
+      pairs.push({ left, right, angle, length });
     }
   }
 
   const directionSet = clusterByBuckets(pairs.map((pair) => pair.angle), tolerance.angular, Math.PI, (left, right) => circularDistance(left, right, Math.PI) <= tolerance.angular);
   const directionGroups = [...directionSet.groups().entries()].map(([root, indexes]) => ({ root, pairs: indexes.map((index) => pairs[index]) }));
-  const lineGroups = directionGroups.flatMap(({ root, pairs: directionPairs }) => groupLinePairs(directionPairs, root, tolerance));
+  const lineGroups = directionGroups.flatMap(({ root, pairs: directionPairs }) => groupLinePairs(directionPairs, root, tolerance, points));
+  const directionFamilies = directionGroups.flatMap(({ root, pairs: directionPairs }) => {
+    const angle = directionPairs[0].angle;
+    // A transitive angular cluster can drift beyond the intended tolerance.
+    if (!directionPairs.every((pair) => circularDistance(pair.angle, angle, Math.PI) <= tolerance.angular)) return [];
+    const lines = lineGroups.filter((line) => line.directionRoot === root);
+    // Distinct parallel lines cannot share a point. Nearly parallel rays that
+    // failed the incidence check are too ambiguous to form a direction family.
+    const stableLines = lines.filter((line) => !lines.some((other) => other !== line && [...line.points].some((index) => other.points.has(index))));
+    return [{ root, angle, lines: stableLines }];
+  });
   const relationSeeds: RelationSeed[] = [];
 
   lineGroups.forEach((line) => {
@@ -141,18 +206,17 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
     if (line.points.size >= 3) relationSeeds.push({ key: `collinear:${names.join('|')}`, kind: 'collinear', witness: { points: names.slice(0, MAX_WITNESSES), lineFamilies: [[names]] }, points: line.points, confidence: Math.min(1, 0.75 + (line.points.size - 3) * 0.05) });
   });
 
-  [...new Set(lineGroups.map((line) => line.directionRoot))].forEach((directionRoot) => {
-    const family = lineGroups.filter((line) => line.directionRoot === directionRoot);
+  directionFamilies.forEach(({ root: directionRoot, lines: family }) => {
     if (family.length < 2) return;
     const pointsInFamily = new Set(family.flatMap((line) => [...line.points]));
     relationSeeds.push({ key: `parallel:${directionRoot}`, kind: 'parallel', witness: { points: [...pointsInFamily].map((index) => points[index].name), lineFamilies: [lineFamilyNames(family, points)] }, points: pointsInFamily, confidence: 0.98 });
   });
 
-  directionGroups.forEach((left, leftIndex) => {
-    directionGroups.slice(leftIndex + 1).forEach((right) => {
-      if (circularDistance(left.pairs[0].angle - right.pairs[0].angle, Math.PI / 2, Math.PI) > tolerance.angular) return;
-      const leftLines = lineGroups.filter((line) => line.directionRoot === left.root);
-      const rightLines = lineGroups.filter((line) => line.directionRoot === right.root);
+  directionFamilies.forEach((left, leftIndex) => {
+    directionFamilies.slice(leftIndex + 1).forEach((right) => {
+      if (circularDistance(left.angle - right.angle, Math.PI / 2, Math.PI) > tolerance.angular) return;
+      const leftLines = left.lines;
+      const rightLines = right.lines;
       if (leftLines.length === 0 || rightLines.length === 0) return;
       const pointsInFamily = new Set([...leftLines, ...rightLines].flatMap((line) => [...line.points]));
       relationSeeds.push({ key: `perpendicular:${Math.min(left.root, right.root)}:${Math.max(left.root, right.root)}`, kind: 'perpendicular', witness: { points: [...pointsInFamily].map((index) => points[index].name), lineFamilies: [lineFamilyNames(leftLines, points), lineFamilyNames(rightLines, points)] }, points: pointsInFamily, confidence: 0.98 });
@@ -170,7 +234,7 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
       }
     }
   }
-  if (stopped) diagnostics.push(`共圆候选数量超过 ${MAX_CIRCLE_CANDIDATES}，已限制计算规模。`);
+  if (stopped) diagnostics.push(`Circle candidate limit (${MAX_CIRCLE_CANDIDATES}) reached; further candidates were skipped.`);
   const circleSet = new DisjointSet(circles.length);
   const buckets = new Map<string, number[]>();
   const MAX_BUCKET_REPRESENTATIVES = 8;
@@ -190,6 +254,9 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   });
   [...circleSet.groups().values()].forEach((indexes) => {
     const pointSet = new Set(indexes.flatMap((index) => circles[index].points));
+    const circle = circles[indexes[0]];
+    // Bucket clustering is only a candidate search, not an incidence proof.
+    if (![...pointSet].every((index) => Math.abs(Math.hypot(points[index].coordinates.x - circle.centerX, points[index].coordinates.y - circle.centerY) - circle.radius) <= tolerance.circleRadius)) return;
     if (pointSet.size >= 4) {
       const names = [...pointSet].map((index) => points[index].name);
       relationSeeds.push({ key: `concyclic:${[...names].sort().join('|')}`, kind: 'concyclic', witness: { points: names.slice(0, MAX_WITNESSES) }, points: pointSet, confidence: Math.min(1, 0.85 + (pointSet.size - 4) * 0.03) });
@@ -198,11 +265,18 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
 
   const profile = buildDependencyProfile(graph);
   const relations = new Map<string, GeometryRelation>();
+  const aliases = new Map(points.map((point) => [point.name, point.aliases]));
+  const expandNames = (names: readonly string[]): string[] => names.flatMap((name) => aliases.get(name) ?? [name]);
   relationSeeds.forEach((seed) => {
-    const pointNames = [...seed.points].map((index) => points[index].name).sort();
+    const pointNames = [...seed.points].flatMap((index) => points[index].aliases).sort();
     const id = seed.key;
-    const witness = { ...seed.witness, points: [...new Set(seed.witness.points)].sort() };
-    const metric = measureDependencySeparation(profile, witness.points);
+    const representativeNames = [...new Set(seed.witness.points)].sort();
+    const metric = measureDependencySeparation(profile, representativeNames);
+    const witness: RelationWitness = {
+      ...seed.witness,
+      points: expandNames(representativeNames).sort(),
+      lineFamilies: seed.witness.lineFamilies?.map((family) => family.map(expandNames)),
+    };
     const relation: GeometryRelation = { id, kind: seed.kind, pointNames, witnesses: [witness], confidence: seed.confidence, nonTriviality: scoreDependencySeparation(metric), explanation: explainDependencySeparation(metric), metric };
     const existing = relations.get(id);
     if (existing) {
@@ -212,5 +286,5 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   });
 
   const sortedRelations = [...relations.values()].sort((left, right) => right.nonTriviality - left.nonTriviality || right.confidence - left.confidence || RELATION_ORDER.indexOf(left.kind) - RELATION_ORDER.indexOf(right.kind) || left.id.localeCompare(right.id));
-  return { relations: sortedRelations, pointCount: points.length, tolerance, diagnostics, computedAt };
+  return { relations: sortedRelations, pointCount: points.reduce((count, point) => count + point.aliases.length, 0), tolerance: buildTolerance(scale), diagnostics, computedAt };
 };
