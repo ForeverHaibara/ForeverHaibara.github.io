@@ -257,7 +257,7 @@ describe('reusable tool definitions and P1 outputs', () => {
     scope.objects.set('curve', 'implicitCurve');
     for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
       if (['conic', 'conicBranch'].includes(overload.builder ?? '')) continue;
-      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1' };
+      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', line: 'l', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1' };
       const arguments_ = overload.params.map((param) => fixtures[param.type]);
       expect(arguments_.every(Boolean), tool.name).toBe(true);
       expect(() => compile(`${tool.name}(${arguments_.join(',')})`, scope), tool.name).not.toThrow();

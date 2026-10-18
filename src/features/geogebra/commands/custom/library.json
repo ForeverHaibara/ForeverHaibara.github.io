@@ -27,6 +27,13 @@
       ]
     },
     {
+      "name": "Pole",
+      "description": "Pole of a line with respect to a conic.",
+      "overloads": [
+        {"params": [{"name": "l", "type": "line"}, {"name": "q", "type": "conic"}], "returns": "point", "expression": "Polar($l,$q)"}
+      ]
+    },
+    {
       "name": "Conic",
       "description": "Five point/tangent-line constraints in any order. Mixed inputs create separate conics (2 or 4 slots); undefined slots can appear on dragging. Add a 1-based index to select one. Nested calls select the first solution. Segments/rays mean supporting lines. Native point/coefficient forms are preserved.",
       "overloads": [

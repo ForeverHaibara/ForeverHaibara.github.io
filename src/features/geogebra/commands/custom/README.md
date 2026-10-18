@@ -59,7 +59,7 @@ case-insensitively across canonical commands and aliases; self-aliases, duplicat
 aliases and malformed names are rejected. Flat lists avoid alias chains. File
 macros retain priority at the call site, including when they own only an alias.
 
-The catalog currently has **136 canonical commands and 138 callable names**:
+The catalog currently has **137 canonical commands and 139 callable names**:
 `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases `OppositeArcMidpoint`.
 
 ### Implementations and composition
@@ -239,6 +239,8 @@ extensions. `FermatPoint` means X(13), including obtuse triangles.
 
 `Polar(P,F:implicitCurve)` is the second homogeneous polar line of a cubic.
 Native `Polar(P,conic)` and `Polar(line,conic)` retain their original meanings.
+`Pole(l:line,q:conic)` returns the pole point via native `Polar(l,q)`; circles
+are also accepted as conics.
 `PolarConic` is the first homogeneous polar conic, including contributions from
 the constant and lower-degree terms. There is no `PolarLine` alias.
 
