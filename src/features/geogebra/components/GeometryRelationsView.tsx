@@ -39,6 +39,7 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
   if (!result) return <p className="p-4 text-xs text-slate-500">No relation result is available.</p>;
   return <div className="space-y-2 p-3">
     <div className="flex items-center justify-between text-[11px] text-slate-500"><span>{result.pointCount} points analyzed</span><span>{result.relations.length} relation groups</span></div>
+    <p className="text-[10px] leading-4 text-slate-500">Numerical observations for exploration. Scores estimate construction novelty, not proof.</p>
     {result.diagnostics.length > 0 && <div className="rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] text-amber-700">{result.diagnostics.join(' ')}</div>}
     {result.relations.length === 0 ? <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500">No significant geometric relations found.</p> : <div className="max-h-[420px] space-y-2 overflow-auto pr-1">{result.relations.map((relation) => {
       const expanded = expandedId === relation.id;
@@ -47,7 +48,14 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
         <button type="button" className="w-full text-left" onClick={() => setExpandedId(expanded ? null : relation.id)} aria-expanded={expanded}>
           <div className="flex min-h-6 items-center justify-between gap-3"><p className="min-w-0 break-words text-xs font-semibold text-slate-700">{formatConclusion(relation, relation.witnesses[0])}</p><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${colors[relation.kind]}`}>{relation.nonTriviality.toFixed(0)}</span></div>
         </button>
-        {expanded && <div className="mt-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500"><div className="mb-2 flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} type="button" className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div><p>Type: {labels[relation.kind]}</p><p className="mt-1">Confidence: {(relation.confidence * 100).toFixed(0)}%</p><p className="mt-1">Witnesses: {relation.witnesses.map((witness) => formatConclusion(relation, witness)).join('; ')}</p><p className="mt-1">{relation.explanation}</p><p className="mt-1">Depth factor: {relation.metric.depthFactor.toFixed(2)}; branch separation: {relation.metric.branchDiversity.toFixed(2)}</p></div>}
+        {expanded && <div className="mt-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
+          <div className="mb-2 flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} type="button" className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div>
+          <p>Type: {labels[relation.kind]}</p>
+          <p className="mt-1">Match heuristic: {relation.confidence.toFixed(2)}</p>
+          <p className="mt-1">Witnesses: {relation.witnesses.map((witness) => formatConclusion(relation, witness)).join('; ')}</p>
+          <p className="mt-1">{relation.explanation}</p>
+          <p className="mt-1">Construction span: {relation.metric.constructionSpan?.toFixed(2) ?? 'disconnected'}; branches: {relation.metric.connectedComponents}; dependency coverage: {(relation.metric.dependencyCoverage * 100).toFixed(0)}%</p>
+        </div>}
       </article>;
     })}</div>}
   </div>;

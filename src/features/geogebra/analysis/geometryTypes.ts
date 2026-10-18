@@ -24,11 +24,12 @@ export interface RelationWitness {
 }
 
 export interface DependencySeparation {
-  branchDiversity: number;
-  depthFactor: number;
-  independenceFactor: number;
-  meanDepth: number;
-  sharedAncestorWeight: number;
+  /** Bottleneck of the minimum spanning forest; null means disconnected. */
+  constructionSpan: number | null;
+  connectedComponents: number;
+  /** Fraction of named objects with fully readable, acyclic upstream definitions. */
+  dependencyCoverage: number;
+  pointCount: number;
 }
 
 export interface GeometryRelation {

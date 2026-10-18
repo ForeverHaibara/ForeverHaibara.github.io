@@ -271,7 +271,9 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
     const pointNames = [...seed.points].flatMap((index) => points[index].aliases).sort();
     const id = seed.key;
     const representativeNames = [...new Set(seed.witness.points)].sort();
-    const metric = measureDependencySeparation(profile, representativeNames);
+    // Display limits must not hide a distant dependency from the value metric.
+    const scoringNames = [...seed.points].map((index) => points[index].name);
+    const metric = measureDependencySeparation(profile, scoringNames);
     const witness: RelationWitness = {
       ...seed.witness,
       points: expandNames(representativeNames).sort(),
