@@ -5,6 +5,7 @@ import DependencyGraphView from './DependencyGraphView';
 import type { DependencyGraph } from '../analysis/graphTypes';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 import GeometryRelationsView from './GeometryRelationsView';
+import GeometryReasoningView from './GeometryReasoningView';
 import type { ObjectLink } from '../interaction/useObjectLink';
 
 interface GeoGebraSidePanelProps {
@@ -89,9 +90,9 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, width,
       </div>
       <div className="flex items-start justify-between border-b border-slate-200/80 p-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">Future workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">Geometry workspace</p>
           <h2 className="mt-1 text-lg font-semibold text-slate-800">Analysis & Proof</h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">This panel is ready for geometry discovery and proof providers.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Explore observations and reason from selected conditions.</p>
         </div>
         <button type="button" onClick={onToggle} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 hover:text-sky-700">Hide</button>
       </div>
@@ -101,6 +102,7 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, width,
       </div>
       <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dependency graph</h3><p className="mt-1 text-xs leading-5 text-slate-500">Dependencies point toward the object that uses them.</p></div><DependencyGraphView objectLink={objectLink} graph={graph} status={graphStatus} error={graphError} onRefresh={onRefreshGraph} /></div>
       <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Discovered relations</h3><p className="mt-1 text-xs leading-5 text-slate-500">Numerical point relations, ranked by construction novelty.</p></div><GeometryRelationsView objectLink={objectLink} state={geometryRelations} /></div>
+      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conditional reasoning</h3></div><GeometryReasoningView graph={graph} graphStatus={graphStatus} lastEventTime={events[events.length - 1]?.timestamp ?? 0} discovery={geometryRelations} objectLink={objectLink} /></div>
       <div className="min-h-0 flex-1 border-t border-slate-100 px-4 py-4">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Construction events</h3>
         <div className="mt-3 max-h-52 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-500">
