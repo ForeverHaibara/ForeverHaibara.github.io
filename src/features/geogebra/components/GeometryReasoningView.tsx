@@ -9,8 +9,14 @@ import { Ag2WorkerClient } from '../reasoning/backends/ag2/Ag2WorkerClient';
 import type { Ag2RunResult } from '../reasoning/backends/ag2/protocol';
 import type { ConditionSelection, ReasoningProblem } from '../reasoning/ir/types';
 import { formatPredicate } from '../reasoning/ir/formatPredicate';
+import type { GeoGebraEngine } from '../types';
+import { useCharacterization } from '../reasoning/selection/useCharacterization';
+import { evaluateCoverage } from '../reasoning/selection/evaluateCoverage';
+import type { CharacterizationProposal, CoverageResult } from '../reasoning/selection/types';
+import ConditionSuggestions from './ConditionSuggestions';
 
 interface Props {
+  engine: GeoGebraEngine;
   graph: DependencyGraph | null;
   graphStatus: 'idle' | 'loading' | 'ready' | 'error';
   lastEventTime: number;
@@ -19,25 +25,51 @@ interface Props {
 }
 const emptySelection: ConditionSelection = { acceptedIds: [], goalId: null };
 
-const GeometryReasoningView: React.FC<Props> = ({ graph, graphStatus, lastEventTime, discovery, objectLink }) => {
-  const problem = useMemo(() => graph && discovery.result?.computedAt === graph.generatedAt
+const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, lastEventTime, discovery, objectLink }) => {
+  const baseProblem = useMemo(() => graph && discovery.result?.computedAt === graph.generatedAt
     ? createDiscoveryProblem(graph, discovery.result) : null, [graph, discovery.result]);
-  const [selectionState, setSelection] = useState<{ problem: ReasoningProblem | null; value: ConditionSelection }>({ problem: null, value: emptySelection });
-  const selection = selectionState.problem === problem ? selectionState.value : emptySelection;
-  const fresh = Boolean(problem && graphStatus === 'ready' && !discovery.stale && lastEventTime <= problem.snapshot);
+  const constructionFresh = Boolean(graph && graphStatus === 'ready' && lastEventTime <= graph.generatedAt);
+  const suggestions = useCharacterization(engine, graph, constructionFresh);
+  const proposal = suggestions.proposal;
+  const problem = useMemo(() => proposal ? { ...proposal.problem, candidates: [...(baseProblem?.candidates ?? []), ...proposal.problem.candidates] } : baseProblem, [proposal, baseProblem]);
+  const [selectionState, setSelection] = useState<{ graph: DependencyGraph | null; problem: ReasoningProblem | null; value: ConditionSelection }>({ graph: null, problem: null, value: emptySelection });
+  const selection = useMemo(() => {
+    if (selectionState.graph !== graph || !problem) return emptySelection;
+    const unchanged = (id: string) => {
+      const before = selectionState.problem?.candidates.find((candidate) => candidate.id === id);
+      const after = problem.candidates.find((candidate) => candidate.id === id);
+      return before && after && JSON.stringify(before.predicates) === JSON.stringify(after.predicates);
+    };
+    return { acceptedIds: selectionState.value.acceptedIds.filter(unchanged), goalId: selectionState.value.goalId && unchanged(selectionState.value.goalId) ? selectionState.value.goalId : null };
+  }, [selectionState, graph, problem]);
+  const fresh = Boolean(problem && constructionFresh && (proposal || !discovery.stale));
   const exported = useMemo(() => problem ? exportAg2Problem(problem, selection) : null, [problem, selection]);
   const [search, setSearch] = useState('');
   const [phase, setPhase] = useState<'idle' | 'loading' | 'solving'>('idle');
   const [result, setResult] = useState<Ag2RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [validateSamples, setValidateSamples] = useState(true);
+  const [earlierContext, setEarlierContext] = useState(true);
+  const [coveragePhase, setCoveragePhase] = useState<'idle' | 'loading' | 'solving'>('idle');
+  const [coverageState, setCoverage] = useState<{ proposal: CharacterizationProposal; result: CoverageResult } | null>(null);
+  const coverage = coverageState?.proposal === proposal ? coverageState.result : null;
   const client = useRef<Ag2WorkerClient | null>(null);
   const generation = useRef(0);
-  const running = phase !== 'idle';
-  const invalidate = () => { generation.current += 1; if (running) client.current?.stop(); setPhase('idle'); setResult(null); setError(null); };
+  const running = phase !== 'idle' || coveragePhase !== 'idle';
+  const invalidate = () => { generation.current += 1; if (running) client.current?.stop(); setPhase('idle'); setCoveragePhase('idle'); setResult(null); setError(null); };
 
   useEffect(() => { invalidate(); }, [problem, fresh]);
   useEffect(() => () => { generation.current += 1; client.current?.stop(); }, []);
-  const changeSelection = (value: ConditionSelection) => { invalidate(); setSelection({ problem, value }); };
+  const changeSelection = (value: ConditionSelection) => { invalidate(); setSelection({ graph, problem, value }); };
+  const checkCoverage = async () => {
+    if (!fresh || !proposal || !problem) return;
+    invalidate(); const ticket = generation.current; setCoveragePhase('loading');
+    client.current ??= new Ag2WorkerClient();
+    try {
+      const answer = await evaluateCoverage({ ...proposal, problem }, client.current, (next) => { if (ticket === generation.current) setCoveragePhase(next); });
+      if (ticket === generation.current) { setCoverage({ proposal, result: answer }); setCoveragePhase('idle'); }
+    } catch (failure) { if (ticket === generation.current) { setError(failure instanceof Error ? failure.message : 'Coverage evaluation failed.'); setCoveragePhase('idle'); } }
+  };
   const run = async () => {
     if (!fresh || !exported?.value || !selection.goalId) return;
     invalidate();
@@ -53,18 +85,24 @@ const GeometryReasoningView: React.FC<Props> = ({ graph, graphStatus, lastEventT
   };
   const download = (project: boolean) => {
     if (!fresh || !exported?.value) return;
-    const content = project ? JSON.stringify({ version: 1, problem, selection, export: exported.value, result }, null, 2) : exported.value.text;
+    const content = project ? JSON.stringify({ version: 1, problem, selection, export: exported.value, result, characterization: proposal, coverage }, null, 2) : exported.value.text;
     blobToDownload(new Blob([content], { type: project ? 'application/json' : 'text/plain;charset=utf-8' }), project ? 'geometry-conditions.json' : 'geometry-problems.ag2.txt');
   };
   const query = search.trim().toLocaleLowerCase();
-  const candidates = problem?.candidates.filter((candidate) => !query || candidate.label.toLocaleLowerCase().includes(query)) ?? [];
+  const matching = problem?.candidates.filter((candidate) => !query || candidate.label.toLocaleLowerCase().includes(query)) ?? [];
+  const candidates = matching.slice(0, 100);
   const hasSelection = Boolean(selection.acceptedIds.length || selection.goalId);
   const value = exported?.value;
   return <div className="space-y-3 p-3 text-[11px]">
     <p className="leading-5 text-slate-500">Accept observations as conditions, then choose a goal. Conclusions are conditional on your selection and the coordinate witness.</p>
-    {!fresh && <p role="status" className="rounded-lg bg-amber-50 p-2 text-amber-800">Run discovery on the current construction before selecting or exporting conditions.</p>}
+    <ConditionSuggestions proposal={proposal} problem={problem} coverage={coverage} fresh={constructionFresh} busy={running || suggestions.status !== 'idle'} validating={validateSamples} earlierContext={earlierContext}
+      status={suggestions.status === 'sampling' ? `Checking construction copy · ${suggestions.progress}/6 configurations` : suggestions.status === 'searching' ? 'Searching local conditions…'
+        : coveragePhase !== 'idle' ? 'Evaluating additional consequences in DDAR…' : proposal ? `${proposal.coreIds.length} proposed conditions · ${proposal.sampling?.samples.length ?? 0} sampled configurations` : 'No conditions are accepted automatically.'}
+      error={suggestions.error} onValidate={setValidateSamples} onContext={setEarlierContext} onStart={() => { invalidate(); void suggestions.start(validateSamples, earlierContext); }}
+      onStop={() => { suggestions.stop(); invalidate(); }} onApply={() => proposal && changeSelection({ acceptedIds: proposal.coreIds, goalId: null })} onEvaluate={() => void checkCoverage()} />
+    {!fresh && <p role="status" className="rounded-lg bg-amber-50 p-2 text-amber-800">Run discovery or suggest conditions on the current construction before selecting or exporting.</p>}
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="rounded bg-sky-50 px-2 py-1 font-semibold text-sky-700 disabled:opacity-40" disabled={!fresh || !value || !selection.goalId || running} onClick={() => void run()}>Check goal</button>
+      <button type="button" className="rounded bg-sky-50 px-2 py-1 font-semibold text-sky-700 disabled:opacity-40" disabled={!fresh || !value || !selection.goalId || running || suggestions.status !== 'idle'} onClick={() => void run()}>Check goal</button>
       <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!running} onClick={invalidate}>Stop</button>
       <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !value} onClick={() => download(false)}>Export AG2</button>
       <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !value} onClick={() => download(true)}>Export project</button>
@@ -86,13 +124,14 @@ const GeometryReasoningView: React.FC<Props> = ({ graph, graphStatus, lastEventT
       <input aria-label="Search condition candidates" className="min-w-0 flex-1 rounded border border-slate-200 px-2 py-1" placeholder="Find a condition or goal…" value={search} onChange={(event) => setSearch(event.target.value)} />
       <button type="button" className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" onClick={() => changeSelection(emptySelection)}>Clear</button>
     </div>
-    <p className="text-[10px] leading-4 text-slate-500">Single-snapshot observations. Accepting a group accepts its listed relations. Search and display filters do not change accepted conditions. No independent proof certificate is produced.</p>
+    <p className="text-[10px] leading-4 text-slate-500">Unmarked observations use one snapshot. Sample checks are evidence, not proof. Accepting a group accepts its listed relations. Search filters do not change conditions.</p>
     <div className="max-h-80 space-y-2 overflow-auto pr-1">{candidates.map((candidate) => {
       const accepted = selection.acceptedIds.includes(candidate.id);
       const goal = selection.goalId === candidate.id;
-      const disabled = !fresh || !candidate.predicates.length;
+      const disabled = !fresh || !candidate.predicates.length || candidate.diagnostics.length > 0;
       return <article key={candidate.id} className={`rounded-lg border p-2 ${accepted || goal ? 'border-sky-300 bg-sky-50/40' : 'border-slate-200'}`}>
         <p className="break-words leading-5 text-slate-700">{candidate.label}</p>
+        {candidate.evidence.kind === 'sampled' && <p className="mt-1 text-[10px] text-sky-700">Checked on {candidate.evidence.discoverySamples} discovery + {candidate.evidence.holdoutSamples} held-out configurations{candidate.evidence.skippedSamples ? ` · ${candidate.evidence.skippedSamples} undefined` : ''}</p>}
         <details className="mt-1 text-[10px] text-slate-500"><summary className="cursor-pointer">Relations in this group ({candidate.predicates.length})</summary>{candidate.predicates.map((predicate, i) => <p key={i} className="mt-1 break-words">{formatPredicate(predicate, problem!.objects)}</p>)}</details>
         <div className="mt-1 flex items-center gap-3 text-slate-600">
           <label className="flex items-center gap-1"><input type="checkbox" aria-label={`Accept condition: ${candidate.label}`} disabled={disabled} checked={accepted} onChange={() => changeSelection({ ...selection, acceptedIds: accepted ? selection.acceptedIds.filter((id) => id !== candidate.id) : [...selection.acceptedIds, candidate.id] })} />Accept condition</label>
@@ -101,6 +140,7 @@ const GeometryReasoningView: React.FC<Props> = ({ graph, graphStatus, lastEventT
         {candidate.diagnostics.map((message) => <p key={message} className="mt-1 text-amber-700">{message}</p>)}
       </article>;
     })}</div>
+    {matching.length > candidates.length && <p className="text-[10px] text-slate-500">Showing the first {candidates.length}/{matching.length} candidates. Search to inspect more; accepted conditions remain included.</p>}
     {value && <details className="rounded-lg border border-slate-200 p-2"><summary className="cursor-pointer text-slate-600">Accepted conditions and export</summary>
       {selection.acceptedIds.map((id) => <p key={id} className="mt-1 break-words">{problem?.candidates.find((candidate) => candidate.id === id)?.label}</p>)}
       <div className="mt-2 flex flex-wrap gap-1">{value.names.map((entry) => <button key={entry.id} type="button" className="ggb-object-chip" onClick={() => objectLink.select(entry.name)}>{entry.symbol} = {entry.name}</button>)}</div>

@@ -7,6 +7,7 @@ type Token = {
 };
 
 const isIdentifierCharacter = (value: string | undefined): boolean => Boolean(value && /[\p{L}\p{N}_{}]/u.test(value));
+const isObjectBoundaryCharacter = (value: string | undefined): boolean => Boolean(value && /[\p{L}\p{N}_]/u.test(value));
 
 const sortNamesForMatching = (names: readonly string[]): string[] =>
   [...new Set(names.filter(Boolean))].sort((left, right) => right.length - left.length);
@@ -36,7 +37,7 @@ const tokenize = (source: string, objectNames: readonly string[], diagnostics: P
       const after = source[index + candidate.length];
       const previous = tokens.at(-1);
       const followsNumber = previous?.kind === 'number' && previous.position + previous.value.length === index;
-      return (!isIdentifierCharacter(before) || followsNumber) && !isIdentifierCharacter(after);
+      return (!isObjectBoundaryCharacter(before) || followsNumber) && !isObjectBoundaryCharacter(after);
     });
     if (objectName) {
       tokens.push({ kind: 'object', value: objectName, position: index });

@@ -13,6 +13,7 @@ export interface Ag2Export {
   engineCommit: string;
   premise: string;
   goals: string[];
+  queries: Array<{ id: string; goals: string[] }>;
   text: string;
   acceptedIds: string[];
   goalId: string | null;
@@ -31,14 +32,16 @@ const fraction = ({ numerator, denominator }: Rational): string => {
 const pairKey = (pair: Segment) => JSON.stringify([...pair].sort());
 
 /** Export only accepted conditions. Neither observed consequences nor scores are premises. */
-export const exportAg2Problem = (problem: ReasoningProblem, selection: ConditionSelection): Ag2ExportResult => {
+const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelection, queryIds: readonly string[]): Ag2ExportResult => {
   try {
     const candidates = new Map(problem.candidates.map((candidate) => [candidate.id, candidate]));
     const acceptedIds = [...new Set(selection.acceptedIds)].sort();
     const accepted = acceptedIds.map((id) => candidates.get(id));
     const goal = selection.goalId === null ? null : candidates.get(selection.goalId);
+    const queries = [...new Set(queryIds)].map((id) => candidates.get(id));
     if (accepted.some((candidate) => !candidate) || (selection.goalId !== null && !goal)) throw new Error('A selected condition or goal is no longer available.');
-    const selected = [...accepted, ...(goal ? [goal] : [])];
+    if (queries.some((candidate) => !candidate)) throw new Error('A coverage query is no longer available.');
+    const selected = [...accepted, ...queries];
     if (!selected.length) throw new Error('Select conditions or a goal first.');
     if (selected.some((candidate) => !candidate!.predicates.length || candidate!.diagnostics.length)) throw new Error('A selected observation cannot be exported.');
     if (selected.some((candidate) => candidate!.source.snapshot !== problem.snapshot)) throw new Error('Observations belong to a different construction snapshot.');
@@ -134,7 +137,8 @@ export const exportAg2Problem = (problem: ReasoningProblem, selection: Condition
       throw new Error('Unsupported geometric predicate.');
     };
     const premises = [...new Set(accepted.flatMap((candidate) => candidate!.predicates.flatMap((predicate) => lower(predicate, 'assumption'))))];
-    const goals = [...new Set(goal?.predicates.flatMap((predicate) => lower(predicate, 'goal')) ?? [])];
+    const queryGoals = queries.map((candidate) => ({ id: candidate!.id, goals: [...new Set(candidate!.predicates.flatMap((predicate) => lower(predicate, 'goal')))] }));
+    const goals = [...new Set(queryGoals.flatMap((query) => query.goals))];
     if (premises.length + goals.length > AG2_LIMITS.predicates) throw new Error(`This run exceeds the ${AG2_LIMITS.predicates}-predicate budget.`);
     const directlyIncluded = (target: string) => premises.includes(target) || premises.some((premise) => {
       const [kind, ...args] = premise.split(' '); const [targetKind, ...targetArgs] = target.split(' ');
@@ -143,7 +147,7 @@ export const exportAg2Problem = (problem: ReasoningProblem, selection: Condition
     const declarations = names.map(({ id, symbol: name }) => { const point = points.get(id)!; return `${name}@${point.x}_${point.y} = `; });
     if (!declarations.length) throw new Error('The selection contains no points.');
     const premise = declarations.join('; ') + premises.join(', ');
-    return { value: { version: 1, engineCommit: AG2_COMMIT, premise, goals,
+    return { value: { version: 1, engineCommit: AG2_COMMIT, premise, goals, queries: queryGoals,
       text: goals.length ? goals.map((target) => `${premise} ? ${target}`).join('\n') : premise,
       acceptedIds, goalId: selection.goalId, alreadyAssumed: Boolean(goal && goals.every(directlyIncluded)),
       branches, names, normalization: { origin: { ...origin }, scale } }, errors: [] };
@@ -151,3 +155,10 @@ export const exportAg2Problem = (problem: ReasoningProblem, selection: Condition
     return { value: null, errors: [error instanceof Error ? error.message : 'Problem export failed.'] };
   }
 };
+
+export const exportAg2Problem = (problem: ReasoningProblem, selection: ConditionSelection): Ag2ExportResult =>
+  compileAg2Problem(problem, selection, selection.goalId === null ? [] : [selection.goalId]);
+
+/** Several queries share one closure, coordinate frame and symbol mapping. */
+export const exportAg2Queries = (problem: ReasoningProblem, acceptedIds: string[], queryIds: string[]): Ag2ExportResult =>
+  compileAg2Problem(problem, { acceptedIds, goalId: queryIds[0] ?? null }, queryIds);

@@ -1,6 +1,7 @@
-import { candidate, discoveredMidpointProblem, midpointProblem } from '../src/features/geogebra/reasoning/__fixtures__/problems';
-import { exportAg2Problem } from '../src/features/geogebra/reasoning/backends/ag2/exportProblem';
+import { candidate, discoveredMidpointProblem, midpointConstruction, midpointProblem } from '../src/features/geogebra/reasoning/__fixtures__/problems';
+import { exportAg2Problem, exportAg2Queries } from '../src/features/geogebra/reasoning/backends/ag2/exportProblem';
 import type { ConditionSelection, ReasoningProblem } from '../src/features/geogebra/reasoning/ir/types';
+import { proposeConditions } from '../src/features/geogebra/reasoning/selection/proposeConditions';
 
 const cases: Array<{ name: string; problem: ReasoningProblem; selection: ConditionSelection; expected: string }> = [];
 for (const [name, acceptedIds, goalId, expected] of [
@@ -13,6 +14,9 @@ const discovered = discoveredMidpointProblem();
 const midpoints = discovered.candidates.filter((entry) => entry.predicates.some((predicate) => predicate.kind === 'midpoint'));
 const target = discovered.candidates.find((entry) => entry.predicates.some((predicate) => predicate.kind === 'parallel'))!;
 cases.push({ name: 'opaque-discovery-to-engine', problem: discovered, selection: { acceptedIds: midpoints.map((entry) => entry.id), goalId: target.id }, expected: 'derived' });
+const proposal = proposeConditions(midpointConstruction());
+const automatic = { ...proposal.problem, candidates: [...proposal.problem.candidates, target] };
+cases.push({ name: 'automatic-local-conditions-to-engine', problem: automatic, selection: { acceptedIds: proposal.coreIds, goalId: target.id }, expected: 'derived' });
 
 const algebra = midpointProblem();
 algebra.candidates.push(candidate('ratio', [{ kind: 'length-product', terms: [
@@ -35,4 +39,7 @@ const output = cases.map(({ name, problem, selection, expected }) => {
   if (!exported.value) throw new Error(`${name}: ${exported.errors.join('; ')}`);
   return { name, problem: exported.value, expected };
 });
+const coverage = exportAg2Queries(midpointProblem(), ['m-midpoint', 'n-midpoint'], ['midsegment', 'false-goal']);
+if (!coverage.value) throw new Error(coverage.errors.join('; '));
+output.push({ name: 'coverage-positive-and-negative', problem: coverage.value, expected: 'not-derived' });
 process.stdout.write(JSON.stringify(output));

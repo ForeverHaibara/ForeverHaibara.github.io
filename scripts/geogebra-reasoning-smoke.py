@@ -22,6 +22,8 @@ generated = subprocess.run([
 for case in json.loads(generated.stdout):
     answer = json.loads(solve_json(json.dumps(case["problem"])))
     assert answer["status"] == case["expected"], (case["name"], answer)
+    if case["name"] == "coverage-positive-and-negative":
+        assert answer["checks"] == [True, False], answer
     print(f"PASS {case['name']}: {answer['status']} ({answer['elapsedMs']} ms)")
 
 # Upstream examples provide an independent check beyond our small fixtures.

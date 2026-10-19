@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../config';
-import type { EngineCapabilities, GeometryEvent } from '../types';
+import type { EngineCapabilities, GeoGebraEngine, GeometryEvent } from '../types';
 import DependencyGraphView from './DependencyGraphView';
 import type { DependencyGraph } from '../analysis/graphTypes';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
@@ -9,6 +9,7 @@ import GeometryReasoningView from './GeometryReasoningView';
 import type { ObjectLink } from '../interaction/useObjectLink';
 
 interface GeoGebraSidePanelProps {
+  engine: GeoGebraEngine;
   collapsed: boolean;
   width: number;
   capabilities: EngineCapabilities;
@@ -25,7 +26,7 @@ interface GeoGebraSidePanelProps {
 
 const clampWidth = (width: number): number => Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, width));
 
-const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, width, capabilities, events, graph, graphStatus, graphError, geometryRelations, onRefreshGraph, onToggle, onWidthChange, objectLink }) => {
+const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ engine, collapsed, width, capabilities, events, graph, graphStatus, graphError, geometryRelations, onRefreshGraph, onToggle, onWidthChange, objectLink }) => {
   const panelRef = useRef<HTMLElement>(null);
   const onWidthChangeRef = useRef(onWidthChange);
   const [dragging, setDragging] = useState(false);
@@ -102,7 +103,7 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ collapsed, width,
       </div>
       <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dependency graph</h3><p className="mt-1 text-xs leading-5 text-slate-500">Dependencies point toward the object that uses them.</p></div><DependencyGraphView objectLink={objectLink} graph={graph} status={graphStatus} error={graphError} onRefresh={onRefreshGraph} /></div>
       <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Discovered relations</h3><p className="mt-1 text-xs leading-5 text-slate-500">Numerical point relations, ranked by construction novelty.</p></div><GeometryRelationsView objectLink={objectLink} state={geometryRelations} /></div>
-      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conditional reasoning</h3></div><GeometryReasoningView graph={graph} graphStatus={graphStatus} lastEventTime={events[events.length - 1]?.timestamp ?? 0} discovery={geometryRelations} objectLink={objectLink} /></div>
+      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conditional reasoning</h3></div><GeometryReasoningView engine={engine} graph={graph} graphStatus={graphStatus} lastEventTime={events[events.length - 1]?.timestamp ?? 0} discovery={geometryRelations} objectLink={objectLink} /></div>
       <div className="min-h-0 flex-1 border-t border-slate-100 px-4 py-4">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Construction events</h3>
         <div className="mt-3 max-h-52 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-500">

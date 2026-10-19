@@ -138,7 +138,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
             {loadingMessage && <div className="ggb-canvas-overlay" aria-live="polite"><div className="ggb-loading-card"><span className="ggb-spinner" /><strong>{loadingMessage}</strong></div></div>}
           </main>
           {fullscreen && !analysisHidden && <button type="button" className="geogebra-panel-backdrop absolute inset-0 z-20 bg-slate-900/20 lg:hidden" onClick={hideAnalysis} aria-label="Close analysis panel" />}
-          <GeoGebraSidePanel objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
+          <GeoGebraSidePanel engine={engine} objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
         </div>
         <div id="geogebra-command-dock" hidden={commandsHidden} className="geogebra-command-dock">
           <GeoGebraCommandBar engine={engine} ready={ready} onResult={onCommandResult} />

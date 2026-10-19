@@ -30,8 +30,9 @@ export interface ConditionCandidate {
   label: string;
   predicates: GeometryPredicate[];
   source: { kind: 'numerical-observation'; relationId: string; snapshot: number; derivedFrom: string[] };
-  evidence: { kind: 'single-snapshot'; };
+  evidence: { kind: 'single-snapshot' } | { kind: 'sampled'; seed: number; discoverySamples: number; holdoutSamples: number; skippedSamples: number };
   diagnostics: string[];
+  characterization?: { objectId: string; contextIds: string[] };
 }
 
 export interface ReasoningProblem {

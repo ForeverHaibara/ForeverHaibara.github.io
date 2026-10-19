@@ -26,12 +26,14 @@ export const midpointProblem = (): ReasoningProblem => ({
   ],
 });
 
-export const discoveredMidpointProblem = (): ReasoningProblem => {
-  const graph = buildDependencyGraph([
+export const midpointConstruction = () => buildDependencyGraph([
     { name: 'A', coordinates: { x: 0, y: 0 } }, { name: 'B', coordinates: { x: 6, y: 0 } },
     { name: 'C', coordinates: { x: 2, y: 4 } },
     { name: 'M', coordinates: { x: 3, y: 0 }, commandString: 'Element(Zip((A+B)/2,v,{C}),1)' },
     { name: 'N', coordinates: { x: 1, y: 2 }, commandString: 'unknown(A,C)' },
   ].map((point) => ({ objectType: 'point', commandString: '', ...point })), 123);
+
+export const discoveredMidpointProblem = (): ReasoningProblem => {
+  const graph = midpointConstruction();
   return createDiscoveryProblem(graph, detectGeometryRelations(graph, 123, { ...DEFAULT_DISCOVERY_OPTIONS, compressConsequences: false }));
 };

@@ -92,7 +92,7 @@ const fromRelation = (relation: GeometryRelation, linePair: LinePair): GeometryP
 };
 
 /** Observe opaque outputs. Command text is provenance, never a semantic oracle. */
-export const createDiscoveryProblem = (graph: DependencyGraph, result: GeometryRelationResult): ReasoningProblem => {
+export const createDiscoveryProblem = (graph: DependencyGraph, result: GeometryRelationResult | null = null): ReasoningProblem => {
   const objects = graph.nodes.filter((node) => !node.isSentinel).map((node) => ({
     id: node.id, name: node.name, objectType: node.objectType, definition: node.commandString,
     dependencies: graph.edges.filter((edge) => edge.kind === 'dependency' && edge.target === node.id).map((edge) => edge.source),
@@ -111,15 +111,15 @@ export const createDiscoveryProblem = (graph: DependencyGraph, result: GeometryR
   };
   const finitePoints = new Set(objects.filter((object) => object.coordinates && Number.isFinite(object.coordinates.x) && Number.isFinite(object.coordinates.y)).map((object) => object.id));
   return { version: 1, snapshot: graph.generatedAt, objects,
-    diagnostics: ['Candidates are retained single-snapshot observations, not an exhaustive property description.', ...result.diagnostics,
-      ...(result.computedAt === graph.generatedAt ? [] : ['Discovery belongs to another construction snapshot.'])],
-    candidates: result.relations.map((relation) => {
+    diagnostics: result ? ['Candidates are retained single-snapshot observations, not an exhaustive property description.', ...result.diagnostics,
+      ...(result.computedAt === graph.generatedAt ? [] : ['Discovery belongs to another construction snapshot.'])] : [],
+    candidates: (result?.relations ?? []).map((relation) => {
       const diagnostics: string[] = [];
       const predicates = fromRelation(relation, linePair).map((predicate) => mapPredicatePoints(predicate, (name) => byName.get(name) ?? name));
       if (!predicates.length) diagnostics.push('This observation has no supported predicate representation.');
       if (predicates.some((predicate) => predicatePoints(predicate).some((point) => !finitePoints.has(point)))) diagnostics.push('Some witness points have no finite two-dimensional coordinates.');
       return { id: relation.id, label: formatRelation(relation), predicates: diagnostics.length ? [] : predicates,
-        source: { kind: 'numerical-observation', relationId: relation.id, snapshot: result.computedAt, derivedFrom: relation.derivedFrom ?? [] },
+        source: { kind: 'numerical-observation', relationId: relation.id, snapshot: result!.computedAt, derivedFrom: relation.derivedFrom ?? [] },
         evidence: { kind: 'single-snapshot' }, diagnostics };
     }) };
 };

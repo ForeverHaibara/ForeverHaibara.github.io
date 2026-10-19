@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { candidate, discoveredMidpointProblem, midpointProblem } from '../../__fixtures__/problems';
-import { exportAg2Problem } from './exportProblem';
+import { exportAg2Problem, exportAg2Queries } from './exportProblem';
 
 describe('conditional AG2 export', () => {
+  it('keeps coverage queries out of the premises and uses one shared symbol map', () => {
+    const result = exportAg2Queries(midpointProblem(), ['m-midpoint', 'n-midpoint'], ['midsegment', 'false-goal']).value!;
+    expect(result.queries).toHaveLength(2);
+    expect(result.goals).toHaveLength(2);
+    expect(result.premise).not.toContain('para');
+    expect(result.premise).not.toContain('perp');
+    expect(result.queries.every((query) => query.goals.every((goal) => result.goals.includes(goal)))).toBe(true);
+  });
   it('keeps unaccepted observations out of premises and maps names safely', () => {
     const problem = midpointProblem();
     problem.objects[0].name = '点 A@0_0 = overlap ?';
