@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 import type { ObjectLink } from '../interaction/useObjectLink';
 import { RELATION_CATALOG } from '../analysis/relations/catalog';
-import type { GeometryRelationKind } from '../analysis/relations/catalog';
-import { displayScore, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
+import { displayScore, formatLengthMember, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
+import { RelationTypeControls } from './RelationTypeControls';
 
 const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLink: ObjectLink }> = ({ state, objectLink }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedOnly, setSelectedOnly] = useState(false);
   const [search, setSearch] = useState('');
   const { preferences, setPreferences, result } = state;
-  const toggle = (kinds: readonly GeometryRelationKind[], kind: GeometryRelationKind) => kinds.includes(kind) ? kinds.filter((item) => item !== kind) : [...kinds, kind];
   const query = search.trim().toLocaleLowerCase();
   const relations = result?.relations.filter((relation) => preferences.visibleKinds.includes(relation.kind)
     && preferences.options.enabledKinds.includes(relation.kind)
@@ -26,13 +25,7 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
     <p className="text-[10px] leading-4 text-slate-500">Numerical exploration. Value colors show construction novelty. Generator models compress observed consequences.</p>
     <details className="rounded-lg border border-slate-200 p-2 text-[11px]">
       <summary className="cursor-pointer font-semibold text-slate-600">Compute and display ({preferences.options.enabledKinds.length} enabled)</summary>
-      <table className="mt-2 w-full text-left"><thead><tr><th>Type</th><th>Compute</th><th>Show</th></tr></thead>
-        <tbody>{RELATION_CATALOG.map((item) => <tr key={item.kind}>
-          <td className="py-1 text-slate-600">{item.symbol} {item.label}</td>
-          <td><input type="checkbox" aria-label={`Compute ${item.label}`} checked={preferences.options.enabledKinds.includes(item.kind)} onChange={() => setPreferences({ ...preferences, options: { ...preferences.options, enabledKinds: toggle(preferences.options.enabledKinds, item.kind) } })} /></td>
-          <td><input type="checkbox" aria-label={`Show ${item.label}`} disabled={!preferences.options.enabledKinds.includes(item.kind)} checked={preferences.visibleKinds.includes(item.kind)} onChange={() => setPreferences({ ...preferences, visibleKinds: toggle(preferences.visibleKinds, item.kind) })} /></td>
-        </tr>)}</tbody>
-      </table>
+      <RelationTypeControls preferences={preferences} onChange={setPreferences} />
       <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={!preferences.options.compressConsequences} onChange={(event) => setPreferences({ ...preferences, options: { ...preferences.options, compressConsequences: !event.target.checked } })} />Expand derived observations (recompute)</label>
       <label className="mt-2 flex items-center gap-2">Budget <select aria-label="Discovery budget" className="rounded border border-slate-200 px-1" value={preferences.options.maxAngles <= 5000 ? 'light' : preferences.options.maxAngles >= 50000 ? 'deep' : 'standard'} onChange={(event) => {
         const limits = event.target.value === 'light' ? { maxTriangles: 2000, maxAngles: 5000, maxComparisons: 50000, maxModels: 3, maxRelations: 200 }
@@ -68,7 +61,7 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
           <p>{relation.explanation}</p>
           {relation.derivedFrom && relation.derivedFrom.length > 0 && <p>Generated from: {relation.derivedFrom.slice(0, 3).map((id) => {
             const parent = result?.relations.find((item) => item.id === id);
-            return parent ? formatRelation(parent) : 'an observation outside the retained result budget';
+            return parent ? formatRelation(parent) : 'an observation outside the retained results';
           }).join('; ')}{relation.derivedFrom.length > 3 ? ' …' : ''}</p>}
           <p>Construction span: {relation.metric.constructionSpan?.toFixed(2) ?? 'disconnected'}; readable dependencies: {(relation.metric.dependencyCoverage * 100).toFixed(0)}%</p>
           {relation.witnesses[0].triangleSymmetryOrder && relation.witnesses[0].triangleSymmetryOrder > 1 && <p>One representative correspondence; numerical triangle symmetry order {relation.witnesses[0].triangleSymmetryOrder}.</p>}
@@ -79,6 +72,13 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
             {relation.model.members.slice(0, 12).map((member) => <p key={member.line.join('|')}>{member.denominator}δ({member.line.join('·')}) = {member.coefficients.map((coefficient, i) => `${coefficient}δ(${relation.model!.generators[i].join('·')})`).join(' + ') || '0'} + {member.constant}π</p>)}
             {relation.model.members.length > 12 && <p>{relation.model.members.length - 12} additional line descriptions omitted.</p>}
             <p>Bounded rational fit of this snapshot; not a theorem or a certified lattice rank.</p>
+          </div>}
+          {relation.lengthModel && <div className="space-y-1">
+            <p>Reference length: dist({relation.lengthModel.anchor.join(', ')}). Every ratio is dimensionless.</p>
+            <p>Generators: {relation.lengthModel.generators.map((segment) => `dist(${segment.join(', ')})`).join(', ') || 'small rational constants'}; {relation.lengthModel.constraintRank} new constraints.</p>
+            {relation.lengthModel.members.slice(0, 12).map((member) => <p key={member.segment.join('|')}>{formatLengthMember(relation.lengthModel!, member)}</p>)}
+            {relation.lengthModel.members.length > 12 && <p>{relation.lengthModel.members.length - 12} additional length descriptions omitted.</p>}
+            <p>Bounded numerical fit on segments incident to the seed triangle; not a proof.</p>
           </div>}
         </div>}
       </article>;

@@ -145,6 +145,6 @@ describe('new elementary observations and bounded search', () => {
   it('retains the generator summary when the result budget would otherwise hide its low score', () => {
     const result = detectGeometryRelations(buildDependencyGraph(triangleCenterFixture()), 0, { ...DEFAULT_DISCOVERY_OPTIONS, maxRelations: 1 });
     expect(result.relations).toHaveLength(1);
-    expect(result.relations[0].model).toBeDefined();
+    expect(result.relations[0].model || result.relations[0].lengthModel).toBeDefined();
   });
 });

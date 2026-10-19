@@ -25,6 +25,22 @@ export interface RelationWitness {
   angles?: Array<[string, string, string]>;
   triangles?: Array<[string, string, string]>;
   triangleSymmetryOrder?: number;
+  midpoint?: { point: string; segment: [string, string] };
+  equation?: QuantityEquation;
+}
+
+export type GeometricQuantity = { kind: 'length'; points: [string, string] } | { kind: 'angle'; points: [string, string, string] };
+/** An equation of geometric quantities, not a display string or construction AST. */
+export interface QuantityEquation {
+  terms: Array<{ coefficient: number; quantity: GeometricQuantity }>;
+  pi?: { numerator: number; denominator: number };
+}
+
+export interface LengthModel {
+  anchor: [string, string];
+  generators: Array<[string, string]>;
+  members: Array<{ segment: [string, string]; coefficients: number[]; denominator: number; ratio: [number, number]; residual: number }>;
+  constraintRank: number;
 }
 
 export interface DirectionModel {
@@ -54,6 +70,7 @@ export interface GeometryRelation {
   explanation: string;
   metric: DependencySeparation;
   model?: DirectionModel;
+  lengthModel?: LengthModel;
   derived?: boolean;
   derivedFrom?: string[];
   baseNonTriviality?: number;

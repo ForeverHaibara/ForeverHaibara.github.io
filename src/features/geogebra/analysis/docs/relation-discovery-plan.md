@@ -2,6 +2,8 @@
 
 状态：持续更新的设计。初稿 2026-10-18；2026-10-19 已按反馈调整并实施第一批，见 [生成关系空间与实现状态](./generator-spaces.md)。本文件仍包含尚未实施的后续目标。
 
+第二批已实现长度生成模型、中点、小常数长度比、二倍角、可选余角／补角及分类批量控件，见 [第二批实现记录](./algebraic-relations.md)。其余 C／D／E 阶段仍按下述路线推进。
+
 配套文档：[算法与架构](./relation-discovery-architecture.md)、[界面与交互](./relation-discovery-ui.md)、[现有价值评分](./value-scoring-design.md)。
 
 ## 1. 目标与设计决定
@@ -32,14 +34,14 @@
 | `equal-lengths` | AB=CD=EF | 非零长度近似等值 | B，开启 |
 | `equal-angles` | ∠ABC=∠DEF | 普通内角值的近似等值，端点可交换 | B，开启 |
 | `equal-directed-angles` | ∠(AB,CD)≡∠(EF,GH) mod π | 周期域近似等值；保留方向顺序 | B，进阶手动开启 |
-| `midpoint` | M 是 AB 中点 | 共线＋局部等距／仿射参数 1/2 的有限模板 | C，标准预设开启 |
-| `length-multiple` | AB=2CD、AB=(3/2)CD | 正长度乘法群，经 log 变为固定偏移 | C，标准预设开启小常数集 |
+| `midpoint` | M 是 AB 中点 | 中点坐标空间索引，复核两半长与全长 | C，已实现，默认开启 |
+| `length-multiple` | AB=2CD、AB=(3/2)CD | 正长度乘法群，经 log 变为固定偏移 | C，已实现 {3/2,2,3}，默认开启 |
 | `equal-length-ratios` | AB/CD=EF/GH | log 长度的二项差等值；原值交叉乘积复核 | C，进阶开启 |
 | `length-sum` | AB+CD=EF | 实数加法域的三项小整数关系 | C，进阶开启 |
 | `equal-length-sums` | AB+CD=EF+GH | 二项和索引的等值搜索 | C，进阶开启 |
-| `angle-multiple` | ∠ABC=2∠DEF | 普通角的实数线性关系；有向版单独标明模数 | C，标准预设只开二倍 |
-| `complementary-angles` | α+β=π/2 | 普通角实数域固定和 | C，进阶开启 |
-| `supplementary-angles` | α+β=π | 普通角实数域固定和，不与 mod π 混用 | C，进阶开启 |
+| `angle-multiple` | ∠ABC=2∠DEF | 普通角的实数线性关系；有向版单独标明模数 | C，已实现二倍，默认开启 |
+| `complementary-angles` | α+β=π/2 | 普通角实数域固定和 | C，已实现，手动开启 |
+| `supplementary-angles` | α+β=π | 普通角实数域固定和，不与 mod π 混用 | C，已实现，手动开启 |
 | `angle-sum` | α+β=γ、α+β=γ+δ | 有限项数／系数的加法搜索 | C，进阶开启 |
 | `equal-areas` | |[ABC]|=|[DEF]| | 无向面积近似等值 | C，进阶开启 |
 | `equal-oriented-areas` | [ABC]=[DEF] | 有向面积实数域，顶点顺序保留 | C，进阶开启 |
@@ -54,6 +56,7 @@
 | `similar-triangles` | △ABC∼△DEF，列出对应顶点 | 共享形状索引，输出生成约束 | B，已提前实现 |
 | `congruent-triangles` | △ABC≅△DEF，列出对应顶点 | 相似细化与尺度等值，商去重复对应 | B，已提前实现 |
 | `direction-space` | 参考点星的方向生成描述 | 小整数拟合与带 π lift 的稀疏约束 | B，首批已实现 |
+| `length-space` | (L/L₀)^d = (p/q) ∏(Gᵢ/L₀)^aᵢ | 无量纲 log 比、有界小系数组合索引 | C，第二批已实现，默认开启 |
 | `harmonic-range` 等射影关系 | 共线四点的有向交比≈−1 | 有向比例与非零分母模板 | E，局部／选中对象搜索 |
 | `isogonal-pair` 等特殊三角形关系 | 关于指定 ABC 的特殊点对 | 参照构型模板，不进入第一批 | E，低优先级 |
 

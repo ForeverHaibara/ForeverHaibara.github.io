@@ -1,4 +1,4 @@
-import { ALL_RELATION_KINDS, DEFAULT_DISCOVERY_OPTIONS } from '../relations/catalog';
+import { ALL_RELATION_KINDS, DEFAULT_DISCOVERY_OPTIONS, DEFAULT_RELATION_KINDS } from '../relations/catalog';
 import type { DiscoveryOptions, GeometryRelationKind } from '../relations/catalog';
 
 export interface DiscoveryPreferences {
@@ -6,10 +6,16 @@ export interface DiscoveryPreferences {
   options: DiscoveryOptions;
   visibleKinds: GeometryRelationKind[];
   minimumValue: number;
+  knownKinds: GeometryRelationKind[];
 }
 export const DISCOVERY_PREFERENCES_KEY = 'geogebra-discovery-preferences-v1';
 export const defaultDiscoveryPreferences = (): DiscoveryPreferences => ({ automatic: true,
-  options: { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: [...ALL_RELATION_KINDS] }, visibleKinds: [...ALL_RELATION_KINDS], minimumValue: 0 });
+  options: { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: [...DEFAULT_RELATION_KINDS] }, visibleKinds: [...ALL_RELATION_KINDS], minimumValue: 0, knownKinds: [...ALL_RELATION_KINDS] });
+
+// The first stored schema did not record catalog membership. Only a complete
+// selection of its ten types opts into new defaults during this one-time migration.
+const INITIAL_KINDS: GeometryRelationKind[] = ['collinear', 'parallel', 'perpendicular', 'concyclic', 'coincident-points',
+  'equal-lengths', 'equal-angles', 'similar-triangles', 'congruent-triangles', 'direction-space'];
 
 export const normalizeDiscoveryPreferences = (value: unknown): DiscoveryPreferences => {
   const result = defaultDiscoveryPreferences();
@@ -17,12 +23,19 @@ export const normalizeDiscoveryPreferences = (value: unknown): DiscoveryPreferen
   const source = value as Record<string, unknown>;
   const kinds = (input: unknown, fallback: readonly GeometryRelationKind[]) => Array.isArray(input)
     ? ALL_RELATION_KINDS.filter((kind) => input.includes(kind)) : [...fallback];
+  const migrate = (input: unknown, fallback: readonly GeometryRelationKind[], defaults: readonly GeometryRelationKind[]) => {
+    const selection = kinds(input, fallback);
+    if (!Array.isArray(input) || input.length === 0) return selection;
+    const known = Array.isArray(source.knownKinds) ? kinds(source.knownKinds, []) : INITIAL_KINDS;
+    const adoptNewDefaults = Array.isArray(source.knownKinds) || known.every((kind) => selection.includes(kind));
+    return adoptNewDefaults ? ALL_RELATION_KINDS.filter((kind) => selection.includes(kind) || !known.includes(kind) && defaults.includes(kind)) : selection;
+  };
   if (typeof source.automatic === 'boolean') result.automatic = source.automatic;
-  result.visibleKinds = kinds(source.visibleKinds, result.visibleKinds);
+  result.visibleKinds = migrate(source.visibleKinds, result.visibleKinds, ALL_RELATION_KINDS);
   if (typeof source.minimumValue === 'number' && Number.isFinite(source.minimumValue)) result.minimumValue = Math.round(Math.max(0, Math.min(100, source.minimumValue)));
   if (source.options && typeof source.options === 'object') {
     const options = source.options as Record<string, unknown>;
-    result.options.enabledKinds = kinds(options.enabledKinds, result.options.enabledKinds);
+    result.options.enabledKinds = migrate(options.enabledKinds, result.options.enabledKinds, DEFAULT_RELATION_KINDS);
     if (typeof options.compressConsequences === 'boolean') result.options.compressConsequences = options.compressConsequences;
     for (const key of ['maxTriangles', 'maxAngles', 'maxComparisons', 'maxModels', 'maxRelations'] as const) {
       const number = options[key];

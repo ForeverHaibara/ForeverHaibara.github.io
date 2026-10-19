@@ -1,11 +1,12 @@
 import { groupNearValues } from '../algebra/nearEquality';
 import type { RationalRelationSpace } from '../algebra/rationalSpace';
 import { orientedDoubleArea } from '../quantities/vector';
+import { segmentId } from '../quantities/lengths';
+import { balancedTriples } from '../quantities/candidates';
 import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import type { RelationSeed } from './relationSeed';
 
-export const segmentId = (a: number, b: number): string => `s:${Math.min(a, b)}:${Math.max(a, b)}`;
 interface Triangle { vertices: [number, number, number]; sides: number[]; shape: number[]; }
 
 export const detectTriangles = (scene: GeometryScene, options: DiscoveryOptions, budget: DiscoveryBudget, lengths: RationalRelationSpace): RelationSeed[] => {
@@ -15,8 +16,9 @@ export const detectTriangles = (scene: GeometryScene, options: DiscoveryOptions,
   const triangles: Triangle[] = [];
   const measured = new Map(scene.pairs.map((pair) => [segmentId(pair.left, pair.right), pair.length]));
   const distance = (a: number, b: number) => measured.get(segmentId(a, b)) ?? Math.hypot(scene.points[a].coordinates.x - scene.points[b].coordinates.x, scene.points[a].coordinates.y - scene.points[b].coordinates.y);
-  outer: for (let a = 0; a < scene.points.length; a += 1) for (let b = a + 1; b < scene.points.length; b += 1) for (let c = b + 1; c < scene.points.length; c += 1) {
-    if (!budget.take('Triangle candidates', options.maxTriangles)) break outer;
+  const order = scene.points.map((_, i) => i).sort((a, b) => scene.points[a].name.localeCompare(scene.points[b].name));
+  for (const [a, b, c] of balancedTriples(order)) {
+    if (!budget.take('Triangle candidates', options.maxTriangles)) break;
     const opposite = new Map([[a, distance(b, c)], [b, distance(a, c)], [c, distance(a, b)]]);
     const vertices = [a, b, c].sort((left, right) => opposite.get(left)! - opposite.get(right)! || scene.points[left].name.localeCompare(scene.points[right].name)) as [number, number, number];
     const sides = vertices.map((vertex) => opposite.get(vertex)!);
@@ -55,14 +57,17 @@ export const detectTriangles = (scene: GeometryScene, options: DiscoveryOptions,
       const source = `${kind}:${names.map((v) => v.join('|')).sort().join(';')}`;
       const edges = (v: number[]) => [segmentId(v[1], v[2]), segmentId(v[0], v[2]), segmentId(v[0], v[1])];
       const baseEdges = edges(corresponding[0]);
-      for (const v of options.enabledKinds.includes('equal-lengths') ? corresponding.slice(1) : []) {
+      for (const v of options.enabledKinds.some((kind) => ['equal-lengths', 'length-multiple', 'length-space', 'midpoint'].includes(kind)) ? corresponding.slice(1) : []) {
         const other = edges(v);
+        const otherLogs = [distance(v[1], v[2]), distance(v[0], v[2]), distance(v[0], v[1])].map(Math.log);
+        const values = new Map([...baseEdges.map((id, i) => [id, Math.log(reference.sides[i])] as const), ...other.map((id, i) => [id, otherLogs[i]] as const)]);
         for (let i = 0; i < 3; i += 1) {
           const row: Record<string, number> = {};
           const term = (id: string, coefficient: number) => { row[id] = (row[id] ?? 0) + coefficient; };
           term(baseEdges[i], 1); term(other[i], -1);
           if (kind === 'similar-triangles') { term(baseEdges[2], -1); term(other[2], 1); }
-          lengths.insert(row, source, epsilon * 4);
+          const residual = Math.abs(Object.entries(row).reduce((sum, [id, coefficient]) => sum + coefficient * values.get(id)!, 0));
+          lengths.insert(row, source, residual + 1e-12);
         }
       }
       const points = new Set(corresponding.flat());

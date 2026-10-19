@@ -5,15 +5,21 @@ import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import { buildDirectionSpaces } from './directionSpaces';
 import type { RelationSeed } from './relationSeed';
-import { detectTriangles, segmentId } from './triangles';
+import { detectTriangles } from './triangles';
+import { segmentId } from '../quantities/lengths';
+import { createLengthRelationSpace, detectLengthRelations } from './lengthRelations';
+import { combineExpressions } from '../algebra/scalarSearch';
+import { detectAngleRelations } from './angleRelations';
+import { balancedTriples } from '../quantities/candidates';
 
 export const detectMetricRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions, budget: DiscoveryBudget): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
   const enabled = new Set(options.enabledKinds);
-  if (!['similar-triangles', 'congruent-triangles', 'coincident-points', 'equal-lengths', 'equal-angles', 'direction-space'].some((kind) => enabled.has(kind as RelationSeed['kind']))) return seeds;
-  const lengths = new RationalRelationSpace(new Set());
+  const angleKinds = ['equal-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles'] as const;
+  const needsAngles = angleKinds.some((kind) => enabled.has(kind));
+  const lengths = createLengthRelationSpace();
   seeds.push(...detectTriangles(scene, options, budget, lengths));
-  const directions = enabled.has('equal-angles') || enabled.has('direction-space')
+  const directions = needsAngles || enabled.has('direction-space')
     ? buildDirectionSpaces(scene, [...existing, ...seeds], options, budget)
     : { seeds: [], space: new RationalRelationSpace(), bySegment: new Map<string, never>() };
   seeds.push(...directions.seeds);
@@ -39,40 +45,15 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
     }
   }
 
-  if (enabled.has('equal-lengths')) {
-    const epsilon = 4e-7;
-    // Validate the geometric quantity before taking its logarithm. Self
-    // distances and collapsed segments have no place in the positive-length
-    // multiplicative domain, even if a candidate carries a cached length.
-    const seen = new Set<string>();
-    const positiveLengths = scene.pairs.flatMap((pair) => {
-      const left = scene.points[pair.left]; const right = scene.points[pair.right];
-      if (!left || !right || pair.left === pair.right || left.name === right.name) return [];
-      const length = Math.hypot(right.coordinates.x - left.coordinates.x, right.coordinates.y - left.coordinates.y);
-      const id = segmentId(pair.left, pair.right);
-      if (!Number.isFinite(length) || length <= scene.tolerance.minimumLength || seen.has(id)) return [];
-      seen.add(id);
-      return [{ ...pair, length }];
-    });
-    const groups = groupNearValues(positiveLengths, {
-      bucket: (pair) => [Math.floor(Math.log(pair.length) / epsilon)],
-      matches: (a, b) => Math.abs(Math.log(a.length / b.length)) <= epsilon,
-    }, budget, 'Length comparisons', options.maxComparisons);
-    for (const group of groups) {
-      if (group.length < 2) continue;
-      const keys = group.map((pair) => lengths.reduce({ [segmentId(pair.left, pair.right)]: 1 }));
-      const derived = keys.every((key) => key.key === keys[0].key && key.error < 1e-5) && keys.some((key) => key.sources.length > 0);
-      const segments = group.map((pair) => [scene.points[pair.left].name, scene.points[pair.right].name] as [string, string]);
-      const points = new Set(group.flatMap((pair) => [pair.left, pair.right]));
-      emit('equal-lengths', points, { points: [...points].map((i) => scene.points[i].name), segments }, segments.map((s) => s.join('|')).sort().join(';'), derived, derived ? keys.flatMap((key) => key.sources) : []);
-    }
-  }
+  seeds.push(...detectLengthRelations(scene, options, budget, lengths));
 
-  if (enabled.has('equal-angles')) {
-    interface Angle { value: number; names: [string, string, string]; indexes: number[]; key: string; error: number; sources: string[]; }
+  if (needsAngles) {
+    interface Angle { value: number; names: [string, string, string]; indexes: number[]; key: string; error: number; sources: string[]; row: Record<string, number>; representationError: number; }
     const symbolic = new Map<string, Angle[]>();
-    outer: for (let a = 0; a < scene.points.length; a += 1) for (let c = a + 1; c < scene.points.length; c += 1) for (let vertex = 0; vertex < scene.points.length; vertex += 1) {
-      if (a === vertex || c === vertex) continue;
+    const order = scene.points.map((_, i) => i).sort((a, b) => scene.points[a].name.localeCompare(scene.points[b].name));
+    outer: for (const triangle of balancedTriples(order)) for (let slot = 0; slot < 3; slot += 1) {
+      const vertex = triangle[slot];
+      const [a, c] = triangle.filter((i) => i !== vertex).sort((a, b) => a - b);
       if (!budget.take('Angle candidates', options.maxAngles)) break outer;
       const first = directions.bySegment.get(segmentId(vertex, a)); const second = directions.bySegment.get(segmentId(vertex, c));
       if (!first || !second) continue;
@@ -84,10 +65,10 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       const delta = second.angle - first.angle;
       const sign = Math.abs(value - delta - Math.round((value - delta) / Math.PI) * Math.PI) < 4e-7 ? 1 : -1;
       const constant = Math.round((value - sign * delta) / Math.PI);
-      const row: Record<string, number> = { '@pi': constant };
-      row[first.id] = (row[first.id] ?? 0) - sign; row[second.id] = (row[second.id] ?? 0) + sign;
-      const reduced = directions.space.reduce(row);
-      const angle: Angle = { value, names: [scene.points[a].name, scene.points[vertex].name, scene.points[c].name], indexes: [a, vertex, c], ...reduced };
+      const row = combineExpressions([[{ '@pi': constant }, 1], [{ [first.id]: 1 }, -sign], [{ [second.id]: 1 }, sign]]);
+      const representationError = Math.abs(value - sign * delta - constant * Math.PI);
+      const reduced = directions.space.reduce(row, representationError);
+      const angle: Angle = { value, names: [scene.points[a].name, scene.points[vertex].name, scene.points[c].name], indexes: [a, vertex, c], row, representationError, ...reduced };
       angle.sources = [...new Set([...angle.sources, ...[first.incidenceSource, second.incidenceSource].filter((source): source is string => Boolean(source))])];
       // Reduce before numeric comparison: a space needs O(lines) generator
       // fits instead of a pairwise search over all its derived angle values.
@@ -101,7 +82,7 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       bucket: (angle) => [Math.floor(angle.value / epsilon)],
       matches: (a, b) => Math.abs(a.value - b.value) <= epsilon,
     }, budget, 'Angle comparisons', options.maxComparisons);
-    for (const group of groups) {
+    if (enabled.has('equal-angles')) for (const group of groups) {
       const members = group.flatMap((angle) => symbolic.get(angle.key) ?? [angle]);
       // Recheck every published member against all others via min/max, even
       // when their symbolic forms agree under approximate observed equations.
@@ -112,6 +93,9 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       const points = new Set(members.flatMap((angle) => angle.indexes));
       emit('equal-angles', points, { points: [...points].map((i) => scene.points[i].name), angles: members.map((angle) => angle.names) }, members.map((angle) => angle.names.join('|')).sort().join(';'), derived, derived ? members.flatMap((angle) => angle.sources) : []);
     }
+    // Each numerically equal class contributes one representative to affine
+    // searches. We never form every pair of angle expressions in a model.
+    seeds.push(...detectAngleRelations(scene, groups.map((group) => group[0]), options, budget, directions.space));
   }
   if (directions.space.limited || lengths.limited) budget.note('Relation-space reduction budget reached; some algebraic consequences were not compressed.');
   return seeds;

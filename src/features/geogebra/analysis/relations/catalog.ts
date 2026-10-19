@@ -1,18 +1,28 @@
 export const RELATION_CATALOG = [
-  { kind: 'collinear', label: 'Collinear', symbol: '—', group: 'Basic' },
-  { kind: 'parallel', label: 'Parallel', symbol: '∥', group: 'Basic' },
-  { kind: 'perpendicular', label: 'Perpendicular', symbol: '⊥', group: 'Basic' },
-  { kind: 'concyclic', label: 'Concyclic', symbol: '○', group: 'Basic' },
-  { kind: 'coincident-points', label: 'Coincident points', symbol: '≈', group: 'Basic' },
-  { kind: 'equal-lengths', label: 'Equal lengths', symbol: '| |', group: 'Metric' },
-  { kind: 'equal-angles', label: 'Equal angles', symbol: '∠', group: 'Metric' },
-  { kind: 'similar-triangles', label: 'Similar triangles', symbol: '∼', group: 'Triangles' },
-  { kind: 'congruent-triangles', label: 'Congruent triangles', symbol: '≅', group: 'Triangles' },
-  { kind: 'direction-space', label: 'Direction generators', symbol: '⟨ ⟩', group: 'Generators' },
+  { kind: 'collinear', label: 'Collinear', symbol: '—', group: 'Basic', defaultEnabled: true },
+  { kind: 'parallel', label: 'Parallel', symbol: '∥', group: 'Basic', defaultEnabled: true },
+  { kind: 'perpendicular', label: 'Perpendicular', symbol: '⊥', group: 'Basic', defaultEnabled: true },
+  { kind: 'concyclic', label: 'Concyclic', symbol: '○', group: 'Basic', defaultEnabled: true },
+  { kind: 'coincident-points', label: 'Coincident points', symbol: '≈', group: 'Basic', defaultEnabled: true },
+  { kind: 'midpoint', label: 'Midpoints', symbol: '½', group: 'Lengths', defaultEnabled: true },
+  { kind: 'equal-lengths', label: 'Equal lengths', symbol: 'dist', group: 'Lengths', defaultEnabled: true },
+  { kind: 'length-multiple', label: 'Length multiples', symbol: '×', group: 'Lengths', defaultEnabled: true },
+  { kind: 'equal-angles', label: 'Equal angles', symbol: '∠', group: 'Angles', defaultEnabled: true },
+  { kind: 'angle-multiple', label: 'Double angles', symbol: '2∠', group: 'Angles', defaultEnabled: true },
+  { kind: 'complementary-angles', label: 'Complementary angles', symbol: 'π/2', group: 'Angles', defaultEnabled: false },
+  { kind: 'supplementary-angles', label: 'Supplementary angles', symbol: 'π', group: 'Angles', defaultEnabled: false },
+  { kind: 'similar-triangles', label: 'Similar triangles', symbol: '∼', group: 'Triangles', defaultEnabled: true },
+  { kind: 'congruent-triangles', label: 'Congruent triangles', symbol: '≅', group: 'Triangles', defaultEnabled: true },
+  { kind: 'direction-space', label: 'Direction generators', symbol: '⟨ ⟩', group: 'Generators', defaultEnabled: true },
+  { kind: 'length-space', label: 'Length generators', symbol: 'log', group: 'Generators', defaultEnabled: true },
 ] as const;
 export type GeometryRelationKind = typeof RELATION_CATALOG[number]['kind'];
 export const LEGACY_RELATION_KINDS: GeometryRelationKind[] = ['collinear', 'parallel', 'perpendicular', 'concyclic'];
 export const ALL_RELATION_KINDS: GeometryRelationKind[] = RELATION_CATALOG.map((item) => item.kind);
+export const DEFAULT_RELATION_KINDS: GeometryRelationKind[] = RELATION_CATALOG.filter((item) => item.defaultEnabled).map((item) => item.kind);
+export const RELATION_GROUPS = [...new Set(RELATION_CATALOG.map((item) => item.group))].map((label) => ({
+  label, items: RELATION_CATALOG.filter((item) => item.group === label),
+}));
 export const relationLabel = (kind: GeometryRelationKind): string => RELATION_CATALOG.find((item) => item.kind === kind)!.label;
 
 export interface DiscoveryOptions {
@@ -25,7 +35,7 @@ export interface DiscoveryOptions {
   compressConsequences: boolean;
 }
 export const DEFAULT_DISCOVERY_OPTIONS: DiscoveryOptions = {
-  enabledKinds: ALL_RELATION_KINDS, maxTriangles: 8000, maxAngles: 20000,
+  enabledKinds: DEFAULT_RELATION_KINDS, maxTriangles: 8000, maxAngles: 20000,
   maxComparisons: 200000, maxModels: 6, maxRelations: 500, compressConsequences: true,
 };
 

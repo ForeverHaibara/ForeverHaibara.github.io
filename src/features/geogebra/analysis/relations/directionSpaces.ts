@@ -4,7 +4,8 @@ import type { DirectionModel } from '../geometryTypes';
 import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import type { RelationSeed } from './relationSeed';
-import { segmentId } from './triangles';
+import { segmentId } from '../quantities/lengths';
+import { balancedTriples } from '../quantities/candidates';
 
 export const wrapDirection = (value: number): number => ((value % Math.PI) + Math.PI) % Math.PI;
 
@@ -82,10 +83,10 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
   const order = scene.points.map((_, i) => i).sort((a, b) => scene.points[a].name.localeCompare(scene.points[b].name));
   const seen = new Set<string>();
   let attempts = 0;
-  outer: for (let ai = 0; ai < order.length; ai += 1) for (let bi = ai + 1; bi < order.length; bi += 1) for (let ci = bi + 1; ci < order.length; ci += 1) {
+  outer: for (const [a, b, c] of balancedTriples(order)) {
+    if (!budget.take('Direction seed triples', options.maxTriangles)) break;
     if (seeds.length >= options.maxModels) { budget.note(`Direction model limit (${options.maxModels}) reached; models are partial.`); break outer; }
     if (attempts >= 12) { budget.note('Direction seed limit (12) reached; models are partial.'); break outer; }
-    const [a, b, c] = [order[ai], order[bi], order[ci]];
     if (Math.abs(orientedDoubleArea(scene.points[a].coordinates, scene.points[b].coordinates, scene.points[c].coordinates)) <= 2e-7) continue;
     const anchor = bySegment.get(segmentId(a, b));
     const first = bySegment.get(segmentId(a, c)); const second = bySegment.get(segmentId(b, c));
