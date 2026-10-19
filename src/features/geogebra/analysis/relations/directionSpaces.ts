@@ -6,6 +6,7 @@ import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import type { RelationSeed } from './relationSeed';
 import { segmentId } from '../quantities/lengths';
 import { balancedTriples } from '../quantities/candidates';
+import { combineExpressions } from '../algebra/scalarSearch';
 
 export const wrapDirection = (value: number): number => ((value % Math.PI) + Math.PI) % Math.PI;
 
@@ -15,7 +16,8 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
   const carriers = scene.lineGroups.map((line) => {
     const endpoints = [...line.points].sort((a, b) => scene.points[a].name.localeCompare(scene.points[b].name)).slice(0, 2) as [number, number];
     return { id: `l:${endpoints.join(':')}`, endpoints, angle: line.pairs[0].angle, pairs: line.pairs, points: line.points,
-      incidenceSource: incidenceSources.get([...line.points].sort((a, b) => a - b).join(',')) };
+      incidenceSource: line.points.size < 3 ? undefined : incidenceSources.get([...line.points].sort((a, b) => a - b).join(','))
+        ?? `incidence:${[...line.points].map((i) => scene.points[i].name).sort().join('|')}` };
   });
   const bySegment = new Map<string, typeof carriers[number]>();
   carriers.forEach((line) => line.pairs.forEach((pair) => bySegment.set(segmentId(pair.left, pair.right), line)));
@@ -115,20 +117,30 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
     if (seen.has(signature)) continue;
     seen.add(signature);
     const key = `direction-space:${scene.points[a].name}|${scene.points[b].name}|${scene.points[c].name}`;
+    const scoringGroups: string[][] = [];
+    const effective = new Set<string>();
+    const byId = new Map(carriers.map((line) => [line.id, line]));
     let rank = 0;
     for (const line of carriers) {
       const fit = fits.get(line.id);
       if (!fit) continue;
       const terms: Array<[string, number]> = [[line.id, fit.denominator], [anchor.id, -fit.denominator + fit.coefficients.reduce((sum, value) => sum + value, 0)]];
       bases.forEach((base, i) => terms.push([base.id, -fit.coefficients[i]]));
-      if (space.insert(rowFor(terms, -fit.constant), key, fit.denominator * fit.residual) === 'independent') rank += 1;
+      const row = combineExpressions([[rowFor(terms, -fit.constant), 1]]);
+      const support = [...new Set(Object.keys(row).filter((id) => id !== '@pi').flatMap((id) => byId.get(id)!.endpoints.map((i) => scene.points[i].name)))].sort();
+      support.forEach((name) => effective.add(name));
+      if (space.insert(row, key, fit.denominator * fit.residual) === 'independent') { rank += 1; scoringGroups.push(support); }
     }
     if (rank === 0) continue; // A different coordinate frame is not a new discovery.
     const pointCover = order.filter((p) => [a, b, c].every((v) => p === v || fits.has(bySegment.get(segmentId(p, v))?.id ?? ''))).map((p) => scene.points[p].name);
     const model: DirectionModel = { anchor: anchor.endpoints.map((i) => scene.points[i].name) as [string, string],
       generators: bases.map((base) => base.endpoints.map((i) => scene.points[i].name) as [string, string]), members, pointCover, constraintRank: rank };
     const points = new Set(members.flatMap((member) => member.line.map((name) => byName.get(name)!)));
-    seeds.push({ key, kind: 'direction-space', points, confidence: 0.95, model, witness: { points: [...points].map((i) => scene.points[i].name) } });
+    const frame = [...new Set([model.anchor, ...model.generators].flat())].filter((name) => !effective.has(name));
+    seeds.push({ key, kind: 'direction-space', points, confidence: 0.95, model, scoringGroups,
+      support: { effective: [...effective].sort(), guards: members.map((member) => member.line), frame,
+        reason: 'Lifted direction terms cancelled before scoring; value is the maximum over new normalized constraints.' },
+      witness: { points: [...points].map((i) => scene.points[i].name) } });
   }
   return { seeds, space, bySegment };
 };

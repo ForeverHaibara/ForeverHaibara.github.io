@@ -1,6 +1,6 @@
 # 条件退化分析：验收构型与反例
 
-2026-10-19，配套 [理论说明](./conditional-degeneracy-theory.md) 与 [实施计划](./conditional-degeneracy-plan.md)。以下是未来实现的验收设计，不表示运行代码已经具备相应能力。本轮仅对第 9 节矩阵样例做了独立整数计算，未新增运行测试代码。
+2026-10-19，配套 [理论说明](./conditional-degeneracy-theory.md) 与 [实施计划](./conditional-degeneracy-plan.md)。最初研究阶段只对第 9 节矩阵样例做了独立整数计算；随后已加入首批运行代码与回归测试，实际覆盖见 [实现记录](./conditional-degeneracy-implementation.md)。其余构型仍为后续验收设计，不能理解为所有能力都已实施。
 
 每个构型分别检查：原关系是否成立、可消去哪些角色、必须保留什么条件、评分是否受无关对象影响、候选量是否减少。不能只检查输出条数。
 

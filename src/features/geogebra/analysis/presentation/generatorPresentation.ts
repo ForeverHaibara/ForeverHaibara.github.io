@@ -1,11 +1,10 @@
 import type { DirectionModel, LengthModel } from '../geometryTypes';
+import { describeLengthConstraint, integerGcd as gcd, segmentKey } from '../algebra/lengthConstraint';
+import type { Segment } from '../algebra/lengthConstraint';
 
-type Segment = [string, string];
 interface Description { denominator: number; terms: Map<string, number>; }
 interface DescriptionGroup { description: Description; members: Segment[]; }
 export interface GeneratorPresentation { equations: string[]; identities: number; }
-const segmentKey = (segment: Segment) => JSON.stringify([...segment].sort());
-const gcd = (a: number, b: number): number => { a = Math.abs(a); b = Math.abs(b); while (b) { const r = a % b; a = b; b = r; } return a; };
 const add = (terms: Map<string, number>, id: string, coefficient: number) => {
   const next = (terms.get(id) ?? 0) + coefficient;
   if (next === 0) terms.delete(id); else terms.set(id, next);
@@ -36,17 +35,6 @@ const combineGroups = <T extends { members: Array<unknown> }>(model: T, describe
   return { groups: [...groups.values()], identities };
 };
 
-const addFactors = (terms: Map<string, number>, value: number, sign: number) => {
-  for (let prime = 2; prime * prime <= value; prime += 1) while (value % prime === 0) { add(terms, `@factor:${prime}`, sign); value /= prime; }
-  if (value > 1) add(terms, `@factor:${value}`, sign);
-};
-const lengthDescription = (model: LengthModel, member: LengthModel['members'][number]): Description => {
-  const terms = new Map<string, number>();
-  add(terms, segmentKey(model.anchor), member.denominator - member.coefficients.reduce((sum, coefficient) => sum + coefficient, 0));
-  member.coefficients.forEach((coefficient, i) => add(terms, segmentKey(model.generators[i]), coefficient));
-  addFactors(terms, member.ratio[0], 1); addFactors(terms, member.ratio[1], -1);
-  return normalize(member.denominator, terms);
-};
 const renderLengthGroup = ({ description, members }: DescriptionGroup): string => {
   const target = members.length === 1 ? distance(members[0]) : `(${chain(members.map(distance), ' = ')})`;
   const left = [power(target, description.denominator)]; const right: string[] = [];
@@ -80,8 +68,10 @@ const addProportion = (family: ProportionFamily, numerator: number, denominator:
   if (!bucket.seen.has(segmentKey(segment))) { bucket.members.push(segment); bucket.seen.add(segmentKey(segment)); }
   family.buckets.set(key, bucket);
 };
-const renderProportionFamily = (family: ProportionFamily): string => {
+const renderProportionFamily = (family: ProportionFamily, baseFirst = false): string => {
   addProportion(family, 1, 1, JSON.parse(family.base) as Segment);
+  const baseBucket = family.buckets.get('1/1')!;
+  if (baseFirst) baseBucket.members.sort((a, b) => Number(segmentKey(b) === family.base) - Number(segmentKey(a) === family.base));
   const buckets = [...family.buckets.values()].sort((a, b) => a.numerator / a.denominator - b.numerator / b.denominator);
   if (buckets.length === 1) return chain(buckets[0].members.map(distance), ' = ');
   const common = buckets.reduce((multiple, bucket) => multiple / gcd(multiple, bucket.numerator) * bucket.numerator, 1);
@@ -101,20 +91,21 @@ export const presentLengthModel = (model: LengthModel): GeneratorPresentation =>
   const families = new Map<string, ProportionFamily>();
   const groups = new Map<string, DescriptionGroup & { seen: Set<string> }>();
   const rows = new Map<string, () => string>(); let identities = 0;
+  const identitySegments = new Set<string>();
   for (const member of model.members) {
-    const description = lengthDescription(model, member);
-    const trivial = identity(member.segment, description);
-    if (trivial) identities += 1;
+    const normalized = describeLengthConstraint(model, member);
+    if (!normalized) { identities += 1; identitySegments.add(segmentKey(member.segment)); continue; }
+    const { target, description } = normalized;
     const proportion = lengthProportion(description);
     if (proportion) {
       const family = families.get(proportion.base) ?? { base: proportion.base, buckets: new Map<string, ProportionBucket>() };
-      addProportion(family, proportion.numerator, proportion.denominator, member.segment);
+      addProportion(family, proportion.numerator, proportion.denominator, target);
       families.set(proportion.base, family);
-      if (!trivial && !rows.has(`p:${proportion.base}`)) rows.set(`p:${proportion.base}`, () => renderProportionFamily(family));
-    } else if (!trivial) {
+      if (!rows.has(`p:${proportion.base}`)) rows.set(`p:${proportion.base}`, () => renderProportionFamily(family, identitySegments.has(family.base)));
+    } else {
       const key = descriptionKey(description);
       const group = groups.get(key) ?? { description, members: [], seen: new Set<string>() };
-      if (!group.seen.has(segmentKey(member.segment))) { group.members.push(member.segment); group.seen.add(segmentKey(member.segment)); }
+      if (!group.seen.has(segmentKey(target))) { group.members.push(target); group.seen.add(segmentKey(target)); }
       groups.set(key, group);
       if (!rows.has(`e:${key}`)) rows.set(`e:${key}`, () => renderLengthGroup(group));
     }
@@ -123,8 +114,8 @@ export const presentLengthModel = (model: LengthModel): GeneratorPresentation =>
   lengthCache.set(model, result); return result;
 };
 export const formatLengthMember = (model: LengthModel, member: LengthModel['members'][number]): string | null => {
-  const description = lengthDescription(model, member);
-  return identity(member.segment, description) ? null : renderLengthGroup({ description, members: [member.segment] });
+  const normalized = describeLengthConstraint(model, member);
+  return normalized ? renderLengthGroup({ description: normalized.description, members: [normalized.target] }) : null;
 };
 
 const directionDescription = (model: DirectionModel, member: DirectionModel['members'][number]): Description => {

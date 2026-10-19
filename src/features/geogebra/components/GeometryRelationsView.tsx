@@ -5,6 +5,7 @@ import { RELATION_CATALOG } from '../analysis/relations/catalog';
 import { displayScore, formatQuantityGroup, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
 import { RelationTypeControls } from './RelationTypeControls';
 import { GeneratorDetails } from './GeneratorDetails';
+import { ConditionalDetails } from './ConditionalDetails';
 
 const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLink: ObjectLink }> = ({ state, objectLink }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -54,16 +55,17 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
       const linked = objectLink.selectedNames.some((name) => relation.pointNames.includes(name));
       return <article key={relation.id} className={`rounded-xl border bg-white px-3 py-2 ${linked ? 'border-sky-400' : 'border-slate-200'}`}>
         <button type="button" className="w-full text-left" aria-expanded={expanded} onClick={() => setExpandedId(expanded ? null : relation.id)}>
-          <p className="mb-1 text-[10px] text-slate-500">{RELATION_CATALOG.find((item) => item.kind === relation.kind)!.label}{relation.derived ? ' · generated consequence' : ''}</p>
+          <p className="mb-1 text-[10px] text-slate-500">{RELATION_CATALOG.find((item) => item.kind === relation.kind)!.label}{relation.derived ? ' · generated consequence' : ''}{relation.family ? ' · finite witness family' : ''}</p>
           <div className="flex items-start justify-between gap-2"><p className="min-w-0 break-words text-xs font-semibold text-slate-700">{formatRelation(relation)}</p><span style={scoreColors(relation.nonTriviality)} className="shrink-0 rounded px-2 py-1 text-[10px] font-semibold">Value {displayScore(relation.nonTriviality)}</span></div>
         </button>
         {expanded && <div className="mt-2 space-y-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
           <div className="flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div>
           <p>{relation.explanation}</p>
+          <ConditionalDetails relation={relation} />
           {relation.witnesses[0].equation?.terms.filter((term) => (term.equivalents?.length ?? 0) > 1).map((term, i) => <p key={i}>Equal quantities ({term.equivalents!.length}): {formatQuantityGroup(term.equivalents!, 24)}</p>)}
           {relation.derivedFrom && relation.derivedFrom.length > 0 && <p>Generated from: {relation.derivedFrom.slice(0, 3).map((id) => {
-            const parent = result?.relations.find((item) => item.id === id);
-            return parent ? formatRelation(parent) : 'an observation outside the retained results';
+            const parent = result?.relations.find((item) => item.id === id || item.family?.instances.some((instance) => instance.sourceId === id));
+            return parent ? formatRelation(parent) : id.startsWith('incidence:') ? `shared line carrier (${id.slice('incidence:'.length).split('|').join(', ')})` : 'an observation outside the retained results';
           }).join('; ')}{relation.derivedFrom.length > 3 ? ' …' : ''}</p>}
           <p>Construction span: {relation.metric.constructionSpan?.toFixed(2) ?? 'disconnected'}; readable dependencies: {(relation.metric.dependencyCoverage * 100).toFixed(0)}%</p>
           {relation.witnesses[0].triangleSymmetryOrder && relation.witnesses[0].triangleSymmetryOrder > 1 && <p>One representative correspondence; numerical triangle symmetry order {relation.witnesses[0].triangleSymmetryOrder}.</p>}

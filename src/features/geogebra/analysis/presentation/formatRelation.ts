@@ -25,8 +25,22 @@ export const formatEquation = (equation: QuantityEquation): string => {
 };
 
 export const formatRelation = (relation: GeometryRelation, witness: RelationWitness = relation.witnesses[0]): string => {
-  if (relation.model) return generatorTitle(relation.pointNames, presentDirectionModel(relation.model).equations.length, relation.model.generators.length);
-  if (relation.lengthModel) return generatorTitle(relation.pointNames, presentLengthModel(relation.lengthModel).equations.length, relation.lengthModel.generators.length);
+  if (relation.family) {
+    const { instances } = relation.family;
+    const binding = instances[0].binding;
+    const list = `{${instances.slice(0, 8).map((instance) => instance.binding).join(', ')}${instances.length > 8 ? ', …' : ''}}`;
+    const name = (value: string) => value === binding ? list : value;
+    const pair = (points: [string, string]) => points.map(name) as [string, string];
+    const triple = (points: [string, string, string]) => points.map(name) as [string, string, string];
+    const base = instances[0].witness;
+    const mapped: RelationWitness = { ...base, points: base.points.map(name), triangles: base.triangles?.map(triple),
+      segments: base.segments?.map(pair), angles: base.angles?.map(triple), equation: base.equation && { ...base.equation,
+        terms: base.equation.terms.map((term) => ({ ...term, equivalents: undefined, quantity: term.quantity.kind === 'length'
+          ? { kind: 'length', points: pair(term.quantity.points) } : { kind: 'angle', points: triple(term.quantity.points) } })) } };
+    return `${formatRelation({ ...relation, family: undefined }, mapped)} · ${instances.length} observations`;
+  }
+  if (relation.model) return generatorTitle(relation.support?.effective ?? relation.pointNames, presentDirectionModel(relation.model).equations.length, relation.model.generators.length);
+  if (relation.lengthModel) return generatorTitle(relation.support?.effective ?? relation.pointNames, presentLengthModel(relation.lengthModel).equations.length, relation.lengthModel.generators.length);
   if (witness.midpoint) return `${witness.midpoint.point} is the midpoint of (${witness.midpoint.segment.join(', ')})`;
   if (witness.equation) return formatEquation(witness.equation);
   if (witness.triangles) return witness.triangles.slice(0, 8).map((triangle) => `△(${names(triangle)})`).join(relation.kind === 'congruent-triangles' ? ' ≅ ' : ' ∼ ');

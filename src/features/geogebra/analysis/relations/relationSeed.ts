@@ -1,4 +1,4 @@
-import type { GeometryRelationKind, RelationWitness, DirectionModel, LengthModel } from '../geometryTypes';
+import type { GeometryRelationKind, RelationWitness, DirectionModel, LengthModel, RelationSupport, RelationFamily } from '../geometryTypes';
 
 export interface RelationSeed {
   key: string;
@@ -12,4 +12,8 @@ export interface RelationSeed {
   lengthModel?: LengthModel;
   derived?: boolean;
   sourceIds?: string[];
+  support?: RelationSupport;
+  /** Score distinct new conditions separately; witness unions must not add value. */
+  scoringGroups?: string[][];
+  family?: RelationFamily;
 }

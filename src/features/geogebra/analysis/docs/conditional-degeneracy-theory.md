@@ -1,6 +1,6 @@
 # 条件退化、有效支持集与关系族
 
-2026-10-19，研究与设计提案，**尚未实施**。本轮只更新文档，不修改发现、评分或界面的运行代码。配套 [实施计划](./conditional-degeneracy-plan.md)、[验收构型](./degeneracy-casebook.md)。
+2026-10-19 形成的研究与设计提案。随后已实施射线商、有效支持与有限角色族等首批能力，实际范围见 [实现记录](./conditional-degeneracy-implementation.md)；本文的通用消元／维数理论仍含后续目标。配套 [实施计划](./conditional-degeneracy-plan.md)、[验收构型](./degeneracy-casebook.md)。
 
 ## 1. 核心判断：剩下多少位置，比“是否有无穷多个位置”更重要
 

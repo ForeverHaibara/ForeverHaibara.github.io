@@ -10,6 +10,7 @@ import type { LengthModel } from '../geometryTypes';
 import { balancedTriples } from '../quantities/candidates';
 import { affineClassResidual, groupScalarClasses } from '../algebra/scalarClasses';
 import { assessClusterRelation, classTerm } from './clusteredQuantities';
+import { normalizeLengthConstraint, segmentKey } from '../algebra/lengthConstraint';
 
 const EPSILON = 4e-7;
 const RATIOS = [
@@ -150,24 +151,34 @@ const buildLengthSpaces = (scene: GeometryScene, quantities: PositiveLength[], o
     const signature = fits.map(({ quantity }) => quantity.id).sort().join(';');
     if (seen.has(signature)) continue;
     const key = `length-space:${vertices.map((i) => scene.points[i].name).join('|')}`;
+    const members: LengthModel['members'] = fits.map(({ quantity, fit }) => ({ segment: names(quantity), coefficients: fit.coefficients,
+      denominator: fit.denominator, ratio: RATIOS[fit.offset].ratio, residual: fit.residual }));
+    const model = { anchor: names(anchor), generators: bases.map(names), members, constraintRank: 0 };
+    const ids = new Map(quantities.map((q) => [segmentKey(names(q)), q.id]));
+    const scoringGroups: string[][] = [];
+    const effective = new Set<string>();
     let rank = 0;
-    for (const { quantity, fit } of fits) {
-      const ratio = RATIOS[fit.offset];
-      const row = combineExpressions([
-        [{ [quantity.id]: 1 }, fit.denominator],
-        [{ [anchor.id]: 1 }, -fit.denominator + fit.coefficients.reduce((sum, coefficient) => sum + coefficient, 0)],
-        ...bases.map((base, i) => [{ [base.id]: 1 }, -fit.coefficients[i]] as const),
-        [{ '@log2': -ratio.two, '@log3': -ratio.three }, 1],
-      ]);
-      if (space.insert(row, key, fit.denominator * fit.residual + 1e-12) === 'independent') rank += 1;
+    const guards = new Map<string, [string, string]>();
+    for (const member of members) {
+      const normalized = normalizeLengthConstraint(model, member);
+      normalized.guards.forEach((segment) => guards.set(segmentKey(segment), segment));
+      if (normalized.identity) continue;
+      const support = [...new Set(normalized.segments.flat())].sort();
+      support.forEach((name) => effective.add(name));
+      const row = Object.fromEntries([...normalized.row].map(([id, coefficient]) => [
+        id === '@factor:2' ? '@log2' : id === '@factor:3' ? '@log3' : ids.get(id)!, coefficient,
+      ]));
+      if (space.insert(row, key, normalized.errorScale * member.denominator * member.residual + 1e-12) === 'independent') {
+        rank += 1; scoringGroups.push(support);
+      }
     }
     if (rank === 0) continue;
     seen.add(signature);
-    const members: LengthModel['members'] = fits.map(({ quantity, fit }) => ({ segment: names(quantity), coefficients: fit.coefficients,
-      denominator: fit.denominator, ratio: RATIOS[fit.offset].ratio, residual: fit.residual }));
     const points = new Set(fits.flatMap(({ quantity }) => [quantity.left, quantity.right]));
     seeds.push({ kind: 'length-space', key, points, confidence: 0.98,
-      lengthModel: { anchor: names(anchor), generators: bases.map(names), members, constraintRank: rank },
+      lengthModel: { ...model, constraintRank: rank }, scoringGroups,
+      support: { effective: [...effective].sort(), guards: [...guards.values()], frame: [...new Set([model.anchor, ...model.generators].flat())].filter((name) => !effective.has(name)),
+        reason: 'Positive-length factors cancelled before scoring; value is the maximum over new normalized constraints.' },
       witness: { points: [...points].map((i) => scene.points[i].name) } });
   }
   return seeds;

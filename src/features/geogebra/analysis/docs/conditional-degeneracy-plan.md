@@ -1,6 +1,6 @@
 # 条件退化分析：架构与实施计划
 
-2026-10-19，**设计提案，尚未实施**。本轮不修改运行代码。数学定义见 [理论说明](./conditional-degeneracy-theory.md)，具体预期见 [验收构型](./degeneracy-casebook.md)。本计划应先于更多组合关系的大规模扩展实施。
+2026-10-19，持续更新的设计。首批已落地射线商、生成式有效支持、共享全等的剩余条件和一个角色孔的有限族；完整背景库、通用谓词 IR、可选数值诊断与高阶参数族仍是后续目标。实际代码、预算与限制见 [实现记录](./conditional-degeneracy-implementation.md)。数学定义见 [理论说明](./conditional-degeneracy-theory.md)，具体预期见 [验收构型](./degeneracy-casebook.md)。
 
 ## 1. 当前实现的实际边界
 

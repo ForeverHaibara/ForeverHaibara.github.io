@@ -27,6 +27,31 @@ export interface RelationWitness {
   triangleSymmetryOrder?: number;
   midpoint?: { point: string; segment: [string, string] };
   equation?: QuantityEquation;
+  /** Factorized same-ray aliases; these do not assert arbitrary endpoint pairs. */
+  angleAliases?: Array<{ angle: [string, string, string]; endpoints: [string[], string[]] }>;
+  conditions?: RelationCondition[];
+}
+
+export interface RelationCondition {
+  equation: QuantityEquation;
+  background: boolean;
+  sourceIds: string[];
+  locus?: { kind: 'perpendicular-bisector'; point: string; segment: [string, string] };
+}
+
+/** An explicit finite list, never the Cartesian closure of bindings. */
+export interface RelationFamily {
+  fixed: string[];
+  instances: Array<{ binding: string; sourceId: string; witness: RelationWitness }>;
+  commonConditions: RelationCondition[];
+}
+
+export interface RelationSupport {
+  effective: string[];
+  guards: Array<[string, string]>;
+  frame: string[];
+  assumptions?: string[];
+  reason: string;
 }
 
 export type GeometricQuantity = { kind: 'length'; points: [string, string] } | { kind: 'angle'; points: [string, string, string] };
@@ -74,6 +99,8 @@ export interface GeometryRelation {
   derived?: boolean;
   derivedFrom?: string[];
   baseNonTriviality?: number;
+  support?: RelationSupport;
+  family?: RelationFamily;
 }
 
 export interface GeometryRelationResult {
