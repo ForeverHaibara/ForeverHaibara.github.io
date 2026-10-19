@@ -8,6 +8,7 @@
 
 ## 关系类型扩展与当前实现
 
+- [条件退化、有效支持集与关系族](./docs/conditional-degeneracy-theory.md)：本轮理论提案，区分可消去的辅助对象、剩余轨迹和有限重复见证；配套 [实施计划](./docs/conditional-degeneracy-plan.md) 与 [验收构型](./docs/degeneracy-casebook.md)，尚未修改运行代码。
 - [等值簇与生成模型的约简展示](./docs/clustered-presentation.md)：二倍角／余角／补角／长度比保留完整等值类，生成式约分、恒等式移除与比例链合并。
 - [长度生成与简单代数关系](./docs/algebraic-relations.md)：第二批实现、无量纲 log 模型、共享标量索引、层级压缩、分类及全／反选。
 - [生成关系空间与首批实现](./docs/generator-spaces.md)：2026-10-19 的优先级调整、数学边界、实际代码、实验与剩余工作。

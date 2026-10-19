@@ -4,6 +4,8 @@
 
 第二批已实现长度生成模型、中点、小常数长度比、二倍角、可选余角／补角及分类批量控件，见 [第二批实现记录](./algebraic-relations.md)。其余 C／D／E 阶段仍按下述路线推进。
 
+2026-10-19 后续研究：在继续扩大组合关系前，优先处理条件退化与无关辅助对象带来的计算、评分和展示冗余，见 [理论方案](./conditional-degeneracy-theory.md)、[分阶段计划](./conditional-degeneracy-plan.md) 与 [验收构型](./degeneracy-casebook.md)。本次仅形成设计，尚未实施；M1／M2 先处理射线商和生成式有效支持，随后扩展复合关系与通用角色族。
+
 配套文档：[算法与架构](./relation-discovery-architecture.md)、[界面与交互](./relation-discovery-ui.md)、[现有价值评分](./value-scoring-design.md)。
 
 ## 1. 目标与设计决定
