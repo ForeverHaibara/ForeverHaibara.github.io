@@ -25,7 +25,7 @@ const ConditionSuggestions: React.FC<Props> = ({ proposal, problem, coverage, fr
   const name = (id: string) => proposal?.problem.objects.find((object) => object.id === id)?.name ?? id;
   return <div className="space-y-2 rounded-lg border border-sky-200 bg-sky-50/30 p-2">
     <p className="font-semibold text-slate-700">Suggested conditions</p>
-    <p className="text-[10px] leading-4 text-slate-500">Describe dependent points from local observations. Suggestions are generated without using the selected goal.</p>
+    <p className="text-[10px] leading-4 text-slate-500">Describe dependent points from local observations, using directed angles modulo π. Suggestions are generated without using the selected goal.</p>
     <label className="flex items-center gap-1"><input type="checkbox" checked={validating} disabled={busy} onChange={(event) => onValidate(event.target.checked)} />Check on an independent construction copy</label>
     <details className="text-[10px] text-slate-500"><summary className="cursor-pointer">Search scope</summary><label className="mt-1 flex items-center gap-1"><input type="checkbox" checked={earlierContext} disabled={busy} onChange={(event) => onContext(event.target.checked)} />Use earlier related objects when upstream inputs are insufficient</label><p className="mt-1">Local rank estimates constraints at this configuration; it does not certify a unique global characterization.</p></details>
     <div className="flex flex-wrap gap-1">

@@ -94,7 +94,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
   const hasSelection = Boolean(selection.acceptedIds.length || selection.goalId);
   const value = exported?.value;
   return <div className="space-y-3 p-3 text-[11px]">
-    <p className="leading-5 text-slate-500">Accept observations as conditions, then choose a goal. Conclusions are conditional on your selection and the coordinate witness.</p>
+    <p className="leading-5 text-slate-500">Accept observations as conditions, then choose a goal. ∡ denotes a directed angle modulo π; ∠ denotes an ordinary angle. DDAR proves directed relations; ordinary goals require a separate ray/inequality proof.</p>
     <ConditionSuggestions proposal={proposal} problem={problem} coverage={coverage} fresh={constructionFresh} busy={running || suggestions.status !== 'idle'} validating={validateSamples} earlierContext={earlierContext}
       status={suggestions.status === 'sampling' ? `Checking construction copy · ${suggestions.progress}/6 configurations` : suggestions.status === 'searching' ? 'Searching local conditions…'
         : coveragePhase !== 'idle' ? 'Evaluating additional consequences in DDAR…' : proposal ? `${proposal.coreIds.length} proposed conditions · ${proposal.sampling?.samples.length ?? 0} sampled configurations` : 'No conditions are accepted automatically.'}

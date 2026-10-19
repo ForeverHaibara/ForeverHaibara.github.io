@@ -57,6 +57,8 @@ export interface RelationSupport {
 export type GeometricQuantity = { kind: 'length'; points: [string, string] } | { kind: 'angle'; points: [string, string, string] };
 /** An equation of geometric quantities, not a display string or construction AST. */
 export interface QuantityEquation {
+  /** Missing means an exact equation of ordinary angles in [0,pi]. */
+  angleSemantics?: 'directed-mod-pi';
   terms: Array<{ coefficient: number; quantity: GeometricQuantity; equivalents?: GeometricQuantity[] }>;
   pi?: { numerator: number; denominator: number };
 }

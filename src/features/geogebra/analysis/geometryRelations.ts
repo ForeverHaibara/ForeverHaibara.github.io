@@ -12,7 +12,7 @@ import { compressRefinements } from './relations/refinements';
 import { analyzeSharedComparisons } from './relations/conditionalComparisons';
 import { groupRoleFamilies } from './relations/roleFamilies';
 
-const RELATION_ORDER: GeometryRelationKind[] = ['direction-space', 'length-space', 'congruent-triangles', 'similar-triangles', 'concyclic', 'perpendicular', 'parallel', 'midpoint', 'angle-multiple', 'complementary-angles', 'supplementary-angles', 'equal-angles', 'length-multiple', 'equal-lengths', 'coincident-points', 'collinear'];
+const RELATION_ORDER: GeometryRelationKind[] = ['direction-space', 'length-space', 'congruent-triangles', 'similar-triangles', 'concyclic', 'perpendicular', 'parallel', 'midpoint', 'directed-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles', 'equal-angles', 'length-multiple', 'equal-lengths', 'coincident-points', 'collinear'];
 const MAX_WITNESSES = 8;
 const MAX_CIRCLE_CANDIDATES = 8000;
 

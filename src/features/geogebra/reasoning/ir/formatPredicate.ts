@@ -9,7 +9,7 @@ export const formatPredicate = (predicate: GeometryPredicate, objects: Reasoning
   if (predicate.kind === 'coincident') return `${predicate.points.map(name).join(' = ')}`;
   if ('segments' in predicate) return predicate.segments.map(segment).join({ parallel: ' ∥ ', perpendicular: ' ⊥ ', 'equal-length': ' = ' }[predicate.kind]);
   if (predicate.kind === 'midpoint') return `${name(predicate.point)} is the midpoint of ${segment(predicate.segment)}`;
-  if (predicate.kind === 'ordinary-angle-equation') return `${predicate.terms.map((term) => `${term.coefficient} × ∠(${term.angle.map(name).join(', ')})`).join(' + ')} = ${rational(predicate.pi)}π`;
+  if ('pi' in predicate) return `${predicate.terms.map((term) => `${term.coefficient} × ${predicate.kind === 'directed-angle-equation' ? '∡' : '∠'}(${term.angle.map(name).join(', ')})`).join(' + ')} = ${rational(predicate.pi)}π${predicate.kind === 'directed-angle-equation' ? ' (mod π)' : ' (ordinary)'}`;
   if ('terms' in predicate) {
     if (predicate.kind === 'length-product') return `${predicate.terms.filter((term) => term.coefficient).map((term) => `dist${segment(term.segment)}^(${term.coefficient})`).join(' × ')} = ${rational(predicate.constant)}`;
     return `${predicate.terms.filter((term) => term.coefficient).map((term) => `${term.coefficient} × ${predicate.kind === 'direction-equation' ? 'dir' : 'dist'}${segment(term.segment)}`).join(' + ')} = ${rational(predicate.constant)}${predicate.kind === 'direction-equation' ? 'π (mod π)' : ''}`;

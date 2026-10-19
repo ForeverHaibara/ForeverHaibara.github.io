@@ -10,13 +10,14 @@ const equalLengths = (a: Segment, b: Segment): GeometryPredicate => ({ kind: 'eq
 const fromEquation = (equation: QuantityEquation): GeometryPredicate[] => {
   if (equation.terms.length === 0) return [];
   const predicates: GeometryPredicate[] = [];
+  const angleKind = equation.angleSemantics === 'directed-mod-pi' ? 'directed-angle-equation' : 'ordinary-angle-equation';
   if (equation.terms.every((term) => term.quantity.kind === 'length')) {
     if (equation.pi?.numerator) return [];
     predicates.push({ kind: 'length-sum', terms: equation.terms.map((term) => ({
       segment: term.quantity.points as Segment, coefficient: term.coefficient,
     })), constant: zero });
   } else if (equation.terms.every((term) => term.quantity.kind === 'angle')) {
-    predicates.push({ kind: 'ordinary-angle-equation', terms: equation.terms.map((term) => ({
+    predicates.push({ kind: angleKind, terms: equation.terms.map((term) => ({
       angle: term.quantity.points as [string, string, string], coefficient: term.coefficient,
     })), pi: equation.pi ?? zero });
   } else return [];
@@ -25,7 +26,7 @@ const fromEquation = (equation: QuantityEquation): GeometryPredicate[] => {
     if (other.kind !== term.quantity.kind) return [];
     if (JSON.stringify(other) === JSON.stringify(term.quantity)) continue;
     predicates.push(other.kind === 'length' ? equalLengths(term.quantity.points as Segment, other.points)
-      : { kind: 'ordinary-angle-equation', terms: [{ angle: term.quantity.points as [string, string, string], coefficient: 1 },
+      : { kind: angleKind, terms: [{ angle: term.quantity.points as [string, string, string], coefficient: 1 },
         { angle: other.points, coefficient: -1 }], pi: zero });
   }
   return predicates;

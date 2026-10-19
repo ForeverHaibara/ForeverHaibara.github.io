@@ -2,6 +2,8 @@ import { candidate, discoveredMidpointProblem, midpointConstruction, midpointPro
 import { exportAg2Problem, exportAg2Queries } from '../src/features/geogebra/reasoning/backends/ag2/exportProblem';
 import type { ConditionSelection, ReasoningProblem } from '../src/features/geogebra/reasoning/ir/types';
 import { proposeConditions } from '../src/features/geogebra/reasoning/selection/proposeConditions';
+import { isogonalConstruction, isogonalSamples } from '../src/features/geogebra/reasoning/__fixtures__/isogonal';
+import { DEFAULT_CHARACTERIZATION_OPTIONS } from '../src/features/geogebra/reasoning/selection/types';
 
 const cases: Array<{ name: string; problem: ReasoningProblem; selection: ConditionSelection; expected: string }> = [];
 for (const [name, acceptedIds, goalId, expected] of [
@@ -17,6 +19,15 @@ cases.push({ name: 'opaque-discovery-to-engine', problem: discovered, selection:
 const proposal = proposeConditions(midpointConstruction());
 const automatic = { ...proposal.problem, candidates: [...proposal.problem.candidates, target] };
 cases.push({ name: 'automatic-local-conditions-to-engine', problem: automatic, selection: { acceptedIds: proposal.coreIds, goalId: target.id }, expected: 'derived' });
+
+for (const [name, graph] of [['isogonal-interior', isogonalConstruction()], ['isogonal-exterior-reflected', isogonalConstruction({ x: -2, y: 1 }, 1)]] as const) {
+  const suggested = proposeConditions(graph, DEFAULT_CHARACTERIZATION_OPTIONS, isogonalSamples());
+  const selected = suggested.coreIds.flatMap((id) => suggested.problem.candidates.find((entry) => entry.id === id)!.predicates);
+  if (selected.length !== 2 || !selected.every((predicate) => predicate.kind === 'directed-angle-equation')) throw new Error('Expected two independent directed black-box conditions');
+  suggested.problem.candidates.push(candidate('combined-directions', [{ kind: 'directed-angle-equation',
+    terms: selected.flatMap((predicate) => 'pi' in predicate ? predicate.terms : []), pi: { numerator: 0, denominator: 1 } }]));
+  cases.push({ name, problem: suggested.problem, selection: { acceptedIds: suggested.coreIds, goalId: 'combined-directions' }, expected: 'derived' });
+}
 
 const algebra = midpointProblem();
 algebra.candidates.push(candidate('ratio', [{ kind: 'length-product', terms: [

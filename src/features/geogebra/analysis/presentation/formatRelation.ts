@@ -9,19 +9,19 @@ const summary = (items: string[], total = items.length): string => `${items.slic
 const generatorTitle = (objects: string[], relations: number, dimension: number): string => `${objects.join(', ')} · ${relations} rel · dim ${dimension}`;
 export const formatQuantity = (quantity: GeometricQuantity): string => quantity.kind === 'length'
   ? `dist(${quantity.points.join(', ')})` : `∠(${quantity.points.join(', ')})`;
-export const formatQuantityGroup = (quantities: GeometricQuantity[], limit = 8): string => {
+export const formatQuantityGroup = (quantities: GeometricQuantity[], limit = 8, directed = false): string => {
   const unique = new Map(quantities.map((quantity) => [JSON.stringify(quantity.kind === 'length'
-    ? ['length', [...quantity.points].sort()] : ['angle', quantity.points[1], [quantity.points[0], quantity.points[2]].sort()]), quantity]));
+    ? ['length', [...quantity.points].sort()] : directed ? ['directed', quantity.points] : ['angle', quantity.points[1], [quantity.points[0], quantity.points[2]].sort()]), quantity]));
   const members = [...unique.values()];
-  const text = `${members.slice(0, limit).map(formatQuantity).join(' = ')}${members.length > limit ? ` … (+${members.length - limit})` : ''}`;
+  const text = `${members.slice(0, limit).map((quantity) => directed && quantity.kind === 'angle' ? `∡(${quantity.points.join(', ')})` : formatQuantity(quantity)).join(' = ')}${members.length > limit ? ` … (+${members.length - limit})` : ''}`;
   return members.length > 1 ? `(${text})` : text;
 };
 export const formatEquation = (equation: QuantityEquation): string => {
   const side = (sign: number) => equation.terms.filter((term) => term.coefficient * sign > 0)
-    .map((term) => `${Math.abs(term.coefficient) === 1 ? '' : `${Math.abs(term.coefficient)} × `}${formatQuantityGroup(term.equivalents ?? [term.quantity])}`);
+    .map((term) => `${Math.abs(term.coefficient) === 1 ? '' : `${Math.abs(term.coefficient)} × `}${formatQuantityGroup(term.equivalents ?? [term.quantity], 8, equation.angleSemantics === 'directed-mod-pi')}`);
   const right = side(-1);
-  if (equation.pi) right.push(`${equation.pi.numerator === 1 ? '' : equation.pi.numerator}π${equation.pi.denominator === 1 ? '' : `/${equation.pi.denominator}`}`);
-  return `${side(1).join(' + ') || '0'} = ${right.join(' + ') || '0'}`;
+  if (equation.pi?.numerator) right.push(`${equation.pi.numerator === 1 ? '' : equation.pi.numerator}π${equation.pi.denominator === 1 ? '' : `/${equation.pi.denominator}`}`);
+  return `${side(1).join(' + ') || '0'} = ${right.join(' + ') || '0'}${equation.angleSemantics === 'directed-mod-pi' ? ' (mod π)' : ''}`;
 };
 
 export const formatRelation = (relation: GeometryRelation, witness: RelationWitness = relation.witnesses[0]): string => {

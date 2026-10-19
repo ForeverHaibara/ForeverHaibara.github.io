@@ -1,6 +1,7 @@
 import { predicatePoints } from '../../ir/types';
 import type { ConditionSelection, GeometryPredicate, Rational, ReasoningProblem, Segment, SegmentTerm } from '../../ir/types';
 import { AG2_COMMIT, AG2_LIMITS } from './capabilities';
+import { canonicalDirectionEquation } from '../../../analysis/quantities/directedAngles';
 
 export interface AngleBranch {
   angle: [string, string, string];
@@ -30,6 +31,16 @@ const fraction = ({ numerator, denominator }: Rational): string => {
   return denominator === 1 ? String(numerator) : `${numerator}/${denominator}`;
 };
 const pairKey = (pair: Segment) => JSON.stringify([...pair].sort());
+const ordinaryAngleKey = (predicate: GeometryPredicate): string | null => {
+  if (predicate.kind !== 'ordinary-angle-equation') return null;
+  const rows = new Map<string, number>();
+  for (const { angle: [a, v, b], coefficient } of predicate.terms) {
+    const key = JSON.stringify([v, [a, b].sort()]); rows.set(key, (rows.get(key) ?? 0) + coefficient);
+  }
+  const values = [...rows].filter(([, coefficient]) => coefficient).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  const sign = values[0]?.[1] < 0 ? -1 : 1;
+  return JSON.stringify([values.map(([key, coefficient]) => [key, coefficient * sign]), predicate.pi.numerator * sign, predicate.pi.denominator]);
+};
 
 /** Export only accepted conditions. Neither observed consequences nor scores are premises. */
 const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelection, queryIds: readonly string[]): Ag2ExportResult => {
@@ -107,6 +118,15 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
       }
       if (predicate.kind === 'midpoint') return [...lower({ kind: 'collinear', points: [predicate.point, ...predicate.segment] }, role),
         ...lower({ kind: 'equal-length', segments: [[predicate.point, predicate.segment[0]], [predicate.point, predicate.segment[1]]] }, role)];
+      if (predicate.kind === 'directed-angle-equation') {
+        fraction(predicate.pi);
+        for (const term of predicate.terms) {
+          if (!Number.isSafeInteger(term.coefficient) || Math.abs(term.coefficient) > AG2_LIMITS.coefficient) throw new Error('Coefficient budget exceeded.');
+          const [a, v, b] = term.angle; line([v, a]); line([v, b]);
+        }
+        const equation = canonicalDirectionEquation(predicate.terms, predicate.pi);
+        return linear('angeq', equation.terms, equation.constant);
+      }
       if (predicate.kind === 'ordinary-angle-equation') {
         fraction(predicate.pi);
         let lift = 0;
@@ -125,9 +145,12 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
           return [{ segment: [v, a], coefficient: term.coefficient * sign }, { segment: [v, b], coefficient: -term.coefficient * sign }];
         });
         if (!Number.isFinite(observed) || Math.abs(observed - predicate.pi.numerator / predicate.pi.denominator) > 1e-6) throw new Error('An ordinary angle equation does not hold in the declared witness branch.');
+        if (role === 'goal' && !accepted.some((candidate) => candidate!.predicates.some((known) => ordinaryAngleKey(known) === ordinaryAngleKey(predicate)))) {
+          throw new Error('An ordinary-angle goal needs an exact ray/inequality proof, which DDAR does not provide. Choose a directed (mod π) goal, or explicitly accept this ordinary condition.');
+        }
         return linear('angeq', terms, { numerator: predicate.pi.numerator - lift * predicate.pi.denominator, denominator: predicate.pi.denominator });
       }
-      if ('terms' in predicate) {
+      if ('constant' in predicate) {
         fraction(predicate.constant);
         if (predicate.kind === 'length-sum' && predicate.constant.numerator !== 0) throw new Error('Only homogeneous length sums are supported.');
         if (predicate.kind === 'length-product' && predicate.constant.numerator <= 0) throw new Error('Length products need a positive constant.');

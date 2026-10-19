@@ -1,13 +1,14 @@
 import type { PointCoordinate } from '../../analysis/graphTypes';
 import type { GeometryPredicate, ReasoningObject, Segment } from '../ir/types';
 import { predicatePoints } from '../ir/types';
+import { directedAngleValue, wrapHalfTurns } from '../../analysis/quantities/directedAngles';
 
 export type Gradient = [number, number];
 export interface ConstraintAssessment { gradients: Gradient[]; residual: number; }
 const cross = (a: PointCoordinate, b: PointCoordinate) => a.x * b.y - a.y * b.x;
 const delta = (a: PointCoordinate, b: PointCoordinate) => ({ x: a.x - b.x, y: a.y - b.y });
 const norm = (a: PointCoordinate) => Math.hypot(a.x, a.y);
-const wrap = (angle: number) => angle - Math.round(angle);
+const wrap = wrapHalfTurns;
 
 /** Finite-difference rank is local geometric evidence, never a logical certificate. */
 export const assessLocalConstraint = (predicate: GeometryPredicate, objectId: string, objects: readonly ReasoningObject[], differentiate = true): ConstraintAssessment | null => {
@@ -60,11 +61,20 @@ export const assessLocalConstraint = (predicate: GeometryPredicate, objectId: st
       const a = unit(predicate.segments[0]); const b = unit(predicate.segments[1]);
       return [predicate.kind === 'parallel' ? cross(a, b) : a.x * b.x + a.y * b.y];
     };
+    else if (predicate.kind === 'directed-angle-equation') {
+      const values = () => predicate.terms.map(({ angle: [a, v, b] }) => {
+        const value = directedAngleValue(at(a), at(v), at(b)); if (value === null) throw new Error('Undefined directed angle'); return value;
+      });
+      const initial = values();
+      const baseline = wrap(predicate.terms.reduce((sum, term, i) => sum + term.coefficient * initial[i], -predicate.pi.numerator / predicate.pi.denominator));
+      // Lift only the local increments. Differentiating a principal-value cut is invalid.
+      evaluate = () => { const current = values(); return [predicate.terms.reduce((sum, term, i) => sum + term.coefficient * wrap(current[i] - initial[i]), baseline)]; };
+    }
     else if (predicate.kind === 'ordinary-angle-equation') evaluate = () => [predicate.terms.reduce((sum, term) => {
       const [a, v, b] = term.angle; const u = unit([v, a]); const w = unit([v, b]);
       return sum + term.coefficient * Math.atan2(Math.abs(cross(u, w)), u.x * w.x + u.y * w.y) / Math.PI;
     }, -predicate.pi.numerator / predicate.pi.denominator)];
-    else if ('terms' in predicate) {
+    else if ('constant' in predicate) {
       if (predicate.kind === 'length-sum') evaluate = () => [predicate.terms.reduce((sum, term) => sum + term.coefficient * length(term.segment), 0)];
       else if (predicate.kind === 'length-product') evaluate = () => [predicate.terms.reduce((sum, term) => sum + term.coefficient * Math.log(length(term.segment)), -Math.log(predicate.constant.numerator / predicate.constant.denominator))];
       else {

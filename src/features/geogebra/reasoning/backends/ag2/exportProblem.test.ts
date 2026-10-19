@@ -1,8 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { candidate, discoveredMidpointProblem, midpointProblem } from '../../__fixtures__/problems';
 import { exportAg2Problem, exportAg2Queries } from './exportProblem';
+import { isogonalConstruction, isogonalPredicates } from '../../__fixtures__/isogonal';
+import { createDiscoveryProblem } from '../../sources/discoveryProblem';
 
 describe('conditional AG2 export', () => {
+  it('exports directed isogonal equations with no ordinary-angle branch conditions', () => {
+    const problem = createDiscoveryProblem(isogonalConstruction({ x: -2, y: 1 }));
+    problem.candidates = [candidate('isogonal', isogonalPredicates())];
+    const value = exportAg2Problem(problem, { acceptedIds: ['isogonal'], goalId: 'isogonal' }).value!;
+    expect(value.branches).toHaveLength(0);
+    expect(value.goals).toHaveLength(3);
+    expect(value.premise.match(/angeq/g)).toHaveLength(3);
+    expect(value.alreadyAssumed).toBe(true);
+  });
+  it('never upgrades a modular consequence to a new ordinary-angle conclusion', () => {
+    const problem = midpointProblem();
+    const terms: Array<{ angle: [string, string, string]; coefficient: number }> = [
+      { angle: ['b', 'a', 'c'], coefficient: 1 }, { angle: ['m', 'a', 'n'], coefficient: -1 },
+    ];
+    problem.candidates.push(candidate('directed', [{ kind: 'directed-angle-equation', terms, pi: { numerator: 0, denominator: 1 } }]),
+      candidate('ordinary', [{ kind: 'ordinary-angle-equation', terms, pi: { numerator: 0, denominator: 1 } }]));
+    const blocked = exportAg2Problem(problem, { acceptedIds: ['directed'], goalId: 'ordinary' });
+    expect(blocked.value).toBeNull(); expect(blocked.errors[0]).toContain('exact ray/inequality proof');
+    expect(exportAg2Problem(problem, { acceptedIds: ['ordinary'], goalId: 'ordinary' }).value?.alreadyAssumed).toBe(true);
+    expect(exportAg2Problem(problem, { acceptedIds: ['ordinary'], goalId: 'directed' }).value?.goals[0]).toContain('angeq');
+  });
+  it('preserves directed-angle integer factors and rejects zero-length directions', () => {
+    const problem = midpointProblem();
+    problem.candidates.push(candidate('directed', [{ kind: 'directed-angle-equation', terms: [
+      { angle: ['b', 'a', 'c'], coefficient: 2 },
+    ], pi: { numerator: 0, denominator: 1 } }]));
+    expect(exportAg2Problem(problem, { acceptedIds: [], goalId: 'directed' }).value?.goals[0]).toContain('2 -2 0');
+    problem.objects[2].coordinates = { x: 0, y: 0 };
+    expect(exportAg2Problem(problem, { acceptedIds: [], goalId: 'directed' }).errors[0]).toContain('coincident');
+  });
   it('keeps coverage queries out of the premises and uses one shared symbol map', () => {
     const result = exportAg2Queries(midpointProblem(), ['m-midpoint', 'n-midpoint'], ['midsegment', 'false-goal']).value!;
     expect(result.queries).toHaveLength(2);

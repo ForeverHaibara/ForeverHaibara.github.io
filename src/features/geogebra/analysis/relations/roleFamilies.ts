@@ -41,7 +41,8 @@ const signature = (witness: RelationWitness, hole: string): string | undefined =
 export const groupRoleFamilies = (seeds: RelationSeed[], budget: DiscoveryBudget): RelationSeed[] => {
   const buckets = new Map<string, Array<{ seed: RelationSeed; binding: string }>>();
   for (const seed of seeds) {
-    if (seed.model || seed.lengthModel || seed.family || seed.derived) continue;
+    // Ordinary endpoint reversal is not a symmetry of directed equations.
+    if (seed.model || seed.lengthModel || seed.family || seed.derived || seed.witness.equation?.angleSemantics) continue;
     const witness = seed.witness;
     // Large equivalence classes are already compressed. Repeatedly sorting
     // thousands of their quantities for each hole defeats a projection budget.

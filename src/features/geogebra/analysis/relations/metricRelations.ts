@@ -12,10 +12,12 @@ import { combineExpressions } from '../algebra/scalarSearch';
 import { angleAliasSupport, detectAngleRelations } from './angleRelations';
 import { groupScalarClasses } from '../algebra/scalarClasses';
 import { buildRayClasses, rayAngleCandidates } from '../scene/rays';
+import { detectDirectedAngleRelations } from './directedAngleRelations';
 
 export const detectMetricRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions, budget: DiscoveryBudget): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
   const enabled = new Set(options.enabledKinds);
+  seeds.push(...detectDirectedAngleRelations(scene, options, budget));
   const angleKinds = ['equal-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles'] as const;
   const needsAngles = angleKinds.some((kind) => enabled.has(kind));
   const lengths = createLengthRelationSpace();
