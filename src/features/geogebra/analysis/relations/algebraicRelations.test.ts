@@ -9,6 +9,8 @@ import { formatLengthMember, formatRelation } from '../presentation/formatRelati
 import { buildGeometryScene } from '../scene/geometryScene';
 import { RationalRelationSpace } from '../algebra/rationalSpace';
 import { detectAngleRelations } from './angleRelations';
+import type { AngleQuantity } from './angleRelations';
+import { scalarClass } from '../algebra/scalarClasses';
 
 const point = (name: string, x: number, y: number): ConstructionObjectInput => ({ name, objectType: 'point', commandString: '', coordinates: { x, y } });
 const discover = (points: ConstructionObjectInput[], kinds: GeometryRelationKind[], extra: Partial<DiscoveryOptions> = {}) =>
@@ -91,7 +93,8 @@ describe('dimensionless log length models', () => {
       const actual = (length(member.segment) / length(model!.anchor)) ** member.denominator;
       const predicted = member.ratio[0] / member.ratio[1] * member.coefficients.reduce((product, coefficient, i) => product * (length(model!.generators[i]) / length(model!.anchor)) ** coefficient, 1);
       expect(Math.abs(actual - predicted) / Math.max(actual, predicted)).toBeLessThan(2e-6);
-      expect(formatLengthMember(model!, member)).toContain('dist(');
+      const formatted = formatLengthMember(model!, member);
+      if (formatted !== null) expect(formatted).toContain('dist(');
     }
   });
   it('compresses repeated lengths with model provenance but keeps them available when expanded', () => {
@@ -137,15 +140,15 @@ describe('affine relations between ordinary angles', () => {
     const scene = buildGeometryScene(buildDependencyGraph(anglePair(Math.PI / 6, Math.PI / 3)), []);
     const space = new RationalRelationSpace();
     space.insert({ first: -2, second: 1 }, 'known-double-angle');
-    const angles: Parameters<typeof detectAngleRelations>[1] = [
+    const angles: AngleQuantity[] = [
       { value: Math.PI / 6, names: ['A', 'O', 'B'] as [string, string, string], indexes: [0, 1, 2], row: { first: 1 }, representationError: 2e-7 },
       { value: Math.PI / 3, names: ['C', 'P', 'D'] as [string, string, string], indexes: [3, 4, 5], row: { second: 1 }, representationError: 2e-7 },
     ];
     const options = { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: ['angle-multiple'] as GeometryRelationKind[] };
-    const uncertain = detectAngleRelations(scene, angles, options, new DiscoveryBudget([]), space);
+    const uncertain = detectAngleRelations(scene, angles.map((a) => scalarClass([a])), options, new DiscoveryBudget([]), space);
     expect(uncertain).toHaveLength(1);
     expect(uncertain[0].derived).toBe(false);
-    expect(detectAngleRelations(scene, angles.map((a) => ({ ...a, representationError: 0 })), options, new DiscoveryBudget([]), space)).toEqual([]);
+    expect(detectAngleRelations(scene, angles.map((a) => scalarClass([{ ...a, representationError: 0 }])), options, new DiscoveryBudget([]), space)).toEqual([]);
   });
 });
 

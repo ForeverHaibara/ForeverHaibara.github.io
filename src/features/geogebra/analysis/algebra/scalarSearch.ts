@@ -10,7 +10,7 @@ export const combineExpressions = (terms: ReadonlyArray<readonly [IntegerExpress
 /** Indexed affine matching on any additive scalar domain, including log L.
  * Each candidate is still verified by its caller in the original domain. */
 export function* matchScalarTransform<T extends { value: number }>(values: readonly T[], scale: number, offset: number, epsilon: number,
-  budget: DiscoveryBudget, resource: string, limit: number): Generator<readonly [T, T]> {
+  budget: DiscoveryBudget, resource: string, limit: number, includeSelf = false): Generator<readonly [T, T]> {
   const sorted = values.filter((value) => Number.isFinite(value.value)).slice().sort((a, b) => a.value - b.value);
   for (const source of sorted) {
     if (!budget.take(`${resource} lookups`, limit)) return;
@@ -19,7 +19,7 @@ export function* matchScalarTransform<T extends { value: number }>(values: reado
     while (low < high) { const mid = (low + high) >>> 1; if (sorted[mid].value < target - epsilon) low = mid + 1; else high = mid; }
     for (let i = low; i < sorted.length && sorted[i].value <= target + epsilon; i += 1) {
       if (!budget.take(resource, limit)) return;
-      if (sorted[i] !== source) yield [source, sorted[i]];
+      if (includeSelf || sorted[i] !== source) yield [source, sorted[i]];
     }
   }
 }

@@ -11,6 +11,7 @@ import { createLengthRelationSpace, detectLengthRelations } from './lengthRelati
 import { combineExpressions } from '../algebra/scalarSearch';
 import { detectAngleRelations } from './angleRelations';
 import { balancedTriples } from '../quantities/candidates';
+import { groupScalarClasses } from '../algebra/scalarClasses';
 
 export const detectMetricRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions, budget: DiscoveryBudget): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
@@ -76,26 +77,18 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       angle.key = key;
       const bucket = symbolic.get(key) ?? []; bucket.push(angle); symbolic.set(key, bucket);
     }
-    const representatives = [...symbolic.values()].map((angles) => angles[0]);
     const epsilon = 4e-7;
-    const groups = groupNearValues(representatives, {
-      bucket: (angle) => [Math.floor(angle.value / epsilon)],
-      matches: (a, b) => Math.abs(a.value - b.value) <= epsilon,
-    }, budget, 'Angle comparisons', options.maxComparisons);
+    const groups = groupScalarClasses([...symbolic.values()], epsilon, budget, 'Angle comparisons', options.maxComparisons);
     if (enabled.has('equal-angles')) for (const group of groups) {
-      const members = group.flatMap((angle) => symbolic.get(angle.key) ?? [angle]);
-      // Recheck every published member against all others via min/max, even
-      // when their symbolic forms agree under approximate observed equations.
-      let minimum = Infinity; let maximum = -Infinity;
-      for (const member of members) { minimum = Math.min(minimum, member.value); maximum = Math.max(maximum, member.value); }
-      if (members.length < 2 || maximum - minimum > epsilon) continue;
-      const derived = group.length === 1 && members.some((angle) => angle.sources.length > 0);
+      const members = group.members;
+      if (members.length < 2) continue;
+      const derived = members.every((angle) => angle.key === members[0].key && angle.error <= epsilon) && members.some((angle) => angle.sources.length > 0);
       const points = new Set(members.flatMap((angle) => angle.indexes));
       emit('equal-angles', points, { points: [...points].map((i) => scene.points[i].name), angles: members.map((angle) => angle.names) }, members.map((angle) => angle.names.join('|')).sort().join(';'), derived, derived ? members.flatMap((angle) => angle.sources) : []);
     }
     // Each numerically equal class contributes one representative to affine
     // searches. We never form every pair of angle expressions in a model.
-    seeds.push(...detectAngleRelations(scene, groups.map((group) => group[0]), options, budget, directions.space));
+    seeds.push(...detectAngleRelations(scene, groups, options, budget, directions.space));
   }
   if (directions.space.limited || lengths.limited) budget.note('Relation-space reduction budget reached; some algebraic consequences were not compressed.');
   return seeds;

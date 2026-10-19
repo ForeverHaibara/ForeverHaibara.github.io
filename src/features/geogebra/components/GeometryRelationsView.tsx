@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 import type { ObjectLink } from '../interaction/useObjectLink';
 import { RELATION_CATALOG } from '../analysis/relations/catalog';
-import { displayScore, formatLengthMember, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
+import { displayScore, formatQuantityGroup, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
 import { RelationTypeControls } from './RelationTypeControls';
+import { GeneratorDetails } from './GeneratorDetails';
 
 const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLink: ObjectLink }> = ({ state, objectLink }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -59,27 +60,14 @@ const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLin
         {expanded && <div className="mt-2 space-y-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
           <div className="flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div>
           <p>{relation.explanation}</p>
+          {relation.witnesses[0].equation?.terms.filter((term) => (term.equivalents?.length ?? 0) > 1).map((term, i) => <p key={i}>Equal quantities ({term.equivalents!.length}): {formatQuantityGroup(term.equivalents!, 24)}</p>)}
           {relation.derivedFrom && relation.derivedFrom.length > 0 && <p>Generated from: {relation.derivedFrom.slice(0, 3).map((id) => {
             const parent = result?.relations.find((item) => item.id === id);
             return parent ? formatRelation(parent) : 'an observation outside the retained results';
           }).join('; ')}{relation.derivedFrom.length > 3 ? ' …' : ''}</p>}
           <p>Construction span: {relation.metric.constructionSpan?.toFixed(2) ?? 'disconnected'}; readable dependencies: {(relation.metric.dependencyCoverage * 100).toFixed(0)}%</p>
           {relation.witnesses[0].triangleSymmetryOrder && relation.witnesses[0].triangleSymmetryOrder > 1 && <p>One representative correspondence; numerical triangle symmetry order {relation.witnesses[0].triangleSymmetryOrder}.</p>}
-          {relation.model && <div className="space-y-1">
-            <p>δ(l) = θ(l) − θ({relation.model.anchor.join('·')}); angles in radians.</p>
-            <p>Generators: {relation.model.generators.map((line) => line.join('·')).join(', ')}; {relation.model.constraintRank} new constraints.</p>
-            <p>Point stars covered to the seed triangle: {relation.model.pointCover.join(', ')}. Joins between covered points may lie outside this model.</p>
-            {relation.model.members.slice(0, 12).map((member) => <p key={member.line.join('|')}>{member.denominator}δ({member.line.join('·')}) = {member.coefficients.map((coefficient, i) => `${coefficient}δ(${relation.model!.generators[i].join('·')})`).join(' + ') || '0'} + {member.constant}π</p>)}
-            {relation.model.members.length > 12 && <p>{relation.model.members.length - 12} additional line descriptions omitted.</p>}
-            <p>Bounded rational fit of this snapshot; not a theorem or a certified lattice rank.</p>
-          </div>}
-          {relation.lengthModel && <div className="space-y-1">
-            <p>Reference length: dist({relation.lengthModel.anchor.join(', ')}). Every ratio is dimensionless.</p>
-            <p>Generators: {relation.lengthModel.generators.map((segment) => `dist(${segment.join(', ')})`).join(', ') || 'small rational constants'}; {relation.lengthModel.constraintRank} new constraints.</p>
-            {relation.lengthModel.members.slice(0, 12).map((member) => <p key={member.segment.join('|')}>{formatLengthMember(relation.lengthModel!, member)}</p>)}
-            {relation.lengthModel.members.length > 12 && <p>{relation.lengthModel.members.length - 12} additional length descriptions omitted.</p>}
-            <p>Bounded numerical fit on segments incident to the seed triangle; not a proof.</p>
-          </div>}
+          <GeneratorDetails model={relation.model} lengthModel={relation.lengthModel} />
         </div>}
       </article>;
     })}</div>

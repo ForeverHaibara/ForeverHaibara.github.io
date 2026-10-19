@@ -32,7 +32,7 @@ export interface RelationWitness {
 export type GeometricQuantity = { kind: 'length'; points: [string, string] } | { kind: 'angle'; points: [string, string, string] };
 /** An equation of geometric quantities, not a display string or construction AST. */
 export interface QuantityEquation {
-  terms: Array<{ coefficient: number; quantity: GeometricQuantity }>;
+  terms: Array<{ coefficient: number; quantity: GeometricQuantity; equivalents?: GeometricQuantity[] }>;
   pi?: { numerator: number; denominator: number };
 }
 

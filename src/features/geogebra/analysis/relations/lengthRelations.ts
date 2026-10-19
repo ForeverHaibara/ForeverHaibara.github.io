@@ -1,4 +1,3 @@
-import { groupNearValues } from '../algebra/nearEquality';
 import { RationalRelationSpace } from '../algebra/rationalSpace';
 import { combineExpressions, matchScalarTransform, RationalCombinationIndex } from '../algebra/scalarSearch';
 import { positiveLengthPairs, segmentId } from '../quantities/lengths';
@@ -9,6 +8,8 @@ import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import type { RelationSeed } from './relationSeed';
 import type { LengthModel } from '../geometryTypes';
 import { balancedTriples } from '../quantities/candidates';
+import { affineClassResidual, groupScalarClasses } from '../algebra/scalarClasses';
+import { assessClusterRelation, classTerm } from './clusteredQuantities';
 
 const EPSILON = 4e-7;
 const RATIOS = [
@@ -25,7 +26,8 @@ export const createLengthRelationSpace = () => new RationalRelationSpace(new Set
 export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOptions, budget: DiscoveryBudget, space: RationalRelationSpace): RelationSeed[] => {
   const enabled = new Set(options.enabledKinds);
   if (!['equal-lengths', 'midpoint', 'length-multiple', 'length-space'].some((kind) => enabled.has(kind as RelationSeed['kind']))) return [];
-  const quantities = positiveLengthPairs(scene);
+  const quantities = positiveLengthPairs(scene).map((quantity) => ({ ...quantity,
+    indexes: [quantity.left, quantity.right], row: { [quantity.id]: 1 }, representationError: 0 }));
   const byId = new Map(quantities.map((quantity) => [quantity.id, quantity]));
   const names = (q: PositiveLength): [string, string] => [scene.points[q.left].name, scene.points[q.right].name];
   const seeds: RelationSeed[] = [];
@@ -66,11 +68,8 @@ export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOp
   if (!enabled.has('equal-lengths') && !enabled.has('length-multiple')) return seeds;
   // Use equivalence representatives for the following offset search rather
   // than forming all ratios between every equal-length witness.
-  const groups = groupNearValues(quantities, {
-    bucket: (q) => [Math.floor(q.value / EPSILON)],
-    matches: (a, b) => Math.abs(Math.log(a.length / b.length)) <= EPSILON,
-  }, budget, 'Length comparisons', options.maxComparisons);
-  if (enabled.has('equal-lengths')) for (const group of groups) {
+  const groups = groupScalarClasses(quantities.map((q) => [q]), EPSILON, budget, 'Length comparisons', options.maxComparisons);
+  if (enabled.has('equal-lengths')) for (const { members: group } of groups) {
     if (group.length < 2) continue;
     const keys = group.map((q) => space.reduce({ [q.id]: 1 }));
     const derived = keys.every((key) => key.key === keys[0].key && key.error <= EPSILON) && keys.some((key) => key.sources.length > 0);
@@ -85,25 +84,28 @@ export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOp
   }
 
   if (enabled.has('length-multiple')) {
-    const representatives = groups.map((group) => group[0]);
     let count = 0;
-    outer: for (const ratio of RATIOS.slice(1, 4)) for (const [short, long] of matchScalarTransform(representatives, 1, ratio.value, EPSILON, budget, 'Length ratio comparisons', options.maxComparisons)) {
+    outer: for (const ratio of RATIOS.slice(1, 4)) for (const [shortClass, longClass] of matchScalarTransform(groups, 1, ratio.value, EPSILON, budget, 'Length ratio comparisons', options.maxComparisons)) {
+      const residual = affineClassResidual(shortClass, longClass, 1, ratio.value);
+      if (residual > EPSILON) continue;
+      const short = shortClass.representative; const long = longClass.representative;
       const [p, q] = ratio.ratio;
       if (Math.abs(q * long.length - p * short.length) > EPSILON * Math.max(q * long.length, p * short.length)) continue;
       const row = { [long.id]: 1, [short.id]: -1, '@log2': -ratio.two, '@log3': -ratio.three };
-      const reduced = space.reduce(row);
-      const derived = reduced.redundant && reduced.error <= EPSILON;
+      const assessment = assessClusterRelation([shortClass, longClass], row, residual + 1e-12, EPSILON, space);
+      if (assessment.identity) continue;
+      const { derived } = assessment;
       if (derived && options.compressConsequences) continue;
       if (count >= options.maxRelations) { budget.note(`Length ratio output limit (${options.maxRelations}) reached; results are partial.`); break outer; }
       const key = `length-multiple:${long.id}:${short.id}:${p}/${q}`;
-      const points = new Set([short.left, short.right, long.left, long.right]);
-      seeds.push({ kind: 'length-multiple', key, points, confidence: 0.98, derived, sourceIds: derived ? reduced.sources : [],
+      const points = new Set([...shortClass.members, ...longClass.members].flatMap((member) => member.indexes));
+      const quantity = (member: PositiveLength) => ({ kind: 'length' as const, points: names(member) });
+      seeds.push({ kind: 'length-multiple', key, points, confidence: 0.98, derived, sourceIds: derived ? assessment.sourceIds : [],
         witness: { points: [...points].map((i) => scene.points[i].name), equation: { terms: [
-          { coefficient: q, quantity: { kind: 'length', points: names(long) } },
-          { coefficient: -p, quantity: { kind: 'length', points: names(short) } },
+          classTerm(longClass, q, quantity), classTerm(shortClass, -p, quantity),
         ] } } });
       count += 1;
-      if (!derived) space.insert(row, key, Math.abs(long.value - short.value - ratio.value));
+      if (!derived) assessment.register(key);
     }
   }
   return seeds;
