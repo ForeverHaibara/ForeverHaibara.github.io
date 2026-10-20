@@ -1,7 +1,9 @@
 ﻿import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useMatch } from 'react-router-dom';
+import '../../styles/showcase.css';
 
 const TriplesLayout: React.FC = () => {
+  const isSolver = useMatch({ path: '/triples', end: true });
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
       isActive
@@ -11,8 +13,17 @@ const TriplesLayout: React.FC = () => {
 
   return (
     <div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 xl:px-10">
-      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6">
-        <nav className="rounded-[26px] border border-white/70 bg-white/58 p-3 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl">
+      <div
+        className={`mx-auto flex w-full flex-col gap-6 ${isSolver ? 'max-w-[1240px]' : 'max-w-[1680px]'}`}
+      >
+        <nav
+          aria-label="Triples"
+          className={
+            isSolver
+              ? 'solver-navigation'
+              : 'rounded-[26px] border border-white/70 bg-white/58 p-3 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl'
+          }
+        >
           <ul className="flex flex-wrap gap-2">
             <li>
               <NavLink to="/triples" end className={navLinkClasses}>

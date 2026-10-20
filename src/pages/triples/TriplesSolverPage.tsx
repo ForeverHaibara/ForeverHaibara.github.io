@@ -1,5 +1,7 @@
-﻿import React, { useState, useCallback, useRef } from 'react';
-import { GRADIO_TRIPLES_URL } from '../../constants.ts';
+import React, { useState, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { Arrow, usePageEntrance } from '../../components/PageVisuals';
+import '../../styles/showcase.css';
 import { callTriplesGradioApi } from '../../services/triplesService.ts';
 import type { GradioServiceCallResult } from '../../types.ts';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
@@ -36,7 +38,8 @@ const examplesData: TriplesExample[] = [
   {
     id: 'motzkin',
     name: "Motzkin's Form",
-    description: 'A classic example of a non-negative polynomial that is not a sum of squares of polynomials (without constraints).',
+    description:
+      'A classic example of a non-negative polynomial that is not a sum of squares of polynomials (without constraints).',
     expression: '(x^2+y^2-3*z^2)*x^2*y^2 + z^6',
     displayExpressionLatex: '(x^2+y^2-3z^2)x^2y^2 + z^6 \\ge 0',
     constraints: [],
@@ -58,7 +61,8 @@ const examplesData: TriplesExample[] = [
     name: "Nesbitt's Inequality",
     description: 'A well-known inequality in three variables.',
     expression: 'a/(b+c) + b/(c+a) + c/(a+b) - 3/2',
-    displayExpressionLatex: '\\frac{a}{b+c} + \\frac{b}{c+a} + \\frac{c}{a+b} - \\frac{3}{2} \\ge 0',
+    displayExpressionLatex:
+      '\\frac{a}{b+c} + \\frac{b}{c+a} + \\frac{c}{a+b} - \\frac{3}{2} \\ge 0',
     constraints: [
       { expression: 'a', alias: 'a', type: 'ineq' },
       { expression: 'b', alias: 'b', type: 'ineq' },
@@ -68,15 +72,17 @@ const examplesData: TriplesExample[] = [
   {
     id: 'lax-lax',
     name: "Lax-Lax's Form",
-    description: 'A quaternary quartic form that is not sum-of-squares, but nonnegative over reals.',
-    expression: 'a*(a-b)*(a-c)*(a-d)+b*(b-c)*(b-d)*(b-a)+c*(c-d)*(c-a)*(c-b)+d*(d-a)*(d-b)*(d-c)+a*b*c*d',
+    description:
+      'A quaternary quartic form that is not sum-of-squares, but nonnegative over reals.',
+    expression:
+      'a*(a-b)*(a-c)*(a-d)+b*(b-c)*(b-d)*(b-a)+c*(c-d)*(c-a)*(c-b)+d*(d-a)*(d-b)*(d-c)+a*b*c*d',
     displayExpressionLatex: '\\sum_{\\text{cyc}}a(a-b)(a-c)(a-d) +abcd \\ge 0',
     constraints: [],
   },
   {
     id: 'imo2000',
     name: 'IMO-2000',
-    description: 'Prove (a-1+1/b)(b-1+1/c)(c+1/a) <= 1 given a,b,c>0 and abc=1.',
+    description: 'Prove (a-1+1/b)(b-1+1/c)(c-1+1/a) <= 1 given a,b,c>0 and abc=1.',
     expression: '1 - (a-1+1/b)*(b-1+1/c)*(c-1+1/a)',
     displayExpressionLatex: '1\\geq \\prod_{\\text{cyc}}\\left(a-1+\\frac {1}{b}\\right)',
     constraints: [
@@ -84,14 +90,12 @@ const examplesData: TriplesExample[] = [
       { expression: 'b', alias: 'b', type: 'ineq' },
       { expression: 'c', alias: 'c', type: 'ineq' },
       { expression: 'a*b*c-1', alias: '', type: 'eq' },
-    ]
-  }
+    ],
+  },
 ];
 
-const sectionCardClass = 'rounded-[28px] border border-white/70 bg-white/60 p-5 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:p-6';
-const primaryCardClass = 'rounded-[30px] border border-white/70 bg-white/62 p-5 shadow-[0_20px_44px_rgba(148,163,184,0.14)] backdrop-blur-xl sm:p-6 lg:p-7';
-
 const TriplesSolverPage: React.FC = () => {
+  usePageEntrance();
   const [expression, setExpression] = useState<string>('');
   const [constraints, setConstraints] = useState<Constraint[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -110,66 +114,80 @@ const TriplesSolverPage: React.FC = () => {
   const handleAddConstraint = (type: 'ineq' | 'eq') => {
     const newId = generateId();
     const newConstraint: Constraint = { id: newId, expression: '', alias: '', type };
-    setConstraints(prev => [...prev, newConstraint]);
+    setConstraints((prev) => [...prev, newConstraint]);
     setTimeout(() => {
       constraintInputRefs.current?.[`${newId}_expression`]?.focus();
     }, 0);
   };
 
-  const handleConstraintInputChange = (id: string, field: 'expression' | 'alias', value: string) => {
-    setConstraints(prev => prev.map(c => (c.id === id ? { ...c, [field]: value } : c)));
+  const handleConstraintInputChange = (
+    id: string,
+    field: 'expression' | 'alias',
+    value: string
+  ) => {
+    setConstraints((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
   };
 
   const handleRemoveConstraint = (id: string) => {
-    setConstraints(prev => prev.filter(c => c.id !== id));
+    setConstraints((prev) => prev.filter((c) => c.id !== id));
   };
 
   const handleClearAllConstraints = () => {
     setConstraints([]);
   };
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!expression.trim()) {
-      setError('Please enter a mathematical expression.');
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!expression.trim()) {
+        setError('Please enter a mathematical expression.');
+        setApiResult(null);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
       setApiResult(null);
-      return;
-    }
+      setCopyStatus({ solution: 'Copy', latex: 'Copy', latex_aligned: 'Copy' });
 
-    setIsLoading(true);
-    setError(null);
-    setApiResult(null);
-    setCopyStatus({ solution: 'Copy', latex: 'Copy', latex_aligned: 'Copy' });
+      const ineqConstraints: string[] = [];
+      const eqConstraints: string[] = [];
 
-    const ineqConstraints: string[] = [];
-    const eqConstraints: string[] = [];
-
-    constraints.forEach(c => {
-      if (c.expression.trim()) {
-        const alias = c.alias.trim() || c.expression.trim();
-        const formattedConstraint = `${c.expression.trim()}:${alias}`;
-        if (c.type === 'ineq') {
-          ineqConstraints.push(formattedConstraint);
-        } else {
-          eqConstraints.push(formattedConstraint);
+      constraints.forEach((c) => {
+        if (c.expression.trim()) {
+          const alias = c.alias.trim() || c.expression.trim();
+          const formattedConstraint = `${c.expression.trim()}:${alias}`;
+          if (c.type === 'ineq') {
+            ineqConstraints.push(formattedConstraint);
+          } else {
+            eqConstraints.push(formattedConstraint);
+          }
         }
-      }
-    });
+      });
 
-    try {
-      const result = await callTriplesGradioApi(expression, ineqConstraints.join(';'), eqConstraints.join(';'));
-      setApiResult(result);
-      if (!result.apiSuccess) {
-        setError(result.errorMessage || 'An unknown API error occurred.');
+      try {
+        const result = await callTriplesGradioApi(
+          expression,
+          ineqConstraints.join(';'),
+          eqConstraints.join(';')
+        );
+        setApiResult(result);
+        if (!result.apiSuccess) {
+          setError(result.errorMessage || 'An unknown API error occurred.');
+        }
+      } catch (err: any) {
+        console.error('Gradio API call failed unexpectedly:', err);
+        setError(err.message || 'Failed to connect to the Triples proof service.');
+        setApiResult({
+          apiSuccess: false,
+          errorMessage: err.message || 'Client-side error during API call.',
+        });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      console.error('Gradio API call failed unexpectedly:', err);
-      setError(err.message || 'Failed to connect to the Triples proof service.');
-      setApiResult({ apiSuccess: false, errorMessage: err.message || 'Client-side error during API call.' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [expression, constraints]);
+    },
+    [expression, constraints]
+  );
 
   const handleClearError = useCallback(() => {
     setError(null);
@@ -179,22 +197,25 @@ const TriplesSolverPage: React.FC = () => {
   }, [apiResult]);
 
   const handleCopy = useCallback((textToCopy: string, tabKey: TabKey) => {
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopyStatus(prev => ({ ...prev, [tabKey]: 'Copied!' }));
-      setTimeout(() => setCopyStatus(prev => ({ ...prev, [tabKey]: 'Copy' })), 2000);
-    }).catch(err => {
-      console.error('Failed to copy text: ', err);
-      setCopyStatus(prev => ({ ...prev, [tabKey]: 'Failed' }));
-      setTimeout(() => setCopyStatus(prev => ({ ...prev, [tabKey]: 'Copy' })), 2000);
-    });
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setCopyStatus((prev) => ({ ...prev, [tabKey]: 'Copied!' }));
+        setTimeout(() => setCopyStatus((prev) => ({ ...prev, [tabKey]: 'Copy' })), 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+        setCopyStatus((prev) => ({ ...prev, [tabKey]: 'Failed' }));
+        setTimeout(() => setCopyStatus((prev) => ({ ...prev, [tabKey]: 'Copy' })), 2000);
+      });
   }, []);
 
   const handleLoadExample = useCallback((example: TriplesExample) => {
     setExpression(example.expression);
-    const newConstraints: Constraint[] = example.constraints.map(ec => ({
+    const newConstraints: Constraint[] = example.constraints.map((ec) => ({
       id: generateId(),
       expression: ec.expression,
-      alias: '',
+      alias: ec.alias ?? '',
       type: ec.type,
     }));
     setConstraints(newConstraints);
@@ -202,233 +223,359 @@ const TriplesSolverPage: React.FC = () => {
     setError(null);
     setActiveTab('solution');
     setCopyStatus({ solution: 'Copy', latex: 'Copy', latex_aligned: 'Copy' });
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    formRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+      block: 'start',
+    });
+    formRef.current?.querySelector('textarea')?.focus({ preventScroll: true });
   }, []);
 
   const proofData = apiResult?.apiSuccess ? apiResult.data : null;
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[30px] border border-white/70 bg-white/48 px-5 py-6 shadow-[0_18px_42px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8">
-        <header className="max-w-4xl">
-        {/* <header className="mx-auto max-w-4xl">text-center xl:text-left" */}
-          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-sky-900 sm:text-4xl">Triples Inequality Prover</h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
-            Enter a mathematical expression and optional constraints to attempt a proof of its non-negativity.
-            This tool connects to a Gradio backend at <code className="rounded-full bg-white/80 px-2 py-1 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">{GRADIO_TRIPLES_URL}</code>.
+    <div className="solver-page">
+      <header className="solver-heading">
+        <div>
+          <p className="eyebrow">
+            <span className="eyebrow-line" /> A SUM-OF-SQUARES WORKSPACE
           </p>
-        </header>
-      </section>
+          <h1>
+            Triples Inequality Prover<span>.</span>
+          </h1>
+          <p>A mathematical expression. A few assumptions. A new perspective on the proof.</p>
+        </div>
+        <Link className="design-text-link" to="/triples/documentation">
+          Read the documentation <Arrow diagonal />
+        </Link>
+      </header>
 
-      <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(720px,960px)_320px_minmax(0,1fr)] xl:gap-6">
-        <div className="hidden xl:block" aria-hidden="true" />
-
-        <section className={primaryCardClass}>
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="expression" className="mb-1 block text-sm font-medium text-slate-700">Mathematical Expression</label>
-              <textarea
-                id="expression"
-                value={expression}
-                onChange={(e) => setExpression(e.target.value)}
-                placeholder="e.g., x^2 - 2*x*y + y^2"
-                rows={3}
-                className="w-full rounded-2xl border border-sky-100 bg-white/82 p-3 text-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-colors focus:border-sky-300 focus:ring-sky-200"
-                disabled={isLoading}
-                aria-label="Mathematical Expression Input"
-              />
+      <div className="solver-workspace">
+        <section className="solver-editor" aria-labelledby="problem-heading">
+          <form ref={formRef} onSubmit={handleSubmit}>
+            <div className="solver-panel-heading">
+              <h2 id="problem-heading">Define your problem</h2>
+              <span className="section-index">01 / INPUT</span>
             </div>
-
-            <div className="space-y-4 border-t border-sky-100 pt-4">
-              <h2 className="text-sm font-semibold text-slate-700">Constraints</h2>
-              {constraints.length === 0 && <p className="text-sm text-slate-500">No constraints added. Click buttons below to add.</p>}
-              {constraints.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full overflow-hidden rounded-2xl border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
-                    <thead className="bg-[rgba(239,246,255,0.72)]">
-                      <tr>
-                        <th scope="col" className="w-2/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Constraint Expression</th>
-                        <th scope="col" className="w-2/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Alias (Optional)</th>
-                        <th scope="col" className="w-1/5 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-slate-500">Type</th>
-                        <th scope="col" className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-slate-500">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-sky-100 bg-white/80">
-                      {constraints.map((constraint) => (
-                        <tr key={constraint.id} className="group transition-colors hover:bg-slate-50/80">
-                          <td className="whitespace-nowrap px-4 py-2">
-                            <input
-                              ref={el => { constraintInputRefs.current[`${constraint.id}_expression`] = el; }}
-                              type="text"
-                              value={constraint.expression}
-                              onChange={(e) => handleConstraintInputChange(constraint.id, 'expression', e.target.value)}
-                              placeholder="e.g., a*b*c-1"
-                              className="w-full rounded-xl border border-sky-100 bg-white/80 p-2 text-sm focus:border-sky-300 focus:ring-sky-200"
-                              disabled={isLoading}
-                              aria-label={`Constraint expression for row ${constraint.id}`}
-                            />
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-2">
-                            <input
-                              type="text"
-                              value={constraint.alias}
-                              onChange={(e) => handleConstraintInputChange(constraint.id, 'alias', e.target.value)}
-                              placeholder="e.g., F(a,b,c) (defaults to expression)"
-                              className="w-full rounded-xl border border-sky-100 bg-white/80 p-2 text-sm focus:border-sky-300 focus:ring-sky-200"
-                              disabled={isLoading}
-                              aria-label={`Alias for constraint row ${constraint.id}`}
-                            />
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-2 text-sm text-slate-600">{constraint.type === 'ineq' ? '>= 0' : '= 0'}</td>
-                          <td className="whitespace-nowrap px-4 py-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveConstraint(constraint.id)}
-                              className="rounded-full p-1 text-red-500 opacity-50 transition-opacity hover:bg-red-100 hover:text-red-700 group-hover:opacity-100"
-                              title="Remove constraint"
-                              disabled={isLoading}
-                              aria-label={`Remove constraint row ${constraint.id}`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <label className="solver-label" htmlFor="expression">
+              Mathematical expression <span>to prove ≥ 0</span>
+            </label>
+            <textarea
+              id="expression"
+              value={expression}
+              onChange={(e) => setExpression(e.target.value)}
+              placeholder="e.g., x^2 - 2*x*y + y^2"
+              rows={4}
+              className="solver-expression"
+              disabled={isLoading}
+              aria-label="Mathematical Expression Input"
+              aria-describedby="expression-help"
+            />
+            <p className="solver-field-help" id="expression-help">
+              Enter the expression only, without an inequality sign.
+            </p>
+            <div className="solver-constraints">
+              <div className="constraint-heading">
+                <h3>
+                  Constraints <span>Optional</span>
+                </h3>
+                {constraints.length > 0 && (
+                  <button
+                    className="constraint-clear"
+                    type="button"
+                    onClick={handleClearAllConstraints}
+                    disabled={isLoading}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {constraints.length === 0 ? (
+                <p className="constraints-empty">
+                  Working with assumptions? Add a non-negative expression or an equality below.
+                </p>
+              ) : (
+                <div className="constraint-list">
+                  {constraints.map((constraint, index) => (
+                    <div className="constraint-row" key={constraint.id}>
+                      <div className="constraint-expression-field">
+                        <label className="sr-only" htmlFor={`${constraint.id}_expression`}>
+                          Constraint expression {index + 1}
+                        </label>
+                        <input
+                          id={`${constraint.id}_expression`}
+                          ref={(el) => {
+                            constraintInputRefs.current[`${constraint.id}_expression`] = el;
+                          }}
+                          type="text"
+                          value={constraint.expression}
+                          onChange={(e) =>
+                            handleConstraintInputChange(constraint.id, 'expression', e.target.value)
+                          }
+                          placeholder="Expression, e.g. a*b*c-1"
+                          disabled={isLoading}
+                        />
+                        <span>{constraint.type === 'ineq' ? '≥ 0' : '= 0'}</span>
+                      </div>
+                      <div className="constraint-alias-field">
+                        <label className="sr-only" htmlFor={`${constraint.id}_alias`}>
+                          Alias for constraint {index + 1}
+                        </label>
+                        <input
+                          id={`${constraint.id}_alias`}
+                          type="text"
+                          value={constraint.alias}
+                          onChange={(e) =>
+                            handleConstraintInputChange(constraint.id, 'alias', e.target.value)
+                          }
+                          placeholder="Alias (optional)"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="constraint-remove"
+                        onClick={() => handleRemoveConstraint(constraint.id)}
+                        disabled={isLoading}
+                        aria-label={`Remove constraint ${index + 1}`}
+                        title="Remove constraint"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
-              <div className="flex flex-wrap gap-3 pt-2">
-                <button type="button" onClick={() => handleAddConstraint('ineq')} disabled={isLoading} className="rounded-full bg-emerald-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-50">+ Add Inequality (&gt;=0)</button>
-                <button type="button" onClick={() => handleAddConstraint('eq')} disabled={isLoading} className="rounded-full bg-amber-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(245,158,11,0.24)] transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-50">+ Add Equality (=0)</button>
-                {constraints.length > 0 && <button type="button" onClick={handleClearAllConstraints} disabled={isLoading} className="rounded-full bg-rose-500 px-4 py-2 text-sm text-white shadow-[0_10px_24px_rgba(244,63,94,0.2)] transition-colors hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2 disabled:opacity-50 sm:ml-auto">Clear All Constraints</button>}
+              <div className="constraint-actions">
+                <button
+                  type="button"
+                  onClick={() => handleAddConstraint('ineq')}
+                  disabled={isLoading}
+                >
+                  + Inequality <span>≥ 0</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddConstraint('eq')}
+                  disabled={isLoading}
+                >
+                  + Equality <span>= 0</span>
+                </button>
               </div>
             </div>
-
-            <button type="submit" disabled={isLoading} className="flex w-full items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1d4ed8_0%,#38bdf8_100%)] px-4 py-3 font-semibold text-white shadow-[0_18px_34px_rgba(59,130,246,0.24)] transition-all hover:shadow-[0_22px_42px_rgba(59,130,246,0.3)] focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-              {isLoading ? <><LoadingSpinner size="sm" /><span className="ml-2">Proving...</span></> : 'Prove Non-negativity'}
-            </button>
+            <div className="solver-submit-row">
+              <span>Find a proof of non-negativity.</span>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="design-button design-button--primary"
+              >
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size="sm" /> Proving...
+                  </>
+                ) : (
+                  <>
+                    Prove Non-negativity <Arrow />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </section>
 
-        <section className={`${sectionCardClass} mt-6 xl:mt-0 xl:self-start xl:sticky xl:top-24`}>
-          <h2 className="text-2xl font-semibold text-slate-700">Tutorial</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">Inputs are parsed by SymPy's "sympify" function and should follow Python syntax.</p>
-          <ul className="mt-3 ml-4 list-inside list-disc space-y-2 text-sm text-slate-600 sm:text-base">
-            <li>Both "**" and "^" are allowed for exponents. Multiplication symbols ("*") must not be omitted.</li>
-            <li>Do not use comparison symbols such as "&gt;", "&lt;", "=", "&gt;=", or "&lt;=".</li>
-            <li>Brackets should be "(" or ")", and other brackets are not allowed.</li>
-          </ul>
+        <section className="solver-results" aria-labelledby="proof-heading" aria-busy={isLoading}>
+          <div className="solver-panel-heading">
+            <h2 id="proof-heading">The proof</h2>
+            <span className="section-index">02 / RESULT</span>
+          </div>
+          <div aria-live="polite">
+            {isLoading && (
+              <div className="proof-placeholder">
+                <LoadingSpinner size="sm" />
+                <div>
+                  <h3>Looking for a decomposition…</h3>
+                  <p>The proof service is working on your expression.</p>
+                </div>
+              </div>
+            )}
+            {!isLoading && !error && !apiResult && (
+              <div className="proof-placeholder">
+                <span className="proof-placeholder-symbol" aria-hidden="true">
+                  ∑
+                </span>
+                <div>
+                  <h3>Every proof starts with a question.</h3>
+                  <p>Enter an expression or load an example. Your proof will appear here.</p>
+                </div>
+                <span className="proof-placeholder-formula" aria-hidden="true">
+                  f = ∑ q²
+                </span>
+              </div>
+            )}
+            {error && <AlertMessage type="error" message={error} onClose={handleClearError} />}
+            {!error && apiResult && !apiResult.apiSuccess && (
+              <AlertMessage
+                type="error"
+                message={apiResult.errorMessage || 'An unknown API error occurred.'}
+                onClose={() => setApiResult(null)}
+              />
+            )}
+            {proofData && !proofData.success && (
+              <AlertMessage
+                type="warning"
+                message={`Proof attempt failed: ${proofData.error || 'No proof was found for this expression.'}`}
+                onClose={() => setApiResult(null)}
+              />
+            )}
+          </div>
+          {proofData && proofData.success && (
+            <div className="proof-output-grid">
+              <div className="proof-render">
+                <span className="proof-success-label">Proof found</span>
+                <div className="proof-math">
+                  <KatexDisplay latex={proofData.latex_aligned} />
+                </div>
+              </div>
+              <div className="proof-details">
+                <div className="proof-output-tabs" aria-label="Result format">
+                  {(['solution', 'latex', 'latex_aligned'] as TabKey[]).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      aria-pressed={activeTab === tab}
+                    >
+                      {tab === 'solution'
+                        ? 'Solution'
+                        : tab === 'latex'
+                          ? 'LaTeX'
+                          : 'Aligned LaTeX'}
+                    </button>
+                  ))}
+                </div>
+                <div className="proof-code-heading">
+                  <span>RESULT DETAILS</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(proofData[activeTab], activeTab)}
+                    aria-label={`Copy ${activeTab.replace('_', ' ')}`}
+                  >
+                    {copyStatus[activeTab]}
+                  </button>
+                </div>
+                <pre>{proofData[activeTab]}</pre>
+              </div>
+            </div>
+          )}
         </section>
 
-        <div className="hidden xl:block" aria-hidden="true" />
+        <aside className="solver-reference" aria-labelledby="reference-heading">
+          <p className="eyebrow">A QUICK REFERENCE</p>
+          <h2 id="reference-heading">
+            A little syntax goes
+            <br />a long way.
+          </h2>
+          <p>Use Python-style expressions, parsed with SymPy.</p>
+          <dl className="syntax-list">
+            <div>
+              <dt>
+                <code>a*b</code>
+              </dt>
+              <dd>Write multiplication explicitly.</dd>
+            </div>
+            <div>
+              <dt>
+                <code>a^2</code>
+              </dt>
+              <dd>Use ^ or ** for powers.</dd>
+            </div>
+            <div>
+              <dt>
+                <code>(a+b)</code>
+              </dt>
+              <dd>Group terms with parentheses.</dd>
+            </div>
+          </dl>
+          <p className="syntax-note">
+            Leave out comparison signs such as &gt;, &lt;, and =. The solver checks whether your
+            expression is non-negative.
+          </p>
+          <button
+            className="reference-example"
+            type="button"
+            onClick={() => handleLoadExample(examplesData[1])}
+            disabled={isLoading}
+          >
+            <span>
+              Not sure where to start?<strong>Try Schur's inequality</strong>
+            </span>
+            <Arrow />
+          </button>
+        </aside>
       </div>
 
-      {(error || (!error && apiResult && !apiResult.apiSuccess) || (proofData && !proofData.success)) && (
-        <section className={sectionCardClass}>
-          {error && <AlertMessage type="error" message={error} onClose={handleClearError} />}
-          {!error && apiResult && !apiResult.apiSuccess && <AlertMessage type="error" message={apiResult.errorMessage || 'An unknown API error occurred.'} onClose={() => setApiResult(null)} />}
-          {proofData && !proofData.success && <AlertMessage type="error" message={`Proof attempt failed: ${proofData.error}`} onClose={() => setApiResult(null)} />}
-        </section>
-      )}
-
-      {proofData && proofData.success && (
-        <section className={sectionCardClass}>
-          <div className="overflow-x-auto">
-            <div className="min-w-full grid gap-6 sm:min-w-[640px] xl:min-w-full xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.95fr)]">
-              <div className="min-w-[300px] sm:min-w-[400px] xl:min-w-0">
-                <h2 className="mb-3 text-2xl font-semibold text-slate-700">Proof</h2>
-                <div className="overflow-x-auto rounded-[24px] border border-white/70 bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]">
-                  <div className="min-w-max">
-                    <KatexDisplay latex={proofData.latex_aligned} className="text-base sm:text-lg" />
-                  </div>
-                </div>
-              </div>
-              <div className="min-w-[300px] sm:min-w-[360px] xl:min-w-0">
-                <h2 className="mb-3 text-2xl font-semibold text-slate-700">Result Details</h2>
-                <div className="overflow-hidden rounded-[24px] border border-sky-100 shadow-[0_12px_30px_rgba(148,163,184,0.1)]">
-                  <div className="flex border-b border-sky-100 bg-[rgba(248,250,252,0.76)]">
-                    {(['solution', 'latex', 'latex_aligned'] as TabKey[]).map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`flex-1 px-3 py-2 text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-300 ${activeTab === tab ? 'bg-[linear-gradient(135deg,#bfdbfe_0%,#dbeafe_100%)] text-sky-800' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800'}`}
-                      >
-                        {tab.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="relative bg-white/72 p-3 sm:p-4">
-                    <button
-                      onClick={() => handleCopy(proofData[activeTab], activeTab)}
-                      className="absolute right-2 sm:right-3 top-2 sm:top-3 z-10 rounded-full border border-white/70 bg-slate-200/90 px-2 sm:px-3 py-1 text-xs font-medium text-slate-700 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:bg-slate-700 hover:text-white hover:shadow-xl hover:shadow-black/30 focus:outline-none focus:ring-2 focus:ring-sky-300"
-                      aria-label={`Copy ${activeTab.replace('_', ' ')}`}
-                    >
-                      {copyStatus[activeTab]}
-                    </button>
-                    <pre className="max-h-64 sm:max-h-72 overflow-y-auto whitespace-pre-wrap break-all text-xs sm:text-sm leading-relaxed text-slate-800">
-                      {proofData[activeTab]}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <section className="solver-examples" aria-labelledby="examples-heading">
+        <div className="design-section-heading">
+          <div>
+            <p className="eyebrow">A FEW STARTING POINTS</p>
+            <h2 id="examples-heading">Small expressions. Interesting problems.</h2>
           </div>
-        </section>
-      )}
-
-      <section className={sectionCardClass}>
-        <h2 className="mb-6 text-2xl font-semibold text-slate-800 sm:text-3xl">Try these Examples</h2>
-        {examplesData.length === 0 && <p className="text-slate-600">No examples available at the moment.</p>}
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {examplesData.map((example) => (
-            <div key={example.id} className="flex flex-col justify-between rounded-[26px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.8),rgba(239,246,255,0.72))] p-5 shadow-[0_16px_40px_rgba(148,163,184,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_46px_rgba(96,165,250,0.16)]">
-              <div className="flex-grow">
-                <h3 className="mb-2 text-xl font-semibold text-sky-800">{example.name}</h3>
-                {example.displayExpressionLatex && (
-                  <div className="mb-3 overflow-x-auto rounded-2xl border border-white/80 bg-white/82 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-                    <KatexDisplay latex={example.displayExpressionLatex} />
-                  </div>
-                )}
-                {!example.displayExpressionLatex && example.expression && (
-                  <p className="mb-2 break-all rounded-2xl border border-white/80 bg-white/82 p-3 font-mono text-sm text-slate-700">
-                    <code>{example.expression}</code>
-                  </p>
-                )}
-                {example.description && <p className="mb-3 text-sm text-slate-600">{example.description}</p>}
-                {example.constraints.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Constraints:</h4>
-                    <ul className="list-inside list-disc space-y-0.5 pl-1 text-sm text-slate-600">
-                      {example.constraints.map((c, index) => (
-                        <li key={index}>
-                          <code className="rounded-full bg-slate-200 px-2 py-0.5 text-xs">{c.expression} {c.type === 'ineq' ? '>= 0' : '= 0'}</code>
-                          {c.alias && c.alias !== c.expression && <span className="text-xs text-slate-500"> (as {c.alias})</span>}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+          <span className="section-side-note">Choose an example to load it into the editor.</span>
+        </div>
+        <div className="example-gallery">
+          {examplesData.map((example, index) => (
+            <article className="example-card" key={example.id}>
+              <div className="example-title">
+                <span className="section-index">0{index + 1}</span>
+                <h3>{example.name}</h3>
+                <span className="example-type">
+                  {example.constraints.length ? 'Constrained' : 'Over the reals'}
+                </span>
               </div>
-              <button
-                onClick={() => handleLoadExample(example)}
-                className="mt-auto w-full rounded-full bg-[linear-gradient(135deg,#0ea5e9_0%,#38bdf8_100%)] px-4 py-2 text-sm font-medium text-white shadow-[0_12px_26px_rgba(14,165,233,0.24)] transition-all hover:shadow-[0_16px_34px_rgba(14,165,233,0.3)] focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
-                aria-label={`Load example: ${example.name}`}
-              >
-                Load this Example
-              </button>
-            </div>
+              {example.displayExpressionLatex && (
+                <div className="example-math">
+                  <KatexDisplay latex={example.displayExpressionLatex} />
+                </div>
+              )}
+              <p>{example.description}</p>
+              <div className="example-bottom">
+                <div className="example-constraints">
+                  {example.constraints.length > 0 ? (
+                    example.constraints.map((c, i) => (
+                      <code key={i}>
+                        {c.expression} {c.type === 'ineq' ? '≥ 0' : '= 0'}
+                      </code>
+                    ))
+                  ) : (
+                    <span>No additional constraints</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLoadExample(example)}
+                  disabled={isLoading}
+                  aria-label={`Load example: ${example.name}`}
+                >
+                  Load example <Arrow />
+                </button>
+              </div>
+            </article>
           ))}
         </div>
       </section>
-
-      <section className={sectionCardClass}>
-        <h2 className="mb-6 text-2xl font-semibold text-slate-800 sm:text-3xl">Use it in Python!</h2>
-        <pre className="overflow-x-auto rounded-full border border-white/80 bg-white/78 px-6 py-4 shadow-[0_12px_28px_rgba(148,163,184,0.1)]">
-          <code className="font-mono text-sm text-slate-800">pip install triples</code>
-        </pre>
+      <section className="solver-python">
+        <div>
+          <p className="eyebrow">TAKE IT TO YOUR NOTEBOOK</p>
+          <h2>The same ideas. In Python.</h2>
+        </div>
+        <code>
+          <span>$</span> pip install triples
+        </code>
+        <Link className="design-text-link" to="/triples/documentation/getting-started">
+          Get started <Arrow diagonal />
+        </Link>
       </section>
     </div>
   );

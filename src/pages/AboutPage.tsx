@@ -1,23 +1,109 @@
-﻿import React from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Arrow, usePageEntrance } from '../components/PageVisuals';
+import '../styles/showcase.css';
 
 const AboutPage: React.FC = () => {
+  usePageEntrance();
   return (
-    <div className="overflow-hidden rounded-[32px] border border-white/65 bg-white/58 p-8 shadow-[0_20px_60px_rgba(148,163,184,0.16)] backdrop-blur-xl sm:p-10">
-      <h1 className="mb-6 border-b border-sky-100 pb-4 text-4xl font-semibold tracking-[-0.04em] text-sky-900">About Me</h1>
-      
-      <div className="space-y-6 text-lg leading-relaxed text-slate-700">
-        <p>
-          Hello! This is re-designed by ChatGPT and Codex!
+    <div className="showcase-page about-page">
+      <header className="about-heading">
+        <p className="eyebrow">
+          <span className="eyebrow-line" /> BEHIND THE PROJECTS
         </p>
-      </div>
-
-      <section className="mt-10">
-        <h2 className="mb-4 text-2xl font-semibold text-sky-800">My Philosophy</h2>
-        <div className="rounded-[24px] border border-white/70 bg-[linear-gradient(180deg,rgba(239,246,255,0.88),rgba(248,250,252,0.72))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-          <p className="text-slate-700 italic">
-            "ChatGPT is better."
+        <h1>
+          A little about <span>me.</span>
+        </h1>
+        <p>Mathematics, code, and the ideas that connect them.</p>
+      </header>
+      <div className="about-grid">
+        <aside className="profile-card" aria-label="Profile">
+          <div className="profile-monogram" aria-hidden="true">
+            F<span>h.</span>
+            <i />
+          </div>
+          <p className="eyebrow">HELLO, I'M</p>
+          <h2>ForeverHaibara</h2>
+          <p className="profile-description">
+            Exploring mathematics
+            <br />
+            through code.
           </p>
+          <div className="profile-tags">
+            <span>Algebra</span>
+            <span>Geometry</span>
+            <span>Open source</span>
+          </div>
+          <a
+            className="profile-github"
+            href="https://github.com/ForeverHaibara"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Find me on GitHub <Arrow diagonal />
+          </a>
+        </aside>
+        <div className="about-story">
+          <section className="about-note">
+            <span className="section-index">01 / WELCOME</span>
+            <h2>
+              A space to think,
+              <br />
+              build, and explore.
+            </h2>
+            <p>
+              This site brings together my mathematical tools, experiments, and writing. You can
+              work through an inequality, explore a geometric construction, or browse the notes
+              behind the code.
+            </p>
+            <p className="about-credit">Hello! This site was redesigned with ChatGPT and Codex.</p>
+          </section>
+          <section className="about-interests">
+            <div className="design-section-heading">
+              <h2>What you'll find here</h2>
+              <span className="section-index">02 / EXPLORE</span>
+            </div>
+            <Link to="/triples">
+              <span className="interest-mark" aria-hidden="true">
+                ∑
+              </span>
+              <div>
+                <h3>Algebra, made tangible.</h3>
+                <p>Inequalities and sum-of-squares proofs with Triples.</p>
+              </div>
+              <Arrow />
+            </Link>
+            <Link to="/geogebra">
+              <span className="interest-mark" aria-hidden="true">
+                △
+              </span>
+              <div>
+                <h3>Geometry, in motion.</h3>
+                <p>Constructions and exploration in GeoGebra Studio.</p>
+              </div>
+              <Arrow />
+            </Link>
+            <Link to="/blog">
+              <span className="interest-mark" aria-hidden="true">
+                ↗
+              </span>
+              <div>
+                <h3>Ideas, written down.</h3>
+                <p>Notes on mathematics and programming.</p>
+              </div>
+              <Arrow />
+            </Link>
+          </section>
         </div>
+      </div>
+      <section className="about-philosophy">
+        <div>
+          <p className="eyebrow">A PERSONAL PHILOSOPHY</p>
+          <span className="philosophy-caption">A short thought, in its original form.</span>
+        </div>
+        <blockquote>
+          “ChatGPT is better.”<span aria-hidden="true">”</span>
+        </blockquote>
       </section>
     </div>
   );
