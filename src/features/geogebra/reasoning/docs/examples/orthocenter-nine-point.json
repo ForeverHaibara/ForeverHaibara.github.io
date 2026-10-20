@@ -1,0 +1,1364 @@
+{
+  "input": {
+    "version": 1,
+    "engineCommit": "251e7e16f0bba8ac7c83cdea789fccc195d0c0c7",
+    "premise": "p0@0_0 = ; p1@-0.15151080381571402_-0.6060432152628561 = ; p2@0.7575540190785701_-0.6060432152628561 = ; p3@0_-0.6060432152628561 = ; p4@0.20324620024059203_-0.1625969601924736 = ; p5@-0.09803640246899144_-0.39214560987596575 = ; p6@0.30302160763142805_-0.6060432152628561 = ; p7@0.30302160763142805_-0.3977158600162493 = ; p8@-0.1872605440418937_-0.29961687046702995 = ; p9@-0.378777009539285_-0.606043215262856 = ; p10@0.6060432152628561_-0.7954317200324986 = ; p11@0_-0.41665471049321356 = coll p0 p7 p10, cong p0 p7 p7 p10, perp p0 p11 p1 p2, perp p0 p2 p1 p11, cong p0 p7 p1 p7, cong p0 p7 p2 p7, coll p1 p2 p3, perp p1 p2 p3 p11, coll p0 p2 p4, perp p0 p2 p4 p11, coll p0 p1 p5, perp p0 p1 p5 p11, coll p0 p8 p9, coll p1 p2 p9, coll p1 p2 p6, cong p1 p6 p2 p6, cyclic p0 p1 p2 p8, coll p8 p10 p11",
+    "goals": [
+      "cyclic p3 p4 p5 p6"
+    ],
+    "queries": [
+      {
+        "id": "nine-point",
+        "goals": [
+          "cyclic p3 p4 p5 p6"
+        ]
+      }
+    ],
+    "text": "p0@0_0 = ; p1@-0.15151080381571402_-0.6060432152628561 = ; p2@0.7575540190785701_-0.6060432152628561 = ; p3@0_-0.6060432152628561 = ; p4@0.20324620024059203_-0.1625969601924736 = ; p5@-0.09803640246899144_-0.39214560987596575 = ; p6@0.30302160763142805_-0.6060432152628561 = ; p7@0.30302160763142805_-0.3977158600162493 = ; p8@-0.1872605440418937_-0.29961687046702995 = ; p9@-0.378777009539285_-0.606043215262856 = ; p10@0.6060432152628561_-0.7954317200324986 = ; p11@0_-0.41665471049321356 = coll p0 p7 p10, cong p0 p7 p7 p10, perp p0 p11 p1 p2, perp p0 p2 p1 p11, cong p0 p7 p1 p7, cong p0 p7 p2 p7, coll p1 p2 p3, perp p1 p2 p3 p11, coll p0 p2 p4, perp p0 p2 p4 p11, coll p0 p1 p5, perp p0 p1 p5 p11, coll p0 p8 p9, coll p1 p2 p9, coll p1 p2 p6, cong p1 p6 p2 p6, cyclic p0 p1 p2 p8, coll p8 p10 p11 ? cyclic p3 p4 p5 p6",
+    "acceptedIds": [
+      "antipode",
+      "center",
+      "circumcenter",
+      "foot-D",
+      "foot-E",
+      "foot-F",
+      "intersection-R",
+      "midpoint-M",
+      "second-intersection"
+    ],
+    "goalId": "nine-point",
+    "alreadyAssumed": false,
+    "branches": [],
+    "names": [
+      {
+        "id": "A",
+        "name": "A",
+        "symbol": "p0"
+      },
+      {
+        "id": "B",
+        "name": "B",
+        "symbol": "p1"
+      },
+      {
+        "id": "C",
+        "name": "C",
+        "symbol": "p2"
+      },
+      {
+        "id": "D",
+        "name": "D",
+        "symbol": "p3"
+      },
+      {
+        "id": "E",
+        "name": "E",
+        "symbol": "p4"
+      },
+      {
+        "id": "F",
+        "name": "F",
+        "symbol": "p5"
+      },
+      {
+        "id": "M",
+        "name": "M",
+        "symbol": "p6"
+      },
+      {
+        "id": "O",
+        "name": "O",
+        "symbol": "p7"
+      },
+      {
+        "id": "P",
+        "name": "P",
+        "symbol": "p8"
+      },
+      {
+        "id": "R",
+        "name": "R",
+        "symbol": "p9"
+      },
+      {
+        "id": "U",
+        "name": "U",
+        "symbol": "p10"
+      },
+      {
+        "id": "X",
+        "name": "H",
+        "symbol": "p11"
+      }
+    ],
+    "normalization": {
+      "origin": {
+        "x": 1,
+        "y": 4
+      },
+      "scale": 6.6001893912220435
+    },
+    "assumptionSources": [
+      {
+        "predicate": "coll p0 p7 p10",
+        "candidateIds": [
+          "antipode"
+        ]
+      },
+      {
+        "predicate": "cong p0 p7 p7 p10",
+        "candidateIds": [
+          "antipode"
+        ]
+      },
+      {
+        "predicate": "perp p0 p11 p1 p2",
+        "candidateIds": [
+          "center"
+        ]
+      },
+      {
+        "predicate": "perp p0 p2 p1 p11",
+        "candidateIds": [
+          "center"
+        ]
+      },
+      {
+        "predicate": "cong p0 p7 p1 p7",
+        "candidateIds": [
+          "circumcenter"
+        ]
+      },
+      {
+        "predicate": "cong p0 p7 p2 p7",
+        "candidateIds": [
+          "circumcenter"
+        ]
+      },
+      {
+        "predicate": "coll p1 p2 p3",
+        "candidateIds": [
+          "foot-D"
+        ]
+      },
+      {
+        "predicate": "perp p1 p2 p3 p11",
+        "candidateIds": [
+          "foot-D"
+        ]
+      },
+      {
+        "predicate": "coll p0 p2 p4",
+        "candidateIds": [
+          "foot-E"
+        ]
+      },
+      {
+        "predicate": "perp p0 p2 p4 p11",
+        "candidateIds": [
+          "foot-E"
+        ]
+      },
+      {
+        "predicate": "coll p0 p1 p5",
+        "candidateIds": [
+          "foot-F"
+        ]
+      },
+      {
+        "predicate": "perp p0 p1 p5 p11",
+        "candidateIds": [
+          "foot-F"
+        ]
+      },
+      {
+        "predicate": "coll p0 p8 p9",
+        "candidateIds": [
+          "intersection-R"
+        ]
+      },
+      {
+        "predicate": "coll p1 p2 p9",
+        "candidateIds": [
+          "intersection-R"
+        ]
+      },
+      {
+        "predicate": "coll p1 p2 p6",
+        "candidateIds": [
+          "midpoint-M"
+        ]
+      },
+      {
+        "predicate": "cong p1 p6 p2 p6",
+        "candidateIds": [
+          "midpoint-M"
+        ]
+      },
+      {
+        "predicate": "cyclic p0 p1 p2 p8",
+        "candidateIds": [
+          "second-intersection"
+        ]
+      },
+      {
+        "predicate": "coll p8 p10 p11",
+        "candidateIds": [
+          "second-intersection"
+        ]
+      }
+    ],
+    "assumptionMode": "validated",
+    "operation": "proof"
+  },
+  "result": {
+    "status": "derived",
+    "checks": [
+      true
+    ],
+    "elapsedMs": 2234.15,
+    "points": 12,
+    "assumptions": 18,
+    "certificate": null,
+    "proof": {
+      "version": 1,
+      "mode": "ddar",
+      "nodes": [
+        {
+          "id": "s1",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p0 p7 p10",
+          "sourceIds": [
+            "antipode"
+          ]
+        },
+        {
+          "id": "s6",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cong p0 p7 p7 p10",
+          "sourceIds": [
+            "antipode"
+          ]
+        },
+        {
+          "id": "s9",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p11 p1 p2",
+          "sourceIds": [
+            "center"
+          ]
+        },
+        {
+          "id": "s10",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s9",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p11)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s11",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p2 p1 p11",
+          "sourceIds": [
+            "center"
+          ]
+        },
+        {
+          "id": "s12",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s11",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p2)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p1,p11)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s13",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cong p0 p7 p1 p7",
+          "sourceIds": [
+            "circumcenter"
+          ]
+        },
+        {
+          "id": "s16",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cong p0 p7 p2 p7",
+          "sourceIds": [
+            "circumcenter"
+          ]
+        },
+        {
+          "id": "s19",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p1 p2 p3",
+          "sourceIds": [
+            "foot-D"
+          ]
+        },
+        {
+          "id": "s20",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s19",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p3)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s24",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p1 p2 p3 p11",
+          "sourceIds": [
+            "foot-D"
+          ]
+        },
+        {
+          "id": "s25",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s24",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p3)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s26",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p0 p2 p4",
+          "sourceIds": [
+            "foot-E"
+          ]
+        },
+        {
+          "id": "s27",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s26",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p0,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s28",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s26",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p2,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s31",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p2 p4 p11",
+          "sourceIds": [
+            "foot-E"
+          ]
+        },
+        {
+          "id": "s32",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s31",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p2)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s33",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p0 p1 p5",
+          "sourceIds": [
+            "foot-F"
+          ]
+        },
+        {
+          "id": "s34",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s33",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p1)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p0,p5)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s35",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s33",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p1)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p5)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s38",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p1 p5 p11",
+          "sourceIds": [
+            "foot-F"
+          ]
+        },
+        {
+          "id": "s39",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s38",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p1)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p5)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s40",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p0 p8 p9",
+          "sourceIds": [
+            "intersection-R"
+          ]
+        },
+        {
+          "id": "s45",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p1 p2 p9",
+          "sourceIds": [
+            "intersection-R"
+          ]
+        },
+        {
+          "id": "s46",
+          "kind": "geometry",
+          "rule": "join-collinear-sets",
+          "premises": [
+            {
+              "id": "s45",
+              "coefficient": "1"
+            },
+            {
+              "id": "s19",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "coll p1 p2 p3 p9"
+        },
+        {
+          "id": "s54",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p1 p2 p6",
+          "sourceIds": [
+            "midpoint-M"
+          ]
+        },
+        {
+          "id": "s55",
+          "kind": "geometry",
+          "rule": "join-collinear-sets",
+          "premises": [
+            {
+              "id": "s54",
+              "coefficient": "1"
+            },
+            {
+              "id": "s19",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "coll p1 p2 p3 p6"
+        },
+        {
+          "id": "s56",
+          "kind": "geometry",
+          "rule": "join-collinear-sets",
+          "premises": [
+            {
+              "id": "s55",
+              "coefficient": "1"
+            },
+            {
+              "id": "s46",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "coll p1 p2 p3 p6 p9"
+        },
+        {
+          "id": "s57",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s56",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p6)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s59",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s56",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p3,p6)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s68",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cong p1 p6 p2 p6",
+          "sourceIds": [
+            "midpoint-M"
+          ]
+        },
+        {
+          "id": "s69",
+          "kind": "geometry",
+          "rule": "predicate-equation",
+          "premises": [
+            {
+              "id": "s68",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "length-product",
+            "terms": [
+              {
+                "variable": "log(|p1 p6|)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "log(|p2 p6|)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s71",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cyclic p0 p1 p2 p8",
+          "sourceIds": [
+            "second-intersection"
+          ]
+        },
+        {
+          "id": "s75",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p8 p10 p11",
+          "sourceIds": [
+            "second-intersection"
+          ]
+        },
+        {
+          "id": "s175",
+          "kind": "algebra",
+          "rule": "integer-angle-combination",
+          "premises": [
+            {
+              "id": "s27",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s34",
+              "coefficient": "1"
+            },
+            {
+              "id": "s39",
+              "coefficient": "1"
+            },
+            {
+              "id": "s32",
+              "coefficient": "-1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p0,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p4)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s176",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p0",
+            "p11",
+            "p4"
+          ]
+        },
+        {
+          "id": "s177",
+          "kind": "geometry",
+          "rule": "converse-inscribed-angle",
+          "premises": [
+            {
+              "id": "s175",
+              "coefficient": "1"
+            },
+            {
+              "id": "s176",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "cyclic p0 p11 p4 p5"
+        },
+        {
+          "id": "s179",
+          "kind": "geometry",
+          "rule": "inscribed-angle",
+          "premises": [
+            {
+              "id": "s177",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p0,p11)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p0,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p4)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p4,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s181",
+          "kind": "algebra",
+          "rule": "integer-angle-combination",
+          "premises": [
+            {
+              "id": "s12",
+              "coefficient": "1"
+            },
+            {
+              "id": "s32",
+              "coefficient": "-1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p11)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p11,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s182",
+          "kind": "geometry",
+          "rule": "collinear-from-directions",
+          "premises": [
+            {
+              "id": "s181",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "coll p1 p4 p11"
+        },
+        {
+          "id": "s183",
+          "kind": "geometry",
+          "rule": "collinear-directions",
+          "premises": [
+            {
+              "id": "s182",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p11)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s187",
+          "kind": "algebra",
+          "rule": "integer-angle-combination",
+          "premises": [
+            {
+              "id": "s20",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s39",
+              "coefficient": "1"
+            },
+            {
+              "id": "s35",
+              "coefficient": "1"
+            },
+            {
+              "id": "s25",
+              "coefficient": "-1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p3)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p3)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s188",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p1",
+            "p11",
+            "p3"
+          ]
+        },
+        {
+          "id": "s189",
+          "kind": "geometry",
+          "rule": "converse-inscribed-angle",
+          "premises": [
+            {
+              "id": "s187",
+              "coefficient": "1"
+            },
+            {
+              "id": "s188",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "cyclic p1 p11 p3 p5"
+        },
+        {
+          "id": "s191",
+          "kind": "geometry",
+          "rule": "inscribed-angle",
+          "premises": [
+            {
+              "id": "s189",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p11)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p11,p3)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p3,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s344",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p1",
+            "p2",
+            "p4"
+          ]
+        },
+        {
+          "id": "s345",
+          "kind": "geometry",
+          "rule": "circle-through-three-points",
+          "premises": [
+            {
+              "id": "s344",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "cyclic p1 p2 p4"
+        },
+        {
+          "id": "s346",
+          "kind": "algebra",
+          "rule": "integer-angle-combination",
+          "premises": [
+            {
+              "id": "s183",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s28",
+              "coefficient": "1"
+            },
+            {
+              "id": "s12",
+              "coefficient": "1"
+            },
+            {
+              "id": "s57",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p1,p6)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p2,p4)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s347",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p1",
+            "p2",
+            "p4"
+          ]
+        },
+        {
+          "id": "s348",
+          "kind": "geometry",
+          "rule": "circle-center-from-chord-angle",
+          "premises": [
+            {
+              "id": "s345",
+              "coefficient": "1"
+            },
+            {
+              "id": "s69",
+              "coefficient": "1"
+            },
+            {
+              "id": "s346",
+              "coefficient": "1"
+            },
+            {
+              "id": "s347",
+              "coefficient": "1"
+            }
+          ],
+          "points": [
+            "p6",
+            "p1",
+            "p2",
+            "p4"
+          ]
+        },
+        {
+          "id": "s352",
+          "kind": "geometry",
+          "rule": "radius-chord-angle",
+          "premises": [
+            {
+              "id": "s348",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p1,p2)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p1,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p2,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p4,p6)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "pi",
+                "coefficient": "-1/2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s485",
+          "kind": "algebra",
+          "rule": "integer-angle-combination",
+          "premises": [
+            {
+              "id": "s10",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s32",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s191",
+              "coefficient": "1"
+            },
+            {
+              "id": "s35",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s25",
+              "coefficient": "1"
+            },
+            {
+              "id": "s59",
+              "coefficient": "1"
+            },
+            {
+              "id": "s179",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s34",
+              "coefficient": "1"
+            },
+            {
+              "id": "s352",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s183",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s28",
+              "coefficient": "-1"
+            }
+          ],
+          "equation": {
+            "domain": "angle",
+            "terms": [
+              {
+                "variable": "dir(p3,p5)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dir(p3,p6)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p4,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dir(p4,p6)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s486",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p3",
+            "p4",
+            "p5"
+          ]
+        },
+        {
+          "id": "s487",
+          "kind": "geometry",
+          "rule": "converse-inscribed-angle",
+          "premises": [
+            {
+              "id": "s485",
+              "coefficient": "1"
+            },
+            {
+              "id": "s486",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "cyclic p3 p4 p5 p6"
+        },
+        {
+          "id": "s551",
+          "kind": "geometry",
+          "rule": "incidence-subset",
+          "premises": [
+            {
+              "id": "s487",
+              "coefficient": "1"
+            }
+          ],
+          "predicate": "cyclic p3 p4 p5 p6"
+        }
+      ],
+      "conclusions": [
+        {
+          "predicate": "cyclic p3 p4 p5 p6",
+          "nodeId": "s551",
+          "backendKnown": true,
+          "status": "recorded"
+        }
+      ],
+      "assumptionIds": [
+        "s1",
+        "s6",
+        "s9",
+        "s11",
+        "s13",
+        "s16",
+        "s19",
+        "s24",
+        "s26",
+        "s31",
+        "s33",
+        "s38",
+        "s40",
+        "s45",
+        "s54",
+        "s68",
+        "s71",
+        "s75"
+      ],
+      "contradictionIds": [],
+      "gapIds": [],
+      "guardIds": [
+        "s176",
+        "s188",
+        "s344",
+        "s347",
+        "s486"
+      ],
+      "algebraReplay": {
+        "checked": 5,
+        "valid": true,
+        "errors": []
+      },
+      "limited": false,
+      "explanation": "recorded",
+      "certificate": null,
+      "witnessFailures": []
+    }
+  }
+}

@@ -1,6 +1,7 @@
 """Exact provenance rows, independent of DDAR's numerical elimination choices."""
 
 from fractions import Fraction as F
+from math import gcd
 
 
 def plus(target, other, coefficient=F(1)):
@@ -77,7 +78,7 @@ class ProofGraph:
 
 
 class Basis:
-    """Rational search with integer-combination checks for modular conclusions.
+    """Integer row lattice for angles; rational elimination for lengths.
 
     A failed membership check is incomplete, never a disproof. In particular, we
     do not divide a modular assumption by its coefficient just to get a proof.
@@ -92,10 +93,12 @@ class Basis:
         return variable != "pi" and (not variable.startswith("log(") or variable.startswith("log(|"))
 
     def reduce(self, original):
-        row = dict(original)
+        row = {key: value for key, value in original.items() if value}
         used = {}
         for pivot, (basis, lineage) in sorted(self.rows.items()):
             coefficient = row.get(pivot, F(0))
+            if self.domain == "angle":
+                coefficient = coefficient // basis[pivot]
             if coefficient:
                 plus(row, basis, -coefficient)
                 plus(used, lineage, coefficient)
@@ -104,6 +107,8 @@ class Basis:
     def add(self, original, node_id):
         if not node_id:
             return
+        if self.domain == "angle":
+            return self.add_angle(original, node_id)
         row, used = self.reduce(original)
         lineage = plus({node_id: F(1)}, used, F(-1))
         variables = [variable for variable in row if self.geometric(variable)]
@@ -119,6 +124,45 @@ class Basis:
         pivot = min(variables)
         coefficient = F(1) / row[pivot]
         self.rows[pivot] = scaled(row, coefficient), scaled(lineage, coefficient)
+
+    def add_angle(self, original, node_id):
+        # Hermite-style integer row operations retain dependent rows that a
+        # rational echelon basis would discard. E.g. 2a=0 and 3a=0 imply a=0;
+        # 2a=0 alone still does not. Never divide a modular equation.
+        if any(value.denominator != 1 for key, value in original.items() if self.geometric(key)):
+            raise ValueError("Directed-angle coefficients must be integers")
+        row, lineage = {key: value for key, value in original.items() if value}, {node_id: F(1)}
+        while any(self.geometric(key) for key in row):
+            pivot = min(key for key in row if self.geometric(key))
+            if pivot not in self.rows:
+                break
+            basis, source = self.rows[pivot]
+            b = int(row[pivot])
+            a = int(basis[pivot])
+            if b % a == 0:
+                plus(row, basis, -F(b, a))
+                plus(lineage, source, -F(b, a))
+                continue
+            # Bezout coefficients, including negative b.
+            r0, r1, s0, s1, t0, t1 = a, b, 1, 0, 0, 1
+            while r1:
+                q = r0 // r1
+                r0, r1, s0, s1, t0, t1 = r1, r0 - q * r1, s1, s0 - q * s1, t1, t0 - q * t1
+            g = gcd(a, b)
+            s, t = s0 * (1 if r0 > 0 else -1), t0 * (1 if r0 > 0 else -1)
+            self.rows[pivot] = (plus(scaled(basis, F(s)), row, F(t)), plus(scaled(source, F(s)), lineage, F(t)))
+            row = plus(scaled(row, F(a, g)), basis, -F(b, g))
+            lineage = plus(scaled(lineage, F(a, g)), source, -F(b, g))
+        variables = [key for key in row if self.geometric(key)]
+        if variables:
+            pivot = min(variables)
+            sign = F(1) if row[pivot] > 0 else F(-1)
+            self.rows[pivot] = scaled(row, sign), scaled(lineage, sign)
+        elif row.get("pi", F(0)).denominator != 1:
+            contradiction = self.graph.equation("contradiction", "incompatible-equations", "angle", row,
+                [{"id": key, "coefficient": str(value)} for key, value in lineage.items()])
+            if contradiction:
+                self.graph.contradictions.append(contradiction)
 
     def membership(self, row):
         remainder, used = self.reduce(row)

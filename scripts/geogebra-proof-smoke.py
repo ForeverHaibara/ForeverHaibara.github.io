@@ -2,6 +2,8 @@
 
 import copy
 import json
+import itertools
+import random
 from pathlib import Path
 import subprocess
 import sys
@@ -92,6 +94,51 @@ class ReadableProofTests(unittest.TestCase):
         result = self.hypothetical("angeq p0 p1 p0 p2 2 -2 0", ["para p0 p1 p0 p2", "angeq p0 p1 p0 p2 2 -2 0"])
         self.assertEqual(result["checks"], [False, True])
         self.assertEqual(result["proof"]["conclusions"][1]["status"], "assumed")
+
+    def test_dependent_modular_rows_retain_integer_bezout_derivations(self):
+        for coefficients in itertools.permutations([2, 3, 6]):
+            graph = ProofGraph()
+            basis = Basis(graph, "angle")
+            for coefficient in coefficients:
+                row = {"dir(a,b)": F(coefficient)}
+                node = graph.equation("assumption", "test-condition", "angle", row)
+                basis.add(row, node)
+            self.assertIsNotNone(basis.prove({"dir(a,b)": F(1)}))
+            self.assertTrue(replay_algebra(graph.nodes)["valid"])
+        graph = ProofGraph()
+        basis = Basis(graph, "angle")
+        for coefficient in (4, 6):
+            row = {"dir(a,b)": F(coefficient)}
+            basis.add(row, graph.equation("assumption", "test-condition", "angle", row))
+        self.assertIsNone(basis.prove({"dir(a,b)": F(1)}))
+        self.assertIsNotNone(basis.prove({"dir(a,b)": F(2)}))
+
+    def test_fraction_normalization_preserves_condition_sources_and_assumed_goals(self):
+        predicate = "angeq p0 p1 p0 p2 1 -1 -180/2"
+        result = json.loads(solve_json(json.dumps({"version": 1, "operation": "proof", "assumptionMode": "hypothetical",
+            "premise": "p0@0_0 = ; p1@3_0 = ; p2@0_2 = " + predicate,
+            "assumptionSources": [{"predicate": predicate, "candidateIds": ["right-angle"]}], "goals": [predicate]})))
+        self.assertEqual(result["proof"]["conclusions"][0]["status"], "assumed")
+        self.assertEqual(next(node for node in result["proof"]["nodes"] if node["kind"] == "assumption")["sourceIds"], ["right-angle"])
+
+    def test_integer_lattice_conclusions_hold_for_all_small_torus_witnesses(self):
+        rng = random.Random(7139)
+        for _ in range(20):
+            graph = ProofGraph()
+            basis = Basis(graph, "angle")
+            equations = []
+            for _ in range(4):
+                a, b = rng.randint(-3, 3), rng.randint(-3, 3)
+                row = {key: value for key, value in {"dir(a,b)": F(a), "dir(a,c)": F(b), "pi": -F(a, 6) - F(b, 4)}.items() if value}
+                equations.append(row)
+                basis.add(row, graph.equation("assumption", "test-condition", "angle", row))
+            witnesses = [(F(a, 12), F(b, 12)) for a in range(12) for b in range(12)
+                if all((row.get("dir(a,b)", 0) * F(a, 12) + row.get("dir(a,c)", 0) * F(b, 12) + row.get("pi", 0)).denominator == 1 for row in equations)]
+            for a, b in itertools.product(range(-2, 3), repeat=2):
+                target = {"dir(a,b)": F(a), "dir(a,c)": F(b), "pi": -F(a, 6) - F(b, 4)}
+                if basis.prove(target):
+                    self.assertTrue(all((a * x + b * y + target["pi"]).denominator == 1 for x, y in witnesses))
+            self.assertTrue(replay_algebra(graph.nodes)["valid"])
 
     def test_contradiction_does_not_prove_an_unrelated_goal(self):
         result = self.hypothetical("para p0 p1 p0 p2, perp p0 p1 p0 p2", ["cong p0 p1 p1 p2"])

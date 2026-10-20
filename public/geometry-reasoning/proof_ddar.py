@@ -12,7 +12,7 @@ import time
 from fractions import Fraction as F
 
 from ddar import DDAR
-from parse import AGProblem
+from parse import AGPredicate, AGProblem
 from elimination import prime_decomposition
 import numericals as ng
 from proof_algebra import Basis, ProofGraph, plus, scaled
@@ -39,6 +39,7 @@ class Knowledge:
         self.given = {}
         self.branch_parents = []
         self.incidence = {"coll": [], "cyclic": []}
+        self.circle_centers = []
         self.facts = []
         self.seen_equations = set()
 
@@ -106,9 +107,9 @@ class Knowledge:
             if predicate.name == "cong":
                 a, b, c, d = predicate.points
                 self.assert_row("length-add", self.row("length-add", [(a, b, 1), (c, d, -1)]), "equal-lengths", [node])
-        elif self.hypothetical and predicate.name == "coll":
+        elif predicate.name == "coll":
             self.collinear(predicate.points, node)
-        elif self.hypothetical and predicate.name == "cyclic":
+        elif predicate.name == "cyclic":
             self.cyclic(predicate.points, (), node)
         return node
 
@@ -130,15 +131,15 @@ class Knowledge:
         if a is None:
             return None
         if source is None:
-            parents = []
-            for c in names:
-                if c in (a, b) or not self.separated(a, c):
+            parents = None
+            for v, w in itertools.permutations(names, 2):
+                if not self.separated(v, w):
                     continue
-                parent = self.bases["angle"].prove(self.angle(b, a, c))
-                if parent is None:
-                    parents = None
+                rows = [self.angle(w, v, c) for c in names if c not in (v, w) and self.separated(v, c)]
+                if all(self.bases["angle"].membership(row) is not None for row in rows):
+                    a, b = v, w
+                    parents = [self.bases["angle"].prove(row) for row in rows]
                     break
-                parents.append(parent)
             source = self.graph.add("geometry" if parents is not None else "gap", "collinear-from-directions" if parents is not None else "unreconstructed-collinearity",
                 parents or (), predicate="coll " + " ".join(names))
         # Existing lines can be joined only when two separated points are shared.
@@ -169,8 +170,19 @@ class Knowledge:
         if len(names) < 3:
             return None
         existing = self.incidence_source("cyclic", names)
-        if existing:
+        if existing and all(any(set(names) <= known and str(center) == old_center
+                for known, old_center, _ in self.circle_centers) for center in centers):
             return existing
+        source = existing or source
+        center_names = list(map(str, centers))
+        if source is None and not self.hypothetical:
+            for center in center_names:
+                rows = [self.row("length-product", [(center, names[0], 1), (center, point, -1)]) for point in names[1:]]
+                if all(self.bases["length-product"].membership(row) is not None for row in rows):
+                    parents = [self.bases["length-product"].prove(row) for row in rows]
+                    source = self.graph.add("geometry", "equal-radii-circle", parents,
+                        points=[center, *names], predicate="cyclic " + " ".join(names))
+                    break
         if source is None:
             parents = []
             if len(names) >= 4:
@@ -182,26 +194,80 @@ class Knowledge:
                         parents = None
                         break
                     parents.append(parent)
+            elif not self.hypothetical:
+                guard = self.guard("witness-noncollinear", names)
+                source = self.graph.add("geometry", "circle-through-three-points", [guard], predicate="cyclic " + " ".join(names))
+                parents = None
             else:
                 parents = None
             if parents is not None and parents:
                 guard = self.guard("witness-noncollinear", names[:3])
                 source = self.graph.add("geometry", "converse-inscribed-angle", [*parents, guard], predicate="cyclic " + " ".join(names))
-            else:
+            elif source is None:
                 source = self.graph.add("gap", "unreconstructed-circle", predicate="cyclic " + " ".join(names))
-        self.incidence["cyclic"].append((set(names), source))
+        # Three common noncollinear points determine the same circle. In
+        # particular, do not demand a new angle proof for a merged circle.
+        if not existing and not self.hypothetical:
+            pending = list(self.incidence["cyclic"])
+            changed = True
+            while changed:
+                changed = False
+                for known, parent in pending[:]:
+                    common = sorted(set(names) & known)
+                    triple = next((triple for triple in itertools.combinations(common, 3)
+                        if ng.orientation(*(self.points[name].value for name in triple)) != 0), None)
+                    if triple and not known <= set(names):
+                        guard = self.guard("witness-noncollinear", triple)
+                        names = sorted(set(names) | known)
+                        source = self.graph.add("geometry", "join-cyclic-sets", [source, parent, guard], predicate="cyclic " + " ".join(names))
+                        pending.remove((known, parent))
+                        changed = True
+        if not existing:
+            self.incidence["cyclic"].append((set(names), source))
         for a, b, c, d in itertools.islice(itertools.combinations(names, 4), 128):
             for x, y, v, w in ((a, b, c, d), (a, c, b, d), (a, d, b, c)):
                 row = plus(self.angle(x, v, y), self.angle(x, w, y), F(-1))
                 self.assert_row("angle", row, "inscribed-angle", [source])
-        # Center provenance is not reconstructed yet; never silently assume it.
-        if centers:
-            center_fact = self.graph.add("gap", "unreconstructed-circle-center", [source], points=list(map(str, centers)))
-            for center in centers:
+        inherited = [center for known, center, _ in self.circle_centers if len(known & set(names)) >= 3]
+        for center in dict.fromkeys([*center_names, *inherited]):
+            if any(set(names) <= known and center == old_center for known, old_center, _ in self.circle_centers):
+                continue
+            center_fact = self.center_source(names, center, source)
+            self.circle_centers.append((set(names), center, center_fact))
+            if center_fact:
                 for point in names[1:]:
                     self.assert_row("length-product", self.row("length-product", [(center, names[0], 1), (center, point, -1)]), "circle-radii", [center_fact])
+                for a, b, c in itertools.islice(itertools.permutations(names, 3), 160):
+                    if center not in (a, b, c) and self.separated(center, a):
+                        row = plus(self.angle(a, c, b), self.angle(center, a, b), F(-1))
+                        plus(row, {"pi": -F(1, 2)})
+                        self.assert_row("angle", row, "radius-chord-angle", [center_fact])
         self.facts.append(source)
         return source
+
+    def center_source(self, names, center, source):
+        for triple in itertools.combinations(names, 3):
+            if center in triple or ng.orientation(*(self.points[name].value for name in triple)) == 0:
+                continue
+            a, b, c = triple
+            rows = [self.row("length-product", [(center, a, 1), (center, point, -1)]) for point in (b, c)]
+            if all(self.bases["length-product"].membership(row) is not None for row in rows):
+                parents = [self.bases["length-product"].prove(row) for row in rows]
+                guard = self.guard("witness-noncollinear", triple)
+                return self.graph.add("geometry", "circle-center-from-radii", [source, *parents, guard], points=[center, *triple])
+        # Upstream also locates a center from one chord's perpendicular
+        # bisector and its tangent/inscribed-angle relation.
+        for a, b, c in itertools.permutations(names, 3):
+            if center in (a, b, c) or not self.separated(center, a):
+                continue
+            radius = self.row("length-product", [(center, a, 1), (center, b, -1)])
+            angle = plus(self.angle(a, c, b), self.angle(center, a, b), F(-1))
+            plus(angle, {"pi": -F(1, 2)})
+            if self.bases["length-product"].membership(radius) is not None and self.bases["angle"].membership(angle) is not None:
+                parents = [self.bases["length-product"].prove(radius), self.bases["angle"].prove(angle)]
+                guard = self.guard("witness-noncollinear", [a, b, c])
+                return self.graph.add("geometry", "circle-center-from-chord-angle", [source, *parents, guard], points=[center, a, b, c])
+        return self.graph.add("gap", "unreconstructed-circle-center", [source], points=[center])
 
     def similar(self, first, second):
         first, second = list(map(str, first)), list(map(str, second))
@@ -212,6 +278,9 @@ class Knowledge:
         left, right = edges(first), edges(second)
         ratios = [self.row("length-product", [(*left[i], 1), (*right[i], -1), (*left[2], -1), (*right[2], 1)]) for i in (0, 1)]
         angles = [plus(self.angle(first[(i + 1) % 3], first[i], first[(i + 2) % 3]), self.angle(second[(i + 1) % 3], second[i], second[(i + 2) % 3]), F(-sign)) for i in range(3)]
+        if all(self.bases[domain].membership(row) is not None for domain, row in
+                [("length-product", row) for row in ratios] + [("angle", row) for row in angles]):
+            return
         rule, parents = None, []
         obligations = (("sss-similarity", [("length-product", row) for row in ratios]),
             ("aa-similarity", [("angle", row) for row in angles[:2]]),
@@ -277,6 +346,22 @@ class Knowledge:
                 premise = self.bases["length-product"].prove(log_row)
                 self.assert_row("length-add", row, "positive-length-ratio", [premise], ratio=str(ratio))
 
+    def sync_circles(self):
+        if self.hypothetical or self.graph.limited or self.graph.contradictions:
+            return
+        for center in self.points:
+            groups = {}
+            for point in self.points:
+                if not self.separated(center, point):
+                    continue
+                row, _ = self.bases["length-product"].reduce({symbol("length-product", center, point): F(1)})
+                groups.setdefault(tuple(sorted(row.items())), []).append(point)
+            for names in groups.values():
+                triple = next((triple for triple in itertools.combinations(names, 3)
+                    if ng.orientation(*(self.points[name].value for name in triple)) != 0), None)
+                if triple:
+                    self.cyclic([*triple, *(name for name in names if name not in triple)], [center])
+
     def prove_predicate(self, predicate):
         if str(predicate) in self.given:
             return self.given[str(predicate)]
@@ -321,6 +406,7 @@ class TracedDDAR(DDAR):
 
     def transfer_dist_add_mul(self):
         self.knowledge.sync_lengths()
+        self.knowledge.sync_circles()
         return super().transfer_dist_add_mul()
 
 
@@ -339,8 +425,14 @@ def generate_proof(data, validate_assumption):
             knowledge.branch_parents.append(knowledge.graph.add("guard", "ordinary-angle-branch",
                 points=[symbols.get(name, name) for name in branch["angle"]], sign=branch["sign"], lift=branch["lift"]))
     engine = None if hypothetical else TracedDDAR(problem.points, knowledge)
-    sources = {entry["predicate"]: entry["candidateIds"] for entry in data.get("assumptionSources", [])}
+    sources = {}
+    for entry in data.get("assumptionSources", []):
+        # The AG2 parser reduces constants such as -180/2 to -90. Source
+        # identity must survive that normalization, including direct goals.
+        key = str(AGPredicate.parse(entry["predicate"]))
+        sources[key] = list(dict.fromkeys([*sources.get(key, []), *entry["candidateIds"]]))
     validation = []
+    roots = []
     for predicate in problem.preds:
         try:
             validate_assumption(predicate)
@@ -349,6 +441,13 @@ def generate_proof(data, validate_assumption):
             if not hypothetical:
                 raise ValueError("Coordinate witness rejected. Enable hypothesis exploration to use these assumptions: " + str(predicate)) from error
         root = knowledge.assume(predicate, sources.get(str(predicate), []))
+        roots.append((predicate, root))
+    knowledge.sync_lengths()
+    knowledge.sync_circles()
+    # Load every explicit premise before reconstructing the closure. A theorem
+    # discovered early must not be given a spurious gap because a later input
+    # premise has not been entered into the explanation basis yet.
+    for predicate, root in roots:
         if engine:
             engine.current_assumption = root
             try:
@@ -360,7 +459,6 @@ def generate_proof(data, validate_assumption):
         with contextlib.redirect_stdout(io.StringIO()):
             engine.deduction_closure(progress_dot=False)
     knowledge.sync_lengths()
-    from parse import AGPredicate
     names = {point.name: point for point in problem.points}
     conclusions = []
     for text in data.get("goals", [])[:64]:
@@ -370,7 +468,7 @@ def generate_proof(data, validate_assumption):
         if known and node is None and not knowledge.graph.contradictions:
             node = knowledge.graph.add("gap", "unreconstructed-ddar-conclusion", predicate=text)
         conclusions.append({"predicate": text, "nodeId": node, "backendKnown": known,
-            "status": "assumed" if text in knowledge.given and not knowledge.graph.contradictions else "recorded" if node and knowledge.graph.by_id[node]["kind"] != "gap" else "unexplained" if known else "not-derived"})
+            "status": "assumed" if str(goal) in knowledge.given and not knowledge.graph.contradictions else "recorded" if node and knowledge.graph.by_id[node]["kind"] != "gap" else "unexplained" if known else "not-derived"})
     if not conclusions:
         for node in list(dict.fromkeys(knowledge.facts))[-12:]:
             if node and node not in knowledge.assumptions:

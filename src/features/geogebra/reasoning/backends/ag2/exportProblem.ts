@@ -2,6 +2,7 @@ import { predicatePoints } from '../../ir/types';
 import type { ConditionSelection, GeometryPredicate, Rational, ReasoningProblem, Segment, SegmentTerm } from '../../ir/types';
 import { AG2_COMMIT, AG2_LIMITS } from './capabilities';
 import { canonicalDirectionEquation } from '../../../analysis/quantities/directedAngles';
+import { proofQueryCandidates } from './proofQueries';
 
 export interface AngleBranch {
   angle: [string, string, string];
@@ -196,11 +197,15 @@ export const exportAg2Queries = (problem: ReasoningProblem, acceptedIds: string[
 export const exportAg2Proof = (problem: ReasoningProblem, selection: ConditionSelection): Ag2ExportResult => {
   const queryIds: string[] = [];
   if (selection.goalId) queryIds.push(selection.goalId);
-  else for (const candidate of problem.candidates) {
+  else for (const candidate of proofQueryCandidates(problem.candidates, selection.acceptedIds)) {
     if (queryIds.length >= 32) break;
-    if (selection.acceptedIds.includes(candidate.id) || candidate.diagnostics.length || !candidate.predicates.length
-      || candidate.predicates.some((predicate) => predicate.kind === 'ordinary-angle-equation')) continue;
-    if (compileAg2Problem(problem, selection, [...queryIds, candidate.id]).value) queryIds.push(candidate.id);
+    const trial = compileAg2Problem(problem, selection, [...queryIds, candidate.id]).value;
+    if (trial) {
+      const rows = trial.queries.at(-1)!.goals;
+      const previous = new Set(trial.queries.slice(0, -1).flatMap((query) => query.goals));
+      const given = new Set(trial.assumptionSources.map((entry) => entry.predicate));
+      if (rows.some((row) => !given.has(row) && !previous.has(row))) queryIds.push(candidate.id);
+    }
   }
   const result = compileAg2Problem(problem, selection, queryIds);
   if (result.value) result.value.operation = 'proof';

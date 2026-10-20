@@ -44,6 +44,9 @@ Evaluate coverage 可检查建议集能推出多少额外性质，不会自动�
 精确消元系数、几何规则与坐标分支，并导出当前证明的 Markdown。
 完整项目 JSON 保留整批证明图和实际使用的导出输入。
 可直接阅读生成的 [中位线证明样例](docs/examples/midsegment-proof.md)。
+新增 [九点圆](docs/examples/orthocenter-nine-point.md) 和
+[内心辅助点长度乘积](docs/examples/incenter-contact-polar.md) 的真实推导；
+构型、条件、对照结果与复现方法见 [垂足构型基准](docs/pedal-benchmarks.md)。
 
 **Explore hypotheses** 允许显式接受采样失败或出现反例的保留候选。此模式
 使用符号代数，不强迫当前坐标满足假设；报告可检测的矛盾，不使用爆炸律。
@@ -105,6 +108,7 @@ AG2 的坐标检查可能比数值发现严格得多。普通模式的桥接层�
 npm test -- --run src/features/geogebra/reasoning --maxWorkers=2
 python scripts/geogebra-reasoning-smoke.py
 python scripts/geogebra-proof-smoke.py
+python scripts/geogebra-pedal-smoke.py
 npx tsc --noEmit
 npm run build
 ```

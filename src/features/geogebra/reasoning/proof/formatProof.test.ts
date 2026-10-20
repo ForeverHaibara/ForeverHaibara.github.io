@@ -25,4 +25,13 @@ describe('readable proof presentation', () => {
     expect(focused.nodes.map((node) => node.id)).toEqual(['s9']);
     expect(focused.gapIds).toEqual([]); expect(focused.explanation).toBe('recorded');
   });
+  it('shows exact length products as geometric identities and keeps fractional log rows explicit', () => {
+    expect(formatProofPredicate('distmeq p0 p3 p0 p4 p0 p1 1 1 -2 1', payload())).toBe('|A, M| · |A, N| = |A, B|²');
+    expect(formatProofPredicate('distmeq p0 p1 p0 p3 1 -1 1/2', payload())).toBe('|A, B| = |A, M| · 2');
+    expect(formatProofEquation({ domain: 'length-product', terms: [
+      { variable: 'log(|p0 p1|)', coefficient: '2' }, { variable: 'log(|p0 p3|)', coefficient: '-1' },
+      { variable: 'log(2)', coefficient: '-1' },
+    ] }, payload())).toBe('|A B|² = |A M| · 2');
+    expect(formatProofEquation({ domain: 'length-product', terms: [{ variable: 'log(|p0 p1|)', coefficient: '1/2' }] }, payload())).toContain('1/2 × log |A B|');
+  });
 });

@@ -10,6 +10,10 @@ export const proofRuleLabel = (rule: string): string => ({
   'similarity-side-ratios': 'Corresponding sides of similar triangles', 'similarity-angles': 'Corresponding directed angles of similar triangles',
   'inscribed-angle': 'Angles subtending the same chord', 'converse-inscribed-angle': 'Converse of the inscribed-angle theorem',
   'incidence-subset': 'Take a subset of the incidence relation', 'circle-radii': 'Radii of one circle',
+  'equal-radii-circle': 'Equal radii define a circle', 'circle-center-from-radii': 'Three equal radii determine the circle center',
+  'circle-through-three-points': 'Three noncollinear points determine a circle', 'join-cyclic-sets': 'Join circles with three common noncollinear points',
+  'circle-center-from-chord-angle': 'Identify the center from an equal-radius chord and its inscribed angle',
+  'radius-chord-angle': 'Radius, chord and inscribed-angle relation',
   'rational-linear-combination': 'Exact rational elimination', 'integer-angle-combination': 'Integer combination modulo π',
   'witness-line-order': 'Point order from the coordinate witness', 'witness-triangle-orientations': 'Triangle orientation from the coordinate witness',
   'witness-noncollinear': 'Noncollinearity from the coordinate witness', 'incompatible-equations': 'Incompatible assumed equations',
@@ -33,7 +37,21 @@ const expression = (parts: Array<{ text: string; coefficient: string }>): string
     return `${index ? negative ? ' − ' : ' + ' : negative ? '−' : ''}${absolute === '1' ? '' : `${absolute} × `}${text}`;
   }).join('') || '0';
 
+/** Keep the exact log equation in JSON; show small integer powers as products. */
+const lengthProduct = (parts: Array<{ text: string; coefficient: string }>): string | null => {
+  if (parts.some((part) => !/^-?\d+$/.test(part.coefficient) || Math.abs(Number(part.coefficient)) > 32)) return null;
+  const side = (sign: number) => parts.filter((part) => Number(part.coefficient) * sign > 0).map((part) => {
+    const power = Math.abs(Number(part.coefficient));
+    return `${part.text}${power === 1 ? '' : power === 2 ? '²' : `^${power}`}`;
+  }).join(' · ') || '1';
+  return `${side(1)} = ${side(-1)}`;
+};
+
 export const formatProofEquation = (equation: ProofEquation, exported: Ag2Export): string => {
+  if (equation.domain === 'length-product' && equation.terms.every((term) => /^log\(.*\)$/.test(term.variable))) {
+    const product = lengthProduct(equation.terms.map((term) => ({ text: proofNames(term.variable.slice(4, -1), exported), coefficient: term.coefficient })));
+    if (product) return product;
+  }
   const symbol = (value: string) => {
     const text = value.replace(/^len\((.*)\)$/, '|$1|').replace(/^log\(\|(.*)\|\)$/, 'log |$1|').replace(/^log\((.*)\)$/, 'log $1').replace(/^pi$/, 'π');
     return proofNames(text, exported);
@@ -51,6 +69,12 @@ export const formatProofPredicate = (predicate: string, exported: Ag2Export): st
   if (kind === 'cong') return `|${pair(0)}| = |${pair(2)}|`;
   if (kind === 'overlap') return `${name(points[0])} = ${name(points[1])}`;
   if (kind === 'angeq' || kind === 'distseq' || kind === 'distmeq') {
+    if (kind === 'distmeq') {
+      const [numerator, denominator = '1'] = constants[points.length / 2].split('/');
+      const product = lengthProduct([...Array.from({ length: points.length / 2 }, (_, i) => ({ coefficient: constants[i], text: `|${pair(2 * i)}|` })),
+        ...(numerator === '1' ? [] : [{ text: numerator, coefficient: '1' }]), ...(denominator === '1' ? [] : [{ text: denominator, coefficient: '-1' }])]);
+      if (product) return product;
+    }
     const parts = Array.from({ length: points.length / 2 }, (_, i) => ({ coefficient: constants[i],
       text: kind === 'angeq' ? `dir(${pair(2 * i)})` : kind === 'distmeq' ? `log |${pair(2 * i)}|` : `|${pair(2 * i)}|` }));
     const tail = constants[points.length / 2];
