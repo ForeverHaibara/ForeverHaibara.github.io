@@ -39,9 +39,21 @@ export const detectDirectedAngleRelations = (scene: GeometryScene, options: Disc
       if (!canonical.terms.length || found.has(canonical.key)) continue;
       if (found.size >= options.maxRelations) { budget.note(`Directed angle output limit (${options.maxRelations}) reached; results are partial.`); return [...found.values()]; }
       const points = new Set([...source.indexes, ...target.indexes]);
+      // Shared directions can cancel a whole spectator point. For example,
+      // angle(A,B,M)=angle(A,B,C) constrains B,C,M, not the free point A.
+      // Retain the original equation and all nonzero-direction guards.
+      const effective = [...new Set(canonical.terms.flatMap((term) => term.segment))].sort();
+      const guards = new Map<string, [string, string]>();
+      for (const { angle: [a, v, b] } of terms) for (const end of [a, b]) {
+        const segment = [v, end].sort() as [string, string];
+        guards.set(JSON.stringify(segment), segment);
+      }
       const equation: QuantityEquation = { angleSemantics: 'directed-mod-pi', pi,
         terms: terms.map((term) => ({ coefficient: term.coefficient, quantity: { kind: 'angle', points: term.angle } })) };
       found.set(canonical.key, { kind: 'directed-angles', key: `directed-angles:${canonical.key}`, points, confidence: 0.98,
+        scoringNames: effective, support: { effective, guards: [...guards.values()],
+          frame: [...points].map((index) => scene.points[index].name).filter((name) => !effective.includes(name)).sort(),
+          reason: 'Value uses nonzero direction terms after algebraic cancellation; original angles and nonzero guards retained.' },
         witness: { points: [...points].map((index) => scene.points[index].name), equation } });
     }
   }

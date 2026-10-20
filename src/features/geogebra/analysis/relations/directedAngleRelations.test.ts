@@ -3,6 +3,12 @@ import { buildDependencyGraph } from '../constructionGraph';
 import { detectGeometryRelations } from '../geometryRelations';
 import { canonicalDirectionEquation, directedAngleValue, wrapHalfTurns } from '../quantities/directedAngles';
 import { DEFAULT_DISCOVERY_OPTIONS } from './catalog';
+import type { GeometryRelation } from '../geometryTypes';
+
+const relationKey = (relation: GeometryRelation) => {
+  const eq = relation.witnesses[0].equation!;
+  return canonicalDirectionEquation(eq.terms.map((term) => ({ angle: term.quantity.points as [string, string, string], coefficient: term.coefficient })), eq.pi!).key;
+};
 
 const ray = (degrees: number) => ({ x: Math.cos(degrees * Math.PI / 180), y: Math.sin(degrees * Math.PI / 180) });
 const origin = { x: 0, y: 0 };
@@ -50,5 +56,63 @@ describe('directed angle discovery and circle semantics', () => {
     const { result } = discover(30, 0, 0);
     expect(result.relations).toHaveLength(0);
     expect(result.diagnostics.join(' ')).toContain('Directed angle candidates limit');
+  });
+});
+
+describe('directed angle effective scoring support', () => {
+  const midpointAngles = (commandString = '(B+C)/2', rotation = 0, reverse = false) => {
+    const graph = buildDependencyGraph([
+      { name: 'A', coordinates: { x: 1, y: 4 }, commandString: '' },
+      { name: 'B', coordinates: { x: 0, y: 0 }, commandString: '' },
+      { name: 'C', coordinates: { x: 6, y: 0 }, commandString: '' },
+      { name: 'M', coordinates: { x: 3, y: 0 }, commandString },
+    ].map((point) => ({ ...point, objectType: 'point', coordinates: {
+      x: point.coordinates.x * Math.cos(rotation) - point.coordinates.y * Math.sin(rotation),
+      y: point.coordinates.x * Math.sin(rotation) + point.coordinates.y * Math.cos(rotation),
+    } })).sort((a, b) => reverse ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)));
+    // Collinear and midpoint output are deliberately disabled. Scoring is
+    // about the observed equation, independent of which other cards are shown.
+    const result = detectGeometryRelations(graph, 0, { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: ['directed-angles'], compressConsequences: false });
+    const key = canonicalDirectionEquation([{ angle: ['A', 'B', 'M'], coefficient: 1 },
+      { angle: ['A', 'B', 'C'], coefficient: -1 }], { numerator: 0, denominator: 1 }).key;
+    return result.relations.find((relation) => relationKey(relation) === key)!;
+  };
+
+  it.each(['(B+C)/2', 'Midpoint(B,C)', 'unknown(B,C)'])('scores ABM = ABC using B,C,M after cancelling BA (%s)', (command) => {
+    const relation = midpointAngles(command);
+    expect(relation).toBeDefined();
+    expect(relation.nonTriviality).toBeLessThan(10);
+    expect(relation.baseNonTriviality).toBeCloseTo(100 * (1 - Math.exp(-0.5 / 8)));
+    expect(relation.metric.pointCount).toBe(3);
+    expect(relation.support?.effective).toEqual(['B', 'C', 'M']);
+    expect(relation.support?.frame).toEqual(['A']);
+    expect(relation.pointNames).toContain('A');
+    expect(relation.support?.guards).toContainEqual(['A', 'B']);
+    expect(relation.witnesses[0].equation?.angleSemantics).toBe('directed-mod-pi');
+  });
+
+  it('keeps the same score after rotating or reordering the construction', () => {
+    expect(midpointAngles('(B+C)/2', 2.4, true).nonTriviality).toBe(midpointAngles().nonTriviality);
+  });
+
+  it('retains the value of an independently observed collinearity core', () => {
+    const relation = midpointAngles('');
+    expect(relation.nonTriviality).toBe(100);
+    expect(relation.support?.effective).toEqual(['B', 'C', 'M']);
+    expect(relation.metric.pointCount).toBe(3);
+  });
+
+  it('does not erase independent angles just because their directions agree numerically', () => {
+    const graph = buildDependencyGraph([
+      { name: 'A', coordinates: { x: 0, y: 0 } }, { name: 'B', coordinates: { x: 2, y: 0 } }, { name: 'C', coordinates: { x: 1, y: 3 } },
+      { name: 'D', coordinates: { x: 10, y: 7 } }, { name: 'E', coordinates: { x: 12, y: 7 } }, { name: 'F', coordinates: { x: 11, y: 10 } },
+    ].map((point) => ({ ...point, objectType: 'point', commandString: '' })));
+    const key = canonicalDirectionEquation([{ angle: ['B', 'A', 'C'], coefficient: 1 },
+      { angle: ['E', 'D', 'F'], coefficient: -1 }], { numerator: 0, denominator: 1 }).key;
+    const result = detectGeometryRelations(graph, 0, { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: ['directed-angles'] });
+    const relation = result.relations.find((entry) => relationKey(entry) === key)!;
+    expect(relation).toBeDefined();
+    expect(relation.nonTriviality).toBe(100);
+    expect(relation.metric.pointCount).toBe(6);
   });
 });
