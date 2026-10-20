@@ -5,26 +5,13 @@ import '../../styles/showcase.css';
 const TriplesLayout: React.FC = () => {
   const isSolver = useMatch({ path: '/triples', end: true });
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
-      isActive
-        ? 'bg-[linear-gradient(135deg,#dbeafe_0%,#eff6ff_100%)] text-sky-800 shadow-[0_10px_24px_rgba(96,165,250,0.18)]'
-        : 'text-slate-600 hover:bg-white/90 hover:text-sky-700'
-    }`;
+    `triples-navigation-link${isActive ? ' is-active' : ''}`;
 
   return (
     <div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 xl:px-10">
-      <div
-        className={`mx-auto flex w-full flex-col gap-6 ${isSolver ? 'max-w-[1240px]' : 'max-w-[1680px]'}`}
-      >
-        <nav
-          aria-label="Triples"
-          className={
-            isSolver
-              ? 'solver-navigation'
-              : 'rounded-[26px] border border-white/70 bg-white/58 p-3 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl'
-          }
-        >
-          <ul className="flex flex-wrap gap-2">
+      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6">
+        <nav aria-label="Triples" className="triples-navigation">
+          <ul>
             <li>
               <NavLink to="/triples" end className={navLinkClasses}>
                 Solver
@@ -37,7 +24,7 @@ const TriplesLayout: React.FC = () => {
             </li>
           </ul>
         </nav>
-        <div className="min-w-0">
+        <div className={`min-w-0 w-full mx-auto ${isSolver ? 'max-w-[1240px]' : ''}`}>
           <Outlet />
         </div>
       </div>

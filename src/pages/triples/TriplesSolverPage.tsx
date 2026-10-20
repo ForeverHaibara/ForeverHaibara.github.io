@@ -298,7 +298,15 @@ const TriplesSolverPage: React.FC = () => {
               ) : (
                 <div className="constraint-list">
                   {constraints.map((constraint, index) => (
-                    <div className="constraint-row" key={constraint.id}>
+                    <div
+                      className="constraint-row"
+                      data-constraint-type={constraint.type}
+                      key={constraint.id}
+                    >
+                      <span className="constraint-kind">
+                        <span>{constraint.type === 'ineq' ? 'Inequality' : 'Equality'}</span>
+                        <strong>{constraint.type === 'ineq' ? '≥ 0' : '= 0'}</strong>
+                      </span>
                       <div className="constraint-expression-field">
                         <label className="sr-only" htmlFor={`${constraint.id}_expression`}>
                           Constraint expression {index + 1}
@@ -316,7 +324,6 @@ const TriplesSolverPage: React.FC = () => {
                           placeholder="Expression, e.g. a*b*c-1"
                           disabled={isLoading}
                         />
-                        <span>{constraint.type === 'ineq' ? '≥ 0' : '= 0'}</span>
                       </div>
                       <div className="constraint-alias-field">
                         <label className="sr-only" htmlFor={`${constraint.id}_alias`}>
@@ -350,6 +357,7 @@ const TriplesSolverPage: React.FC = () => {
               <div className="constraint-actions">
                 <button
                   type="button"
+                  data-constraint-type="ineq"
                   onClick={() => handleAddConstraint('ineq')}
                   disabled={isLoading}
                 >
@@ -357,6 +365,7 @@ const TriplesSolverPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  data-constraint-type="eq"
                   onClick={() => handleAddConstraint('eq')}
                   disabled={isLoading}
                 >
@@ -544,7 +553,7 @@ const TriplesSolverPage: React.FC = () => {
                 <div className="example-constraints">
                   {example.constraints.length > 0 ? (
                     example.constraints.map((c, i) => (
-                      <code key={i}>
+                      <code key={i} data-constraint-type={c.type}>
                         {c.expression} {c.type === 'ineq' ? '≥ 0' : '= 0'}
                       </code>
                     ))
@@ -566,16 +575,29 @@ const TriplesSolverPage: React.FC = () => {
         </div>
       </section>
       <section className="solver-python">
-        <div>
-          <p className="eyebrow">TAKE IT TO YOUR NOTEBOOK</p>
-          <h2>The same ideas. In Python.</h2>
+        <div className="solver-python-copy">
+          <p className="eyebrow">THE PYTHON LIBRARY</p>
+          <h2>Make room for the next proof.</h2>
+          <p>
+            Use Triples in your own scripts and notebooks. Install the library, then explore the
+            Python documentation.
+          </p>
+          <Link className="design-text-link" to="/triples/documentation/getting-started">
+            Python quick start <Arrow />
+          </Link>
         </div>
-        <code>
-          <span>$</span> pip install triples
-        </code>
-        <Link className="design-text-link" to="/triples/documentation/getting-started">
-          Get started <Arrow diagonal />
-        </Link>
+        <div className="python-install-command" aria-label="Install Triples with pip">
+          <div className="python-terminal-heading">
+            <span>Terminal</span>
+            <span>INSTALL WITH PIP</span>
+          </div>
+          <pre>
+            <code>
+              <span aria-hidden="true">$ </span>pip install triples
+            </code>
+          </pre>
+          <p>Start with one command.</p>
+        </div>
       </section>
     </div>
   );
