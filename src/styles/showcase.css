@@ -873,6 +873,22 @@
 .constraint-clear {
   color: #716577;
   font-size: 14px;
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 1px solid #cdbfcf;
+  border-radius: 9px;
+  background: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 5px #4a304a08;
+  transition:
+    background 0.16s,
+    border-color 0.16s,
+    color 0.16s;
+}
+.constraint-clear:enabled:is(:hover, :focus-visible) {
+  color: #7c3f5b;
+  border-color: #b58b9f;
+  background: #fff0f5;
 }
 .constraints-empty {
   padding: 16px;
@@ -1319,10 +1335,6 @@
   color: #d5e7f5;
   font-size: 13px;
 }
-.python-terminal-heading > span:last-child {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-}
 .python-install-command pre {
   overflow-x: auto;
   padding: 24px 20px 12px;
@@ -1529,5 +1541,219 @@
   .python-terminal-heading,
   .python-install-command > p {
     padding-inline: 16px;
+  }
+}
+
+/* Arrow links share a visible hover/focus treatment without changing their layout. */
+.design-text-link,
+.profile-github,
+.example-bottom button,
+.reference-example {
+  border-radius: 6px;
+  transition:
+    color 0.16s,
+    background 0.16s,
+    box-shadow 0.16s;
+}
+.design-text-link:is(:hover, :focus-visible),
+.profile-github:is(:hover, :focus-visible),
+.example-bottom button:enabled:is(:hover, :focus-visible) {
+  color: #125b92;
+  background: #e2effb;
+  box-shadow: 0 0 0 6px #e2effb;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.directory-link:is(:hover, :focus-visible),
+.about-interests a:is(:hover, :focus-visible),
+.reference-example:enabled:is(:hover, :focus-visible) {
+  background: #e2effb;
+  box-shadow: 0 0 0 6px #e2effb;
+  color: #125b92;
+}
+.reference-example:enabled:is(:hover, :focus-visible) strong,
+.directory-link:is(:hover, :focus-visible) h3,
+.about-interests a:is(:hover, :focus-visible) h3,
+.project-feature:is(:hover, :focus-visible) .project-cta {
+  color: #125b92;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.project-feature:is(:hover, :focus-visible) .project-arrow {
+  color: #125b92;
+  background: #dcecfb;
+  box-shadow: 0 0 0 8px #dcecfb;
+  border-radius: 4px;
+}
+.design-text-link > svg,
+.profile-github > svg,
+.directory-link > svg,
+.about-interests a > svg,
+.reference-example > svg,
+.example-bottom button > svg {
+  flex-shrink: 0;
+  transition: transform 0.16s;
+}
+:is(.design-text-link, .profile-github, .directory-link):is(:hover, :focus-visible) > svg,
+.about-interests a:is(:hover, :focus-visible) > svg,
+.reference-example:enabled:is(:hover, :focus-visible) > svg,
+.example-bottom button:enabled:is(:hover, :focus-visible) > svg {
+  transform: translateX(2px);
+}
+.command-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 100px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #799bb5;
+  border-radius: 8px;
+  color: #f1f8ff;
+  background: #ffffff0d;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background 0.16s,
+    border-color 0.16s;
+}
+.command-copy-button:enabled:is(:hover, :focus-visible) {
+  border-color: #c5e5ff;
+  background: #ffffff20;
+}
+.solver-page .command-copy-button:focus-visible {
+  outline-color: #c5e5ff;
+}
+.triples-release {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 24px;
+  padding: 24px 28px;
+  border: 1px solid #d5e4ef;
+  border-radius: 20px;
+  background: #ffffffa6;
+}
+.release-version {
+  padding: 13px 15px;
+  border: 1px solid #b7d4eb;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #e2efff, #eef7ff);
+  color: #235e89;
+  font:
+    600 18px/1.6 ui-monospace,
+    Consolas,
+    monospace;
+}
+.release-copy {
+  flex: 1;
+  min-width: 200px;
+}
+.release-copy h2 {
+  margin: 5px 0 8px;
+  color: #173954;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.release-copy > p:last-child {
+  color: #435c70;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.documentation-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.documentation-layout[data-contents-open='false'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.documentation-toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.documentation-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #b9d2e5;
+  border-radius: 10px;
+  background: #ffffffb3;
+  color: #285f88;
+  font-size: 14px;
+  font-weight: 600;
+}
+.documentation-toggle:is(:hover, :focus-visible) {
+  background: #e2effb;
+  border-color: #82adce;
+}
+.documentation-toggle:focus-visible {
+  outline: 3px solid #2676b7;
+  outline-offset: 3px;
+}
+.documentation-sidebar {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+.documentation-sidebar[hidden] {
+  display: none;
+}
+.documentation-contents-card {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding: 16px 12px;
+  border: 1px solid #d5e4ef;
+  border-radius: 20px;
+  background: #ffffffb3;
+}
+.documentation-contents-card h2 {
+  padding: 0 12px;
+  margin-bottom: 14px;
+  color: #173954;
+  font-size: 17px;
+  font-weight: 600;
+}
+.documentation-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.documentation-body :is(pre, .katex-display) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+@media (max-width: 1023px) {
+  .documentation-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .documentation-sidebar {
+    position: static;
+  }
+  .documentation-contents-card {
+    max-height: 55vh;
+  }
+}
+@media (max-width: 540px) {
+  .triples-release {
+    align-items: start;
+    gap: 18px;
+    padding: 22px 20px;
+  }
+  .release-copy {
+    min-width: 0;
+    flex-basis: calc(100% - 116px);
+  }
+  .triples-release > .design-text-link {
+    flex-basis: 100%;
   }
 }

@@ -1,5 +1,7 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { usePageEntrance } from '../../../components/PageVisuals';
+import '../../../styles/showcase.css';
 
 const docNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
   `block rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-300 ${
@@ -14,9 +16,7 @@ const documentationSections = [
   {
     name: 'Applications',
     path: '/triples/documentation/applications',
-    subLinks: [
-      { name: 'Limitations', path: '/triples/documentation/applications/limitations' },
-    ]
+    subLinks: [{ name: 'Limitations', path: '/triples/documentation/applications/limitations' }],
   },
   {
     name: 'API Reference',
@@ -24,7 +24,7 @@ const documentationSections = [
     subLinks: [
       { name: 'Sum of Squares', path: '/triples/documentation/api-reference/sum-of-squares' },
       { name: 'SymPy', path: '/triples/documentation/api-reference/sympy' },
-    ]
+    ],
   },
   {
     name: 'Solvers',
@@ -33,7 +33,7 @@ const documentationSections = [
       { name: 'StructuralSOS', path: '/triples/documentation/solvers/structsos' },
       { name: 'LinearSOS', path: '/triples/documentation/solvers/linsos' },
       { name: 'SDPSOS', path: '/triples/documentation/solvers/sdpsos' },
-    ]
+    ],
   },
   {
     name: 'Semidefinite Programming',
@@ -41,7 +41,7 @@ const documentationSections = [
     subLinks: [
       { name: 'SDPSOS', path: '/triples/documentation/semidefinite-programming/sdpsos' },
       { name: 'SDPProblem', path: '/triples/documentation/semidefinite-programming/sdp-problem' },
-    ]
+    ],
   },
   {
     name: 'Objects',
@@ -50,26 +50,70 @@ const documentationSections = [
       { name: 'Problem', path: '/triples/documentation/objects/problem' },
       { name: 'Solution', path: '/triples/documentation/objects/solution' },
       { name: 'CyclicSum', path: '/triples/documentation/objects/cyclic-sum' },
-    ]
+    ],
   },
 ];
 
 const DocumentationLayout: React.FC = () => {
+  usePageEntrance();
+  const [isContentsOpen, setIsContentsOpen] = useState(
+    () => window.matchMedia('(min-width: 1024px)').matches
+  );
+
+  const handleNavigate = () => {
+    if (window.matchMedia('(max-width: 1023px)').matches) setIsContentsOpen(false);
+  };
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-8">
-      <aside className="lg:sticky lg:top-24 lg:self-start">
-        <div className="rounded-[28px] border border-white/70 bg-white/58 p-4 shadow-[0_18px_40px_rgba(148,163,184,0.12)] backdrop-blur-xl">
-          <h2 className="mb-4 px-2 text-lg font-semibold text-slate-800">Documentation Menu</h2>
-          <nav className="space-y-1">
+    <div className="documentation-layout" data-contents-open={isContentsOpen}>
+      <div className="documentation-toolbar">
+        <p className="eyebrow">TRIPLES / DOCUMENTATION</p>
+        <button
+          type="button"
+          className="documentation-toggle"
+          aria-expanded={isContentsOpen}
+          aria-controls="documentation-contents"
+          onClick={() => setIsContentsOpen((open) => !open)}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+          </svg>
+          {isContentsOpen ? 'Hide contents' : 'Show contents'}
+        </button>
+      </div>
+      <aside id="documentation-contents" className="documentation-sidebar" hidden={!isContentsOpen}>
+        <div className="documentation-contents-card">
+          <h2>Contents</h2>
+          <nav aria-label="Documentation contents" className="space-y-1">
             {documentationSections.map((section) => (
               <div key={section.name}>
-                <NavLink to={section.path} end={section.end} className={docNavLinkClasses}>
+                <NavLink
+                  to={section.path}
+                  end
+                  className={docNavLinkClasses}
+                  onClick={handleNavigate}
+                >
                   {section.name}
                 </NavLink>
                 {section.subLinks && (
-                  <div className="ml-4 mt-2 space-y-1 border-l border-sky-100 pl-4">
+                  <div className="ml-3 mt-1 space-y-1 border-l border-sky-100 pl-3">
                     {section.subLinks.map((subLink) => (
-                      <NavLink key={subLink.name} to={subLink.path} className={docNavLinkClasses}>
+                      <NavLink
+                        key={subLink.name}
+                        to={subLink.path}
+                        end
+                        className={docNavLinkClasses}
+                        onClick={handleNavigate}
+                      >
                         {subLink.name}
                       </NavLink>
                     ))}
@@ -80,17 +124,17 @@ const DocumentationLayout: React.FC = () => {
           </nav>
         </div>
       </aside>
-
-      <main className="min-w-0">
+      <div className="documentation-body">
         <div
-          className="rounded-[30px] border border-white/70 px-5 py-6 shadow-[0_20px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl sm:px-7 sm:py-8 xl:px-10"
+          className="rounded-[24px] border border-white/70 px-5 py-6 shadow-[0_20px_50px_rgba(148,163,184,0.10)] backdrop-blur-xl sm:px-7 sm:py-8 xl:px-9"
           style={{
-            background: 'linear-gradient(180deg, rgba(219,234,254,0.72) 0px, rgba(239,246,255,0.78) 150px, rgba(251,253,255,0.94) 280px, rgba(251,253,255,0.94) 100%)',
+            background:
+              'linear-gradient(180deg, rgba(219,234,254,0.72) 0px, rgba(239,246,255,0.78) 150px, rgba(251,253,255,0.94) 280px, rgba(251,253,255,0.94) 100%)',
           }}
         >
           <Outlet />
         </div>
-      </main>
+      </div>
     </div>
   );
 };

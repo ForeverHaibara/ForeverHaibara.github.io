@@ -7,6 +7,7 @@ import type { GradioServiceCallResult } from '../../types.ts';
 import LoadingSpinner from '../../components/LoadingSpinner.tsx';
 import AlertMessage from '../../components/AlertMessage.tsx';
 import KatexDisplay from '../../components/KatexDisplay.tsx';
+import CopyButton from '../../components/CopyButton';
 
 type TabKey = 'solution' | 'latex' | 'latex_aligned';
 
@@ -589,7 +590,7 @@ const TriplesSolverPage: React.FC = () => {
         <div className="python-install-command" aria-label="Install Triples with pip">
           <div className="python-terminal-heading">
             <span>Terminal</span>
-            <span>INSTALL WITH PIP</span>
+            <CopyButton text="pip install triples" label="Copy install command" />
           </div>
           <pre>
             <code>
@@ -598,6 +599,19 @@ const TriplesSolverPage: React.FC = () => {
           </pre>
           <p>Start with one command.</p>
         </div>
+      </section>
+      <section className="triples-release" aria-labelledby="release-heading">
+        <span className="release-version">v0.3.0</span>
+        <div className="release-copy">
+          <p className="eyebrow">RELEASE NOTE</p>
+          <h2 id="release-heading">Triples 0.3.0 is here.</h2>
+          <p>
+            Released on <time dateTime="2026-10-20">October 20, 2026</time>.
+          </p>
+        </div>
+        <Link className="design-text-link" to="/triples/documentation">
+          Explore the documentation <Arrow />
+        </Link>
       </section>
     </div>
   );
