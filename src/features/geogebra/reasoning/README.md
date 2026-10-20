@@ -39,6 +39,18 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 查看逐对象建议和不足，点击 Accept suggested conditions 一次接受，再选目标。
 Evaluate coverage 可检查建议集能推出多少额外性质，不会自动增加条件。
 
+现在优先使用 **Generate readable proof**：接受条件后即可生成可读后果，不必
+先选目标；也可选目标来聚焦其证明。阅读界面可以切换结论，显示逐步来源、
+精确消元系数、几何规则与坐标分支，并导出当前证明的 Markdown。
+完整项目 JSON 保留整批证明图和实际使用的导出输入。
+可直接阅读生成的 [中位线证明样例](docs/examples/midsegment-proof.md)。
+
+**Explore hypotheses** 允许显式接受采样失败或出现反例的保留候选。此模式
+使用符号代数，不强迫当前坐标满足假设；报告可检测的矛盾，不使用爆炸律。
+数值拒绝不会自动取消用户选择；结构错误仍单独报告。项目可在后端无法导出
+时保存条件、诊断和失败原因。详见 [P4 可读证明与实验假设](docs/readable-proofs.md)。
+Rejected candidates only 可以单独查看被拒绝的保留候选；搜索也会匹配诊断文字。
+
 构图变化后，旧选择和结果失效；同快照候选池扩展只保留语义未变的选择。停止会终止
 Worker，下次重新初始化。不使用远程推理服务，构图数据不发送到模型端。
 
@@ -58,14 +70,15 @@ Worker，下次重新初始化。不使用远程推理服务，构图数据不�
 后果；尚无射线／不等式证明器，因此新普通角目标会被拒绝，仅明确接受过的
 同一普通角条件可标为已接受。覆盖评估会单独说明跳过的普通角目标。
 
-AG2 的坐标检查可能比数值发现严格得多。桥接层及内核拒绝不满足见证容差的
+AG2 的坐标检查可能比数值发现严格得多。普通模式的桥接层及内核拒绝不满足见证容差的
 条件，不修改坐标、不放宽容差、不将近似共线／重合冒充精确输入。
-JSON 项目中的 `certificate` 为 null。界面结果始终相对于所选条件及数值见证。
+实验假设模式另走符号路径。JSON 项目中的 `certificate` 仍为 null：代数步骤
+可以独立回放，几何规则实例与数值分支仍属于当前检查器的明确可信输入。
 
 首批候选来自已有发现器保留的结果，有预算和压缩，不是完整性质库。
 不解释 `Element/Zip/If` 等复杂表达式，不根据函数名推断三角形中心语义。
-多构型检查和局部条件集建议已实现首批；充分性分析、辅助点搜索、证明来源／
-检查器仍待后续阶段。线、圆等保留为依赖对象；推理条件目前以二维点为载体。
+多构型检查、局部条件建议及可读来源图已实现首批；全局充分性、辅助点搜索、
+完整几何检查器仍待后续阶段。线、圆等保留为依赖对象；推理条件目前以二维点为载体。
 
 ## 文件
 
@@ -78,6 +91,8 @@ JSON 项目中的 `certificate` 为 null。界面结果始终相对于所选条�
 | `backends/ag2/capabilities.ts` | 上游版本、能力及资源预算 |
 | `backends/ag2/exportProblem.ts` | 语义展开、校验、角分支、名称与坐标映射 |
 | `backends/ag2/Ag2WorkerClient.ts`、`ag2.worker.ts` | 加载、通信、取消及超时 |
+| `proof/`、`components/ReadableProofView.tsx` | 证明图协议、原始名称展示、聚焦和 Markdown |
+| 根目录 `public/geometry-reasoning/proof_algebra.py`、`proof_ddar.py` | 精确来源消元、独立代数回放、带记录的 DDAR 适配 |
 | `../../../../public/geometry-reasoning/ag2_bridge.py` | 原生与浏览器共用的 Python 桥 |
 | `../../../../public/vendor/alphageometry2/` | 未修改的固定上游源码与许可 |
 
@@ -89,6 +104,7 @@ JSON 项目中的 `certificate` 为 null。界面结果始终相对于所选条�
 ```sh
 npm test -- --run src/features/geogebra/reasoning --maxWorkers=2
 python scripts/geogebra-reasoning-smoke.py
+python scripts/geogebra-proof-smoke.py
 npx tsc --noEmit
 npm run build
 ```
@@ -113,6 +129,10 @@ IMO 样例。生命周期测试覆盖取消、旧响应、求解超时和解释�
 角语义更新后：36 个测试文件、359 项测试、TypeScript、生产构建及原生
 DDAR 回归通过；真实 GGB 等角共轭长表达式的三个有向候选通过 4+2 构型检查。
 浏览器的第三条等式仍未由两个建议推出，按未覆盖报告；详情见角语义规范。
+
+2026-10-20：P4 首批可读推导与实验假设完成。全仓库 37 文件、363 项测试及
+12 项原生证明回归通过，既有 AG2 回归、TypeScript、生产构建通过。浏览器
+实测无目标证明、按结论聚焦、显式选用被采样拒绝的命题，以及构图更新后失效。
 
 ## 上游
 

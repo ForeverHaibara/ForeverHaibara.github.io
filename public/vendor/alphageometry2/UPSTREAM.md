@@ -13,3 +13,9 @@ copyright headers. Site integration and bridge code live outside this directory.
 
 The engine uses numerical witnesses and does not return a proof certificate.
 Its result must retain the selected assumptions and coordinate snapshot.
+
+The site's `public/geometry-reasoning/proof_ddar.py` subclasses this unchanged
+DDAR to reconstruct readable rule instances. `proof_algebra.py` separately
+records exact combinations and replays their coefficients. Neither changes
+these upstream files. Gaps and numerical branch guards remain explicit; the
+site does not claim a full independent geometry certificate.

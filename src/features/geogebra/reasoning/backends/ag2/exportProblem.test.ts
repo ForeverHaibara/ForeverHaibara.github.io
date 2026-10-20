@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { candidate, discoveredMidpointProblem, midpointProblem } from '../../__fixtures__/problems';
-import { exportAg2Problem, exportAg2Queries } from './exportProblem';
+import { exportAg2Problem, exportAg2Queries, exportAg2Proof } from './exportProblem';
 import { isogonalConstruction, isogonalPredicates } from '../../__fixtures__/isogonal';
 import { createDiscoveryProblem } from '../../sources/discoveryProblem';
 
 describe('conditional AG2 export', () => {
+  it('retains evidence-rejected hypotheses with an explicit mode and source mapping', () => {
+    const problem = midpointProblem();
+    problem.candidates[0].diagnostics = ['A sampled counterexample was found.'];
+    problem.candidates[0].hypothesisEligible = true;
+    expect(exportAg2Proof(problem, { acceptedIds: ['m-midpoint'], goalId: null }).value).toBeNull();
+    const value = exportAg2Proof(problem, { acceptedIds: ['m-midpoint'], goalId: null, assumptionMode: 'hypothetical' }).value!;
+    expect(value.operation).toBe('proof'); expect(value.assumptionMode).toBe('hypothetical');
+    expect(value.goalId).toBeNull();
+    expect(value.assumptionSources.every((source) => source.candidateIds.includes('m-midpoint'))).toBe(true);
+    problem.candidates[0].hypothesisEligible = false;
+    expect(exportAg2Proof(problem, { acceptedIds: ['m-midpoint'], goalId: null, assumptionMode: 'hypothetical' }).value).toBeNull();
+  });
+  it('allows a rejected supported proposition to be queried without assuming it', () => {
+    const problem = midpointProblem(); problem.candidates[3].diagnostics = ['Rejected numeric observation'];
+    const value = exportAg2Problem(problem, { acceptedIds: ['m-midpoint'], goalId: 'false-goal' }).value!;
+    expect(value.premise).not.toContain('perp'); expect(value.goals[0]).toContain('perp');
+  });
   it('exports directed isogonal equations with no ordinary-angle branch conditions', () => {
     const problem = createDiscoveryProblem(isogonalConstruction({ x: -2, y: 1 }));
     problem.candidates = [candidate('isogonal', isogonalPredicates())];

@@ -8,6 +8,7 @@ interface Props {
   coverage: CoverageResult | null;
   fresh: boolean;
   busy: boolean;
+  stopLabel?: string;
   validating: boolean;
   earlierContext: boolean;
   status: string;
@@ -20,7 +21,7 @@ interface Props {
   onEvaluate(): void;
 }
 
-const ConditionSuggestions: React.FC<Props> = ({ proposal, problem, coverage, fresh, busy, validating, earlierContext, status, error,
+const ConditionSuggestions: React.FC<Props> = ({ proposal, problem, coverage, fresh, busy, stopLabel = 'Stop suggestions', validating, earlierContext, status, error,
   onValidate, onContext, onStart, onStop, onApply, onEvaluate }) => {
   const name = (id: string) => proposal?.problem.objects.find((object) => object.id === id)?.name ?? id;
   return <div className="space-y-2 rounded-lg border border-sky-200 bg-sky-50/30 p-2">
@@ -30,7 +31,7 @@ const ConditionSuggestions: React.FC<Props> = ({ proposal, problem, coverage, fr
     <details className="text-[10px] text-slate-500"><summary className="cursor-pointer">Search scope</summary><label className="mt-1 flex items-center gap-1"><input type="checkbox" checked={earlierContext} disabled={busy} onChange={(event) => onContext(event.target.checked)} />Use earlier related objects when upstream inputs are insufficient</label><p className="mt-1">Local rank estimates constraints at this configuration; it does not certify a unique global characterization.</p></details>
     <div className="flex flex-wrap gap-1">
       <button type="button" className="rounded bg-sky-100 px-2 py-1 font-semibold text-sky-800 disabled:opacity-40" disabled={!fresh || busy} onClick={onStart}>Suggest conditions</button>
-      {busy && <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" onClick={onStop}>Stop suggestions</button>}
+      {busy && <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" onClick={onStop}>{stopLabel}</button>}
       {proposal && <><button type="button" className="rounded px-2 py-1 text-sky-700 hover:bg-sky-100 disabled:opacity-40" disabled={!fresh || busy || !proposal.coreIds.length} onClick={onApply}>Accept suggested conditions</button>
         <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || busy || !proposal.coreIds.length} onClick={onEvaluate}>Evaluate coverage</button></>}
     </div>

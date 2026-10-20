@@ -59,6 +59,9 @@ def solve_json(payload):
     data = json.loads(payload)
     if data.get("version") != 1:
         raise ValueError("Unsupported reasoning protocol version")
+    if data.get("operation") == "proof":
+        from proof_ddar import generate_proof
+        return json.dumps(generate_proof(data, validate_assumption))
     problem = AGProblem.parse(data["premise"])
     if not 1 <= len(problem.points) <= 40:
         raise ValueError("Point budget exceeded")

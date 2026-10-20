@@ -61,6 +61,8 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
     if (upstream.length >= options.maxScopePoints) report.diagnostics.push('Upstream point scope was truncated.');
     let gradients: Gradient[] = [];
     const ranked = new Map<string, { candidate: ConditionCandidate; gradients: Gradient[]; cost: number }>();
+    const rejected = new Map<string, ConditionCandidate>();
+    const rejectionBudget = Math.min(16, Math.ceil(options.maxCandidatesPerObject / 4));
     const search = (points: ReasoningObject[], contextIds: string[]) => {
       const allowed = new Set(points.map((point) => point.id));
       const scopedGraph = { ...graph, nodes: graph.nodes.map((node) => allowed.has(node.id) ? node : { ...node, coordinates: undefined }) };
@@ -79,12 +81,12 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
         const trials = samples.map((sample) => ({ index: sample.index, phase: sample.phase, result: assessLocalConstraint(predicate, object.id, sample.objects, false) }));
         const discoveryTrials = trials.filter((trial) => trial.phase === 'discovery' && trial.result);
         const holdoutTrials = trials.filter((trial) => trial.phase === 'holdout' && trial.result);
-        if (samples.length && (discoveryTrials.length < 3 || discoveryTrials.some((trial) => trial.result!.residual > 2e-6))) {
+        const discoveryFailed = samples.length > 0 && (discoveryTrials.length < 3 || discoveryTrials.some((trial) => trial.result!.residual > 2e-6));
+        if (discoveryFailed) {
           report.rejectedCandidates += 1;
           const failure = discoveryTrials.find((trial) => trial.result!.residual > 2e-6);
           if (failure && report.counterexamples.length < 8) report.counterexamples.push({ label: formatPredicate(predicate, problem.objects),
             index: failure.index, phase: 'discovery', residual: failure.result!.residual });
-          continue;
         }
         const holdoutPassed = !samples.length || holdoutTrials.length >= 1 && holdoutTrials.every((trial) => trial.result!.residual <= 2e-6);
         const extra = contextIds.filter((id) => support.has(id));
@@ -92,11 +94,17 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
           characterization: { objectId: object.id, contextIds: extra },
           evidence: samples.length ? { kind: 'sampled', seed: sampling!.seed, discoverySamples: discoveryTrials.length,
             holdoutSamples: holdoutTrials.length, skippedSamples: samples.length - discoveryTrials.length - holdoutTrials.length } : { kind: 'single-snapshot' },
-          diagnostics: holdoutPassed ? [] : ['A held-out configuration contradicted this condition, or too few held-out samples were defined.'] };
+          diagnostics: discoveryFailed ? ['Discovery configurations contradicted this condition, or too few samples were defined.'] : holdoutPassed ? [] : ['A held-out configuration contradicted this condition, or too few held-out samples were defined.'],
+          hypothesisEligible: discoveryFailed || !holdoutPassed };
+        if (discoveryFailed) {
+          if (rejected.size < rejectionBudget) rejected.set(id, candidate);
+          else if (!report.diagnostics.includes('Rejected-hypothesis retention budget reached; some failed candidates were omitted.')) report.diagnostics.push('Rejected-hypothesis retention budget reached; some failed candidates were omitted.');
+          continue;
+        }
         atoms.set(id, { candidate, gradients: assessment.gradients, cost: costOf(predicate) + extra.length });
       }
       const ordered = [...atoms.values()].sort((a, b) => a.cost - b.cost || a.candidate.id.localeCompare(b.candidate.id));
-      const remaining = options.maxCandidatesPerObject - ranked.size;
+      const remaining = Math.max(0, options.maxCandidatesPerObject - ranked.size - rejectionBudget);
       if (ordered.length > remaining) report.diagnostics.push('Local condition candidate budget reached.');
       for (const item of ordered.slice(0, remaining)) ranked.set(item.candidate.id, item);
     };
@@ -123,6 +131,7 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
     report.scopeIds = scope.map((point) => point.id);
     report.candidateIds = [...ranked.keys()];
     ranked.forEach((item, id) => candidates.set(id, item.candidate));
+    rejected.forEach((candidate, id) => candidates.set(id, candidate));
     // Held-out failures invalidate the chosen description; never retry selection on them.
     const failed = report.coreIds.filter((id) => candidates.get(id)!.diagnostics.length);
     if (failed.length) {

@@ -32,6 +32,8 @@ export interface ConditionCandidate {
   source: { kind: 'numerical-observation'; relationId: string; snapshot: number; derivedFrom: string[] };
   evidence: { kind: 'single-snapshot' } | { kind: 'sampled'; seed: number; discoverySamples: number; holdoutSamples: number; skippedSamples: number };
   diagnostics: string[];
+  /** Evidence rejection is overridable; missing geometry/unsupported syntax is not. */
+  hypothesisEligible?: boolean;
   characterization?: { objectId: string; contextIds: string[] };
 }
 
@@ -46,6 +48,7 @@ export interface ReasoningProblem {
 export interface ConditionSelection {
   acceptedIds: string[];
   goalId: string | null;
+  assumptionMode?: 'validated' | 'hypothetical';
 }
 
 export const predicatePoints = (predicate: GeometryPredicate): string[] => {

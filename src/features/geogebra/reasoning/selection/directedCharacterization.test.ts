@@ -47,7 +47,10 @@ describe('directed black-box characterizations', () => {
     const sampling = isogonalSamples(); sampling.samples[0].coordinates['object:Q']!.x += 0.5;
     const proposal = proposeConditions(isogonalConstruction(), DEFAULT_CHARACTERIZATION_OPTIONS, sampling);
     const expected = new Set(isogonalPredicates().map(key));
-    expect(proposal.problem.candidates.some((candidate) => expected.has(key(candidate.predicates[0])))).toBe(false);
+    expect(proposal.coreIds.some((id) => expected.has(key(proposal.problem.candidates.find((candidate) => candidate.id === id)!.predicates[0])))).toBe(false);
+    const rejected = proposal.problem.candidates.filter((candidate) => expected.has(key(candidate.predicates[0])));
+    expect(rejected.length).toBeGreaterThan(0);
+    expect(rejected.every((candidate) => candidate.hypothesisEligible && candidate.diagnostics.length)).toBe(true);
     expect(proposal.objects.find((object) => object.objectId === 'object:Q')!.counterexamples.length).toBeGreaterThan(0);
   });
 

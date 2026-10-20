@@ -22,6 +22,9 @@ export interface Ag2Export {
   branches: AngleBranch[];
   names: Array<{ id: string; name: string; symbol: string }>;
   normalization: { origin: { x: number; y: number }; scale: number };
+  assumptionMode: 'validated' | 'hypothetical';
+  assumptionSources: Array<{ predicate: string; candidateIds: string[] }>;
+  operation?: 'check' | 'proof';
 }
 export interface Ag2ExportResult { value: Ag2Export | null; errors: string[]; }
 
@@ -54,7 +57,8 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
     if (queries.some((candidate) => !candidate)) throw new Error('A coverage query is no longer available.');
     const selected = [...accepted, ...queries];
     if (!selected.length) throw new Error('Select conditions or a goal first.');
-    if (selected.some((candidate) => !candidate!.predicates.length || candidate!.diagnostics.length)) throw new Error('A selected observation cannot be exported.');
+    if (selected.some((candidate) => !candidate!.predicates.length)) throw new Error('A selected observation has no supported predicate representation.');
+    if (accepted.some((candidate) => candidate!.diagnostics.length && !(selection.assumptionMode === 'hypothetical' && candidate!.hypothesisEligible))) throw new Error('A selected observation failed checks. Enable hypothesis exploration to accept an evidence rejection.');
     if (selected.some((candidate) => candidate!.source.snapshot !== problem.snapshot)) throw new Error('Observations belong to a different construction snapshot.');
     const used = new Set(selected.flatMap((candidate) => candidate!.predicates.flatMap(predicatePoints)));
     const objects = problem.objects.filter((object) => used.has(object.id)).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -159,7 +163,9 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
       }
       throw new Error('Unsupported geometric predicate.');
     };
-    const premises = [...new Set(accepted.flatMap((candidate) => candidate!.predicates.flatMap((predicate) => lower(predicate, 'assumption'))))];
+    const sourceRows = accepted.map((candidate) => ({ id: candidate!.id, rows: candidate!.predicates.flatMap((predicate) => lower(predicate, 'assumption')) }));
+    const premises = [...new Set(sourceRows.flatMap((source) => source.rows))];
+    const assumptionSources = premises.map((predicate) => ({ predicate, candidateIds: sourceRows.filter((source) => source.rows.includes(predicate)).map((source) => source.id) }));
     const queryGoals = queries.map((candidate) => ({ id: candidate!.id, goals: [...new Set(candidate!.predicates.flatMap((predicate) => lower(predicate, 'goal')))] }));
     const goals = [...new Set(queryGoals.flatMap((query) => query.goals))];
     if (premises.length + goals.length > AG2_LIMITS.predicates) throw new Error(`This run exceeds the ${AG2_LIMITS.predicates}-predicate budget.`);
@@ -173,7 +179,7 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
     return { value: { version: 1, engineCommit: AG2_COMMIT, premise, goals, queries: queryGoals,
       text: goals.length ? goals.map((target) => `${premise} ? ${target}`).join('\n') : premise,
       acceptedIds, goalId: selection.goalId, alreadyAssumed: Boolean(goal && goals.every(directlyIncluded)),
-      branches, names, normalization: { origin: { ...origin }, scale } }, errors: [] };
+      branches, names, normalization: { origin: { ...origin }, scale }, assumptionSources, assumptionMode: selection.assumptionMode ?? 'validated' }, errors: [] };
   } catch (error) {
     return { value: null, errors: [error instanceof Error ? error.message : 'Problem export failed.'] };
   }
@@ -185,3 +191,18 @@ export const exportAg2Problem = (problem: ReasoningProblem, selection: Condition
 /** Several queries share one closure, coordinate frame and symbol mapping. */
 export const exportAg2Queries = (problem: ReasoningProblem, acceptedIds: string[], queryIds: string[]): Ag2ExportResult =>
   compileAg2Problem(problem, { acceptedIds, goalId: queryIds[0] ?? null }, queryIds);
+
+/** Explain a selected goal, or bounded additional consequences without requiring one. */
+export const exportAg2Proof = (problem: ReasoningProblem, selection: ConditionSelection): Ag2ExportResult => {
+  const queryIds: string[] = [];
+  if (selection.goalId) queryIds.push(selection.goalId);
+  else for (const candidate of problem.candidates) {
+    if (queryIds.length >= 32) break;
+    if (selection.acceptedIds.includes(candidate.id) || candidate.diagnostics.length || !candidate.predicates.length
+      || candidate.predicates.some((predicate) => predicate.kind === 'ordinary-angle-equation')) continue;
+    if (compileAg2Problem(problem, selection, [...queryIds, candidate.id]).value) queryIds.push(candidate.id);
+  }
+  const result = compileAg2Problem(problem, selection, queryIds);
+  if (result.value) result.value.operation = 'proof';
+  return result;
+};
