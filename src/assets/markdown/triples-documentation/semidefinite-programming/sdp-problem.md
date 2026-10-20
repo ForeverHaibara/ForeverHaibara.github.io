@@ -978,6 +978,7 @@ def solve(
     verbose: bool = False,
     time_limit: Optional[float] = None,
     allow_numer: int = 0,
+    normalize: bool = True,
     kwargs: Dict[Any, Any] = {}
 ) -> Optional[Matrix]:
 ```
@@ -1140,6 +1141,11 @@ Matrix([[1.41421356161294]])
   <dt><code>allow_numer: int (default: <code>0</code>)</code></dt>
   <dd>
     Whether to allow inexact, numerical feasible solutions. This is useful when the SDP is weakly feasible and no rational solution is found successfully.
+  </dd>
+
+  <dt><code>normalize: bool (default: <code>True</code>)</code></dt>
+  <dd>
+    <!-- TODO: add description -->
   </dd>
 
   <dt><code>kwargs: Dict[Any, Any] (default: <code>{}</code>)</code></dt>

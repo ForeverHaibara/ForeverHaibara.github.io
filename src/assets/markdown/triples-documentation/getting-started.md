@@ -40,7 +40,7 @@ No, the package is not published on PyPI yet.
 The triples library bases on SymPy for symbolic computations. Here is a simple example to prove that $x^2 - 2xy + y^2 \ge 0$.
 All you need to do is to define a sympy expression and call the `sum_of_squares` function from the library.
 
-```
+```python
 import sympy as sp
 from triples import sum_of_squares
 x, y = sp.symbols("x y")

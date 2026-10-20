@@ -21,9 +21,10 @@ def SDPSOS(
     ineq_constraints_with_trivial: bool = True,
     preordering: str = 'linear-progressive',
     unstable_eig_threshold: float = -0.1,
+    normalize: bool = True,
     verbose: bool = False,
     time_limit: float = 3600.0
-) -> Optional["SolutionSDP"]:
+) -> Optional["Solution"]:
 ```
 
 ## Examples
@@ -139,6 +140,11 @@ Currently SDPSOS first identifies the equality cases to apply facial reduction a
     If it fails to rationalize but the smallest eigenvalue of the SDP is larger than <code>unstable_eig_threshold</code>, then it considers the problem as numerically unstable and stops further search. Default is -0.1.
   </dd>
 
+  <dt><code>normalize: bool (default: <code>True</code>)</code></dt>
+  <dd>
+    Use automatic normalization before solving SDP. Default is True.
+  </dd>
+
   <dt><code>verbose: bool (default: <code>False</code>)</code></dt>
   <dd>
     Whether to print the progress. If verbose >= 2, it also prints the SDP solver progress. Default is False.
@@ -153,6 +159,6 @@ Currently SDPSOS first identifies the equality cases to apply facial reduction a
 
 ## Returns
 
-**`Optional["SolutionSDP"]`**
+**`Optional["Solution"]`**
 
-Returns a `Optional["SolutionSDP"]` object.
+Returns a `Optional["Solution"]` object.

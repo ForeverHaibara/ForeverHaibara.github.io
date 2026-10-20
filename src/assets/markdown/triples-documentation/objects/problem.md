@@ -142,7 +142,7 @@ def new(
     expr: T,
     ineq_constraints: Dict[T, Expr] = {},
     eq_constraints: Dict[T, Expr] = {}
-) -> "InequalityProblem":
+) -> "InequalityProblem[T]":
 ```
 
 Initialization of objects without sanity checks.
@@ -169,9 +169,9 @@ Initialization of objects without sanity checks.
 
 #### Returns
 
-**`"InequalityProblem"`**
+**`"InequalityProblem[T]"`**
 
-Returns a `"InequalityProblem"` object.
+Returns a `"InequalityProblem[T]"` object.
 
 ---
 
@@ -225,7 +225,7 @@ def copy_new(
     expr: T,
     ineq_constraints: Dict[T, Expr] = {},
     eq_constraints: Dict[T, Expr] = {}
-) -> "InequalityProblem":
+) -> "InequalityProblem[T]":
 ```
 
 Return a new InequalityProblem with the given <code>expr</code>, <code>ineq_constraints</code> and <code>eq_constraints</code> while other attributes are copied from self.
@@ -252,9 +252,9 @@ Return a new InequalityProblem with the given <code>expr</code>, <code>ineq_cons
 
 #### Returns
 
-**`"InequalityProblem"`**
+**`"InequalityProblem[T]"`**
 
-Returns a `"InequalityProblem"` object.
+Returns a `"InequalityProblem[T]"` object.
 
 ---
 
@@ -263,14 +263,14 @@ Returns a `"InequalityProblem"` object.
 ```python
 def copy(
     self
-) -> "InequalityProblem":
+) -> "InequalityProblem[T]":
 ```
 
 #### Returns
 
-**`"InequalityProblem"`**
+**`"InequalityProblem[T]"`**
 
-Returns a `"InequalityProblem"` object.
+Returns a `"InequalityProblem[T]"` object.
 
 ---
 
@@ -633,10 +633,40 @@ Returns a `Callable[[Permutation], T]` object.
 
 ---
 
-### <span data-api-method-heading="true"><code>extract&#95;constraints</code></span>
+### <span data-api-method-heading="true"><code>uniquely&#95;named&#95;symbol</code></span>
 
 ```python
-def extract_constraints(
+def uniquely_named_symbol(
+    self,
+    xname: str,
+    **kwargs
+) -> Symbol:
+```
+
+Returns a symbol with the given name which should not conflict with any symbol in the problem.
+
+#### Parameters
+
+<dl>
+  <dt><code>xname: str</code></dt>
+  <dd>
+    <!-- TODO: add description -->
+  </dd>
+
+</dl>
+
+#### Returns
+
+**`Symbol`**
+
+Returns a `Symbol` object.
+
+---
+
+### <span data-api-method-heading="true"><code>separate&#95;constraints</code></span>
+
+```python
+def separate_constraints(
     self,
     symbols: Union[Symbol, List[Symbol]]
 ) -> Tuple[Dict[T, Expr], Dict[T, Expr], Dict[T, Expr], Dict[T, Expr]]:
@@ -649,12 +679,12 @@ Split constraints into those that contain given symbols and those that do not. R
 ```python
 >>> from sympy.abc import a, b, c
 >>> problem = InequalityProblem(a*b, [a, b, a*b, b+c], [a-1, b+c-1])
->>> problem.extract_constraints(a) # doctest: +NORMALIZE_WHITESPACE
+>>> problem.separate_constraints(a) # doctest: +NORMALIZE_WHITESPACE
 ({a: a, a*b: a*b},
  {a - 1: a - 1},
  {b: b, b + c: b + c},
  {b + c - 1: b + c - 1})
->>> problem.extract_constraints([b, c]) # doctest: +NORMALIZE_WHITESPACE
+>>> problem.separate_constraints([b, c]) # doctest: +NORMALIZE_WHITESPACE
 ({b: b, a*b: a*b, b + c: b + c},
  {b + c - 1: b + c - 1},
  {a: a},
@@ -833,44 +863,46 @@ def polylize(
     field: bool = False,
     extension: bool = True,
     unify: bool = False
-) -> "InequalityProblem":
+) -> "InequalityProblem[Poly]":
 ```
+
+Convert the problem to polynomial form.
 
 #### Parameters
 
 <dl>
   <dt><code>ineqs_sqf: bool (default: <code>True</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Whether to square-free the inequality constraints. Default is True. NOTE: This might change the leading coefficient of expressions and break the symmetry.
   </dd>
 
   <dt><code>eqs_sqf: bool (default: <code>True</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Whether to square-free the equality constraints. Default is True. NOTE: This might change the leading coefficient of expressions and break the symmetry.
   </dd>
 
   <dt><code>field: bool (default: <code>False</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Whether to convert the problem to a field. Default is False.
   </dd>
 
   <dt><code>extension: bool (default: <code>True</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Whether to extend the domain of the problem. Default is True.
   </dd>
 
   <dt><code>unify: bool (default: <code>False</code>)</code></dt>
   <dd>
-    <!-- TODO: add description -->
+    Whether to unify the domain of the problem. Default is False.
   </dd>
 
 </dl>
 
 #### Returns
 
-**`"InequalityProblem"`**
+**`"InequalityProblem[Poly]"`**
 
-Returns a `"InequalityProblem"` object.
+InequalityProblem[Poly] The problem in polynomial form.
 
 ---
 
@@ -879,7 +911,7 @@ Returns a `"InequalityProblem"` object.
 ```python
 def remove_redundancy(
     self
-) -> "InequalityProblem":
+) -> "InequalityProblem[T]":
 ```
 
 Remove redundant symbols and constraints. TODO: This function assumes redundant constraints are feasible in the current. This could change in the future.
@@ -898,9 +930,9 @@ Remove redundant symbols and constraints. TODO: This function assumes redundant 
 
 #### Returns
 
-**`"InequalityProblem"`**
+**`"InequalityProblem[T]"`**
 
-Returns a `"InequalityProblem"` object.
+Returns a `"InequalityProblem[T]"` object.
 
 ---
 
@@ -913,7 +945,7 @@ def sqr_free(
     ineqs_sqf: bool = True,
     eqs_sqf: bool = True,
     inplace: bool = False
-) -> Tuple["InequalityProblem", Expr]:
+) -> Tuple["InequalityProblem[T]", Expr]:
 ```
 
 Try to make the problem square-free.
@@ -966,7 +998,7 @@ x**2 - x + 1
 
 #### Returns
 
-**`Tuple["InequalityProblem", Expr]`**
+**`Tuple["InequalityProblem[T]", Expr]`**
 
 problem: InequalityProblem The square-free problem. sqr: Expr The expression such that <code>new_problem.expr * sqr**2 == problem.expr</code>.
 
@@ -1094,7 +1126,8 @@ Consider proving x >= 0 given x + y >= 1 and x**2 + y**2 == 1:
 We can define the solution with G0 and H0 and restore it using the restoration function. However, restoration expands the brackets and might break the sum-of-squares structure.
 
 ```python
->>> G0, H0 = list(newpro.ineq_constraints.values())[0], list(newpro.eq_constraints.values())[0]
+>>> G0 = list(newpro.ineq_constraints.values())[0]
+>>> H0 = list(newpro.eq_constraints.values())[0]
 >>> sol = G0 - H0/2 + x**2/2 + (y-1)**2/2; sol
 x**2/2 + (y - 1)**2/2 + _G0(x, y) - _H0(x, y)/2
 >>> restore(sol)
@@ -1156,8 +1189,8 @@ Returns a `RootList` object.
 ```python
 def set_roots(
     self,
-    roots
-) -> RootList:
+    roots: Optional[Union[RootList, Sequence[Union[Mapping[Symbol, Any], Root, Sequence[Any]]]]]
+) -> Optional[RootList]:
 ```
 
 Safely set the roots of the problem. Accepts multiple input types (None or list of tuples or list of dicts).
@@ -1165,7 +1198,7 @@ Safely set the roots of the problem. Accepts multiple input types (None or list 
 #### Parameters
 
 <dl>
-  <dt><code>roots</code></dt>
+  <dt><code>roots: Optional[Union[RootList, Sequence[Union[Mapping[Symbol, Any], Root, Sequence[Any]]]]]</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
@@ -1174,9 +1207,9 @@ Safely set the roots of the problem. Accepts multiple input types (None or list 
 
 #### Returns
 
-**`RootList`**
+**`Optional[RootList]`**
 
-Returns a `RootList` object.
+Returns a `Optional[RootList]` object.
 
 ---
 
@@ -1198,23 +1231,31 @@ A manual approach to solve the IMO-1983 problem by Ravi substitution:
 >>> from sympy.abc import a, b, c, x, y, z
 >>> from sympy import Function
 >>> F = Function('F')
->>> problem = InequalityProblem(a**2*b*(a-b)+b**2*c*(b-c)+c**2*a*(c-a),{b+c-a:F(a),c+a-b:F(b),a+b-c:F(c)})
->>> new_pro, restore = problem.transform({a:y+z,b:z+x,c:x+y}, {x:(b+c-a)/2,y:(c+a-b)/2, z:(a+b-c)/2})
+>>> problem = InequalityProblem(a**2*b*(a-b)+b**2*c*(b-c)+c**2*a*(c-a),
+... {b+c-a:F(a),c+a-b:F(b),a+b-c:F(c)})
+>>> new_pro, restore = problem.transform({a:y+z,b:z+x,c:x+y},
+... {x:(b+c-a)/2,y:(c+a-b)/2, z:(a+b-c)/2})
 >>> new_pro.expr.expand(), new_pro.ineq_constraints # doctest: +NORMALIZE_WHITESPACE
 (2*x**3*z - 2*x**2*y*z + 2*x*y**3 - 2*x*y**2*z - 2*x*y*z**2 + 2*y*z**3,
  {2*x: F(y + z), 2*y: F(x + z), 2*z: F(x + y)})
+```
 
-After we find a solution (sympy Expr) to the transformed problem, use `restore` to
-transform it back to the original problem.
->>> sol = (-x + z)**2*F(x + y)*F(x + z)/2 + (x - y)**2*F(x + y)*F(y + z)/2 + (y - z)**2*F(x + z)*F(y + z)/2
+After we find a solution (sympy Expr) to the transformed problem, use `restore` to transform it back to the original problem.
+
+```python
+>>> sol = (-x + z)**2*F(x + y)*F(x + z)/2 + (x - y)**2*F(
+... x + y)*F(y + z)/2 + (y - z)**2*F(x + z)*F(y + z)/2
 >>> (sol.xreplace({F(y + z): 2*x, F(x + z): 2*y, F(x + y): 2*z}) - new_pro.expr).expand()
 0
 >>> restore(sol) # doctest: +SKIP
 (-a + b)**2*F(a)*F(b)/2 + (a - c)**2*F(a)*F(c)/2 + (-b + c)**2*F(b)*F(c)/2
 >>> (restore(sol).xreplace({F(a):b+c-a, F(b):c+a-b, F(c):a+b-c}) - problem.expr).expand()
 0
+```
 
 Transformations should be birational if the problem is polynomial.
+
+```python
 >>> from sympy import cbrt
 >>> InequalityProblem(a**2).polylize().transform({a: cbrt(b)}, {b: a**3}) # doctest:+SKIP
 Traceback (most recent call last):

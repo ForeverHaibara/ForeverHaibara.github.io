@@ -11,7 +11,7 @@ def sum_of_squares(
     eq_constraints: Union[List["Expr"], Dict["Expr", "Expr"]] = {},
     *,
     roots: Optional[List[Union[Tuple["Expr", ...], Dict["Symbol", "Expr"]]]] = None,
-    verbose: bool = False,
+    verbose: Union[bool, int] = 0,
     time_limit: float = 3600.0,
     methods: Optional[List[str]] = None,
     configs: Dict[str, Dict] = {},
@@ -74,7 +74,7 @@ x*(Σ(2*a + 13))/6 + Σa*(b - c)**2 + (Σa*b*(c - 1)**2)/6 + 5*(Σ(a - 1)**2)/6 
 Σ(x - y)**2*G(z)
 ```
 
-### Assumptions (newly added in 0.2.0.dev)
+### Assumptions
 
 Currently, all SymPy symbol assumptions are ignored by default and symbols are treated as real variables. To claim nonnegativity of symbols, just add them to `ineq_constraints`. Another option is to set `assumptions=True` to use the assumptions of SymPy symbols.
 
@@ -122,7 +122,7 @@ With `assumptions=True`, all variables are treated as complex variables unless t
     Equality cases of the expression. This saves the time for searching equality cases if provided.
   </dd>
 
-  <dt><code>verbose: bool (default: <code>False</code>)</code></dt>
+  <dt><code>verbose: Union[bool, int] (default: <code>0</code>)</code></dt>
   <dd>
     Whether to print information during the solving process. Defaults to False.
   </dd>

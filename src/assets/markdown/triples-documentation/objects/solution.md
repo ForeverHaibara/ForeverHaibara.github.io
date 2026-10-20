@@ -66,12 +66,12 @@ a**2 - 2*a + 1
     <!-- TODO: add description -->
   </dd>
 
-  <dt><code>ineq_constraints: Dict[T, Expr]</code></dt>
+  <dt><code>ineq_constraints: Dict[T, "Expr"]</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
 
-  <dt><code>eq_constraints: Dict[T, Expr]</code></dt>
+  <dt><code>eq_constraints: Dict[T, "Expr"]</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
@@ -131,9 +131,9 @@ a**2 - 2*a + 1
 def __init__(
     self,
     problem: Optional[Union[InequalityProblem[T], T]] = None,
-    solution: Optional[Expr] = None,
-    ineq_constraints: Optional[Dict[T, Expr]] = None,
-    eq_constraints: Optional[Dict[T, Expr]] = None,
+    solution: Optional["Expr"] = None,
+    ineq_constraints: Optional[Dict[T, "Expr"]] = None,
+    eq_constraints: Optional[Dict[T, "Expr"]] = None,
     is_equal: Optional[bool] = None
 ):
 ```
@@ -146,17 +146,17 @@ def __init__(
     <!-- TODO: add description -->
   </dd>
 
-  <dt><code>solution: Optional[Expr] (default: <code>None</code>)</code></dt>
+  <dt><code>solution: Optional["Expr"] (default: <code>None</code>)</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
 
-  <dt><code>ineq_constraints: Optional[Dict[T, Expr]] (default: <code>None</code>)</code></dt>
+  <dt><code>ineq_constraints: Optional[Dict[T, "Expr"]] (default: <code>None</code>)</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
 
-  <dt><code>eq_constraints: Optional[Dict[T, Expr]] (default: <code>None</code>)</code></dt>
+  <dt><code>eq_constraints: Optional[Dict[T, "Expr"]] (default: <code>None</code>)</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
@@ -200,7 +200,7 @@ Bypass immutability: directly overwrite the problem expression; use with care.
 @ineq_constraints.setter
 def ineq_constraints(
     self,
-    value: Dict[T, Expr]
+    value: Dict[T, "Expr"]
 ):
 ```
 
@@ -209,7 +209,7 @@ Bypass immutability: directly overwrite the problem inequality constraints; use 
 #### Parameters
 
 <dl>
-  <dt><code>value: Dict[T, Expr]</code></dt>
+  <dt><code>value: Dict[T, "Expr"]</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
@@ -224,7 +224,7 @@ Bypass immutability: directly overwrite the problem inequality constraints; use 
 @eq_constraints.setter
 def eq_constraints(
     self,
-    value: Dict[T, Expr]
+    value: Dict[T, "Expr"]
 ):
 ```
 
@@ -233,7 +233,7 @@ Bypass immutability: directly overwrite the problem equality constraints; use wi
 #### Parameters
 
 <dl>
-  <dt><code>value: Dict[T, Expr]</code></dt>
+  <dt><code>value: Dict[T, "Expr"]</code></dt>
   <dd>
     <!-- TODO: add description -->
   </dd>
@@ -710,16 +710,16 @@ def as_expr(
     self,
     *args,
     **kwargs
-) -> Expr:
+) -> "Expr":
 ```
 
 Return the solution as an expression. It is equivalent to .solution.
 
 #### Returns
 
-**`Expr`**
+**`"Expr"`**
 
-Returns a `Expr` object.
+Returns a `"Expr"` object.
 
 ---
 
