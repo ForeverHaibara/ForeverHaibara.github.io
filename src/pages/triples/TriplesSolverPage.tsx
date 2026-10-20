@@ -8,6 +8,7 @@ import LoadingSpinner from '../../components/LoadingSpinner.tsx';
 import AlertMessage from '../../components/AlertMessage.tsx';
 import KatexDisplay from '../../components/KatexDisplay.tsx';
 import CopyButton from '../../components/CopyButton';
+import { GRADIO_TRIPLES_URL } from '../../constants.ts';
 
 type TabKey = 'solution' | 'latex' | 'latex_aligned';
 
@@ -93,6 +94,16 @@ const examplesData: TriplesExample[] = [
       { expression: 'a*b*c-1', alias: '', type: 'eq' },
     ],
   },
+  {
+    id: 'butterfly',
+    name: "Butterfly",
+    description: "The real locus of x^6+y^6=x^2 is contained in a disk of radius 5/4.",
+    expression: '25/16-x^2-y^2',
+    displayExpressionLatex: '\\frac{25}{16}-x^2-y^2 \\ge 0',
+    constraints: [
+      { expression: 'x^6+y^6-x^2', alias: 'F(x,y)', type: 'eq' },
+    ],
+  }
 ];
 
 const TriplesSolverPage: React.FC = () => {
@@ -245,7 +256,13 @@ const TriplesSolverPage: React.FC = () => {
           <h1>
             Triples Inequality Prover<span>.</span>
           </h1>
-          <p>A mathematical expression. A few assumptions. A new perspective on the proof.</p>
+          <p>
+            A mathematical expression. A few assumptions. A new perspective on the proof.
+            Backend at
+          <Link className="project-cta" to= {GRADIO_TRIPLES_URL} >
+          {GRADIO_TRIPLES_URL}.
+          </Link>
+          </p>
         </div>
         <Link className="design-text-link" to="/triples/documentation">
           Read the documentation <Arrow diagonal />
@@ -609,8 +626,8 @@ const TriplesSolverPage: React.FC = () => {
             Released on <time dateTime="2026-10-20">October 20, 2026</time>.
           </p>
         </div>
-        <Link className="design-text-link" to="/triples/documentation">
-          Explore the documentation <Arrow />
+        <Link className="design-text-link" to="https://github.com/ForeverHaibara/Triple-SOS/releases/tag/v0.3.0">
+          Explore the release note <Arrow />
         </Link>
       </section>
     </div>

@@ -90,6 +90,10 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   color: #3f6c86;
   font-size: 14px;
   font-weight: 600;
@@ -240,6 +244,11 @@
   display: grid;
   place-items: center;
   margin-left: auto;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
   color: #446b86;
 }
 .project-copy {
@@ -304,7 +313,7 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 23px 6px;
+  padding: 20px 12px;
   border-bottom: 1px solid var(--design-border);
   transition: background 0.2s;
 }
@@ -448,7 +457,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 19px 0;
+  padding: 18px 12px;
   border-top: 1px solid #d5e6f3;
   font-size: 14px;
   font-weight: 600;
@@ -497,7 +506,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 17px 0;
+  padding: 16px 12px;
   border-bottom: 1px solid #e6eef5;
   transition: background 0.2s;
 }
@@ -1058,8 +1067,9 @@
   justify-content: space-between;
   gap: 10px;
   margin-top: 22px;
-  padding-top: 19px;
-  border-top: 1px solid #d5e6f2;
+  padding: 14px 16px;
+  border: 1px solid #cadfea;
+  border-radius: 12px;
   text-align: left;
   color: #346d99;
 }
@@ -1283,7 +1293,10 @@
   align-items: center;
   gap: 10px;
   margin-left: auto;
-  padding: 5px 0;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   color: #3a6e93;
   font-size: 14px;
   font-weight: 600;
@@ -1328,9 +1341,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 8px;
+  padding: 10px 16px;
   border-bottom: 1px solid #ffffff24;
   color: #d5e7f5;
   font-size: 13px;
@@ -1544,12 +1556,12 @@
   }
 }
 
-/* Arrow links share a visible hover/focus treatment without changing their layout. */
+/* Highlight the padded hit area itself; focus rings stay outside that area. */
 .design-text-link,
 .profile-github,
 .example-bottom button,
 .reference-example {
-  border-radius: 6px;
+  border-radius: 10px;
   transition:
     color 0.16s,
     background 0.16s,
@@ -1560,15 +1572,13 @@
 .example-bottom button:enabled:is(:hover, :focus-visible) {
   color: #125b92;
   background: #e2effb;
-  box-shadow: 0 0 0 6px #e2effb;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  border-color: #bdd5e8;
 }
 .directory-link:is(:hover, :focus-visible),
 .about-interests a:is(:hover, :focus-visible),
 .reference-example:enabled:is(:hover, :focus-visible) {
   background: #e2effb;
-  box-shadow: 0 0 0 6px #e2effb;
+  border-color: #bdd5e8;
   color: #125b92;
 }
 .reference-example:enabled:is(:hover, :focus-visible) strong,
@@ -1582,8 +1592,7 @@
 .project-feature:is(:hover, :focus-visible) .project-arrow {
   color: #125b92;
   background: #dcecfb;
-  box-shadow: 0 0 0 8px #dcecfb;
-  border-radius: 4px;
+  border-color: #bdd5e8;
 }
 .design-text-link > svg,
 .profile-github > svg,
@@ -1604,19 +1613,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 100px;
-  min-height: 36px;
-  padding: 7px 11px;
+  gap: 6px;
+  min-width: 0;
+  min-height: 30px;
+  flex-shrink: 0;
+  padding: 4px 8px;
   border: 1px solid #799bb5;
   border-radius: 8px;
   color: #f1f8ff;
   background: #ffffff0d;
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
   font-weight: 600;
   transition:
     background 0.16s,
     border-color 0.16s;
+}
+.command-copy-button > svg {
+  width: 14px;
+  height: 14px;
 }
 .command-copy-button:enabled:is(:hover, :focus-visible) {
   border-color: #c5e5ff;
@@ -1713,9 +1729,55 @@
   max-height: calc(100vh - 200px);
   overflow-y: auto;
   padding: 16px 12px;
-  border: 1px solid #d5e4ef;
+  border: 1px solid #c6ddeb70;
   border-radius: 20px;
-  background: #ffffffb3;
+  background: linear-gradient(155deg, #dcebf966, #e8f3fb26);
+  scrollbar-width: thin;
+  scrollbar-color: #7895ac45 transparent;
+  scrollbar-gutter: stable;
+}
+.documentation-contents-card:is(:hover, :focus-within) {
+  scrollbar-color: #6b8da787 transparent;
+}
+.documentation-contents-card::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.documentation-contents-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+.documentation-contents-card::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 999px;
+  background: #7895ac45;
+}
+.documentation-contents-card:is(:hover, :focus-within)::-webkit-scrollbar-thumb {
+  background: #6b8da787;
+}
+.documentation-menu-link {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: #3e5b70;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 500;
+  transition:
+    color 0.16s,
+    background 0.16s;
+}
+.documentation-menu-link:is(:hover, :focus-visible) {
+  background: #dcecf9a6;
+  color: #164f7d;
+}
+.documentation-menu-link.is-active {
+  background: #d5e7f5;
+  color: #164f7d;
+  box-shadow: inset 3px 0 #5c93bd;
+}
+.documentation-menu-link:focus-visible {
+  outline: 2px solid #5c93bd;
+  outline-offset: 2px;
 }
 .documentation-contents-card h2 {
   padding: 0 12px;

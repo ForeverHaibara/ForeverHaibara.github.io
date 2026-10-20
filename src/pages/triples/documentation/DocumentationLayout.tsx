@@ -4,11 +4,7 @@ import { usePageEntrance } from '../../../components/PageVisuals';
 import '../../../styles/showcase.css';
 
 const docNavLinkClasses = ({ isActive }: { isActive: boolean }) =>
-  `block rounded-2xl px-3 py-2 text-sm font-medium transition-all duration-300 ${
-    isActive
-      ? 'bg-[linear-gradient(135deg,#dbeafe_0%,#eff6ff_100%)] text-sky-800 shadow-[0_8px_20px_rgba(96,165,250,0.14)]'
-      : 'text-slate-600 hover:bg-white/70 hover:text-sky-700'
-  }`;
+  `documentation-menu-link${isActive ? ' is-active' : ''}`;
 
 const documentationSections = [
   { name: 'Overview', path: '/triples/documentation', end: true },
