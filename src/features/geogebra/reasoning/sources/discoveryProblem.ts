@@ -34,6 +34,7 @@ const fromEquation = (equation: QuantityEquation): GeometryPredicate[] => {
 
 type LinePair = (names: string[]) => Segment;
 const fromWitness = (kind: GeometryRelation['kind'], witness: RelationWitness, linePair: LinePair): GeometryPredicate[] => {
+  if (witness.productEquation) return [{ kind: 'vector-product-equation', equation: witness.productEquation }];
   if (witness.midpoint) return [{ kind: 'midpoint', ...witness.midpoint }];
   if (witness.equation) return fromEquation(witness.equation);
   if (kind === 'collinear') return [{ kind, points: witness.lineFamilies?.[0]?.[0] ?? witness.points }];

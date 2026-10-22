@@ -3,6 +3,16 @@ import type { ConditionSelection, GeometryPredicate, Rational, ReasoningProblem,
 import { AG2_COMMIT, AG2_LIMITS } from './capabilities';
 import { canonicalDirectionEquation } from '../../../analysis/quantities/directedAngles';
 import { proofQueryCandidates } from './proofQueries';
+import { mapProductPoints, productRow } from '../../../geometry/vectorProducts';
+import type { VectorProductEquation } from '../../../geometry/vectorProducts';
+
+export interface VectorContext {
+  version: 1;
+  origin: { x: number; y: number };
+  assumptions: Array<{ key: string; equation: VectorProductEquation; candidateIds: string[] }>;
+  goals: Array<{ key: string; equation: VectorProductEquation }>;
+  midpoints: Array<{ point: string; segment: Segment; candidateIds: string[] }>;
+}
 
 export interface AngleBranch {
   angle: [string, string, string];
@@ -26,6 +36,8 @@ export interface Ag2Export {
   assumptionMode: 'validated' | 'hypothetical';
   assumptionSources: Array<{ predicate: string; candidateIds: string[] }>;
   operation?: 'check' | 'proof';
+  vectorContext?: VectorContext;
+  ag2Compatible?: boolean;
 }
 export interface Ag2ExportResult { value: Ag2Export | null; errors: string[]; }
 
@@ -73,6 +85,8 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
     const symbols = new Map(names.map((entry) => [entry.id, entry.symbol]));
     const symbol = (id: string) => { const name = symbols.get(id); if (!name) throw new Error('Unknown point reference.'); return name; };
     const branches: AngleBranch[] = [];
+    const vectorContext: VectorContext = { version: 1, origin: { x: -origin.x / scale, y: -origin.y / scale }, assumptions: [], goals: [], midpoints: [] };
+    const vectorText = (equation: VectorProductEquation) => `${equation.operation}seq ${JSON.stringify(productRow(equation))}`;
     const line = (segment: Segment) => {
       const [a, b] = segment.map((id) => points.get(id)!);
       if (!a || !b || Math.hypot(b.x - a.x, b.y - a.y) < 1e-8) throw new Error('A direction or length uses coincident or poorly separated points.');
@@ -110,6 +124,14 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
       return [[kind, ...values.flatMap((term) => term.segment.map(symbol)), ...values.map((term) => term.coefficient), ...(tail === undefined ? [] : [tail])].join(' ')];
     };
     const lower = (predicate: GeometryPredicate, role: AngleBranch['role']): string[] => {
+      if (predicate.kind === 'vector-product-equation') {
+        if (!predicate.equation.terms.length || predicate.equation.terms.length > 32
+          || predicate.equation.terms.some((term) => !Number.isSafeInteger(term.coefficient) || Math.abs(term.coefficient) > AG2_LIMITS.coefficient)) throw new Error('Vector product coefficient or term budget exceeded.');
+        const equation = mapProductPoints(predicate.equation, symbol);
+        const key = vectorText(equation);
+        if (role === 'goal' && !vectorContext.goals.some((entry) => entry.key === key)) vectorContext.goals.push({ key, equation });
+        return [key];
+      }
       if (predicate.kind === 'collinear' || predicate.kind === 'concyclic') {
         const ids = [...new Set(predicate.points)].sort();
         if (ids.length < (predicate.kind === 'collinear' ? 3 : 4)) throw new Error('An incidence predicate has too few distinct points.');
@@ -165,6 +187,16 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
       throw new Error('Unsupported geometric predicate.');
     };
     const sourceRows = accepted.map((candidate) => ({ id: candidate!.id, rows: candidate!.predicates.flatMap((predicate) => lower(predicate, 'assumption')) }));
+    for (const candidate of accepted) for (const predicate of candidate!.predicates) {
+      if (predicate.kind === 'vector-product-equation') {
+        const equation = mapProductPoints(predicate.equation, symbol);
+        const key = vectorText(equation);
+        const previous = vectorContext.assumptions.find((entry) => entry.key === key);
+        if (previous) previous.candidateIds.push(candidate!.id);
+        else vectorContext.assumptions.push({ key, equation, candidateIds: [candidate!.id] });
+      } else if (predicate.kind === 'midpoint') vectorContext.midpoints.push({ point: symbol(predicate.point),
+        segment: predicate.segment.map(symbol) as Segment, candidateIds: [candidate!.id] });
+    }
     const premises = [...new Set(sourceRows.flatMap((source) => source.rows))];
     const assumptionSources = premises.map((predicate) => ({ predicate, candidateIds: sourceRows.filter((source) => source.rows.includes(predicate)).map((source) => source.id) }));
     const queryGoals = queries.map((candidate) => ({ id: candidate!.id, goals: [...new Set(candidate!.predicates.flatMap((predicate) => lower(predicate, 'goal')))] }));
@@ -176,11 +208,13 @@ const compileAg2Problem = (problem: ReasoningProblem, selection: ConditionSelect
     });
     const declarations = names.map(({ id, symbol: name }) => { const point = points.get(id)!; return `${name}@${point.x}_${point.y} = `; });
     if (!declarations.length) throw new Error('The selection contains no points.');
-    const premise = declarations.join('; ') + premises.join(', ');
+    const vectorKeys = new Set(vectorContext.assumptions.map((entry) => entry.key));
+    const premise = declarations.join('; ') + premises.filter((row) => !vectorKeys.has(row)).join(', ');
+    const ag2Compatible = !vectorContext.assumptions.length && !vectorContext.goals.length;
     return { value: { version: 1, engineCommit: AG2_COMMIT, premise, goals, queries: queryGoals,
-      text: goals.length ? goals.map((target) => `${premise} ? ${target}`).join('\n') : premise,
+      text: ag2Compatible ? goals.length ? goals.map((target) => `${premise} ? ${target}`).join('\n') : premise : '',
       acceptedIds, goalId: selection.goalId, alreadyAssumed: Boolean(goal && goals.every(directlyIncluded)),
-      branches, names, normalization: { origin: { ...origin }, scale }, assumptionSources, assumptionMode: selection.assumptionMode ?? 'validated' }, errors: [] };
+      branches, names, normalization: { origin: { ...origin }, scale }, assumptionSources, assumptionMode: selection.assumptionMode ?? 'validated', vectorContext, ag2Compatible }, errors: [] };
   } catch (error) {
     return { value: null, errors: [error instanceof Error ? error.message : 'Problem export failed.'] };
   }

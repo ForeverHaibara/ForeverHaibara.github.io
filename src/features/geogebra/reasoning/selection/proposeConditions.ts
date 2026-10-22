@@ -13,17 +13,20 @@ import { DEFAULT_CHARACTERIZATION_OPTIONS } from './types';
 import type { CharacterizationOptions, CharacterizationProposal, ObjectCharacterization } from './types';
 import type { SamplingResult } from '../sampling/types';
 import { canonicalDirectionEquation } from '../../analysis/quantities/directedAngles';
+import { productEquationKey } from '../../geometry/vectorProducts';
 
 const KINDS: GeometryRelationKind[] = ['collinear', 'parallel', 'perpendicular', 'concyclic', 'coincident-points', 'midpoint',
-  'equal-lengths', 'directed-angles', 'length-multiple', 'similar-triangles', 'congruent-triangles'];
+  'equal-lengths', 'directed-angles', 'length-multiple', 'similar-triangles', 'congruent-triangles', 'dot-products', 'cross-products'];
 const costOf = (predicate: GeometryPredicate): number => {
   const support = new Set(predicatePoints(predicate)).size;
-  const base = predicate.kind === 'midpoint' ? 1.2 : predicate.kind === 'collinear' || predicate.kind === 'coincident' ? 1
+  const base = predicate.kind === 'vector-product-equation' ? 2.2 : predicate.kind === 'midpoint' ? 1.2 : predicate.kind === 'collinear' || predicate.kind === 'coincident' ? 1
     : 'pi' in predicate ? 2 : 'terms' in predicate ? 2.2 : 1.3;
-  const coefficients = 'terms' in predicate ? predicate.terms.reduce((sum, term) => sum + Math.abs(term.coefficient), 0) : 0;
+  const coefficients = predicate.kind === 'vector-product-equation' ? predicate.equation.terms.reduce((sum, term) => sum + Math.abs(term.coefficient), 0)
+    : 'terms' in predicate ? predicate.terms.reduce((sum, term) => sum + Math.abs(term.coefficient), 0) : 0;
   return base + 0.15 * Math.max(0, support - 3) + 0.05 * coefficients;
 };
 const keyOf = (predicate: GeometryPredicate): string => {
+  if (predicate.kind === 'vector-product-equation') return `vector:${productEquationKey(predicate.equation)}`;
   if (predicate.kind === 'directed-angle-equation') return `directed:${canonicalDirectionEquation(predicate.terms, predicate.pi).key}`;
   const pair = (names: string[]) => [...names].sort();
   if ('points' in predicate) return JSON.stringify([predicate.kind, pair(predicate.points)]);

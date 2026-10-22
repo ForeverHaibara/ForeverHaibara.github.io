@@ -1,7 +1,7 @@
 import type { ConditionCandidate, GeometryPredicate } from '../../ir/types';
 
 const families: GeometryPredicate['kind'][] = ['concyclic', 'midpoint', 'equal-length', 'perpendicular', 'parallel',
-  'collinear', 'directed-angle-equation', 'length-product', 'length-sum', 'direction-equation', 'coincident'];
+  'collinear', 'directed-angle-equation', 'vector-product-equation', 'length-product', 'length-sum', 'direction-equation', 'coincident'];
 
 /** A query budget should sample geometric kinds, rather than the discovery UI's sort order. */
 export const proofQueryCandidates = (candidates: ConditionCandidate[], acceptedIds: readonly string[]): ConditionCandidate[] => {

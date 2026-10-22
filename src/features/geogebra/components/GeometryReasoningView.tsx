@@ -109,7 +109,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     } catch (failure) { if (ticket === generation.current) { setError(failure instanceof Error ? failure.message : 'Proof generation failed.'); setPhase('idle'); } }
   };
   const download = (project: boolean) => {
-    if (!fresh || !problem || !project && !exported?.value) return;
+    if (!fresh || !problem || !project && (!exported?.value || exported.value.ag2Compatible === false)) return;
     const content = project ? JSON.stringify({ version: 1, problem, selection, candidateAliases: Object.fromEntries(aliases), export: exported?.value ?? null, exportErrors: exported?.errors, proofExport: proofExported, result, characterization: proposal, coverage }, null, 2) : exported!.value!.text;
     blobToDownload(new Blob([content], { type: project ? 'application/json' : 'text/plain;charset=utf-8' }), project ? 'geometry-conditions.json' : 'geometry-problems.ag2.txt');
   };
@@ -147,7 +147,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
       {selection.assumptionMode === 'hypothetical' && <p className="mt-1 text-[10px] leading-4 text-amber-800">Rejected evidence can be assumed explicitly. Proof generation uses symbolic equations; coordinate disagreements and consistency remain visible.</p>}
       <div className="mt-2 flex flex-wrap gap-1">
         <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !value || !selection.goalId || selection.assumptionMode === 'hypothetical' || running || suggestions.status !== 'idle'} onClick={() => void run()}>Check goal</button>
-        <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !value} onClick={() => download(false)}>Export AG2</button>
+        <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !value || value.ag2Compatible === false} onClick={() => download(false)}>Export AG2</button>
         <button type="button" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100 disabled:opacity-40" disabled={!fresh || !problem || !hasSelection} onClick={() => download(true)}>Export project</button>
       </div>
       {value && value.branches.length > 0 && <p className="mt-2 text-[10px] text-amber-800">{value.branches.length} ordinary-angle ray/lift branch conditions are included in the exported problem.</p>}
@@ -156,7 +156,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
       fresh={fresh} busy={running || suggestions.status !== 'idle'} onSelection={changeSelection} />
     {fresh && (result || error) && <section ref={resultsRef} aria-label="Proof results" className="scroll-mt-48 space-y-2 border-t border-slate-200 pt-3">
       <h4 className="font-semibold text-slate-700">Proof results</h4>
-      {result && !result.proof && <p className="leading-5 text-slate-600">{result.status === 'already-assumed' ? 'Goal is already accepted or a direct identity.' : result.status === 'derived' ? 'Goal follows in DDAR under the selected conditions.' : 'Goal was not derived; this does not disprove it.'} {result.elapsedMs.toFixed(0)} ms · {result.points} points</p>}
+      {result && !result.proof && <p className="leading-5 text-slate-600">{result.status === 'already-assumed' ? 'Goal is already accepted or a direct identity.' : result.status === 'derived' ? 'Goal follows under the selected conditions.' : 'Goal was not derived; this does not disprove it.'} {result.elapsedMs.toFixed(0)} ms · {result.points} points</p>}
       {result?.proof && proofExported && <ReadableProofView proof={result.proof} exported={proofExported} elapsedMs={result.elapsedMs} />}
       {error && <p role="alert" className="break-words rounded-lg bg-rose-50 p-2 text-rose-700">{error}</p>}
     </section>}
@@ -164,7 +164,8 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     {value && <details className="rounded-lg border border-slate-200 p-2"><summary className="cursor-pointer text-slate-600">Accepted conditions and backend input</summary>
       {selection.acceptedIds.map((id) => <p key={id} className="mt-1 break-words">{problem?.candidates.find((candidate) => candidate.id === id)?.label}</p>)}
       <div className="mt-2 flex flex-wrap gap-1">{value.names.map((entry) => <button key={entry.id} type="button" className="ggb-object-chip" onClick={() => objectLink.select(entry.name)}>{entry.symbol} = {entry.name}</button>)}</div>
-      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-2 text-[10px]">{value.text}</pre>
+      {value.ag2Compatible === false && <p className="mt-2 text-amber-800">Vector conditions require the project JSON export. Pure AG2 text cannot represent the complete problem.</p>}
+      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-slate-50 p-2 text-[10px]">{value.text || value.premise}</pre>
     </details>}
     {problem && <details className="text-[10px] text-slate-500"><summary className="cursor-pointer">Candidate scope and notes</summary>{problem.diagnostics.map((message, i) => <p key={i} className="mt-1">{message}</p>)}</details>}
   </div>;

@@ -59,9 +59,16 @@ def solve_json(payload):
     data = json.loads(payload)
     if data.get("version") != 1:
         raise ValueError("Unsupported reasoning protocol version")
-    if data.get("operation") == "proof":
+    if data.get("operation") == "proof" or data.get("vectorContext") is not None:
+        if data.get("operation") != "proof" and data.get("goalId") is None:
+            raise ValueError("Select a goal first")
         from proof_ddar import generate_proof
-        return json.dumps(generate_proof(data, validate_assumption))
+        result = generate_proof(data, validate_assumption)
+        if data.get("operation") != "proof":
+            result.pop("proof", None)
+            if data.get("alreadyAssumed") and result["status"] != "inconsistent":
+                result["status"] = "already-assumed"
+        return json.dumps(result)
     problem = AGProblem.parse(data["premise"])
     if not 1 <= len(problem.points) <= 40:
         raise ValueError("Point budget exceeded")

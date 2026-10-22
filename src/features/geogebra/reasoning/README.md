@@ -1,5 +1,10 @@
 # 条件性几何推理
 
+2026-10-23：点乘／叉乘的线性积域已接入发现、条件建议与 DDAR 双向闭包。
+原点可以是独立框架，不新增作图对象；题 A/B 使用无辅助点的线性推导。
+见 [修订设计与实现](docs/vector-products-plan.md)、[数学路径](docs/vector-products-math.md) 和
+[验证记录](docs/vector-products-experiments.md)。完整积条件通过项目 JSON 导出。
+
 从 GGB 黑盒输出的数值性质出发，明确选择承认的条件，再用无语言模型的
 AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 [实施计划](docs/implementation-plan.md)。XML 语义还原不是本模块的前置依赖。

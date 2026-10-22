@@ -14,6 +14,8 @@ export const RELATION_CATALOG = [
   { kind: 'supplementary-angles', label: 'Supplementary angles', symbol: 'π', group: 'Angles', defaultEnabled: false },
   { kind: 'similar-triangles', label: 'Similar triangles', symbol: '∼', group: 'Triangles', defaultEnabled: true },
   { kind: 'congruent-triangles', label: 'Congruent triangles', symbol: '≅', group: 'Triangles', defaultEnabled: true },
+  { kind: 'dot-products', label: 'Dot products', symbol: '·', group: 'Vectors', defaultEnabled: true },
+  { kind: 'cross-products', label: 'Cross products', symbol: '×', group: 'Vectors', defaultEnabled: true },
   { kind: 'direction-space', label: 'Direction generators', symbol: '⟨ ⟩', group: 'Generators', defaultEnabled: true },
   { kind: 'length-space', label: 'Length generators', symbol: 'log', group: 'Generators', defaultEnabled: true },
 ] as const;

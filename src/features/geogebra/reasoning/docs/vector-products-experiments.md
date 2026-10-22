@@ -1,224 +1,85 @@
-# 向量积计划：本轮实验记录与复现
+# 向量积扩展：验证记录与复现
 
-日期：2026-10-22。调研基线：仓库 HEAD `b5bb566`，开始时工作区干净。关联 [联合计划](vector-products-plan.md)、[数学推导](vector-products-math.md)。
+2026-10-23。调研与实现基线为用户提交的 `facd4e0`（vector plan）。关联 [修订计划](vector-products-plan.md)、[数学推导](vector-products-math.md)。
 
-## 1. 做了什么与没有验证什么
+## 1. 数学路径的修正
 
-本轮阅读了 TypeScript 发现／条件建议／IR／AG2 编译／证明协议，以及 Python 桥接、精确来源消元、DDAR 适配和固定上游源码。使用本地 Python 3.14.2、现有 NumPy 和 SymPy，执行了不落地为代码文件的分析脚本。
+2026-10-22 的原生基线：在记录的几何前提下，原 DDAR 未推出问题 A 的两条相似边比，也未推出问题 B 的三个题面目标；B 中 DA⊥DE 可以推出。该结果不是命题的否证。
 
-- 未修改运行实现、测试、配置或固定上游。
-- 未打开或修改用户的 GGB 构图，没有辅助点。
-- 下面的基准是手工编码几何前提后的原生桥接输入，**不是已经跑通的“GGB 命令 → 自动发现 → 自动建议 → 新向量证明”端到端测试**。
-- 数学恒等式核验使用形式坐标，不用数值看起来正确冒充恒等证明。
-- 未运行全仓库测试、构建或浏览器 Worker 回归；文档变化不需要用这些运行结果声称新增能力已实现。
-
-所有导入均使用 `python -B` 或 `sys.dont_write_bytecode=True`，避免在静态资源目录生成缓存。
-
-## 2. 原生 DDAR 对照
-
-### 2.1 问题 A
-
-六点：
+上一版提出了一个可验证的四次恒等式，但错误地将它视作 B 的必要算法支持。2026-10-23 用户指出先证 AH∥FG 的线性叉乘链；当前数学文档已改为
 
 ```text
-a=(1/3,4/3), b=(−1,0), c=(1,0), m=(0,0),
-h=(1/3,2/3), d=(3/17,12/17).
+2 AH×FG = C₁−C₂−X = 0
 ```
 
-前提：
+其中 C₁、C₂ 是 H 的两条关联叉乘，X 是逆相似混合叉乘等式。当前引擎只执行关于二次积量的有理线性消元，不实现四次证书或多项式求解器。
 
-```text
-coll b m c
-cong b m m c
-perp a h b c
-perp b h a c
-coll a m d
-perp h d a m
+## 2. 本轮新增验证
+
+`geogebra-vector-smoke.py` 先运行真实 TypeScript 导出器，再把实际 JSON 交给未修改上游源码加站点混合适配器。它不是手工伪造导出结果。
+
+| 用例 | 核查结果 |
+| --- | --- |
+| A，6 个已有点 | 两条相似边比推出；来源含积消元与逆相似，无反射辅助点 |
+| B，长度／角前提 | BG=DG、AH∥FG、FG⊥BD 全部推出 |
+| B，改从两个积前提开始 | 积域恢复相似并回写 DDAR，题面三项目标全部推出 |
+| B，反馈专用目标 DA·DE=0 | 先由积式恢复相似，DDAR 推出直角，再返回点乘基；至少两轮同步，来源图含实际转换链 |
+| B，六构型采样建议 | 从黑盒局部建议及题设直角条件出发，三项目标全部推出 |
+| B，一般 D、镜像、旋转、平移及 1e−10／1e10 单位 | 几何和积前提两条路径均推出目标 |
+| 缺少必要积条件、没有接受条件 | 不借坐标真值补前提，相关目标未推出 |
+| 正长度乘积＋模 π 夹角，实际射线相差 π | 正确推出负号关系；错误符号的目标不推出 |
+| 独立原点位置积 | 归一化后仍正确，4 个实际点不会变成 5 个 |
+| 零向量积 | 有定义，不伪造非零方向或 guard |
+| 实验假设模式 | 可接受数值不匹配的积式，保留诊断并作符号线性推导，不补数值非退化条件 |
+| 篡改叉乘消元系数 | 独立代数回放拒绝 |
+| 普通检查与 coverage | 共享同一混合闭包，真／假目标逐项隔离 |
+
+新增原生套件目前 13 项测试。推出的 A/B 目标均无解释缺口，所用代数步骤回放通过；这仍不是对所有几何模板和坐标 guard 的完整独立形式化认证，`certificate` 保持 null。
+
+前端另有 11 项新测试，覆盖原子规范化、对称／反对称、平移镜像缩放、独立原点、零向量、发现候选、局部秩、预算、结构化检索以及混合 JSON 导出。镜像测试曾发现等值簇代表受舍入影响，已改为按稳定符号键选择代表。
+
+## 3. 旧回归与记录预算
+
+初次集成无条件展开积后果，占用了既有 1600 节点的证明记录预算，导致扩展垂足构型的旧可读证明退化。已经改为按需激活：先运行 DDAR，对已经完成的目标保留其证明；仍需新能力时才展开积行并进入双向闭包。
+
+原有中位线、角、长度、假设模式与垂足测试继续保留，不删除或放宽旧断言。垂足套件覆盖 14 个完整构型输入及缺少中心／圆心条件的反例检查。最终检查：46 个 TypeScript 测试文件、430 项测试通过；类型检查与生产构建通过；13 项新增原生测试、15 项既有 proof 测试、3 项 pedal 测试及 reasoning 脚本（含两个上游 IMO 例）通过。构建保留原有 Gradio 浏览器兼容及主包体积提示。
+
+## 4. 可阅读的实际证明
+
+- [问题 A 的证明步骤](examples/vector-problem-a.md)：聚焦 18 步，2 个代数回放步骤、2 个 guard。
+- [问题 B 的平行结论](examples/vector-problem-b.md)：聚焦 21 步，3 个代数回放步骤、2 个 guard。
+- 对应 JSON 与 Markdown 同目录，JSON 保存完整三项目标（B）的实际输入和结果，可独立回放。
+
+这些文件由真实求解器和站点现有格式化器生成，不是手写模仿程序输出。短的手工数学链仍见数学文档；自动推导可能采用其他已证中间事实。
+
+## 5. 性能与浏览器范围
+
+有界发现已运行 20/40/80 点散点、同圆、网格样本。一次同时有其他回归运行的本机测量为：
+
+| 点数 | 散点 ms | 同圆 ms | 网格 ms |
+| --- | --- | --- | --- |
+| 20 | 516 | 665 | 845 |
+| 40 | 1430 | 3730 | 2458 |
+| 80 | 1571 | 2519 | 2625 |
+
+这是预算截断后的有限搜索，存在候选／输出／行空间 partial 诊断；不是完整召回率测量或时延保证。密集样本原先达到输出上限后仍重复消元，现已提前停止该类输出处理。
+
+本轮尝试通过应用浏览器访问本地开发页，但浏览器报告连接超时，未完成实际页面／Pyodide Worker 回归。因此不宣称真实浏览器交互已通过。TypeScript 的 Worker 入口参与构建，新增 Python 模块已进入生产公共资源；取消／超时／复用仍沿用已有客户端路径。
+
+## 6. 复现命令
+
+从仓库根目录执行：
+
+```sh
+npm test -- --run --maxWorkers=2
+npx tsc --noEmit
+npm run build
+python -B scripts/geogebra-vector-smoke.py
+python -B scripts/geogebra-proof-smoke.py
+python -B scripts/geogebra-reasoning-smoke.py
+python -B scripts/geogebra-pedal-smoke.py
+node node_modules/vite-node/vite-node.mjs scripts/geogebra-vector-examples.ts
+node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
 ```
 
-两个独立的边比目标：
-
-```text
-distmeq b m a m m d m b 1 -1 -1 1 1
-distmeq b m a m b d a b 1 -1 -1 1 1
-```
-
-分别表达 `BM/AM=MD/MB` 和 `BM/AM=BD/AB`。当前 `check` 与 `proof` 均返回 `[false,false]`，单次约 27 ms，不含 GGB 或浏览器初始化。
-
-结果不表示目标为假，也不表示加入任意别的前提后仍不可解；它给出这组有明确几何意义前提的当前基线。数学文档给出不添加额外结论的向量推导。
-
-### 2.2 问题 B
-
-八点：
-
-```text
-a=(1,0), b=(0,0), c=(0,7/5), d=(11/5,3/5),
-e=(34/25,57/25), f=(11/10,3/10), g=(17/25,46/25),
-h=(374/545,627/545).
-```
-
-前提包括 B 处直角、ABC 与 ADE 的两条边比、F/G 的中点，以及 H 的两条共线关联。
-
-第一轮只有边比，当前引擎基于坐标朝向处理相似：`BG=DG, AH∥FG, FG⊥BD, AH⊥BD` 的 checks 全为 false；但可推出 `DA⊥DE`。这里当前朝向分支属于既有引擎的条件性语义，不能据此当作未来逆相似 IR 的替代品。
-
-第二轮显式再加入两条逆向有向角约束：
-
-```text
-angeq a b a c a d a e 1 -1 1 -1 0
-angeq b a b c d a d e 1 -1 1 -1 0
-```
-
-检查结果依旧为：
-
-| BG=DG | AH∥FG | FG⊥BD | AH⊥BD | DA⊥DE |
-| --- | --- | --- | --- | --- |
-| false | false | false | false | true |
-
-`proof` 单次约 84 ms。再将未来线性积层能得到的 `BG=DG`、`FG⊥BD` 作为**对照实验中的额外输入**，输出变为 `[true,false,true,false,true]`，约 93 ms。新增输入对应的 true 是“已给定”，不应被称为新推导。
-
-这说明不能把 AH 垂直的能力承诺建立在“先给 DDAR 这两个结果，它大概会解出来”的猜测上。数学文档为 AH 垂直提供了额外的精确四次证书。
-
-这些测试未推出的目标没有被转换成前提。`gapIds` 在这些运行中为零也不说明失败目标已有完整证明：未推出的目标本身没有可供回放的证明图。
-
-### 2.3 可复现的原生输入脚本
-
-在仓库根目录将以下内容交给 `python -B -`。这是文档中的复现实验，不是新增的项目脚本：
-
-```python
-import json
-import sys
-from fractions import Fraction as F
-from pathlib import Path
-
-sys.dont_write_bytecode = True
-root = Path.cwd()
-sys.path[:0] = [str(root / "public/geometry-reasoning"),
-                str(root / "public/vendor/alphageometry2")]
-from ag2_bridge import solve_json
-
-
-def run(name, points, assumptions, goals, operation="proof"):
-    declarations = "; ".join(
-        f"{key}@{float(x)}_{float(y)} = "
-        for key, (x, y) in points.items())
-    data = {"version": 1, "operation": operation, "goalId": "test",
-            "premise": declarations + ", ".join(assumptions),
-            "goals": goals}
-    answer = json.loads(solve_json(json.dumps(data)))
-    print(name, operation, answer["checks"], answer["elapsedMs"])
-
-
-points_a = {
-    "a": (F(1, 3), F(4, 3)), "b": (-1, 0), "c": (1, 0),
-    "m": (0, 0), "h": (F(1, 3), F(2, 3)),
-    "d": (F(3, 17), F(12, 17)),
-}
-assumptions_a = [
-    "coll b m c", "cong b m m c", "perp a h b c",
-    "perp b h a c", "coll a m d", "perp h d a m",
-]
-goals_a = [
-    "distmeq b m a m m d m b 1 -1 -1 1 1",
-    "distmeq b m a m b d a b 1 -1 -1 1 1",
-]
-for operation in ("check", "proof"):
-    run("A", points_a, assumptions_a, goals_a, operation)
-
-points_b = {
-    "a": (1, 0), "b": (0, 0), "c": (0, F(7, 5)),
-    "d": (F(11, 5), F(3, 5)), "e": (F(34, 25), F(57, 25)),
-    "f": (F(11, 10), F(3, 10)), "g": (F(17, 25), F(46, 25)),
-    "h": (F(374, 545), F(627, 545)),
-}
-assumptions_b = [
-    "perp b a b c",
-    "distmeq a b a d a c a e 1 -1 -1 1 1",
-    "distmeq a b a d b c d e 1 -1 -1 1 1",
-    "angeq a b a c a d a e 1 -1 1 -1 0",
-    "angeq b a b c d a d e 1 -1 1 -1 0",
-    "coll b f d", "cong b f f d", "coll c g e", "cong c g g e",
-    "coll b e h", "coll c d h",
-]
-goals_b = ["cong b g d g", "para a h f g", "perp f g b d",
-           "perp a h b d", "perp a d d e"]
-run("B-directed", points_b, assumptions_b, goals_b)
-run("B-extra-givens", points_b,
-    assumptions_b + ["perp f g b d", "cong b g d g"], goals_b)
-```
-
-预期 checks 依次为：
-
-```text
-A check:        [False, False]
-A proof:        [False, False]
-B-directed:     [False, False, False, False, True]
-B-extra-givens: [True,  False, True,  False, True]
-```
-
-性能数值是本机单次观察，不是基准统计或运行时保证。
-
-## 3. 符号恒等式核验
-
-以下项目本轮已核验：
-
-| 项目 | 方法 | 结果 |
-| --- | --- | --- |
-| 逆相似二式的正负号 | 一般反向相似矩阵 `[[r,t],[t,−r]]` 作用于向量，符号展开 | 点乘差、叉乘差均为 0 |
-| A 的高线、投影与目标积 | `A=(p,q), B=(−1,0), C=(1,0)` 的一般参数代入 | 四个有理余式均为 0 |
-| B 的 BG²−DG² | 一般 x,y,k，按题面构造 E 和 G | 严格为 0 |
-| B 的 FG·BD | 同上 | 严格为 0 |
-| B 的 AH·BD | 一般 x,y,k，符号求 BE/CD 交点 | 在分母非零的定义域内严格为 0 |
-| B 的线性证书 `S=R−T+f₀` | 独立形式坐标展开 | 严格为 0 |
-| B 的四次证书 | a,c,d,e,h 共十个独立形式坐标展开 | 严格为 0 |
-
-最后一项不依赖 B 的数值实例，也不依赖用构造公式消去 E/H 后才成立：它本身就是任意五个平面向量的恒等式，因此适合作为规则证书。
-
-下面是核心证书核验的完整短脚本（需要本地 SymPy，仅用于研究）：
-
-```python
-import sympy as s
-
-ax, ay, cx, cy, dx, dy, ex, ey, hx, hy = s.symbols(
-    "ax ay cx cy dx dy ex ey hx hy")
-a = s.Matrix([ax, ay])
-c = s.Matrix([cx, cy])
-d = s.Matrix([dx, dy])
-e = s.Matrix([ex, ey])
-h = s.Matrix([hx, hy])
-
-
-def cross(u, v):
-    return u[0] * v[1] - u[1] * v[0]
-
-
-f0 = a.dot(c)
-R = a.dot(e) - a.dot(d) + c.dot(d) - a.dot(c)
-X = cross(a, e) + cross(c, d) + cross(a, c) - cross(a, d)
-C1 = cross(h, e)
-C2 = cross(h - c, d - c)
-K = cross(a, c)
-Q = (h - a).dot(d)
-rhs = (a.dot(a) * (C1 - C2) - R * cross(h, a) - X * h.dot(a)
-       - f0 * (cross(h, 2 * a - d) + cross(a, d)))
-assert s.expand(K * Q - rhs) == 0
-
-T = (a - d).dot(e - d)
-S = d.dot(c + e - d)
-assert s.expand(S - (R - T + f0)) == 0
-print("Both certificate identities are exact.")
-```
-
-恒等式核验不自动证明非零消去合法；`K≠0` 和 AH、BD 等方向非零的条件另见数学文档。也不据此宣称现有引擎已有高次回放器。
-
-## 4. 尚待实施后的验证
-
-需要将以上研究实例变成真正的结构化条件 fixture，再接发现、采样、混合证明与浏览器 Worker。尤其应加入：
-
-- A 的一般三角形形变与镜像，且不命名反射点；H=A 或 D=H 时改用合法积条件。
-- B 的一般 D 及退化 D，明确区分多项式零积和无效直线目标。
-- 证明中删除任一必要条件、非零 guard 或篡改乘子后的拒绝结果。
-- 没有接受条件时，即使坐标恰好满足目标也不得证明。
-- 正相似与逆相似分支、单独点乘／叉乘判据的反例。
-- 纯 AG2、混合检查、可读证明与 coverage 的一致性。
-
-本轮仅提供可复核基线与数学证书，不把这些未来检查写为已通过。
+原生脚本使用本地 Python 与 NumPy；示例生成器还会写入上述 examples 文件。新实现不依赖 SymPy，也不会创建 GeoGebra 辅助对象。

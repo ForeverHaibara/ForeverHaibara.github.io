@@ -1,5 +1,5 @@
 export interface ProofEquation {
-  domain: 'angle' | 'length-add' | 'length-product';
+  domain: 'angle' | 'length-add' | 'length-product' | 'dot' | 'cross';
   terms: Array<{ variable: string; coefficient: string }>;
 }
 export interface ProofNode {
@@ -31,4 +31,5 @@ export interface ReadableProof {
   limited: boolean;
   explanation: 'recorded' | 'partial';
   certificate: null;
+  vectorDiagnostics?: { rounds: number; queries: number; dotRank: number; crossRank: number; limited: boolean };
 }

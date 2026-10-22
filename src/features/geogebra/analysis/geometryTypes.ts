@@ -1,4 +1,5 @@
 import type { PointCoordinate } from './graphTypes';
+import type { VectorProductEquation } from '../geometry/vectorProducts';
 
 import type { GeometryRelationKind } from './relations/catalog';
 export type { GeometryRelationKind } from './relations/catalog';
@@ -27,6 +28,7 @@ export interface RelationWitness {
   triangleSymmetryOrder?: number;
   midpoint?: { point: string; segment: [string, string] };
   equation?: QuantityEquation;
+  productEquation?: VectorProductEquation;
   /** Factorized same-ray aliases; these do not assert arbitrary endpoint pairs. */
   angleAliases?: Array<{ angle: [string, string, string]; endpoints: [string[], string[]] }>;
   conditions?: RelationCondition[];

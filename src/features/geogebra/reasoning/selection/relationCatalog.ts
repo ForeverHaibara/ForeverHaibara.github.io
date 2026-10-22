@@ -1,4 +1,5 @@
 import { canonicalDirectionEquation } from '../../analysis/quantities/directedAngles';
+import { productEquationKey } from '../../geometry/vectorProducts';
 import type { ConditionCandidate, GeometryPredicate, ReasoningProblem } from '../ir/types';
 import type { ConditionSelection } from '../ir/types';
 import type { GeometryRelation, GeometryRelationKind } from '../../analysis/geometryTypes';
@@ -15,6 +16,7 @@ const rational = (numerator: number, denominator: number) => {
 
 /** Only declared predicate symmetries; ordinary angles retain their ray meaning. */
 export const predicateIdentity = (predicate: GeometryPredicate): string => {
+  if (predicate.kind === 'vector-product-equation') return `vector:${productEquationKey(predicate.equation)}`;
   const segment = (names: string[]) => [...names].sort();
   if (predicate.kind === 'directed-angle-equation') return `directed:${canonicalDirectionEquation(predicate.terms, predicate.pi).key}`;
   if ('points' in predicate) return JSON.stringify([predicate.kind, segment(predicate.points)]);

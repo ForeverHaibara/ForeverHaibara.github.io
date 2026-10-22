@@ -14,6 +14,7 @@ import { angleAliasSupport, detectAngleRelations } from './angleRelations';
 import { groupScalarClasses } from '../algebra/scalarClasses';
 import { buildRayClasses, rayAngleCandidates } from '../scene/rays';
 import { detectDirectedAngleRelations } from './directedAngleRelations';
+import { detectVectorProductRelations } from './vectorProductRelations';
 
 export const detectMetricRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions, budget: DiscoveryBudget): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
@@ -50,6 +51,7 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
   }
 
   seeds.push(...detectLengthRelations(scene, options, budget, lengths));
+  seeds.push(...detectVectorProductRelations(scene, [...existing, ...seeds], options, budget));
 
   if (needsAngles) {
     interface Angle { value: number; names: [string, string, string]; indexes: number[]; aliases: [string[], string[]]; key: string; error: number; sources: string[]; row: Record<string, number>; representationError: number; }

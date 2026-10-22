@@ -1,4 +1,6 @@
 import type { PointCoordinate } from '../../analysis/graphTypes';
+import { mapProductPoints, productPoints } from '../../geometry/vectorProducts';
+import type { VectorProductEquation } from '../../geometry/vectorProducts';
 
 export type Segment = [string, string];
 export type Angle = [string, string, string];
@@ -7,6 +9,7 @@ export interface SegmentTerm { segment: Segment; coefficient: number; }
 
 /** Semantic predicates; no GeoGebra expression or backend text is executable here. */
 export type GeometryPredicate =
+  | { kind: 'vector-product-equation'; equation: VectorProductEquation }
   | { kind: 'collinear' | 'concyclic'; points: string[] }
   | { kind: 'coincident'; points: Segment }
   | { kind: 'parallel' | 'perpendicular' | 'equal-length'; segments: [Segment, Segment] }
@@ -52,6 +55,7 @@ export interface ConditionSelection {
 }
 
 export const predicatePoints = (predicate: GeometryPredicate): string[] => {
+  if (predicate.kind === 'vector-product-equation') return productPoints(predicate.equation);
   if ('points' in predicate) return predicate.points;
   if ('segments' in predicate) return predicate.segments.flat();
   if (predicate.kind === 'midpoint') return [predicate.point, ...predicate.segment];
@@ -60,6 +64,7 @@ export const predicatePoints = (predicate: GeometryPredicate): string[] => {
 };
 
 export const mapPredicatePoints = (predicate: GeometryPredicate, map: (point: string) => string): GeometryPredicate => {
+  if (predicate.kind === 'vector-product-equation') return { ...predicate, equation: mapProductPoints(predicate.equation, map) };
   const segment = (points: Segment): Segment => [map(points[0]), map(points[1])];
   if (predicate.kind === 'collinear' || predicate.kind === 'concyclic') return { ...predicate, points: predicate.points.map(map) };
   if (predicate.kind === 'coincident') return { ...predicate, points: segment(predicate.points) };

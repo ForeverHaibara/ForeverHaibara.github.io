@@ -24,7 +24,7 @@ const initialize = async (): Promise<PythonRuntime> => {
   const sources = await Promise.all(modules.map((name) => readSource(new URL(`vendor/alphageometry2/${name}.py`, root))));
   modules.forEach((name, i) => runtime.FS.writeFile(`/home/pyodide/${name}.py`, sources[i]));
   runtime.FS.writeFile('/home/pyodide/ag2_bridge.py', await readSource(new URL('geometry-reasoning/ag2_bridge.py', root)));
-  for (const name of ['proof_algebra', 'proof_ddar']) runtime.FS.writeFile(`/home/pyodide/${name}.py`, await readSource(new URL(`geometry-reasoning/${name}.py`, root)));
+  for (const name of ['proof_algebra', 'vector_algebra', 'proof_ddar']) runtime.FS.writeFile(`/home/pyodide/${name}.py`, await readSource(new URL(`geometry-reasoning/${name}.py`, root)));
   runtime.runPython('from ag2_bridge import solve_json');
   return runtime;
 };

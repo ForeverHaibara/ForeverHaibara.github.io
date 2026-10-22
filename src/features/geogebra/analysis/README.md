@@ -15,6 +15,8 @@
 
 ## 关系类型扩展与当前实现
 
+- [点乘／叉乘的发现与双向证明](../reasoning/docs/vector-products-plan.md)：有向积表达式、公共标量搜索、仿射收缩、长度／角交换及无辅助点回归。
+
 - [条件退化首批实现](./docs/conditional-degeneracy-implementation.md)：射线商、生成式有效支持、共享全等的剩余条件和有限角色族；配套 [理论](./docs/conditional-degeneracy-theory.md)、[实施计划](./docs/conditional-degeneracy-plan.md) 与 [验收构型](./docs/degeneracy-casebook.md)。
 - [等值簇与生成模型的约简展示](./docs/clustered-presentation.md)：二倍角／余角／补角／长度比保留完整等值类，生成式约分、恒等式移除与比例链合并。
 - [长度生成与简单代数关系](./docs/algebraic-relations.md)：第二批实现、无量纲 log 模型、共享标量索引、层级压缩、分类及全／反选。

@@ -1,6 +1,7 @@
 import type { GeometricQuantity, GeometryRelation, QuantityEquation, RelationWitness } from '../geometryTypes';
 import { relationLabel } from '../relations/catalog';
 import { presentDirectionModel, presentLengthModel } from './generatorPresentation';
+import { formatProductEquation } from '../../geometry/vectorProducts';
 export { formatLengthMember } from './generatorPresentation';
 
 const names = (line: string[]) => line.join('·');
@@ -42,6 +43,7 @@ export const formatRelation = (relation: GeometryRelation, witness: RelationWitn
   if (relation.model) return generatorTitle(relation.support?.effective ?? relation.pointNames, presentDirectionModel(relation.model).equations.length, relation.model.generators.length);
   if (relation.lengthModel) return generatorTitle(relation.support?.effective ?? relation.pointNames, presentLengthModel(relation.lengthModel).equations.length, relation.lengthModel.generators.length);
   if (witness.midpoint) return `${witness.midpoint.point} is the midpoint of (${witness.midpoint.segment.join(', ')})`;
+  if (witness.productEquation) return formatProductEquation(witness.productEquation);
   if (witness.equation) return formatEquation(witness.equation);
   if (witness.triangles) return witness.triangles.slice(0, 8).map((triangle) => `△(${names(triangle)})`).join(relation.kind === 'congruent-triangles' ? ' ≅ ' : ' ∼ ');
   if (witness.angles) return summary(witness.angles.map((angle) => `∠(${names(angle)})`));

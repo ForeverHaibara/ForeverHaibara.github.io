@@ -3,6 +3,7 @@ import type { PointCoordinate } from '../../analysis/graphTypes';
 import type { GeometryPredicate, ReasoningObject, Segment } from '../ir/types';
 import { predicatePoints } from '../ir/types';
 import { directedAngleValue, wrapHalfTurns } from '../../analysis/quantities/directedAngles';
+import { evaluateProductEquation } from '../../geometry/vectorProducts';
 
 export type Gradient = [number, number];
 export interface ConstraintAssessment { gradients: Gradient[]; residual: number; }
@@ -28,7 +29,13 @@ export const assessLocalConstraint = (predicate: GeometryPredicate, objectId: st
   const unit = (segment: Segment) => { const v = vector(segment); const d = norm(v); if (d < 1e-8) throw new Error('Degenerate segment'); return { x: v.x / d, y: v.y / d }; };
   let evaluate: () => number[];
   try {
-    if (predicate.kind === 'midpoint') evaluate = () => {
+    if (predicate.kind === 'vector-product-equation') evaluate = () => {
+      const fixedOrigin = { x: -origin.x / scale, y: -origin.y / scale };
+      const result = evaluateProductEquation(predicate.equation, points, fixedOrigin);
+      if (!result) throw new Error('Undefined vector product');
+      return [result.value / Math.max(1, result.magnitude)];
+    };
+    else if (predicate.kind === 'midpoint') evaluate = () => {
       const p = at(predicate.point); const [a, b] = predicate.segment.map(at);
       return [p.x - (a.x + b.x) / 2, p.y - (a.y + b.y) / 2];
     };

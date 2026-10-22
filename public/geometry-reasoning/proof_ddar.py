@@ -30,7 +30,7 @@ def logarithm(value):
 
 
 class Knowledge:
-    def __init__(self, points, hypothetical=False):
+    def __init__(self, points, hypothetical=False, vector_context=None):
         self.graph = ProofGraph()
         self.bases = {domain: Basis(self.graph, domain) for domain in ("angle", "length-add", "length-product")}
         self.points = {str(point): point for point in points}
@@ -42,6 +42,10 @@ class Knowledge:
         self.circle_centers = []
         self.facts = []
         self.seen_equations = set()
+        self.vector = None
+        if vector_context is not None:
+            from vector_algebra import VectorKnowledge
+            self.vector = VectorKnowledge(self, vector_context)
 
     @staticmethod
     def row(domain, pairs):
@@ -111,6 +115,8 @@ class Knowledge:
             self.collinear(predicate.points, node)
         elif predicate.name == "cyclic":
             self.cyclic(predicate.points, (), node)
+        if self.vector:
+            self.vector.import_predicate(predicate, node)
         return node
 
     def incidence_source(self, kind, points):
@@ -162,6 +168,8 @@ class Knowledge:
                 if self.separated(x, y) and self.separated(y, z):
                     row = self.row("length-add", [(x, y, 1), (y, z, 1), (x, z, -1)])
                     self.assert_row("length-add", row, "segment-addition", [source, guard])
+        if self.vector:
+            self.vector.collinear(names, source)
         self.facts.append(source)
         return source
 
@@ -402,6 +410,8 @@ class TracedDDAR(DDAR):
         if (first, second) not in self.known_similar:
             self.knowledge.sync_lengths()
             self.knowledge.similar(first, second)
+        if self.knowledge.vector:
+            self.knowledge.vector.similarity(first, second)
         return super().force_similar(first, second)
 
     def transfer_dist_add_mul(self):
@@ -418,7 +428,7 @@ def generate_proof(data, validate_assumption):
     if any(not all(math.isfinite(float(value)) for value in point.value) for point in problem.points):
         raise ValueError("Non-finite proof coordinates")
     hypothetical = data.get("assumptionMode") == "hypothetical"
-    knowledge = Knowledge(problem.points, hypothetical)
+    knowledge = Knowledge(problem.points, hypothetical, data.get("vectorContext"))
     symbols = {entry["id"]: entry["symbol"] for entry in data.get("names", [])}
     for branch in data.get("branches", []):
         if branch["role"] == "assumption":
@@ -429,7 +439,7 @@ def generate_proof(data, validate_assumption):
     for entry in data.get("assumptionSources", []):
         # The AG2 parser reduces constants such as -180/2 to -90. Source
         # identity must survive that normalization, including direct goals.
-        key = str(AGPredicate.parse(entry["predicate"]))
+        key = entry["predicate"] if entry["predicate"].startswith(("dotseq ", "crossseq ")) else str(AGPredicate.parse(entry["predicate"]))
         sources[key] = list(dict.fromkeys([*sources.get(key, []), *entry["candidateIds"]]))
     validation = []
     roots = []
@@ -442,6 +452,8 @@ def generate_proof(data, validate_assumption):
                 raise ValueError("Coordinate witness rejected. Enable hypothesis exploration to use these assumptions: " + str(predicate)) from error
         root = knowledge.assume(predicate, sources.get(str(predicate), []))
         roots.append((predicate, root))
+    if knowledge.vector:
+        knowledge.vector.load(validation)
     knowledge.sync_lengths()
     knowledge.sync_circles()
     # Load every explicit premise before reconstructing the closure. A theorem
@@ -455,16 +467,55 @@ def generate_proof(data, validate_assumption):
             finally:
                 engine.current_assumption = None
         knowledge.sync_lengths()
-    if engine:
-        with contextlib.redirect_stdout(io.StringIO()):
-            engine.deduction_closure(progress_dot=False)
+    proved_queries = {}
+    for iteration in range(12 if knowledge.vector else 1):
+        before = (sum(len(basis.rows) for basis in knowledge.bases.values()),
+                  len(engine.known_similar) if engine else 0)
+        if engine:
+            with contextlib.redirect_stdout(io.StringIO()):
+                engine.deduction_closure(progress_dot=False)
+        if knowledge.vector:
+            # Keep the existing proof budget for conclusions DDAR already knows.
+            # Observed coordinates never enter this fast path as logical facts.
+            vector_keys = {entry["key"] for entry in data.get("vectorContext", {}).get("goals", [])}
+            queries = data.get("goals", [])
+            if engine:
+                for text in queries[:64]:
+                    if text not in vector_keys and text not in proved_queries:
+                        predicate = AGPredicate.parse(text).replace_points(knowledge.points)
+                        if engine.check_pred(predicate):
+                            node = knowledge.prove_predicate(predicate)
+                            if node:
+                                proved_queries[text] = node
+            if engine and queries and not vector_keys and all(engine.check_pred(AGPredicate.parse(text).replace_points(knowledge.points)) for text in queries):
+                break
+            knowledge.vector.activate(validation)
+            knowledge.vector.sync(engine)
+            knowledge.sync_lengths()
+            knowledge.sync_circles()
+        after = (sum(len(basis.rows) for basis in knowledge.bases.values()),
+                 len(engine.known_similar) if engine else 0)
+        if after == before or knowledge.graph.limited or knowledge.graph.contradictions:
+            break
+    else:
+        if knowledge.vector:
+            knowledge.vector.limited = True
     knowledge.sync_lengths()
     names = {point.name: point for point in problem.points}
     conclusions = []
+    vector_goals = {entry["key"]: entry["equation"] for entry in data.get("vectorContext", {}).get("goals", [])}
     for text in data.get("goals", [])[:64]:
+        if text in vector_goals:
+            from vector_algebra import product_row
+            equation = vector_goals[text]
+            node = None if knowledge.graph.contradictions else knowledge.bases[equation["operation"]].prove(product_row(equation["operation"], equation["terms"]))
+            conclusions.append({"predicate": text, "nodeId": node, "backendKnown": bool(node),
+                "status": "assumed" if text in knowledge.given and not knowledge.graph.contradictions else "recorded" if node else "not-derived"})
+            continue
         goal = AGPredicate.parse(text).replace_points(names)
-        node = None if knowledge.graph.contradictions else knowledge.prove_predicate(goal)
-        known = bool(engine.check_pred(goal)) if engine else bool(node)
+        node = None if knowledge.graph.contradictions else proved_queries.get(text) or knowledge.prove_predicate(goal)
+        backend_known = bool(engine.check_pred(goal)) if engine else False
+        known = False if knowledge.graph.contradictions else (bool(node) or backend_known if knowledge.vector else backend_known if engine else bool(node))
         if known and node is None and not knowledge.graph.contradictions:
             node = knowledge.graph.add("gap", "unreconstructed-ddar-conclusion", predicate=text)
         conclusions.append({"predicate": text, "nodeId": node, "backendKnown": known,
@@ -474,6 +525,13 @@ def generate_proof(data, validate_assumption):
             if node and node not in knowledge.assumptions:
                 conclusions.append({"nodeId": node, "backendKnown": True, "status": "recorded"})
     report = knowledge.graph.export(conclusions, knowledge.assumptions, "hypothetical" if hypothetical else "ddar")
+    if knowledge.vector:
+        report["vectorDiagnostics"] = {"rounds": knowledge.vector.rounds, "queries": knowledge.vector.queries,
+            "dotRank": len(knowledge.bases["dot"].rows), "crossRank": len(knowledge.bases["cross"].rows),
+            "limited": knowledge.vector.limited}
+        if knowledge.vector.limited:
+            report["limited"] = True
+            report["explanation"] = "partial"
     report["witnessFailures"] = validation
     checks = [item["backendKnown"] for item in conclusions]
     return {"status": "inconsistent" if knowledge.graph.contradictions else "derived" if checks and all(checks) else "not-derived",

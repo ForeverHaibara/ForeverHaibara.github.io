@@ -17,6 +17,7 @@ const predicateKinds = (predicate: GeometryPredicate): GeometryRelationKind[] =>
     case 'coincident': return ['coincident-points'];
     case 'equal-length': return ['equal-lengths'];
     case 'directed-angle-equation': return ['directed-angles'];
+    case 'vector-product-equation': return [predicate.equation.operation === 'dot' ? 'dot-products' : 'cross-products'];
     case 'direction-equation': return ['direction-space'];
     case 'length-product': return ['length-space'];
     case 'length-sum': return ['length-multiple'];
@@ -52,7 +53,12 @@ export const buildRelationSearchDocument = (candidate: ConditionCandidate, relat
     const predicate = mapPredicatePoints(raw, name);
     if (!('terms' in predicate)) predicatePoints(predicate).forEach((point) => document.points.add(point));
     if (predicate.kind === 'collinear') document.carriers.push(predicate.points);
-    if ('segments' in predicate) predicate.segments.forEach(segment);
+    if (predicate.kind === 'vector-product-equation') {
+      for (const term of predicate.equation.terms) if (term.coefficient) for (const vector of [term.left, term.right]) {
+        if (vector[0] !== null && vector[1] !== null) segment(vector as [string, string]);
+      }
+    }
+    else if ('segments' in predicate) predicate.segments.forEach(segment);
     else if (predicate.kind === 'midpoint') {
       segment(predicate.segment); predicate.segment.forEach((point) => segment([predicate.point, point]));
     } else if ('pi' in predicate) predicate.terms.filter((term) => term.coefficient !== 0).forEach((term) => angle(term.angle));
@@ -108,6 +114,7 @@ export interface RelationSearchQuery { points: string[]; quantities: QuantityQue
 // Aliases complement the canonical catalog labels. New kinds automatically
 // support their label/key; only additional vocabulary needs an alias entry.
 const ALIASES: Array<[RegExp, GeometryRelationKind[]]> = [
+  [/点乘|内积|dot(?:\s+products?)?/giu, ['dot-products']], [/叉乘|外积|cross(?:\s+products?)?/giu, ['cross-products']],
   [/有向角|directed(?:\s+angles?)?/giu, ['directed-angles', 'direction-space']],
   [/无向角|普通角|ordinary(?:\s+angles?)?/giu, ['equal-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles']],
   [/共线|collinear/giu, ['collinear']], [/共圆|concyclic|cyclic/giu, ['concyclic']],

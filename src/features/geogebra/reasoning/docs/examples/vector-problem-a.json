@@ -1,0 +1,729 @@
+{
+  "input": {
+    "version": 1,
+    "engineCommit": "251e7e16f0bba8ac7c83cdea789fccc195d0c0c7",
+    "premise": "p0@0_0 = ; p1@-0.7071067811865475_-0.7071067811865475 = ; p2@0.3535533905932738_-0.7071067811865475 = ; p3@-0.08318903308077029_-0.33275613232308116 = ; p4@0_-0.35355339059327373 = ; p5@-0.17677669529663687_-0.7071067811865475 = perp p0 p4 p1 p2, perp p0 p2 p1 p4, coll p1 p2 p5, cong p1 p5 p2 p5, coll p0 p3 p5",
+    "goals": [
+      "distmeq p0 p5 p1 p5 p3 p5 1 -2 1 1",
+      "distmeq p0 p1 p0 p5 p1 p3 p1 p5 1 -1 -1 1 1"
+    ],
+    "queries": [
+      {
+        "id": "similar",
+        "goals": [
+          "distmeq p0 p5 p1 p5 p3 p5 1 -2 1 1",
+          "distmeq p0 p1 p0 p5 p1 p3 p1 p5 1 -1 -1 1 1"
+        ]
+      }
+    ],
+    "text": "",
+    "acceptedIds": [
+      "altitudes",
+      "midpoint",
+      "projection"
+    ],
+    "goalId": "similar",
+    "alreadyAssumed": false,
+    "branches": [],
+    "names": [
+      {
+        "id": "object:A",
+        "name": "A",
+        "symbol": "p0"
+      },
+      {
+        "id": "object:B",
+        "name": "B",
+        "symbol": "p1"
+      },
+      {
+        "id": "object:C",
+        "name": "C",
+        "symbol": "p2"
+      },
+      {
+        "id": "object:D",
+        "name": "D",
+        "symbol": "p3"
+      },
+      {
+        "id": "object:H",
+        "name": "H",
+        "symbol": "p4"
+      },
+      {
+        "id": "object:M",
+        "name": "M",
+        "symbol": "p5"
+      }
+    ],
+    "normalization": {
+      "origin": {
+        "x": 0.3333333333333333,
+        "y": 1.3333333333333333
+      },
+      "scale": 1.8856180831641267
+    },
+    "assumptionSources": [
+      {
+        "predicate": "perp p0 p4 p1 p2",
+        "candidateIds": [
+          "altitudes"
+        ]
+      },
+      {
+        "predicate": "perp p0 p2 p1 p4",
+        "candidateIds": [
+          "altitudes"
+        ]
+      },
+      {
+        "predicate": "coll p1 p2 p5",
+        "candidateIds": [
+          "midpoint"
+        ]
+      },
+      {
+        "predicate": "cong p1 p5 p2 p5",
+        "candidateIds": [
+          "midpoint"
+        ]
+      },
+      {
+        "predicate": "coll p0 p3 p5",
+        "candidateIds": [
+          "projection"
+        ]
+      },
+      {
+        "predicate": "dotseq {\"[\\\"p0\\\",\\\"p3\\\"]\":-1,\"[\\\"p0\\\",\\\"p4\\\"]\":1,\"[\\\"p3\\\",\\\"p5\\\"]\":1,\"[\\\"p4\\\",\\\"p5\\\"]\":-1}",
+        "candidateIds": [
+          "projection"
+        ]
+      }
+    ],
+    "assumptionMode": "validated",
+    "vectorContext": {
+      "version": 1,
+      "origin": {
+        "x": -0.17677669529663687,
+        "y": -0.7071067811865475
+      },
+      "assumptions": [
+        {
+          "key": "dotseq {\"[\\\"p0\\\",\\\"p3\\\"]\":-1,\"[\\\"p0\\\",\\\"p4\\\"]\":1,\"[\\\"p3\\\",\\\"p5\\\"]\":1,\"[\\\"p4\\\",\\\"p5\\\"]\":-1}",
+          "equation": {
+            "operation": "dot",
+            "terms": [
+              {
+                "coefficient": 1,
+                "left": [
+                  "p4",
+                  "p3"
+                ],
+                "right": [
+                  "p0",
+                  "p5"
+                ]
+              }
+            ]
+          },
+          "candidateIds": [
+            "projection"
+          ]
+        }
+      ],
+      "goals": [],
+      "midpoints": [
+        {
+          "point": "p5",
+          "segment": [
+            "p1",
+            "p2"
+          ],
+          "candidateIds": [
+            "midpoint"
+          ]
+        }
+      ]
+    },
+    "ag2Compatible": false,
+    "operation": "proof"
+  },
+  "result": {
+    "status": "derived",
+    "checks": [
+      true,
+      true
+    ],
+    "elapsedMs": 97.08,
+    "points": 6,
+    "assumptions": 5,
+    "certificate": null,
+    "proof": {
+      "version": 1,
+      "mode": "ddar",
+      "nodes": [
+        {
+          "id": "s1",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p4 p1 p2",
+          "sourceIds": [
+            "altitudes"
+          ]
+        },
+        {
+          "id": "s3",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "perp p0 p2 p1 p4",
+          "sourceIds": [
+            "altitudes"
+          ]
+        },
+        {
+          "id": "s5",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p1 p2 p5",
+          "sourceIds": [
+            "midpoint"
+          ]
+        },
+        {
+          "id": "s10",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "cong p1 p5 p2 p5",
+          "sourceIds": [
+            "midpoint"
+          ]
+        },
+        {
+          "id": "s13",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "coll p0 p3 p5",
+          "sourceIds": [
+            "projection"
+          ]
+        },
+        {
+          "id": "s20",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "dotseq {\"[\\\"p0\\\",\\\"p3\\\"]\":-1,\"[\\\"p0\\\",\\\"p4\\\"]\":1,\"[\\\"p3\\\",\\\"p5\\\"]\":1,\"[\\\"p4\\\",\\\"p5\\\"]\":-1}",
+          "sourceIds": [
+            "projection"
+          ]
+        },
+        {
+          "id": "s21",
+          "kind": "geometry",
+          "rule": "vector-product-expansion",
+          "premises": [
+            {
+              "id": "s20",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p0,p3)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p0,p4)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dot(p3,p5)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dot(p4,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s22",
+          "kind": "assumption",
+          "rule": "accepted-condition",
+          "premises": [],
+          "predicate": "midpoint p5 p1 p2",
+          "sourceIds": [
+            "midpoint"
+          ]
+        },
+        {
+          "id": "s23",
+          "kind": "geometry",
+          "rule": "affine-vector-contraction",
+          "premises": [
+            {
+              "id": "s22",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p0,p1)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p0,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p0,p5)",
+                "coefficient": "2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s24",
+          "kind": "geometry",
+          "rule": "affine-vector-contraction",
+          "premises": [
+            {
+              "id": "s22",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p1,p1)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p5)",
+                "coefficient": "2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s27",
+          "kind": "geometry",
+          "rule": "affine-vector-contraction",
+          "premises": [
+            {
+              "id": "s22",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p1,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p2,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p4,p5)",
+                "coefficient": "2"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s34",
+          "kind": "geometry",
+          "rule": "geometric-vector-product",
+          "premises": [
+            {
+              "id": "s1",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p0,p1)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dot(p0,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p2,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s35",
+          "kind": "geometry",
+          "rule": "geometric-vector-product",
+          "premises": [
+            {
+              "id": "s3",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p0,p1)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dot(p0,p4)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p2)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p2,p4)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s36",
+          "kind": "geometry",
+          "rule": "collinear-vector-product",
+          "premises": [
+            {
+              "id": "s13",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "cross",
+            "terms": [
+              {
+                "variable": "cross(p0,p3)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "cross(p0,p5)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "cross(p3,p5)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s81",
+          "kind": "algebra",
+          "rule": "rational-linear-combination",
+          "premises": [
+            {
+              "id": "s21",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s35",
+              "coefficient": "-1"
+            },
+            {
+              "id": "s23",
+              "coefficient": "-1/2"
+            },
+            {
+              "id": "s34",
+              "coefficient": "1/2"
+            },
+            {
+              "id": "s27",
+              "coefficient": "-1/2"
+            },
+            {
+              "id": "s24",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "dot",
+            "terms": [
+              {
+                "variable": "dot(p0,p3)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "dot(p0,p5)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p1)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "dot(p1,p5)",
+                "coefficient": "2"
+              },
+              {
+                "variable": "dot(p3,p5)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s82",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p0",
+            "p1",
+            "p5"
+          ]
+        },
+        {
+          "id": "s83",
+          "kind": "guard",
+          "rule": "witness-noncollinear",
+          "premises": [],
+          "points": [
+            "p1",
+            "p3",
+            "p5"
+          ]
+        },
+        {
+          "id": "s84",
+          "kind": "geometry",
+          "rule": "similarity-from-bilinear-products",
+          "premises": [
+            {
+              "id": "s81",
+              "coefficient": "1"
+            },
+            {
+              "id": "s36",
+              "coefficient": "1"
+            },
+            {
+              "id": "s82",
+              "coefficient": "1"
+            },
+            {
+              "id": "s83",
+              "coefficient": "1"
+            }
+          ],
+          "triangles": [
+            [
+              "p0",
+              "p1",
+              "p5"
+            ],
+            [
+              "p1",
+              "p3",
+              "p5"
+            ]
+          ],
+          "orientation": -1
+        },
+        {
+          "id": "s85",
+          "kind": "geometry",
+          "rule": "similarity-side-ratios",
+          "premises": [
+            {
+              "id": "s84",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "length-product",
+            "terms": [
+              {
+                "variable": "log(|p0 p1|)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "log(|p0 p5|)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "log(|p1 p3|)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "log(|p1 p5|)",
+                "coefficient": "1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s86",
+          "kind": "geometry",
+          "rule": "similarity-side-ratios",
+          "premises": [
+            {
+              "id": "s84",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "length-product",
+            "terms": [
+              {
+                "variable": "log(|p0 p5|)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "log(|p1 p5|)",
+                "coefficient": "2"
+              },
+              {
+                "variable": "log(|p3 p5|)",
+                "coefficient": "-1"
+              }
+            ]
+          }
+        },
+        {
+          "id": "s104",
+          "kind": "algebra",
+          "rule": "rational-linear-combination",
+          "premises": [
+            {
+              "id": "s86",
+              "coefficient": "-1"
+            }
+          ],
+          "equation": {
+            "domain": "length-product",
+            "terms": [
+              {
+                "variable": "log(|p0 p5|)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "log(|p1 p5|)",
+                "coefficient": "-2"
+              },
+              {
+                "variable": "log(|p3 p5|)",
+                "coefficient": "1"
+              }
+            ]
+          },
+          "predicate": "distmeq p0 p5 p1 p5 p3 p5 1 -2 1 1"
+        },
+        {
+          "id": "s105",
+          "kind": "algebra",
+          "rule": "rational-linear-combination",
+          "premises": [
+            {
+              "id": "s85",
+              "coefficient": "1"
+            }
+          ],
+          "equation": {
+            "domain": "length-product",
+            "terms": [
+              {
+                "variable": "log(|p0 p1|)",
+                "coefficient": "1"
+              },
+              {
+                "variable": "log(|p0 p5|)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "log(|p1 p3|)",
+                "coefficient": "-1"
+              },
+              {
+                "variable": "log(|p1 p5|)",
+                "coefficient": "1"
+              }
+            ]
+          },
+          "predicate": "distmeq p0 p1 p0 p5 p1 p3 p1 p5 1 -1 -1 1 1"
+        }
+      ],
+      "conclusions": [
+        {
+          "predicate": "distmeq p0 p5 p1 p5 p3 p5 1 -2 1 1",
+          "nodeId": "s104",
+          "backendKnown": true,
+          "status": "recorded"
+        },
+        {
+          "predicate": "distmeq p0 p1 p0 p5 p1 p3 p1 p5 1 -1 -1 1 1",
+          "nodeId": "s105",
+          "backendKnown": true,
+          "status": "recorded"
+        }
+      ],
+      "assumptionIds": [
+        "s1",
+        "s3",
+        "s5",
+        "s10",
+        "s13",
+        "s20",
+        "s22"
+      ],
+      "contradictionIds": [],
+      "gapIds": [],
+      "guardIds": [
+        "s82",
+        "s83"
+      ],
+      "algebraReplay": {
+        "checked": 3,
+        "valid": true,
+        "errors": []
+      },
+      "limited": false,
+      "explanation": "recorded",
+      "certificate": null,
+      "vectorDiagnostics": {
+        "rounds": 1,
+        "queries": 471,
+        "dotRank": 10,
+        "crossRank": 6,
+        "limited": false
+      },
+      "witnessFailures": []
+    }
+  }
+}

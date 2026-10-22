@@ -1,8 +1,17 @@
 import type { Ag2Export } from '../backends/ag2/exportProblem';
 import type { ProofEquation, ProofNode, ReadableProof } from './types';
+import { formatProductEquation } from '../../geometry/vectorProducts';
 
 export const proofRuleLabel = (rule: string): string => ({
   'accepted-condition': 'Given condition', 'predicate-equation': 'Express the given condition as an equation',
+  'vector-product-expansion': 'Expand the signed vector product', 'affine-vector-contraction': 'Contract the affine relation with a vector',
+  'geometric-vector-product': 'Express parallel or perpendicular directions as a product', 'collinear-vector-product': 'Collinearity gives zero cross product',
+  'squared-equal-lengths': 'Express equal lengths using squared norms', 'length-ratio-squared': 'Square the proved positive length ratio',
+  'direction-vector-product': 'Transfer the proved direction relation to a vector product',
+  'equal-squared-lengths': 'Equal squared norms imply equal lengths', 'zero-product-direction': 'A zero product determines the direction relation',
+  'length-angle-product-transfer': 'Transfer equal length products and corresponding angles',
+  'similarity-from-bilinear-products': 'The two signed product equations imply reversing similarity',
+  'witness-product-angle-lift': 'Ray orientation of the product from the coordinate witness', 'witness-nonzero-vectors': 'Nonzero directions from the coordinate witness',
   'equal-lengths': 'Equal lengths', 'collinear-directions': 'Directions on one line',
   'collinear-from-directions': 'Equal directions imply collinearity', 'join-collinear-sets': 'Join lines with two common points',
   'segment-addition': 'Segment addition', 'positive-length-ratio': 'Convert a positive length ratio',
@@ -53,6 +62,8 @@ export const formatProofEquation = (equation: ProofEquation, exported: Ag2Export
     if (product) return product;
   }
   const symbol = (value: string) => {
+    const product = value.match(/^(dot|cross)\(([^,]+),([^,]+)\)$/);
+    if (product) return `${proofNames(`O₀→${product[2]}`, exported)} ${product[1] === 'dot' ? '·' : '×'} ${proofNames(`O₀→${product[3]}`, exported)}`;
     const text = value.replace(/^len\((.*)\)$/, '|$1|').replace(/^log\(\|(.*)\|\)$/, 'log |$1|').replace(/^log\((.*)\)$/, 'log $1').replace(/^pi$/, 'π');
     return proofNames(text, exported);
   };
@@ -60,10 +71,13 @@ export const formatProofEquation = (equation: ProofEquation, exported: Ag2Export
 };
 
 export const formatProofPredicate = (predicate: string, exported: Ag2Export): string => {
+  const vector = [...exported.vectorContext?.assumptions ?? [], ...exported.vectorContext?.goals ?? []].find((entry) => entry.key === predicate);
+  if (vector) return formatProductEquation(vector.equation, (point) => proofNames(point, exported));
   const [kind, ...tokens] = predicate.split(' ');
   const points = tokens.filter((token) => /^p\d+$/.test(token)); const constants = tokens.slice(points.length);
   const name = (point: string) => proofNames(point, exported);
   const pair = (i: number) => `${name(points[i])}, ${name(points[i + 1])}`;
+  if (kind === 'midpoint') return `${name(points[0])} is the midpoint of (${name(points[1])}, ${name(points[2])})`;
   if (kind === 'coll' || kind === 'cyclic') return `${points.map(name).join(', ')} ${kind === 'coll' ? 'are collinear' : 'are concyclic'}`;
   if (kind === 'para' || kind === 'perp') return `(${pair(0)}) ${kind === 'para' ? '∥' : '⊥'} (${pair(2)})`;
   if (kind === 'cong') return `|${pair(0)}| = |${pair(2)}|`;
@@ -118,7 +132,7 @@ export const focusProof = (proof: ReadableProof, nodeId: string | null): Readabl
 
 export const proofToMarkdown = (proof: ReadableProof, exported: Ag2Export): string => {
   const indexes = new Map(proof.nodes.map((node, i) => [node.id, i + 1]));
-  const lines = ['# Conditional geometry derivation', '', `Mode: ${proof.mode === 'hypothetical' ? 'Symbolic hypotheses' : 'DDAR with recorded provenance'}.`,
+  const lines = ['# Conditional geometry derivation', '', `Mode: ${proof.mode === 'hypothetical' ? 'Symbolic hypotheses' : proof.vectorDiagnostics ? 'DDAR + vector algebra with recorded provenance' : 'DDAR with recorded provenance'}.`,
     `Explanation: ${proof.explanation}. Algebra replay: ${proof.algebraReplay.valid ? 'passed' : 'failed'} (${proof.algebraReplay.checked} steps).`,
     `Coordinate branch guards: ${proof.guardIds.length}. Unreconstructed steps: ${proof.gapIds.length}.`,
     'Geometric rules and coordinate guards are explicit trust inputs; this is not a full independent geometry certificate.', ''];
