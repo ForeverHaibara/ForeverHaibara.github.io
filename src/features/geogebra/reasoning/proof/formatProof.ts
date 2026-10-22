@@ -1,6 +1,6 @@
 import type { Ag2Export } from '../backends/ag2/exportProblem';
 import type { ProofEquation, ProofNode, ReadableProof } from './types';
-import { formatProductEquation } from '../../geometry/vectorProducts';
+import { formatProductEquation, formatProductSum, formatVectorProduct, type VectorNotation } from '../../geometry/vectorProducts';
 
 export const proofRuleLabel = (rule: string): string => ({
   'accepted-condition': 'Given condition', 'predicate-equation': 'Express the given condition as an equation',
@@ -56,23 +56,29 @@ const lengthProduct = (parts: Array<{ text: string; coefficient: string }>): str
   return `${side(1)} = ${side(-1)}`;
 };
 
-export const formatProofEquation = (equation: ProofEquation, exported: Ag2Export): string => {
+export const formatProofEquation = (equation: ProofEquation, exported: Ag2Export, notation: VectorNotation = 'text'): string => {
+  if ((equation.domain === 'dot' || equation.domain === 'cross') && equation.terms.every((term) => /^(dot|cross)\(([^,]+),([^,]+)\)$/.test(term.variable))) {
+    const parts = equation.terms.map((term) => {
+      const atom = term.variable.match(/^(dot|cross)\(([^,]+),([^,]+)\)$/)!;
+      return { coefficient: term.coefficient,
+        product: formatVectorProduct(atom[1] as 'dot' | 'cross', [null, atom[2]], [null, atom[3]], (point) => proofNames(point, exported), notation) };
+    });
+    return `${formatProductSum(parts, notation)} = 0`;
+  }
   if (equation.domain === 'length-product' && equation.terms.every((term) => /^log\(.*\)$/.test(term.variable))) {
     const product = lengthProduct(equation.terms.map((term) => ({ text: proofNames(term.variable.slice(4, -1), exported), coefficient: term.coefficient })));
     if (product) return product;
   }
   const symbol = (value: string) => {
-    const product = value.match(/^(dot|cross)\(([^,]+),([^,]+)\)$/);
-    if (product) return `${proofNames(`O₀→${product[2]}`, exported)} ${product[1] === 'dot' ? '·' : '×'} ${proofNames(`O₀→${product[3]}`, exported)}`;
     const text = value.replace(/^len\((.*)\)$/, '|$1|').replace(/^log\(\|(.*)\|\)$/, 'log |$1|').replace(/^log\((.*)\)$/, 'log $1').replace(/^pi$/, 'π');
     return proofNames(text, exported);
   };
   return `${expression(equation.terms.map((term) => ({ text: symbol(term.variable), coefficient: term.coefficient })))} = 0${equation.domain === 'angle' ? ' (mod π)' : ''}`;
 };
 
-export const formatProofPredicate = (predicate: string, exported: Ag2Export): string => {
+export const formatProofPredicate = (predicate: string, exported: Ag2Export, notation: VectorNotation = 'text'): string => {
   const vector = [...exported.vectorContext?.assumptions ?? [], ...exported.vectorContext?.goals ?? []].find((entry) => entry.key === predicate);
-  if (vector) return formatProductEquation(vector.equation, (point) => proofNames(point, exported));
+  if (vector) return formatProductEquation(vector.equation, (point) => proofNames(point, exported), notation);
   const [kind, ...tokens] = predicate.split(' ');
   const points = tokens.filter((token) => /^p\d+$/.test(token)); const constants = tokens.slice(points.length);
   const name = (point: string) => proofNames(point, exported);
@@ -99,15 +105,15 @@ export const formatProofPredicate = (predicate: string, exported: Ag2Export): st
   return proofNames(predicate, exported);
 };
 
-export const formatProofNode = (node: ProofNode, exported: Ag2Export): string => {
-  if (node.predicate) return formatProofPredicate(node.predicate, exported);
+export const formatProofNode = (node: ProofNode, exported: Ag2Export, notation: VectorNotation = 'text'): string => {
+  if (node.predicate) return formatProofPredicate(node.predicate, exported, notation);
   if (node.triangles) return node.triangles.map((triangle) => `△(${triangle.map((name) => proofNames(name, exported)).join(', ')})`).join(' ∼ ');
   if (node.ratio && node.equation?.domain === 'length-product') {
     const positive = node.equation.terms.find((term) => term.variable.startsWith('log(|') && term.coefficient === '1');
     const negative = node.equation.terms.find((term) => term.variable.startsWith('log(|') && term.coefficient === '-1');
     if (positive && negative) return `${proofNames(positive.variable.slice(4, -1), exported)} = ${node.ratio} × ${proofNames(negative.variable.slice(4, -1), exported)}`;
   }
-  if (node.equation) return formatProofEquation(node.equation, exported);
+  if (node.equation) return formatProofEquation(node.equation, exported, notation);
   if (node.rule === 'ordinary-angle-branch') return `∠(${node.points?.map((name) => proofNames(name, exported)).join(', ')}) · sign ${node.sign}, lift ${node.lift}`;
   if (node.points) return `${node.points.map((name) => proofNames(name, exported)).join(node.rule === 'witness-line-order' ? ' → ' : ', ')}${node.orientation ? ` · ${node.orientation > 0 ? 'matching' : 'opposite'} orientation` : ''}`;
   return proofRuleLabel(node.rule);
@@ -131,22 +137,26 @@ export const focusProof = (proof: ReadableProof, nodeId: string | null): Readabl
 };
 
 export const proofToMarkdown = (proof: ReadableProof, exported: Ag2Export): string => {
+  const statement = (format: (notation: VectorNotation) => string): string => {
+    const text = format('text'); const latex = format('latex');
+    return text === latex ? text : `$${latex}$`;
+  };
   const indexes = new Map(proof.nodes.map((node, i) => [node.id, i + 1]));
   const lines = ['# Conditional geometry derivation', '', `Mode: ${proof.mode === 'hypothetical' ? 'Symbolic hypotheses' : proof.vectorDiagnostics ? 'DDAR + vector algebra with recorded provenance' : 'DDAR with recorded provenance'}.`,
     `Explanation: ${proof.explanation}. Algebra replay: ${proof.algebraReplay.valid ? 'passed' : 'failed'} (${proof.algebraReplay.checked} steps).`,
     `Coordinate branch guards: ${proof.guardIds.length}. Unreconstructed steps: ${proof.gapIds.length}.`,
     'Geometric rules and coordinate guards are explicit trust inputs; this is not a full independent geometry certificate.', ''];
   if (proof.contradictionIds.length) lines.push('Incompatible assumptions were found. No arbitrary conclusions are inferred from this contradiction.', '');
-  if (proof.witnessFailures.length) lines.push('## Coordinate disagreements', '', ...proof.witnessFailures.map((failure) => `- ${formatProofPredicate(failure.predicate, exported)}`), '');
+  if (proof.witnessFailures.length) lines.push('## Coordinate disagreements', '', ...proof.witnessFailures.map((failure) => `- ${statement((notation) => formatProofPredicate(failure.predicate, exported, notation))}`), '');
   lines.push('## Steps', '');
   for (const node of proof.nodes) {
     const parents = node.premises.map((parent) => `${parent.coefficient === '1' ? '' : `${parent.coefficient} × `}[${indexes.get(parent.id)}]`).join(', ');
-    lines.push(`${indexes.get(node.id)}. ${formatProofNode(node, exported)}. ${proofRuleLabel(node.rule)}${parents ? `; from ${parents}` : ''}.${node.kind === 'gap' ? ' **Unreconstructed step.**' : node.kind === 'guard' ? ' **Coordinate branch condition.**' : ''}`);
+    lines.push(`${indexes.get(node.id)}. ${statement((notation) => formatProofNode(node, exported, notation))}. ${proofRuleLabel(node.rule)}${parents ? `; from ${parents}` : ''}.${node.kind === 'gap' ? ' **Unreconstructed step.**' : node.kind === 'guard' ? ' **Coordinate branch condition.**' : ''}`);
   }
   lines.push('', '## Conclusions', '');
   for (const conclusion of proof.conclusions) {
     const node = proof.nodes.find((item) => item.id === conclusion.nodeId);
-    lines.push(`- ${conclusion.predicate ? formatProofPredicate(conclusion.predicate, exported) : node ? formatProofNode(node, exported) : 'Unrecorded conclusion'}: ${conclusion.status}${node ? ` [${indexes.get(node.id)}]` : ''}.`);
+    lines.push(`- ${statement((notation) => conclusion.predicate ? formatProofPredicate(conclusion.predicate, exported, notation) : node ? formatProofNode(node, exported, notation) : 'Unrecorded conclusion')}: ${conclusion.status}${node ? ` [${indexes.get(node.id)}]` : ''}.`);
   }
   return lines.join('\n');
 };

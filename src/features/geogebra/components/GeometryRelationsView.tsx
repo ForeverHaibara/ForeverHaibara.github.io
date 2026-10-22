@@ -10,6 +10,8 @@ import type { CatalogFilter, CatalogView } from '../reasoning/selection/relation
 import { RelationDetails } from './RelationDetails';
 import CatalogFilterControls from './CatalogFilterControls';
 import type { GeometryRelation } from '../analysis/geometryTypes';
+import { formatProductEquation } from '../geometry/vectorProducts';
+import GeometryStatement from './GeometryStatement';
 
 interface Props {
   state: GeometryRelationsState;
@@ -51,7 +53,10 @@ const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, se
       return <article key={candidate.id} className={`rounded-xl border p-2.5 ${accepted || goal ? 'border-sky-300 bg-sky-50/40' : 'border-slate-200 bg-white'}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0"><p className="text-[10px] text-slate-500">{relation ? relationLabel(relation.kind) : 'Local condition'}{relation?.derived ? ' · generated consequence' : ''}</p>
-            <p className="mt-1 break-words text-xs font-semibold leading-5 text-slate-700">{candidate.label}</p></div>
+            <p className="mt-1 break-words text-xs font-semibold leading-5 text-slate-700"><GeometryStatement format={(notation) => relation?.witnesses[0].productEquation
+              ? formatProductEquation(relation.witnesses[0].productEquation, undefined, notation)
+              : candidate.predicates.length === 1 && candidate.predicates[0].kind === 'vector-product-equation'
+                ? formatPredicate(candidate.predicates[0], problem!.objects, notation) : candidate.label} /></p></div>
           {relation && <span style={scoreColors(relation.nonTriviality)} className="shrink-0 rounded px-2 py-1 text-[10px] font-semibold">Value {displayScore(relation.nonTriviality)}</span>}
         </div>
         <p className={`mt-1 text-[10px] ${candidate.hypothesisEligible ? 'text-amber-700' : 'text-slate-500'}`}>{candidate.evidence.kind === 'sampled'
@@ -65,7 +70,7 @@ const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, se
             className={`rounded px-2 py-1 disabled:opacity-40 ${goal ? 'bg-sky-100 font-semibold text-sky-800' : 'text-slate-500 hover:bg-slate-100'}`}>{goal ? 'Goal selected' : 'Use as goal'}</button>
         </div>
         <details className="mt-1 border-t border-slate-100 pt-1 text-[10px] text-slate-500"><summary className="cursor-pointer">Details · {candidate.predicates.length} relations</summary>
-          {candidate.predicates.map((predicate, index) => <p key={index} className="mt-1 break-words leading-4">{formatPredicate(predicate, problem!.objects)}</p>)}
+          {candidate.predicates.map((predicate, index) => <p key={index} className="mt-1 break-words leading-4"><GeometryStatement format={(notation) => formatPredicate(predicate, problem!.objects, notation)} /></p>)}
           <div className="mt-2">{relation ? <RelationDetails relation={relation} relations={relations} objectLink={objectLink} />
             : <p>Local numerical condition. It has no global discovery value score.</p>}</div>
         </details>

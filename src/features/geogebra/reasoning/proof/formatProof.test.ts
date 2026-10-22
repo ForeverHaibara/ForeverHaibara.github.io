@@ -3,6 +3,7 @@ import { midpointProblem } from '../__fixtures__/problems';
 import { exportAg2Proof } from '../backends/ag2/exportProblem';
 import { focusProof, formatProofEquation, formatProofPredicate, proofNames, proofToMarkdown } from './formatProof';
 import type { ReadableProof } from './types';
+import katex from 'katex';
 
 const payload = () => exportAg2Proof(midpointProblem(), { acceptedIds: ['m-midpoint', 'n-midpoint'], goalId: 'midsegment' }).value!;
 describe('readable proof presentation', () => {
@@ -33,5 +34,31 @@ describe('readable proof presentation', () => {
       { variable: 'log(2)', coefficient: '-1' },
     ] }, payload())).toBe('|A B|² = |A M| · 2');
     expect(formatProofEquation({ domain: 'length-product', terms: [{ variable: 'log(|p0 p1|)', coefficient: '1/2' }] }, payload())).toContain('1/2 × log |A B|');
+  });
+  it('separates vector products from their signed scalar coefficients', () => {
+    const equation = { domain: 'dot' as const, terms: [
+      { variable: 'dot(p1,p1)', coefficient: '-1' }, { variable: 'dot(p1,p2)', coefficient: '-1' },
+      { variable: 'dot(p1,p3)', coefficient: '2' },
+    ] };
+    expect(formatProofEquation(equation, payload())).toBe('−(vec(B) · vec(B)) − (vec(B) · vec(C)) + 2 (vec(B) · vec(M)) = 0');
+    const cross = { domain: 'cross' as const, terms: [{ variable: 'cross(p0,p1)', coefficient: '-1/2' }] };
+    expect(formatProofEquation(cross, payload())).toBe('−(1/2) (vec(A) × vec(B)) = 0');
+    const latex = formatProofEquation(cross, payload(), 'latex');
+    expect(latex).toContain('\\frac{1}{2}'); expect(latex).toContain('\\times');
+    expect(latex).not.toContain('O₀');
+    expect(() => katex.renderToString(latex, { throwOnError: true, strict: 'error' })).not.toThrow();
+    expect(() => katex.renderToString(formatProofEquation(equation, payload(), 'latex'), { throwOnError: true, strict: 'error' })).not.toThrow();
+  });
+  it('exports vector statements as inline mathematics in both steps and conclusions', () => {
+    const proof: ReadableProof = { version: 1, mode: 'hypothetical', explanation: 'recorded', nodes: [
+      { id: 's1', kind: 'assumption', rule: 'accepted-condition', premises: [], equation: { domain: 'dot',
+        terms: [{ variable: 'dot(p0,p1)', coefficient: '1' }] } },
+    ], conclusions: [{ nodeId: 's1', backendKnown: false, status: 'assumed' }], assumptionIds: ['s1'], contradictionIds: [], gapIds: [], guardIds: [],
+    algebraReplay: { checked: 0, valid: true, errors: [] }, witnessFailures: [], limited: false, certificate: null };
+    const markdown = proofToMarkdown(proof, payload());
+    const formula = '$\\left(\\overrightarrow{\\text{A}} \\cdot \\overrightarrow{\\text{B}}\\right) = 0$';
+    expect(markdown).toContain(`1. ${formula}.`);
+    expect(markdown).toContain(`- ${formula}: assumed [1].`);
+    expect(markdown).not.toContain('O₀');
   });
 });

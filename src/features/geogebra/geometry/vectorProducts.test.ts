@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { evaluateProductEquation, formatProductEquation, mapProductPoints, productEquationKey, productPoints, productRow } from './vectorProducts';
 import { productPredicate } from '../reasoning/__fixtures__/vectorProducts';
 import type { VectorProductEquation } from './vectorProducts';
+import katex from 'katex';
 
 const equation = (operation: 'dot' | 'cross'): VectorProductEquation => ({ operation,
   terms: [{ coefficient: 1, left: ['A', 'B'], right: ['A', 'C'] }, { coefficient: -1, left: ['A', 'B'], right: ['A', 'D'] }] });
@@ -43,7 +44,18 @@ describe('signed vector expressions and position atoms', () => {
     const points = new Map([['A', { x: 3, y: 1 }], ['B', { x: 1, y: 4 }]]);
     expect(evaluateProductEquation(value, points, { x: 1, y: 1 })?.value).toBe(0);
     expect(evaluateProductEquation(value, points)?.value).toBe(7);
-    expect(formatProductEquation(value)).toContain('O₀→A');
+    expect(formatProductEquation(value)).toBe('(vec(A) · vec(B)) = 0');
+  });
+  it('groups products, hides only the virtual origin and renders literal point names safely', () => {
+    const value: VectorProductEquation = { operation: 'cross', terms: [
+      { coefficient: 2, left: ['A', 'B'], right: ['C', null] },
+      { coefficient: -1, left: [null, 'O'], right: [null, null] },
+    ] };
+    expect(formatProductEquation(value)).toBe('2 (vec(A, B) × (-vec(C))) = (vec(O) × 0)');
+    const latex = formatProductEquation(value, (name) => `${name}_1%{x}\\$&#^~`, 'latex');
+    expect(latex).toContain('\\overrightarrow{');
+    expect(latex).not.toContain('→');
+    expect(() => katex.renderToString(latex, { throwOnError: true, strict: false })).not.toThrow();
   });
   it('defines products of zero vectors and rejects missing references', () => {
     const value = productPredicate('dot', [[1, ['A', 'A'], ['A', 'B']]]);

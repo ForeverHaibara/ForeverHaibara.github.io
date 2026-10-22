@@ -53,10 +53,45 @@ export const evaluateProductEquation = (equation: VectorProductEquation, points:
   return Number.isFinite(value) && Number.isFinite(magnitude) ? { value, magnitude, residual: Math.abs(value) / Math.max(1, magnitude) } : null;
 };
 
-export const formatProductEquation = (equation: VectorProductEquation, name: (id: string) => string = (id) => id): string => {
-  const vector = ([a, b]: VectorReference) => a === null ? (b === null ? '0' : `O₀→${name(b)}`)
-    : b === null ? `${name(a)}→O₀` : `→(${name(a)},${name(b)})`;
-  const side = (positive: boolean) => equation.terms.filter((term) => term.coefficient !== 0 && (term.coefficient > 0) === positive)
-    .map((term) => `${Math.abs(term.coefficient) === 1 ? '' : `${Math.abs(term.coefficient)} `}${vector(term.left)} ${equation.operation === 'dot' ? '·' : '×'} ${vector(term.right)}`).join(' + ') || '0';
+export type VectorNotation = 'text' | 'latex';
+
+// Point labels are literal text, never TeX commands (or implicit subscripts).
+const latexLabel = (label: string): string => `\\text{${label.replace(/[\\{}$&#%_^~]/g, (character) => ({
+  '\\': '\\textbackslash{}', '{': '\\{', '}': '\\}', '$': '\\$', '&': '\\&', '#': '\\#',
+  '%': '\\%', '_': '\\_', '^': '\\textasciicircum{}', '~': '\\textasciitilde{}',
+}[character]!))}}`;
+
+/** Hide only the virtual origin; real endpoints and direction signs remain explicit. */
+const formatVector = ([a, b]: VectorReference, name: (id: string) => string, notation: VectorNotation): string => {
+  const arrow = (...points: string[]) => notation === 'latex'
+    ? `\\overrightarrow{${points.map((point) => latexLabel(name(point))).join('\\,')}}`
+    : `vec(${points.map(name).join(', ')})`;
+  if (a === null) return b === null ? '0' : arrow(b);
+  if (b === null) return notation === 'latex' ? `\\left(-${arrow(a)}\\right)` : `(-${arrow(a)})`;
+  return arrow(a, b);
+};
+
+export const formatVectorProduct = (operation: VectorProductEquation['operation'], left: VectorReference, right: VectorReference,
+  name: (id: string) => string = (id) => id, notation: VectorNotation = 'text'): string => {
+  const product = `${formatVector(left, name, notation)} ${notation === 'latex'
+    ? operation === 'dot' ? '\\cdot' : '\\times' : operation === 'dot' ? '·' : '×'} ${formatVector(right, name, notation)}`;
+  return notation === 'latex' ? `\\left(${product}\\right)` : `(${product})`;
+};
+
+/** Keep rational proof coefficients exact and distinguish scalar scaling from cross products. */
+export const formatProductSum = (parts: Array<{ product: string; coefficient: string }>, notation: VectorNotation = 'text'): string =>
+  parts.filter((part) => part.coefficient !== '0').map(({ product, coefficient }, index) => {
+    const negative = coefficient.startsWith('-'); const absolute = negative ? coefficient.slice(1) : coefficient;
+    const fraction = absolute.match(/^(\d+)\/(\d+)$/);
+    const scalar = absolute === '1' ? '' : notation === 'latex'
+      ? `${fraction ? `\\frac{${fraction[1]}}{${fraction[2]}}` : absolute}\\,`
+      : `${fraction ? `(${absolute})` : absolute} `;
+    return `${index ? negative ? ' − ' : ' + ' : negative ? '−' : ''}${scalar}${product}`;
+  }).join('') || '0';
+
+export const formatProductEquation = (equation: VectorProductEquation, name: (id: string) => string = (id) => id,
+  notation: VectorNotation = 'text'): string => {
+  const side = (positive: boolean) => formatProductSum(equation.terms.filter((term) => term.coefficient !== 0 && (term.coefficient > 0) === positive)
+    .map((term) => ({ coefficient: String(Math.abs(term.coefficient)), product: formatVectorProduct(equation.operation, term.left, term.right, name, notation) })), notation);
   return `${side(true)} = ${side(false)}`;
 };

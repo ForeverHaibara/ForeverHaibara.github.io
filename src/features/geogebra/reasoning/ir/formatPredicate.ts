@@ -1,10 +1,10 @@
 import type { GeometryPredicate, Rational, ReasoningProblem, Segment } from './types';
-import { formatProductEquation } from '../../geometry/vectorProducts';
+import { formatProductEquation, type VectorNotation } from '../../geometry/vectorProducts';
 
-export const formatPredicate = (predicate: GeometryPredicate, objects: ReasoningProblem['objects']): string => {
+export const formatPredicate = (predicate: GeometryPredicate, objects: ReasoningProblem['objects'], notation: VectorNotation = 'text'): string => {
   const names = new Map(objects.map((object) => [object.id, object.name]));
   const name = (id: string) => names.get(id) ?? id;
-  if (predicate.kind === 'vector-product-equation') return formatProductEquation(predicate.equation, name);
+  if (predicate.kind === 'vector-product-equation') return formatProductEquation(predicate.equation, name, notation);
   const segment = (points: Segment) => `(${points.map(name).join(', ')})`;
   const rational = (value: Rational) => value.denominator === 1 ? String(value.numerator) : `${value.numerator}/${value.denominator}`;
   if (predicate.kind === 'collinear' || predicate.kind === 'concyclic') return `${predicate.points.map(name).join(', ')} ${predicate.kind}`;
