@@ -317,6 +317,8 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     const onStoreUndo = () => { if (this.selectionWriteDepth === 0) emit('update'); };
     const onClientEvent = (event: ClientEvent) => {
       const eventName = typeof event === 'string' ? event : event.type ?? '';
+      if (eventName === 'updateStyle' && typeof event !== 'string' && event.target) emit('style', event.target);
+      if (eventName === 'undo' || eventName === 'redo') emit(eventName);
       if ((eventName === 'select' || eventName === 'deselect') && this.selectionWriteDepth === 0) {
         const objectName = typeof event !== 'string' && typeof event.target === 'string' ? event.target : undefined;
         this.interactionListeners.forEach((listener) => listener({ type: eventName, objectName }));

@@ -1,6 +1,7 @@
 import React from 'react';
 
 const paths = {
+  palette: 'M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3 1.5 1.5 0 0 1 1.1-2.5H18a3 3 0 0 0 3-3C21 7 17 3 12 3ZM7 10h.01M10 6.5h.01M15 7h.01M6.5 14h.01',
   files: 'M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z',
   left: 'M9 3v18M14 9l-3 3 3 3',
   right: 'M15 3v18M10 9l3 3-3 3',

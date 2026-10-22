@@ -134,7 +134,91 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
     await vi.advanceTimersByTimeAsync(200);
     await f.controller.snapshot();
     expect(f.objects.c.label).toBe(false);
-    expect(f.callApi).toHaveBeenLastCalledWith('refreshViews', []);
+    expect(f.callApi).toHaveBeenCalledWith('refreshViews', []);
+    f.controller.dispose();
+  });
+
+  it('preserves native manual edits across attach/detach clear and remove/add reconstruction', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ A: point(), B: point(), l: line() });
+    await f.controller.loadDocument(async () => undefined);
+    f.objects.A.color = '#ff0000'; f.objects.l.size = 8;
+    f.emit('style', 'A'); f.emit('style', 'l');
+    // Simulate a rebuild which resets native styles, including a role change.
+    f.emit('clear');
+    f.objects.A = { ...point(), role: 'constrained' }; f.emit('add', 'A');
+    f.objects.B = { ...point(), role: 'constrained' }; f.emit('add', 'B');
+    f.objects.l = line(); f.emit('add', 'l');
+    await vi.advanceTimersByTimeAsync(200);
+    await f.controller.snapshot();
+    expect(f.objects.A.color).toBe('#ff0000');
+    expect(f.objects.B.color).toBe(DEFAULT_GGB_PREFERENCES.constrainedPointColor);
+    expect(f.objects.l.size).toBe(8);
+    f.emit('remove', 'A'); f.objects.A = point(); f.emit('add', 'A');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.A.color).toBe('#ff0000');
+    f.controller.dispose();
+  });
+
+  it('does not interpret background reloads as explicit overrides, even with prefer-defaults enabled', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ A: point() });
+    await f.controller.loadDocument(async () => undefined);
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, stylePolicy: 'override' });
+    await f.controller.editObjects(['A'], { color: '#ff0000', size: 7 });
+    f.emit('clear'); f.objects.A = point(); f.emit('add', 'A');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.A).toMatchObject({ color: '#ff0000', size: 7 });
+    // A deliberate preference change still opts into the selected policy.
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, stylePolicy: 'override', pointSize: 8 });
+    expect(f.objects.A).toMatchObject({ color: DEFAULT_GGB_PREFERENCES.pointColor, size: 8 });
+    f.controller.dispose();
+  });
+
+  it('retains intentional same-color overrides, supports selected reset, rename, and draft restoration', async () => {
+    const f = fixture({ A: point(), B: point() });
+    await f.controller.loadDocument(async () => undefined);
+    await f.controller.editObjects(['A', 'B'], { color: DEFAULT_GGB_PREFERENCES.pointColor, size: 7, label: false });
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, pointColor: '#059669' });
+    expect(f.objects.A.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    await f.controller.editObjects(['B'], null);
+    expect(f.objects.B).toMatchObject({ color: '#059669', size: 5, label: true });
+    f.objects.P = f.objects.A; delete f.objects.A; f.emit('rename', 'P', 'A');
+    const saved = await f.controller.snapshot();
+    f.controller.dispose();
+    const restored = new PreferenceController(f.engine, { ...DEFAULT_GGB_PREFERENCES }, f.errors);
+    f.objects.P = point();
+    await restored.loadDocument(async () => undefined, saved);
+    expect(f.objects.P).toMatchObject({ color: DEFAULT_GGB_PREFERENCES.pointColor, size: 7, label: false });
+    restored.dispose();
+  });
+
+  it('accepts undo and redo styles instead of replaying stale overrides during reconstruction', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ A: point() });
+    await f.controller.loadDocument(async () => undefined);
+    await f.controller.editObjects(['A'], { color: '#ff0000' });
+    f.emit('clear'); f.objects.A.color = DEFAULT_GGB_PREFERENCES.pointColor; f.emit('add', 'A'); f.emit('undo');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.A.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    f.emit('clear'); f.objects.A.color = '#ff0000'; f.emit('add', 'A'); f.emit('redo');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.A.color).toBe('#ff0000');
+    f.controller.dispose();
+  });
+
+  it('prunes deleted objects and resets ownership at an explicit document boundary', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ A: point() });
+    await f.controller.loadDocument(async () => undefined);
+    await f.controller.editObjects(['A'], { color: '#ff0000' });
+    delete f.objects.A; f.emit('remove', 'A');
+    await vi.advanceTimersByTimeAsync(200);
+    f.objects.A = point(); f.emit('add', 'A'); await f.controller.snapshot();
+    expect(f.objects.A.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
+    await f.controller.editObjects(['A'], { color: '#ff0000' });
+    await f.controller.loadDocument(async () => { f.emit('clear'); f.objects.A = point(); f.emit('add', 'A'); });
+    expect(f.objects.A.color).toBe(DEFAULT_GGB_PREFERENCES.pointColor);
     f.controller.dispose();
   });
 

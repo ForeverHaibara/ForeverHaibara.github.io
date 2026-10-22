@@ -9,7 +9,7 @@ import { useDependencyGraph } from '../../features/geogebra/analysis/useDependen
 import { useGeometryRelations } from '../../features/geogebra/analysis/useGeometryRelations';
 import { PreferenceController } from '../../features/geogebra/settings/PreferenceController';
 import { readPreferences, savePreferences } from '../../features/geogebra/settings/preferenceStore';
-import type { GgbPreferences } from '../../features/geogebra/settings/types';
+import type { GgbPreferences, ObjectStyle } from '../../features/geogebra/settings/types';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -66,6 +66,13 @@ const GeoGebraStudioPage: React.FC = () => {
     setPreferences(next);
     setPreferenceError(savePreferences(next) ? null : 'Browser storage is unavailable; changes last for this session.');
     void preferenceControllerRef.current?.update(next);
+  }, []);
+
+  const handleEditObjectStyle = useCallback(async (names: readonly string[], patch: ObjectStyle | null) => {
+    await preferenceControllerRef.current?.editObjects(names, patch);
+    setHasUnsavedChanges(true);
+    // Also schedules autosave on engines without updateStyle notifications.
+    setEvents((current) => [...current, { type: 'style' as const, timestamp: Date.now() }].slice(-100));
   }, []);
 
   useEffect(() => {
@@ -236,7 +243,7 @@ const GeoGebraStudioPage: React.FC = () => {
     setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
   }, [store]);
 
-  return <GeoGebraStudioShell preferences={preferences} preferenceError={preferenceError} onPreferencesChange={handlePreferencesChange} onApplyPreferences={() => preferenceControllerRef.current?.applyToAll() ?? Promise.resolve()} engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} geometryRelations={geometryRelations} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
+  return <GeoGebraStudioShell onEditObjectStyle={handleEditObjectStyle} preferences={preferences} preferenceError={preferenceError} onPreferencesChange={handlePreferencesChange} onApplyPreferences={() => preferenceControllerRef.current?.applyToAll() ?? Promise.resolve()} engine={engine} ready={ready} error={error} loadingMessage={loadingMessage} settings={settings} capabilities={capabilities} events={events} graph={dependencyGraphState.graph} graphStatus={dependencyGraphState.status} graphError={dependencyGraphState.error} geometryRelations={geometryRelations} onRefreshGraph={dependencyGraphState.refresh} lastResult={lastResult} onReady={handleReady} onError={handleError} onSettingsChange={handleSettingsChange} onCommandResult={handleCommandResult} onImport={handleImport} onExport={handleExport} onClearDraft={handleClearDraft} onResetInitial={resetToInitial} />;
 };
 
 export default GeoGebraStudioPage;

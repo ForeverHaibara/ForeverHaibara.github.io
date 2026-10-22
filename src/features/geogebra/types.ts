@@ -1,6 +1,6 @@
 export type GeoGebraEngineStatus = 'loading' | 'ready' | 'error' | 'disposed';
 
-export type GeometryEventType = 'add' | 'remove' | 'rename' | 'update' | 'clear' | 'dragStart' | 'dragEnd' | 'toolsChanged';
+export type GeometryEventType = 'add' | 'remove' | 'rename' | 'update' | 'style' | 'undo' | 'redo' | 'clear' | 'dragStart' | 'dragEnd' | 'toolsChanged';
 
 export interface GeometryEvent {
   type: GeometryEventType;

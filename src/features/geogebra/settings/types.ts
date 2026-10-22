@@ -21,5 +21,11 @@ export interface GgbPreferences {
   stylePolicy: 'preserve' | 'override';
 }
 
-/** Last values written by the studio, not a copy of the user's object styles. */
-export type ManagedStyles = Record<string, Partial<Record<'label' | 'size' | 'color', string | number | boolean>>>;
+export interface ObjectStyle {
+  label?: boolean;
+  size?: number;
+  color?: string;
+}
+
+/** Studio baseline plus explicit per-property overrides; old draft baselines remain valid. */
+export type ManagedStyles = Record<string, ObjectStyle & { overrides?: ObjectStyle }>;

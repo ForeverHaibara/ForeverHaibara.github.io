@@ -83,6 +83,7 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
   }, [runRefresh]);
 
   const handleEvent = useCallback((event: GeometryEvent) => {
+    if (event.type === 'style') return;
     if (event.type === 'dragStart') {
       draggingRef.current = true;
       return;
