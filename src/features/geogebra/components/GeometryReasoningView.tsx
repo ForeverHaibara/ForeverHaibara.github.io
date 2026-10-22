@@ -9,7 +9,7 @@ import type { Ag2Export } from '../reasoning/backends/ag2/exportProblem';
 import { Ag2WorkerClient } from '../reasoning/backends/ag2/Ag2WorkerClient';
 import type { Ag2RunResult } from '../reasoning/backends/ag2/protocol';
 import type { ConditionSelection, ReasoningProblem } from '../reasoning/ir/types';
-import { mergeRelationCatalog, resolveCatalogIds, retainCatalogSelection } from '../reasoning/selection/relationCatalog';
+import { mergeRelationCatalog, preserveSelectedCandidates, resolveCatalogIds, retainCatalogSelection } from '../reasoning/selection/relationCatalog';
 import GeometryRelationsView from './GeometryRelationsView';
 import GeometryDiscoveryControls from './GeometryDiscoveryControls';
 import type { GeoGebraEngine } from '../types';
@@ -18,6 +18,7 @@ import { evaluateCoverage } from '../reasoning/selection/evaluateCoverage';
 import type { CharacterizationProposal, CoverageResult } from '../reasoning/selection/types';
 import ConditionSuggestions from './ConditionSuggestions';
 import ReadableProofView from './ReadableProofView';
+import type { GeometryRelation } from '../analysis/geometryTypes';
 
 interface Props {
   engine: GeoGebraEngine;
@@ -35,14 +36,27 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
   const constructionFresh = Boolean(graph && graphStatus === 'ready' && lastEventTime <= graph.generatedAt);
   const suggestions = useCharacterization(engine, graph, constructionFresh);
   const proposal = suggestions.proposal;
-  const catalog = useMemo(() => mergeRelationCatalog(baseProblem, proposal?.problem ?? null), [baseProblem, proposal]);
+  const [selectionState, setSelection] = useState<{ graph: DependencyGraph | null; problem: ReasoningProblem | null; value: ConditionSelection; relations: readonly GeometryRelation[] }>({ graph: null, problem: null, value: emptySelection, relations: [] });
+  const catalog = useMemo(() => {
+    const current = mergeRelationCatalog(baseProblem, proposal?.problem ?? null);
+    const retained = preserveSelectedCandidates(current.problem, selectionState.graph === graph ? selectionState.problem : null, selectionState.value);
+    for (const [id, target] of current.aliases) retained.aliases.set(id, retained.aliases.get(target) ?? target);
+    return retained;
+  }, [baseProblem, proposal, selectionState, graph]);
   const { problem, aliases } = catalog;
-  const [selectionState, setSelection] = useState<{ graph: DependencyGraph | null; problem: ReasoningProblem | null; value: ConditionSelection }>({ graph: null, problem: null, value: emptySelection });
+  const catalogRelations = useMemo(() => {
+    const relations = new Map((discovery.result?.computedAt === graph?.generatedAt ? discovery.result?.relations ?? [] : []).map((relation) => [relation.id, relation]));
+    const ids = new Set(problem?.candidates.map((candidate) => candidate.source.relationId));
+    if (selectionState.graph === graph) for (const relation of selectionState.relations) if (!relations.has(relation.id) && ids.has(relation.id)) relations.set(relation.id, relation);
+    return [...relations.values()];
+  }, [discovery.result, problem, selectionState, graph]);
   const selection = useMemo(() => {
     if (selectionState.graph !== graph || !problem) return emptySelection;
     return retainCatalogSelection(selectionState.value, selectionState.problem, problem, aliases);
   }, [selectionState, graph, problem, aliases]);
-  const fresh = Boolean(problem && constructionFresh && (proposal || !discovery.stale));
+  // Compute options do not invalidate observations from this construction.
+  // Snapshot identity above, rather than pending search settings, gates input.
+  const fresh = Boolean(problem && constructionFresh);
   const exported = useMemo(() => problem ? exportAg2Problem(problem, selection) : null, [problem, selection]);
   const proofRequest = useMemo(() => problem && selection.acceptedIds.length ? exportAg2Proof(problem, selection) : null, [problem, selection]);
   const [phase, setPhase] = useState<'idle' | 'loading' | 'solving'>('idle');
@@ -62,7 +76,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
 
   useEffect(() => { invalidate(); }, [problem, fresh]);
   useEffect(() => () => { generation.current += 1; client.current?.stop(); }, []);
-  const changeSelection = (value: ConditionSelection) => { invalidate(); setSelection({ graph, problem, value }); };
+  const changeSelection = (value: ConditionSelection) => { invalidate(); setSelection({ graph, problem, value, relations: catalogRelations }); };
   const checkCoverage = async () => {
     if (!fresh || !proposal || !problem) return;
     invalidate(); const ticket = generation.current; setCoveragePhase('loading');
@@ -138,7 +152,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
       </div>
       {value && value.branches.length > 0 && <p className="mt-2 text-[10px] text-amber-800">{value.branches.length} ordinary-angle ray/lift branch conditions are included in the exported problem.</p>}
     </details>
-    <GeometryRelationsView state={discovery} objectLink={objectLink} problem={problem} selection={selection} aliases={aliases}
+    <GeometryRelationsView state={discovery} objectLink={objectLink} problem={problem} selection={selection} aliases={aliases} relations={catalogRelations}
       fresh={fresh} busy={running || suggestions.status !== 'idle'} onSelection={changeSelection} />
     {fresh && (result || error) && <section ref={resultsRef} aria-label="Proof results" className="scroll-mt-48 space-y-2 border-t border-slate-200 pt-3">
       <h4 className="font-semibold text-slate-700">Proof results</h4>

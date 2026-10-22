@@ -4,6 +4,8 @@ import type { DiscoveryOptions, GeometryRelationKind } from '../relations/catalo
 export interface DiscoveryPreferences {
   automatic: boolean;
   options: DiscoveryOptions;
+  /** Legacy stored display fields. The catalog now owns per-view list filters;
+   * these remain readable for older saved preference schemas. */
   visibleKinds: GeometryRelationKind[];
   minimumValue: number;
   knownKinds: GeometryRelationKind[];

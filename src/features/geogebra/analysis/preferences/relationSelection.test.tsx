@@ -19,13 +19,16 @@ describe('global and scoped selection controls', () => {
     const all = RELATION_GROUPS.flatMap((group) => group.items.map((item) => item.kind));
     expect(new Set(all).size).toBe(ALL_RELATION_KINDS.length);
     expect(all).toHaveLength(ALL_RELATION_KINDS.length);
-    const html = renderToStaticMarkup(<RelationTypeControls preferences={defaultDiscoveryPreferences()} onChange={() => {}} />);
+    const html = renderToStaticMarkup(<RelationTypeControls kinds={ALL_RELATION_KINDS} purpose="compute" onChange={() => {}} />);
     for (const { label } of RELATION_GROUPS) {
       expect(html).toContain(`aria-label="All compute ${label}"`);
-      expect(html).toContain(`aria-label="Invert show ${label}"`);
+      expect(html).toContain(`aria-label="Invert compute ${label}"`);
     }
     expect(html).toContain('aria-label="All compute types"');
-    expect(html).toContain('aria-label="Invert show types"');
+    expect(html).not.toContain('Show:');
+    const filters = renderToStaticMarkup(<RelationTypeControls kinds={[]} purpose="filter" onChange={() => {}} />);
+    expect(filters).toContain('aria-label="All filter types"');
+    expect(filters).not.toContain('disabled');
   });
   it('keeps display-only operations outside compute options', () => {
     const before = defaultDiscoveryPreferences();

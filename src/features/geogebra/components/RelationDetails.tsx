@@ -5,7 +5,7 @@ import { formatQuantityGroup, formatRelation } from '../analysis/presentation/fo
 import { GeneratorDetails } from './GeneratorDetails';
 import { ConditionalDetails } from './ConditionalDetails';
 
-export const RelationDetails: React.FC<{ relation: GeometryRelation; relations: GeometryRelation[]; objectLink: ObjectLink }> = ({ relation, relations, objectLink }) => <div className="space-y-2 text-[10px] text-slate-500">
+export const RelationDetails: React.FC<{ relation: GeometryRelation; relations: readonly GeometryRelation[]; objectLink: ObjectLink }> = ({ relation, relations, objectLink }) => <div className="space-y-2 text-[10px] text-slate-500">
   <div className="flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div>
   <p>{relation.explanation}</p>
   <ConditionalDetails relation={relation} />

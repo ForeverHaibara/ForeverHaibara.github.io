@@ -9,7 +9,7 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 - 版本化问题表示：完整对象依赖、原始定义、坐标、候选及观测来源。
 - 从当前发现结果读取基础关系、中点、普通角关系、长度关系、相似／全等、
   方向／长度生成模型及有限性质族。每个实例单独展开，不补全未观测的绑定。
-- 在 Analysis & Proof 面板的 Conditional reasoning 区域，人工接受条件组、
+- 在 Analysis & Proof 面板的 Relations & proof 区域，人工接受条件组、
   选择目标、查看组内具体性质。初始无任何自动接受的性质。
 - AG2 文本导出和 JSON 项目导出。文本的每一行是一道独立问题，合取目标
   拆为多个共用前提的问题。JSON 保留条件选择、原始依赖、名称映射、坐标
@@ -29,7 +29,8 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 
 1. 在 Relations & proof 点击 Discover relations，或使用自动发现。
 2. 直接在关系卡片勾选 Accept condition，需要指定目标时点 Use as goal。
-   All／Accepted／Goal／Rejected 共用一个目录和搜索，显示筛选不取消条件。
+   All／Accepted／Goal／Rejected 共用一个目录，每个视图独立记住筛选；显示筛选不取消条件。
+   查询支持 `AO CO`、`(O,A)=(O,C)`、`ABC DEF` 等结构化写法，Reset filters 重置当前视图。
 3. 点 Generate readable proof，可不选目标。第一次运行需联网下载固定版本 Python
    与 NumPy；之后同一面板的独立运行复用已加载的解释器。单独 Check goal
    和导出入口位于 Hypotheses, checks and export。
@@ -41,6 +42,7 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 Evaluate coverage 可检查建议集能推出多少额外性质，不会自动增加条件。
 局部建议与全局发现中的同一命题合并显示采样证据，接受状态和来源 ID 保留映射。
 具体语义、数值精度及界面检查见 [统一关系目录](../analysis/docs/precision-and-unified-catalog.md)。
+计算范围与条件角色的分离、检索语法及扩展方式见 [结构化检索与筛选](docs/catalog-search-and-filters.md)。
 
 现在优先使用 **Generate readable proof**：接受条件后即可生成可读后果，不必
 先选目标；也可选目标来聚焦其证明。阅读界面可以切换结论，显示逐步来源、
@@ -55,9 +57,9 @@ Evaluate coverage 可检查建议集能推出多少额外性质，不会自动�
 使用符号代数，不强迫当前坐标满足假设；报告可检测的矛盾，不使用爆炸律。
 数值拒绝不会自动取消用户选择；结构错误仍单独报告。项目可在后端无法导出
 时保存条件、诊断和失败原因。详见 [P4 可读证明与实验假设](docs/readable-proofs.md)。
-Rejected candidates only 可以单独查看被拒绝的保留候选；搜索也会匹配诊断文字。
+Rejected 视图可以单独查看被拒绝的保留候选；搜索也会匹配诊断文字。
 
-构图变化后，旧选择和结果失效；同快照候选池扩展只保留语义未变的选择。停止会终止
+构图变化后，旧选择和结果失效；同快照计算范围缩小仍保留明确选择，池扩展映射语义未变的选择。停止会终止
 Worker，下次重新初始化。不使用远程推理服务，构图数据不发送到模型端。
 
 ## 语义与资源边界

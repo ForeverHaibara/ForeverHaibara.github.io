@@ -12,8 +12,9 @@ const GeometryDiscoveryControls: React.FC<{ state: GeometryRelationsState }> = (
     </div>
     <p className="text-[10px] leading-4 text-slate-500">Uses full floating-point coordinates, independently of GeoGebra display rounding. Observations are evidence, not proofs.</p>
     <details className="rounded-lg border border-slate-200 p-2 text-[11px]">
-      <summary className="cursor-pointer font-semibold text-slate-600">Compute and display ({preferences.options.enabledKinds.length} enabled)</summary>
-      <RelationTypeControls preferences={preferences} onChange={setPreferences} />
+      <summary className="cursor-pointer font-semibold text-slate-600">Discovery settings ({preferences.options.enabledKinds.length} types)</summary>
+      <p className="mt-2 text-slate-500">These settings control the next discovery run. Auto recomputes after changes. Accepted conditions and the goal are kept on this construction. Use the catalog filters below to change what you see.</p>
+      <RelationTypeControls kinds={preferences.options.enabledKinds} purpose="compute" onChange={(enabledKinds) => setPreferences({ ...preferences, options: { ...preferences.options, enabledKinds } })} />
       <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={!preferences.options.compressConsequences} onChange={(event) => setPreferences({ ...preferences, options: { ...preferences.options, compressConsequences: !event.target.checked } })} />Expand derived observations (recompute)</label>
       <label className="mt-2 flex items-center gap-2">Budget <select aria-label="Discovery budget" className="rounded border border-slate-200 px-1" value={preferences.options.maxAngles <= 5000 ? 'light' : preferences.options.maxAngles >= 50000 ? 'deep' : 'standard'} onChange={(event) => {
         const limits = event.target.value === 'light' ? { maxTriangles: 2000, maxAngles: 5000, maxComparisons: 50000, maxModels: 3, maxRelations: 200 }

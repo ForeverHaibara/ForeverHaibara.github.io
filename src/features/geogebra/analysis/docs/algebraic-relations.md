@@ -85,14 +85,17 @@ d·log L + (Σaᵢ−d)·log L₀ − Σaᵢ·log Gᵢ
 
 `RelationTypeControls.tsx` 根据关系目录自动生成 Basic、Lengths、Angles、Triangles、Generators 五组。各组默认折叠，显示已启用数／总数。
 
-全局和每组都有 Compute 与 Show 的 All／None／Invert：
+最初全局和每组均提供 Compute 与 Show 的 All／None／Invert。2026-10-22
+修订为两个独立用途的选择器：
 
 - Compute 只改计算类型，支持真正的空集合；下一次自动运行按新的集合计算。
-- Show 只改当前启用计算类型的展示选项，不重算，不改计算集合。
-- 分类操作保留其他组的设置。关闭计算时保留该类型原展示偏好；重新启用计算后可恢复。
+- List filters 只改当前角色视图的展示类型，不重算，也不受计算集合限制。
+- 分类操作保留其他组的设置；隐藏条目或关闭计算不会取消同快照的已接受条件。
 - 批量选择逻辑提取为纯函数 `changeRelationSelection`，稳定按目录排序，不依赖 UI 组件位置。
 
 存储新增 knownKinds，用于识别未来新类型；已经明确关闭的已知类型不会在归一化时被重新打开。旧版没有该字段时，仅“完整选中旧十类”的设置采用新默认类型；旧版选择子集或空集合保持原选择。新默认仍不开启余角／补角。
+目录过滤不再读取旧的显示偏好。具体角色状态、重置规则和结构化检索见
+[结构化检索与筛选](../../reasoning/docs/catalog-search-and-filters.md)。
 
 ## 7. 验证与当前边界
 
