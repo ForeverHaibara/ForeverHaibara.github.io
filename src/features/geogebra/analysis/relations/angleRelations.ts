@@ -1,3 +1,4 @@
+import { SCALAR_EPSILON } from '../numericPrecision';
 import { combineExpressions, matchScalarTransform } from '../algebra/scalarSearch';
 import type { RationalRelationSpace } from '../algebra/rationalSpace';
 import type { GeometryScene } from '../scene/geometryScene';
@@ -26,7 +27,7 @@ const PATTERNS = [
 /** Ordinary angles in (0,pi); no modular identification of supplements. */
 export const detectAngleRelations = (scene: GeometryScene, angles: ScalarClass<AngleQuantity>[], options: DiscoveryOptions, budget: DiscoveryBudget, space: RationalRelationSpace): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
-  const epsilon = 4e-7;
+  const epsilon = SCALAR_EPSILON;
   for (const pattern of PATTERNS) {
     if (!options.enabledKinds.includes(pattern.kind)) continue;
     let count = 0;

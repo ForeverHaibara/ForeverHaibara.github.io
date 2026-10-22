@@ -116,13 +116,13 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
       <header className="geogebra-studio-header">
         <div className="geogebra-studio-title"><span className="ggb-brand-mark"><StudioIcon name="geometry" size={22} /></span><div><h1>GeoGebra <span>Studio</span></h1><p>Geometry, with room to think.</p></div></div>
         <div className="ggb-workspace-toolbar" role="toolbar" aria-label="Workspace tools">
+          <GeoGebraQuickStyle engine={engine} names={objectLink.selectedNames} disabled={!ready || settingsOpen || Boolean(loadingMessage)} onOpen={() => { objectLink.hover(null); if (filesRef.current) filesRef.current.open = false; }} onEdit={props.onEditObjectStyle} />
           <button ref={settingsButtonRef} type="button" className="ggb-icon-button" title="Workspace settings" aria-label="Workspace settings" aria-expanded={settingsOpen} aria-controls="geogebra-settings-panel" onClick={() => { if (filesRef.current) filesRef.current.open = false; setSettingsOpen(!settingsOpen); }}><StudioIcon name="settings" />{preferenceError && <span className="ggb-button-alert" />}</button>
           <details ref={filesRef} className="ggb-files-menu">
             <summary className="ggb-icon-button" title="Files" aria-label="Files"><StudioIcon name="files" /></summary>
             <div className="ggb-files-popover"><span className="ggb-eyebrow">CONSTRUCTION</span><GeoGebraFileActions onImport={onImport} onExport={onExport} onClearDraft={onClearDraft} onResetInitial={onResetInitial} onAction={() => { if (filesRef.current) filesRef.current.open = false; filesRef.current?.querySelector('summary')?.focus(); }} /></div>
           </details>
           <span className="ggb-toolbar-divider" />
-          <GeoGebraQuickStyle engine={engine} names={objectLink.selectedNames} disabled={!ready || settingsOpen || Boolean(loadingMessage)} onOpen={() => { objectLink.hover(null); if (filesRef.current) filesRef.current.open = false; }} onEdit={props.onEditObjectStyle} />
           <button type="button" className="ggb-icon-button" title="Toggle Algebra view" aria-label="Toggle Algebra view" aria-pressed={preferences.algebra} disabled={!ready} onClick={() => onPreferencesChange({ ...preferences, algebra: !preferences.algebra })}><StudioIcon name="left" /></button>
           <button ref={analysisButtonRef} type="button" className="ggb-icon-button" title="Toggle analysis panel" aria-label="Toggle analysis panel" aria-expanded={!analysisHidden} aria-controls="geogebra-analysis-panel" onClick={() => { setFocusMode(false); onSettingsChange({ ...settings, sidePanelCollapsed: !settings.sidePanelCollapsed }); }}><StudioIcon name="right" /></button>
           <StudioIconButton icon="bottom" label="Toggle command bar" aria-expanded={!commandsHidden} aria-controls="geogebra-command-dock" onClick={() => { setFocusMode(false); onSettingsChange({ ...settings, commandBarCollapsed: !settings.commandBarCollapsed }); }} />

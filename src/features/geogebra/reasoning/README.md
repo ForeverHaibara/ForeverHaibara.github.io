@@ -27,17 +27,20 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
 
 ## 使用
 
-1. 在当前构图完成一次关系发现。
-2. 在 Conditional reasoning 中勾选 Accept condition。搜索只过滤候选列表，
-   不改变已经接受的条件；已有发现面板的分数／显示筛选也不会取消这些条件。
-3. 选择 Use as goal，再点 Check goal。第一次运行需联网下载固定版本 Python
-   与 NumPy；之后同一面板的独立运行复用已加载的解释器。
+1. 在 Relations & proof 点击 Discover relations，或使用自动发现。
+2. 直接在关系卡片勾选 Accept condition，需要指定目标时点 Use as goal。
+   All／Accepted／Goal／Rejected 共用一个目录和搜索，显示筛选不取消条件。
+3. 点 Generate readable proof，可不选目标。第一次运行需联网下载固定版本 Python
+   与 NumPy；之后同一面板的独立运行复用已加载的解释器。单独 Check goal
+   和导出入口位于 Hypotheses, checks and export。
 4. 查看是否已接受、在给定条件下推出或未推出。未推出不表示目标为假。
 5. Export AG2 下载后端文本，Export project 保存本次条件、见证和来源。
 
 也可以先点击 Suggest conditions，默认在独立副本上检查六个变化构型。
 查看逐对象建议和不足，点击 Accept suggested conditions 一次接受，再选目标。
 Evaluate coverage 可检查建议集能推出多少额外性质，不会自动增加条件。
+局部建议与全局发现中的同一命题合并显示采样证据，接受状态和来源 ID 保留映射。
+具体语义、数值精度及界面检查见 [统一关系目录](../analysis/docs/precision-and-unified-catalog.md)。
 
 现在优先使用 **Generate readable proof**：接受条件后即可生成可读后果，不必
 先选目标；也可选目标来聚焦其证明。阅读界面可以切换结论，显示逐步来源、

@@ -1,3 +1,4 @@
+import { SCALAR_EPSILON } from '../numericPrecision';
 import type { RelationCondition } from '../geometryTypes';
 import { segmentKey } from '../algebra/lengthConstraint';
 import type { Segment } from '../algebra/lengthConstraint';
@@ -32,7 +33,7 @@ export const analyzeSharedComparisons = (scene: GeometryScene, seeds: RelationSe
       const u = locus && byName.get(locus.segment[0])!; const v = locus && byName.get(locus.segment[1])!;
       const background = Boolean(locus && p && u && v
         && Math.hypot(p.x - (u.x + v.x) / 2, p.y - (u.y + v.y) / 2) <= scene.tolerance.distance
-        && Math.abs(Math.log(distance(...a) / distance(...b))) <= 4e-7);
+        && Math.abs(Math.log(distance(...a) / distance(...b))) <= SCALAR_EPSILON);
       // This source is a primitive coordinate check, never a child of `seed`.
       const sourceIds = background ? [`midpoint-fact:${locus!.point}:${[...locus!.segment].sort().join('|')}`] : [];
       conditions.push({ equation: { terms: [{ coefficient: 1, quantity: { kind: 'length', points: a } }, { coefficient: -1, quantity: { kind: 'length', points: b } }] }, background, sourceIds, locus });

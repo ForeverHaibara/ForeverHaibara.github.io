@@ -6,6 +6,8 @@
 
 条件选择、AG2 导出与无语言模型推理已独立放入 [reasoning](../reasoning/README.md)。
 该入口要求明确接受性质作为条件，不会将本模块的观测或压缩来源自动提升为前提。
+前端现使用同一个关系目录完成发现浏览、接受条件与选择目标；浮点精度修补和
+操作方式见 [精度与统一目录](docs/precision-and-unified-catalog.md)。
 
 评分采用统一的依赖图模型，不要求识别上百种工具或解释展开后的公式。详见 [设计、实验与局限](./docs/value-scoring-design.md)。
 
@@ -27,6 +29,7 @@
 | 文件 | 职责 |
 | --- | --- |
 | `constructionSource.ts` | 读取对象名称、类型、定义指令和二维点坐标，记录读取错误。 |
+| `numericPrecision.ts` | 与 GGB 显示小数无关的统一浮点匹配、采样容差及条件性保护。 |
 | `expressionParser.ts` | 尽力解析定义表达式为 AST，并提取对已知对象的引用。 |
 | `constructionGraph.ts` | 建立完整依赖图；另提供图视图的筛选与路径压缩。 |
 | `graphTypes.ts` | 对象、表达式、图和诊断的类型。 |

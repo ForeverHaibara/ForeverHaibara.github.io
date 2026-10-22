@@ -1,3 +1,4 @@
+import { MIN_STABLE_AREA, TRIANGLE_EPSILON } from '../numericPrecision';
 import { fitRationalCombination, RationalRelationSpace } from '../algebra/rationalSpace';
 import { orientedDoubleArea } from '../quantities/vector';
 import type { DirectionModel } from '../geometryTypes';
@@ -32,7 +33,7 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
     const value = terms.reduce((sum, [line, coefficient]) => sum + factor * coefficient * line.angle, 0);
     const lift = Math.round(value / Math.PI);
     const residual = Math.abs(value - lift * Math.PI);
-    if (residual <= 8e-7) space.insert(rowFor(terms.map(([line, coefficient]) => [line.id, coefficient * factor]), -lift), source, residual + 1e-12);
+    if (residual <= TRIANGLE_EPSILON) space.insert(rowFor(terms.map(([line, coefficient]) => [line.id, coefficient * factor]), -lift), source, residual + 1e-12);
   };
   const namedLine = (names: string[]) => bySegment.get(segmentId(byName.get(names[0])!, byName.get(names[1])!));
   for (const seed of existing) {
@@ -70,7 +71,7 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
       if (lines.some((line) => !line)) return;
       const value = edges.reduce((sum, edge, i) => sum + edge[2] * lines[i]!.angle, 0);
       const lift = Math.round(value / Math.PI);
-      if (Math.abs(value - lift * Math.PI) > 8e-7) return;
+      if (Math.abs(value - lift * Math.PI) > TRIANGLE_EPSILON) return;
       space.insert(rowFor(edges.map((edge, i) => [lines[i]!.id, edge[2]]), -lift), seed.key, Math.abs(value - lift * Math.PI) + 1e-12);
     };
     for (const d of indexes.slice(3)) {
@@ -89,7 +90,7 @@ export const buildDirectionSpaces = (scene: GeometryScene, existing: RelationSee
     if (!budget.take('Direction seed triples', options.maxTriangles)) break;
     if (seeds.length >= options.maxModels) { budget.note(`Direction model limit (${options.maxModels}) reached; models are partial.`); break outer; }
     if (attempts >= 12) { budget.note('Direction seed limit (12) reached; models are partial.'); break outer; }
-    if (Math.abs(orientedDoubleArea(scene.points[a].coordinates, scene.points[b].coordinates, scene.points[c].coordinates)) <= 2e-7) continue;
+    if (Math.abs(orientedDoubleArea(scene.points[a].coordinates, scene.points[b].coordinates, scene.points[c].coordinates)) <= MIN_STABLE_AREA) continue;
     const anchor = bySegment.get(segmentId(a, b));
     const first = bySegment.get(segmentId(a, c)); const second = bySegment.get(segmentId(b, c));
     if (!anchor || !first || !second) continue;

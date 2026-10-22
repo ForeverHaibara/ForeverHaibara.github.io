@@ -103,7 +103,7 @@ describe('new elementary observations and bounded search', () => {
     expect(result.relations.some((r) => r.kind === 'equal-angles')).toBe(true);
   });
   it.each([1e-12, 1, 1e12])('excludes zero and near-zero distances from equal lengths at scale %s', (scale) => {
-    const points = [point('I', 0, 0), point('Alias', 0, 0), point('Near', 1e-10, 0), point('Q', 1, 0), point('X', 0, 1)]
+    const points = [point('I', 0, 0), point('Alias', 0, 0), point('Near', 1e-14, 0), point('Q', 1, 0), point('X', 0, 1)]
       .map((p) => ({ ...p, coordinates: { x: p.coordinates!.x * scale, y: p.coordinates!.y * scale } }));
     const result = discover(points, ['equal-lengths']);
     expect(result.relations).toHaveLength(1);

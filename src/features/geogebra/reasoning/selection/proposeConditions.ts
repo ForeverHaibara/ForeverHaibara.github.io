@@ -1,3 +1,4 @@
+import { SAMPLE_EPSILON } from '../../analysis/numericPrecision';
 import { detectGeometryRelations } from '../../analysis/geometryRelations';
 import type { DependencyGraph } from '../../analysis/graphTypes';
 import type { GeometryRelationKind } from '../../analysis/geometryTypes';
@@ -81,14 +82,14 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
         const trials = samples.map((sample) => ({ index: sample.index, phase: sample.phase, result: assessLocalConstraint(predicate, object.id, sample.objects, false) }));
         const discoveryTrials = trials.filter((trial) => trial.phase === 'discovery' && trial.result);
         const holdoutTrials = trials.filter((trial) => trial.phase === 'holdout' && trial.result);
-        const discoveryFailed = samples.length > 0 && (discoveryTrials.length < 3 || discoveryTrials.some((trial) => trial.result!.residual > 2e-6));
+        const discoveryFailed = samples.length > 0 && (discoveryTrials.length < 3 || discoveryTrials.some((trial) => trial.result!.residual > SAMPLE_EPSILON));
         if (discoveryFailed) {
           report.rejectedCandidates += 1;
-          const failure = discoveryTrials.find((trial) => trial.result!.residual > 2e-6);
+          const failure = discoveryTrials.find((trial) => trial.result!.residual > SAMPLE_EPSILON);
           if (failure && report.counterexamples.length < 8) report.counterexamples.push({ label: formatPredicate(predicate, problem.objects),
             index: failure.index, phase: 'discovery', residual: failure.result!.residual });
         }
-        const holdoutPassed = !samples.length || holdoutTrials.length >= 1 && holdoutTrials.every((trial) => trial.result!.residual <= 2e-6);
+        const holdoutPassed = !samples.length || holdoutTrials.length >= 1 && holdoutTrials.every((trial) => trial.result!.residual <= SAMPLE_EPSILON);
         const extra = contextIds.filter((id) => support.has(id));
         const candidate: ConditionCandidate = { ...group, id, label: formatPredicate(predicate, problem.objects), predicates: [predicate],
           characterization: { objectId: object.id, contextIds: extra },

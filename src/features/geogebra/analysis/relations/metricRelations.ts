@@ -1,3 +1,4 @@
+import { SCALAR_EPSILON } from '../numericPrecision';
 import { groupNearValues } from '../algebra/nearEquality';
 import { RationalRelationSpace } from '../algebra/rationalSpace';
 import { cross, displacement, dot } from '../quantities/vector';
@@ -64,9 +65,9 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       const v = displacement(scene.points[vertex].coordinates, scene.points[c].coordinates);
       if (Math.min(Math.hypot(u.x, u.y), Math.hypot(v.x, v.y)) <= scene.tolerance.minimumLength) continue;
       const value = Math.atan2(Math.abs(cross(u, v)), dot(u, v));
-      if (value < 4e-7 || Math.PI - value < 4e-7) continue; // Flat observations already have collinearity groups.
+      if (value < SCALAR_EPSILON || Math.PI - value < SCALAR_EPSILON) continue; // Flat observations already have collinearity groups.
       const delta = second.angle - first.angle;
-      const sign = Math.abs(value - delta - Math.round((value - delta) / Math.PI) * Math.PI) < 4e-7 ? 1 : -1;
+      const sign = Math.abs(value - delta - Math.round((value - delta) / Math.PI) * Math.PI) < SCALAR_EPSILON ? 1 : -1;
       const constant = Math.round((value - sign * delta) / Math.PI);
       const row = combineExpressions([[{ '@pi': constant }, 1], [{ [first.id]: 1 }, -sign], [{ [second.id]: 1 }, sign]]);
       const representationError = Math.abs(value - sign * delta - constant * Math.PI);
@@ -77,11 +78,11 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       angle.sources = [...new Set([...angle.sources, ...[first.incidenceSource, second.incidenceSource].filter((source): source is string => Boolean(source))])];
       // Reduce before numeric comparison: a space needs O(lines) generator
       // fits instead of a pairwise search over all its derived angle values.
-      const key = reduced.error <= 4e-7 ? reduced.key : `${a}:${vertex}:${c}`;
+      const key = reduced.error <= SCALAR_EPSILON ? reduced.key : `${a}:${vertex}:${c}`;
       angle.key = key;
       const bucket = symbolic.get(key) ?? []; bucket.push(angle); symbolic.set(key, bucket);
     }
-    const epsilon = 4e-7;
+    const epsilon = SCALAR_EPSILON;
     const groups = groupScalarClasses([...symbolic.values()], epsilon, budget, 'Angle comparisons', options.maxComparisons);
     if (enabled.has('equal-angles')) for (const group of groups) {
       const members = group.members;

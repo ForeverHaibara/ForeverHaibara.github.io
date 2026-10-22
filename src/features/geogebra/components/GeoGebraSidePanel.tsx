@@ -4,7 +4,6 @@ import type { EngineCapabilities, GeoGebraEngine, GeometryEvent } from '../types
 import DependencyGraphView from './DependencyGraphView';
 import type { DependencyGraph } from '../analysis/graphTypes';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import GeometryRelationsView from './GeometryRelationsView';
 import GeometryReasoningView from './GeometryReasoningView';
 import type { ObjectLink } from '../interaction/useObjectLink';
 
@@ -97,13 +96,9 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ engine, collapsed
         </div>
         <button type="button" onClick={onToggle} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 hover:text-sky-700">Hide</button>
       </div>
-      <div className="grid grid-cols-2 gap-2 p-4 text-xs">
-        <div className="rounded-xl bg-sky-50 p-3"><span className="block text-slate-500">Version</span><strong className="text-sky-800">{capabilities.version ?? 'Loading'}</strong></div>
-        <div className="rounded-xl bg-emerald-50 p-3"><span className="block text-slate-500">Events</span><strong className="text-emerald-800">{events.length}</strong></div>
-      </div>
-      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dependency graph</h3><p className="mt-1 text-xs leading-5 text-slate-500">Dependencies point toward the object that uses them.</p></div><DependencyGraphView objectLink={objectLink} graph={graph} status={graphStatus} error={graphError} onRefresh={onRefreshGraph} /></div>
-      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Discovered relations</h3><p className="mt-1 text-xs leading-5 text-slate-500">Numerical point relations, ranked by construction novelty.</p></div><GeometryRelationsView objectLink={objectLink} state={geometryRelations} /></div>
-      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conditional reasoning</h3></div><GeometryReasoningView engine={engine} graph={graph} graphStatus={graphStatus} lastEventTime={events[events.length - 1]?.timestamp ?? 0} discovery={geometryRelations} objectLink={objectLink} /></div>
+      <div className="flex items-center justify-between px-4 py-2 text-[10px] text-slate-500"><span>GeoGebra {capabilities.version ?? 'loading'}</span><span>{events.length} events</span></div>
+      <details className="border-t border-slate-100"><summary className="cursor-pointer px-4 py-3 text-xs font-semibold text-slate-500">Dependency graph</summary><DependencyGraphView objectLink={objectLink} graph={graph} status={graphStatus} error={graphError} onRefresh={onRefreshGraph} /></details>
+      <div className="border-t border-slate-100"><div className="px-4 pt-4"><h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Relations & proof</h3><p className="mt-1 text-xs leading-5 text-slate-500">Discover, choose conditions and read the derivation.</p></div><GeometryReasoningView engine={engine} graph={graph} graphStatus={graphStatus} lastEventTime={events[events.length - 1]?.timestamp ?? 0} discovery={geometryRelations} objectLink={objectLink} /></div>
       <div className="min-h-0 flex-1 border-t border-slate-100 px-4 py-4">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Construction events</h3>
         <div className="mt-3 max-h-52 overflow-auto rounded-xl bg-slate-50 p-3 font-mono text-[11px] text-slate-500">

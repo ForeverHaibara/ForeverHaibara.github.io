@@ -1,3 +1,4 @@
+import { SAMPLE_EPSILON } from '../../analysis/numericPrecision';
 import type { GeoGebraEngine } from '../../types';
 import type { ReasoningProblem } from '../ir/types';
 import { createSamplePlan, SAMPLING_SEED } from './samplePlan';
@@ -40,7 +41,7 @@ export const sampleConstruction = async (engine: GeoGebraEngine, problem: Reason
       if (event.data.baseline) {
         const origin = points[0].coordinates!;
         const scale = Math.max(1e-10, ...points.map((point) => Math.hypot(point.coordinates!.x - origin.x, point.coordinates!.y - origin.y)));
-        if (points.some((point) => { const value = event.data.baseline[point.id]; return !value || !Number.isFinite(value.x) || !Number.isFinite(value.y) || Math.hypot(value.x - point.coordinates!.x, value.y - point.coordinates!.y) / scale > 2e-7; })) {
+        if (points.some((point) => { const value = event.data.baseline[point.id]; return !value || !Number.isFinite(value.x) || !Number.isFinite(value.y) || Math.hypot(value.x - point.coordinates!.x, value.y - point.coordinates!.y) / scale > SAMPLE_EPSILON; })) {
           finish(new Error('Replica did not reproduce the coordinate snapshot.'));
         }
       } else if (typeof event.data.progress === 'number') onProgress(event.data.progress);

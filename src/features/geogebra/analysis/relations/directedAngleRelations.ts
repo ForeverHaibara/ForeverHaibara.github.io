@@ -1,3 +1,4 @@
+import { GEOMETRY_EPSILON } from '../numericPrecision';
 import type { QuantityEquation } from '../geometryTypes';
 import type { GeometryScene } from '../scene/geometryScene';
 import { canonicalDirectionEquation, directedAngleValue, positiveHalfTurns, wrapHalfTurns } from '../quantities/directedAngles';
@@ -5,7 +6,7 @@ import type { AngleTriple } from '../quantities/directedAngles';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
 import type { RelationSeed } from './relationSeed';
 
-const EPSILON = 2e-7; // half turns; circular distance, including the 0/pi seam
+const EPSILON = 2 * GEOMETRY_EPSILON; // half turns; circular distance, including the 0/pi seam
 const PATTERNS = [{ scale: 1, offset: 0 }, { scale: -1, offset: 0 }, { scale: 2, offset: 0 },
   { scale: -2, offset: 0 }, { scale: 1, offset: 0.5 }, { scale: -1, offset: 0.5 }];
 

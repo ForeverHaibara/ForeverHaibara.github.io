@@ -1,3 +1,4 @@
+import { MIN_STABLE_AREA, TRIANGLE_EPSILON } from '../numericPrecision';
 import { groupNearValues } from '../algebra/nearEquality';
 import type { RationalRelationSpace } from '../algebra/rationalSpace';
 import { orientedDoubleArea } from '../quantities/vector';
@@ -23,10 +24,10 @@ export const detectTriangles = (scene: GeometryScene, options: DiscoveryOptions,
     const vertices = [a, b, c].sort((left, right) => opposite.get(left)! - opposite.get(right)! || scene.points[left].name.localeCompare(scene.points[right].name)) as [number, number, number];
     const sides = vertices.map((vertex) => opposite.get(vertex)!);
     const [p, q, r] = vertices.map((vertex) => scene.points[vertex].coordinates);
-    if (sides[0] <= scene.tolerance.minimumLength || Math.abs(orientedDoubleArea(p, q, r)) <= 2e-7 * sides[2] ** 2) continue;
+    if (sides[0] <= scene.tolerance.minimumLength || Math.abs(orientedDoubleArea(p, q, r)) <= MIN_STABLE_AREA * sides[2] ** 2) continue;
     triangles.push({ vertices, sides, shape: [sides[0] / sides[2], sides[1] / sides[2]] });
   }
-  const epsilon = 8e-7;
+  const epsilon = TRIANGLE_EPSILON;
   const shapes = groupNearValues(triangles, {
     bucket: (t) => t.shape.map((v) => Math.floor(v / epsilon)),
     matches: (a, b) => a.shape.every((v, i) => Math.abs(v - b.shape[i]) <= epsilon),

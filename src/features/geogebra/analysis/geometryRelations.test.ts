@@ -75,9 +75,11 @@ describe('coincident geometry points', () => {
     expect(result.relations.find((relation) => relation.kind === 'perpendicular')?.witnesses[0].lineFamilies?.flat(2)).toContain('Y');
   });
 
-  it('deduplicates small numerical differences before counting circle points', () => {
+  it('keeps distinct nearby positions without manufacturing a circle', () => {
     const result = discover([point('A', 0, 0), point('B', 2, 0), point('C', 0, 2), point('X', 1e-9, 0), point('Y', 2, 1e-9), point('Z', 0, 2 + 1e-9)]);
-    expect(result.relations.filter((relation) => relation.kind === 'collinear' || relation.kind === 'concyclic')).toEqual([]);
+    expect(result.pointCount).toBe(6);
+    expect(result.relations.filter((relation) => relation.kind === 'concyclic')).toEqual([]);
+    expect(result.relations.some((relation) => relation.kind === 'collinear' && ['A', 'C', 'Z'].every((name) => relation.pointNames.includes(name)))).toBe(true);
   });
 });
 

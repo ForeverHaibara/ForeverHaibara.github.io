@@ -19,8 +19,9 @@ const isTwoDimensionalPoint = (objectType: string | null): boolean => {
 };
 
 const finiteNumber = (value: unknown): number | null => {
-  const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
-  return Number.isFinite(number) ? number : null;
+  // Native coordinate getters return doubles. Display text, empty strings and
+  // formatted command definitions must never be interpreted as coordinates.
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 };
 
 export interface ConstructionSource {

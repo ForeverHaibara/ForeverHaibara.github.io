@@ -1,3 +1,4 @@
+import { SAMPLE_EPSILON } from '../../analysis/numericPrecision';
 import type { PointCoordinate } from '../../analysis/graphTypes';
 import type { GeometryPredicate, ReasoningObject, Segment } from '../ir/types';
 import { predicatePoints } from '../ir/types';
@@ -87,7 +88,7 @@ export const assessLocalConstraint = (predicate: GeometryPredicate, objectId: st
     if (!value.length || value.some((entry) => !Number.isFinite(entry))) return null;
     const residual = Math.max(...value.map(Math.abs));
     if (!differentiate) return { gradients: [], residual };
-    if (residual > 2e-6) return null;
+    if (residual > SAMPLE_EPSILON) return null;
     const h = 1e-5; const [x, y] = [owner.x, owner.y];
     const samples: number[][] = [];
     for (const [dx, dy] of [[h, 0], [-h, 0], [0, h], [0, -h]]) { owner.x = x + dx; owner.y = y + dy; samples.push(evaluate()); }

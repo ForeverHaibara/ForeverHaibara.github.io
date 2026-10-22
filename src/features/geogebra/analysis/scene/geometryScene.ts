@@ -1,3 +1,4 @@
+import { GEOMETRY_EPSILON, MIN_STABLE_AREA } from '../numericPrecision';
 import { groupCircularValues, circularDistance } from '../equivalence';
 import type { DependencyGraph, GraphNode, PointCoordinate } from '../graphTypes';
 import type { GeometryPoint, GeometryTolerance } from '../geometryTypes';
@@ -27,10 +28,10 @@ export interface AnalysisPoint extends GeometryPoint {
   aliases: string[];
 }
 
-export const RELATIVE_DISTANCE = 2e-7;
+export const RELATIVE_DISTANCE = GEOMETRY_EPSILON;
 // Beyond this dynamic range, directions to a distant point cannot reliably
 // distinguish points in the main construction at our angular tolerance.
-const MAX_NORMALIZED_COORDINATE = 1 / RELATIVE_DISTANCE;
+const MAX_NORMALIZED_COORDINATE = 5_000_000;
 
 const normalizeAngle = (angle: number): number => {
   const normalized = angle % Math.PI;
@@ -123,10 +124,21 @@ const groupLinePairs = (pairs: readonly PointPair[], directionRoot: number, tole
       const end = points[anchor.right].coordinates;
       const dx = (end.x - origin.x) / anchor.length;
       const dy = (end.y - origin.y) / anchor.length;
-      return [pair.left, pair.right].every((index) => {
+      const onCarrier = [pair.left, pair.right].every((index) => {
         const point = points[index].coordinates;
         return Math.abs(dx * (point.y - origin.y) - dy * (point.x - origin.x)) <= tolerance.lineOffset;
       });
+      if (!onCarrier) return false;
+      // A long reference can hide the angle between two close, distinct
+      // points. Require new joins to agree too; small offsets alone must not
+      // turn a narrow triangle into a three-point line.
+      const added = [pair.left, pair.right].filter((index) => !candidate.points.has(index));
+      return added.every((index) => [...candidate.points, ...added].every((other) => {
+        if (index === other) return true;
+        const u = points[index].coordinates; const v = points[other].coordinates;
+        const length = Math.hypot(v.x - u.x, v.y - u.y);
+        return length > tolerance.minimumLength && Math.abs(dx * (v.y - u.y) - dy * (v.x - u.x)) <= tolerance.angular * length;
+      }));
     });
     if (group) {
       group.pairs.push(pair);
@@ -146,7 +158,7 @@ export const createCircle = (a: PointCoordinate, b: PointCoordinate, c: PointCoo
   const cc = dot({ x: cx, y: cy }, { x: cx, y: cy });
   const determinant = 2 * cross({ x: bx, y: by }, { x: cx, y: cy });
   const longestSideSquared = Math.max(bb, cc, (bx - cx) ** 2 + (by - cy) ** 2);
-  if (Math.abs(determinant) <= RELATIVE_DISTANCE * longestSideSquared * 2) return null;
+  if (Math.abs(determinant) <= MIN_STABLE_AREA * longestSideSquared * 2) return null;
   const x = (bb * cy - cc * by) / determinant;
   const y = (cc * bx - bb * cx) / determinant;
   const circle = { centerX: a.x + x, centerY: a.y + y, radius: Math.hypot(x, y) };

@@ -35,7 +35,7 @@ describe('midpoints and fixed ratios on positive lengths', () => {
     expect(result.relations).toHaveLength(1);
     expect(result.relations[0].witnesses[0].midpoint).toEqual({ point: 'M', segment: ['A', 'B'] });
     expect(formatRelation(result.relations[0])).toBe('M is the midpoint of (A, B)');
-    expect(discover([point('A', 0, 0), point('M', 1e-10, 0), point('B', 2e-10, 0), point('Far', 1, 1), point('Far2', 2.39, 0.179), point('Far3', 0.418, 3.172)], ['midpoint']).relations).toEqual([]);
+    expect(discover([point('A', 0, 0), point('M', 1e-14, 0), point('B', 2e-14, 0), point('Far', 1, 1), point('Far2', 2.39, 0.179), point('Far3', 0.418, 3.172)], ['midpoint']).relations).toEqual([]);
   });
   it('compresses equal halves and twice-the-half observations with the midpoint source', () => {
     const kinds: GeometryRelationKind[] = ['midpoint', 'equal-lengths', 'length-multiple'];

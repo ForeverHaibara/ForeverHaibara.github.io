@@ -1,3 +1,4 @@
+import { SCALAR_EPSILON } from '../numericPrecision';
 import { RationalRelationSpace } from '../algebra/rationalSpace';
 import { combineExpressions, matchScalarTransform, RationalCombinationIndex } from '../algebra/scalarSearch';
 import { positiveLengthPairs, segmentId } from '../quantities/lengths';
@@ -12,7 +13,7 @@ import { affineClassResidual, groupScalarClasses } from '../algebra/scalarClasse
 import { assessClusterRelation, classTerm } from './clusteredQuantities';
 import { normalizeLengthConstraint, segmentKey } from '../algebra/lengthConstraint';
 
-const EPSILON = 4e-7;
+const EPSILON = SCALAR_EPSILON;
 const RATIOS = [
   { ratio: [1, 1], two: 0, three: 0 },
   { ratio: [3, 2], two: -1, three: 1 },

@@ -1,79 +1,85 @@
 import React, { useState } from 'react';
 import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
 import type { ObjectLink } from '../interaction/useObjectLink';
-import { RELATION_CATALOG } from '../analysis/relations/catalog';
-import { displayScore, formatQuantityGroup, formatRelation, scoreColors } from '../analysis/presentation/formatRelation';
-import { RelationTypeControls } from './RelationTypeControls';
-import { GeneratorDetails } from './GeneratorDetails';
-import { ConditionalDetails } from './ConditionalDetails';
+import { relationLabel } from '../analysis/relations/catalog';
+import { displayScore, scoreColors } from '../analysis/presentation/formatRelation';
+import type { ConditionSelection, ReasoningProblem } from '../reasoning/ir/types';
+import { formatPredicate } from '../reasoning/ir/formatPredicate';
+import { buildCatalogEntries, filterCatalogEntries } from '../reasoning/selection/relationCatalog';
+import type { CatalogView } from '../reasoning/selection/relationCatalog';
+import { RelationDetails } from './RelationDetails';
 
-const GeometryRelationsView: React.FC<{ state: GeometryRelationsState; objectLink: ObjectLink }> = ({ state, objectLink }) => {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selectedOnly, setSelectedOnly] = useState(false);
+interface Props {
+  state: GeometryRelationsState;
+  objectLink: ObjectLink;
+  problem: ReasoningProblem | null;
+  selection: ConditionSelection;
+  aliases: ReadonlyMap<string, string>;
+  fresh: boolean;
+  busy: boolean;
+  onSelection(value: ConditionSelection): void;
+}
+
+const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, selection, aliases, fresh, busy, onSelection }) => {
+  const [view, setView] = useState<CatalogView>('all');
   const [search, setSearch] = useState('');
+  const [selectedOnly, setSelectedOnly] = useState(false);
+  const [limit, setLimit] = useState(100);
   const { preferences, setPreferences, result } = state;
-  const query = search.trim().toLocaleLowerCase();
-  const relations = result?.relations.filter((relation) => preferences.visibleKinds.includes(relation.kind)
-    && preferences.options.enabledKinds.includes(relation.kind)
-    && displayScore(relation.nonTriviality) >= preferences.minimumValue
-    && (!selectedOnly || objectLink.selectedNames.length === 0 || objectLink.selectedNames.some((name) => relation.pointNames.includes(name)))
-    && (!query || (formatRelation(relation) + ' ' + relation.pointNames.join(' ')).toLocaleLowerCase().includes(query))) ?? [];
-  return <div className="space-y-3 p-3">
-    <div className="flex flex-wrap items-center gap-2 text-[11px]">
-      <label className="flex items-center gap-1"><input type="checkbox" checked={preferences.automatic} onChange={(event) => setPreferences({ ...preferences, automatic: event.target.checked })} />Auto</label>
-      <button className="rounded bg-sky-50 px-2 py-1 font-semibold text-sky-700 hover:bg-sky-100" type="button" onClick={state.run}>{state.status === 'calculating' ? 'Restart' : 'Run once'}</button>
-      <button className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100" type="button" onClick={state.stop}>Stop</button>
-    </div>
-    <p className="text-[10px] leading-4 text-slate-500">Numerical exploration. Value colors show construction novelty. Generator models compress observed consequences.</p>
-    <details className="rounded-lg border border-slate-200 p-2 text-[11px]">
-      <summary className="cursor-pointer font-semibold text-slate-600">Compute and display ({preferences.options.enabledKinds.length} enabled)</summary>
-      <RelationTypeControls preferences={preferences} onChange={setPreferences} />
-      <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={!preferences.options.compressConsequences} onChange={(event) => setPreferences({ ...preferences, options: { ...preferences.options, compressConsequences: !event.target.checked } })} />Expand derived observations (recompute)</label>
-      <label className="mt-2 flex items-center gap-2">Budget <select aria-label="Discovery budget" className="rounded border border-slate-200 px-1" value={preferences.options.maxAngles <= 5000 ? 'light' : preferences.options.maxAngles >= 50000 ? 'deep' : 'standard'} onChange={(event) => {
-        const limits = event.target.value === 'light' ? { maxTriangles: 2000, maxAngles: 5000, maxComparisons: 50000, maxModels: 3, maxRelations: 200 }
-          : event.target.value === 'deep' ? { maxTriangles: 20000, maxAngles: 50000, maxComparisons: 500000, maxModels: 8, maxRelations: 1000 }
-            : { maxTriangles: 8000, maxAngles: 20000, maxComparisons: 200000, maxModels: 6, maxRelations: 500 };
-        setPreferences({ ...preferences, options: { ...preferences.options, ...limits } });
-      }}><option value="light">Light</option><option value="standard">Standard</option><option value="deep">Deep</option></select></label>
-      <p className="mt-1 text-slate-500">Shared geometric resources may still be needed by other enabled types.</p>
-    </details>
-    <div className="flex flex-wrap items-center gap-2 text-[11px]">
-      <label>Min value <input className="w-14 rounded border border-slate-200 px-1" type="number" min={0} max={100} value={preferences.minimumValue} onChange={(event) => setPreferences({ ...preferences, minimumValue: Number(event.target.value) })} /></label>
+  const entries = buildCatalogEntries(problem, result?.relations ?? [], aliases);
+  const matching = filterCatalogEntries(entries, problem, selection, { view, search, selectedOnly, selectedNames: objectLink.selectedNames,
+    minimumValue: preferences.minimumValue, visibleKinds: preferences.visibleKinds, computedKinds: preferences.options.enabledKinds });
+  const shown = matching.slice(0, limit);
+  const modes: Array<[CatalogView, string, number]> = [['all', 'All', entries.length], ['accepted', 'Accepted', selection.acceptedIds.length],
+    ['goal', 'Goal', selection.goalId ? 1 : 0], ['rejected', 'Rejected', entries.filter(({ candidate }) => candidate.hypothesisEligible).length]];
+  return <section aria-label="Relations catalog" className="space-y-2">
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Relation views">{modes.map(([mode, label, count]) => <button key={mode} type="button"
+      aria-pressed={view === mode} onClick={() => { setView(mode); setLimit(100); }}
+      className={`rounded-full px-2.5 py-1 text-[11px] ${view === mode ? 'bg-sky-700 font-semibold text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} ({count})</button>)}</div>
+    {view === 'rejected' && selection.assumptionMode !== 'hypothetical' && <p className="text-[10px] leading-4 text-amber-800">To use a rejected observation, enable Explore hypotheses in “Hypotheses, checks and export” above.</p>}
+    <input aria-label="Search relations" className="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-xs" placeholder="Find a relation, point or diagnostic…"
+      value={search} onChange={(event) => { setSearch(event.target.value); setLimit(100); }} />
+    <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
+      <label>Min value <input aria-label="Minimum relation value" className="w-12 rounded border border-slate-200 px-1" type="number" min={0} max={100} value={preferences.minimumValue}
+        onChange={(event) => setPreferences({ ...preferences, minimumValue: Number(event.target.value) })} /></label>
       <label className="flex items-center gap-1"><input type="checkbox" checked={selectedOnly} onChange={(event) => setSelectedOnly(event.target.checked)} />Involve selected</label>
-      <input aria-label="Search relations" className="min-w-0 flex-1 rounded border border-slate-200 px-2 py-1" placeholder="Object or conclusion…" value={search} onChange={(event) => setSearch(event.target.value)} />
     </div>
-    <div role="status" aria-live="polite" className="text-[11px] text-slate-500">
-      {state.status === 'calculating' ? 'Computing in background… ' : ''}{state.stale ? 'Previous snapshot/settings · ' : ''}
-      {result ? `${relations.length} shown / ${result.relations.length} groups · ${result.pointCount} points` : 'Run discovery to inspect the construction.'}
-    </div>
-    {state.error && <p className="rounded bg-rose-50 p-2 text-xs text-rose-700">{state.error}</p>}
-    {state.storageUnavailable && <p className="text-[10px] text-slate-500">Settings are available for this session; browser storage is unavailable.</p>}
-    {result && result.diagnostics.length > 0 && <details className="rounded-lg bg-amber-50 px-2 py-2 text-[10px] text-amber-800"><summary className="cursor-pointer">Search limits / notes ({result.diagnostics.length})</summary><p className="mt-1">{result.diagnostics.join(' ')}</p></details>}
-    {result && relations.length === 0 && <p className="text-xs text-slate-500">{result.relations.length ? 'Results are hidden by the current compute/display filters.' : 'No observations in the enabled search scope.'}</p>}
-    <div className="max-h-[520px] space-y-2 overflow-auto pr-1">{relations.map((relation) => {
-      const expanded = expandedId === relation.id;
-      const linked = objectLink.selectedNames.some((name) => relation.pointNames.includes(name));
-      return <article key={relation.id} className={`rounded-xl border bg-white px-3 py-2 ${linked ? 'border-sky-400' : 'border-slate-200'}`}>
-        <button type="button" className="w-full text-left" aria-expanded={expanded} onClick={() => setExpandedId(expanded ? null : relation.id)}>
-          <p className="mb-1 text-[10px] text-slate-500">{RELATION_CATALOG.find((item) => item.kind === relation.kind)!.label}{relation.derived ? ' · generated consequence' : ''}{relation.family ? ' · finite witness family' : ''}</p>
-          <div className="flex items-start justify-between gap-2"><p className="min-w-0 break-words text-xs font-semibold text-slate-700">{formatRelation(relation)}</p><span style={scoreColors(relation.nonTriviality)} className="shrink-0 rounded px-2 py-1 text-[10px] font-semibold">Value {displayScore(relation.nonTriviality)}</span></div>
-        </button>
-        {expanded && <div className="mt-2 space-y-2 border-t border-slate-100 pt-2 text-[10px] text-slate-500">
-          <div className="flex flex-wrap gap-1">{relation.pointNames.map((name) => <button key={name} className="ggb-object-chip" aria-pressed={objectLink.selectedNames.includes(name)} onClick={() => objectLink.select(name)} onPointerEnter={() => objectLink.hover(name)} onPointerLeave={() => objectLink.hover(null)} onFocus={() => objectLink.focus(name)} onBlur={() => objectLink.focus(null)}>{name}</button>)}</div>
-          <p>{relation.explanation}</p>
-          <ConditionalDetails relation={relation} />
-          {relation.witnesses[0].equation?.terms.filter((term) => (term.equivalents?.length ?? 0) > 1).map((term, i) => <p key={i}>Equal quantities ({term.equivalents!.length}): {formatQuantityGroup(term.equivalents!, 24)}</p>)}
-          {relation.derivedFrom && relation.derivedFrom.length > 0 && <p>Generated from: {relation.derivedFrom.slice(0, 3).map((id) => {
-            const parent = result?.relations.find((item) => item.id === id || item.family?.instances.some((instance) => instance.sourceId === id));
-            return parent ? formatRelation(parent) : id.startsWith('incidence:') ? `shared line carrier (${id.slice('incidence:'.length).split('|').join(', ')})` : 'an observation outside the retained results';
-          }).join('; ')}{relation.derivedFrom.length > 3 ? ' …' : ''}</p>}
-          <p>Construction span: {relation.metric.constructionSpan?.toFixed(2) ?? 'disconnected'}; readable dependencies: {(relation.metric.dependencyCoverage * 100).toFixed(0)}%</p>
-          {relation.witnesses[0].triangleSymmetryOrder && relation.witnesses[0].triangleSymmetryOrder > 1 && <p>One representative correspondence; numerical triangle symmetry order {relation.witnesses[0].triangleSymmetryOrder}.</p>}
-          <GeneratorDetails model={relation.model} lengthModel={relation.lengthModel} />
-        </div>}
+    <p role="status" aria-live="polite" className="text-[10px] leading-4 text-slate-500">
+      {state.status === 'calculating' ? 'Computing observations… ' : ''}{state.stale ? 'Discovery is updating · ' : ''}
+      {shown.length} shown / {matching.length} matching · {result?.pointCount ?? problem?.objects.filter((object) => object.coordinates).length ?? 0} points
+    </p>
+    {!shown.length && <p className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500">{problem ? 'No relations match this view. Display filters do not clear your conditions or goal.' : 'Discover relations or suggest conditions to begin.'}</p>}
+    <div className="max-h-[32rem] space-y-2 overflow-auto pr-1">{shown.map(({ candidate, relation }) => {
+      const accepted = selection.acceptedIds.includes(candidate.id); const goal = selection.goalId === candidate.id;
+      const unsupported = !candidate.predicates.length;
+      const disabled = !fresh || busy || !accepted && (unsupported || candidate.diagnostics.length > 0 && !(selection.assumptionMode === 'hypothetical' && candidate.hypothesisEligible));
+      return <article key={candidate.id} className={`rounded-xl border p-2.5 ${accepted || goal ? 'border-sky-300 bg-sky-50/40' : 'border-slate-200 bg-white'}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0"><p className="text-[10px] text-slate-500">{relation ? relationLabel(relation.kind) : 'Local condition'}{relation?.derived ? ' · generated consequence' : ''}</p>
+            <p className="mt-1 break-words text-xs font-semibold leading-5 text-slate-700">{candidate.label}</p></div>
+          {relation && <span style={scoreColors(relation.nonTriviality)} className="shrink-0 rounded px-2 py-1 text-[10px] font-semibold">Value {displayScore(relation.nonTriviality)}</span>}
+        </div>
+        <p className={`mt-1 text-[10px] ${candidate.hypothesisEligible ? 'text-amber-700' : 'text-slate-500'}`}>{candidate.evidence.kind === 'sampled'
+          ? `${candidate.evidence.discoverySamples} discovery + ${candidate.evidence.holdoutSamples} held-out checks${candidate.evidence.skippedSamples ? ` · ${candidate.evidence.skippedSamples} undefined` : ''}` : 'Observed in this snapshot'}{candidate.hypothesisEligible ? ' · failed or insufficient checks' : ''}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+          <label className={`flex items-center gap-1.5 rounded px-1 py-1 ${accepted ? 'font-semibold text-sky-800' : 'text-slate-600'}`}>
+            <input type="checkbox" aria-label={`Accept condition: ${candidate.label}`} checked={accepted} disabled={disabled}
+              onChange={() => onSelection({ ...selection, acceptedIds: accepted ? selection.acceptedIds.filter((id) => id !== candidate.id) : [...selection.acceptedIds, candidate.id] })} />
+            {candidate.hypothesisEligible ? 'Assume despite checks' : 'Accept condition'}</label>
+          <button type="button" aria-pressed={goal} disabled={!fresh || busy || unsupported} onClick={() => onSelection({ ...selection, goalId: goal ? null : candidate.id })}
+            className={`rounded px-2 py-1 disabled:opacity-40 ${goal ? 'bg-sky-100 font-semibold text-sky-800' : 'text-slate-500 hover:bg-slate-100'}`}>{goal ? 'Goal selected' : 'Use as goal'}</button>
+        </div>
+        <details className="mt-1 border-t border-slate-100 pt-1 text-[10px] text-slate-500"><summary className="cursor-pointer">Details · {candidate.predicates.length} relations</summary>
+          {candidate.predicates.map((predicate, index) => <p key={index} className="mt-1 break-words leading-4">{formatPredicate(predicate, problem!.objects)}</p>)}
+          <div className="mt-2">{relation ? <RelationDetails relation={relation} relations={result?.relations ?? []} objectLink={objectLink} />
+            : <p>Local numerical condition. It has no global discovery value score.</p>}</div>
+        </details>
+        {candidate.diagnostics.map((message) => <p key={message} className="mt-1 text-[10px] leading-4 text-amber-700">{message}</p>)}
       </article>;
     })}</div>
-  </div>;
+    {shown.length < matching.length && <button type="button" className="w-full rounded-lg bg-slate-100 p-2 text-[11px] text-sky-700" onClick={() => setLimit(limit + 100)}>Show more ({matching.length - shown.length} remaining)</button>}
+    <p className="text-[10px] leading-4 text-slate-500">One catalog for observations, conditions and goals. Value measures construction novelty. Sample checks are evidence, not proof. Local suggestions have no global value score.</p>
+  </section>;
 };
 
 export default GeometryRelationsView;

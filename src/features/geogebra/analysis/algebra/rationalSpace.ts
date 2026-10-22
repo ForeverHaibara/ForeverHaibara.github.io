@@ -1,3 +1,4 @@
+import { GEOMETRY_EPSILON } from '../numericPrecision';
 // Exact algebra of observed, lifted affine equations. This is not a proof engine
 // or an integer-lattice saturation algorithm. Constants are never pivot columns.
 type Fraction = readonly [bigint, bigint];
@@ -102,7 +103,7 @@ export const fitRationalCombination = (target: number, bases: readonly number[],
         if (!Number.isSafeInteger(constant)) continue;
         const residual = Math.abs(d * target - value - constant * unit) / d;
         const cost = d + coefficients.reduce((sum, coefficient) => sum + Math.abs(coefficient), 0) + Math.abs(constant);
-        if (residual <= 2e-7 && (cost < bestCost || cost === bestCost && residual < best!.residual)) {
+        if (residual <= 2 * GEOMETRY_EPSILON && (cost < bestCost || cost === bestCost && residual < best!.residual)) {
           best = { coefficients, denominator: d, constant, residual }; bestCost = cost;
         }
       }

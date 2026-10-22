@@ -87,4 +87,15 @@ describe('local black-box characterization', () => {
     expect(report.coreIds).toHaveLength(0); expect(report.rank).toBe(0);
     expect(report.diagnostics.join(' ')).toContain('no replacements');
   });
+
+  it('rejects held-out errors small enough to disappear in display rounding', () => {
+    const sampling = samplesForMidpoints();
+    sampling.samples[4].coordinates['object:M']!.y += 5e-8;
+    const proposal = proposeConditions(midpointConstruction(), DEFAULT_CHARACTERIZATION_OPTIONS, sampling);
+    const report = proposal.objects.find((object) => object.objectId === 'object:M')!;
+    expect(report.coreIds).toHaveLength(0);
+    const rejected = proposal.problem.candidates.find((entry) => entry.characterization?.objectId === 'object:M' && entry.predicates[0].kind === 'midpoint')!;
+    expect(rejected.hypothesisEligible).toBe(true);
+    expect(rejected.diagnostics.join(' ')).toContain('held-out');
+  });
 });
