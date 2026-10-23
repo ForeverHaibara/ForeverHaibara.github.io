@@ -3,6 +3,7 @@ import type { GeoGebraEngine } from '../../types';
 import type { ReasoningProblem } from '../ir/types';
 import { createSamplePlan, SAMPLING_SEED } from './samplePlan';
 import type { CoordinateSample, SamplingResult } from './types';
+import { REPLICA_SNAPSHOT_WARNING } from './types';
 
 /** Only read the live engine. All setCoords calls occur inside a disposable iframe. */
 export const sampleConstruction = async (engine: GeoGebraEngine, problem: ReasoningProblem, signal: AbortSignal,
@@ -29,9 +30,11 @@ export const sampleConstruction = async (engine: GeoGebraEngine, problem: Reason
     Object.assign(frame.style, { position: 'fixed', left: '-10000px', top: '0', width: '640px', height: '480px', visibility: 'hidden' });
     const token = window.crypto.randomUUID();
     const diagnostics = free.length < 3 ? ['Fewer than three movable free points: shape variation may be limited.'] : [];
+    let baselineMatched: boolean | undefined;
     const finish = (error?: Error, samples?: CoordinateSample[]) => {
       clearTimeout(timer); window.removeEventListener('message', receive); signal.removeEventListener('abort', abort); frame.remove();
-      if (error) reject(error); else resolve({ seed: SAMPLING_SEED, samples: samples!, variedPointIds: free.map((point) => point.id), diagnostics });
+      if (error) reject(error); else resolve({ seed: SAMPLING_SEED, samples: samples!, variedPointIds: free.map((point) => point.id), diagnostics,
+        ...(baselineMatched === undefined ? {} : { baselineMatched }) });
     };
     const abort = () => finish(new Error('Condition search stopped.'));
     const receive = (event: MessageEvent) => {
@@ -42,8 +45,15 @@ export const sampleConstruction = async (engine: GeoGebraEngine, problem: Reason
         const origin = points[0].coordinates!;
         const scale = Math.max(1e-10, ...points.map((point) => Math.hypot(point.coordinates!.x - origin.x, point.coordinates!.y - origin.y)));
         if (points.some((point) => { const value = event.data.baseline[point.id]; return !value || !Number.isFinite(value.x) || !Number.isFinite(value.y) || Math.hypot(value.x - point.coordinates!.x, value.y - point.coordinates!.y) / scale > SAMPLE_EPSILON; })) {
-          finish(new Error('Replica did not reproduce the coordinate snapshot.'));
+          // The replica is unusable as evidence, but the live snapshot still
+          // supports provisional condition search. Return a warning instead of
+          // aborting the search, and never mix in coordinates from this copy.
+          baselineMatched = false;
+          diagnostics.push(REPLICA_SNAPSHOT_WARNING);
+          finish(undefined, []);
+          return;
         }
+        baselineMatched = true;
       } else if (typeof event.data.progress === 'number') onProgress(event.data.progress);
       else if (Array.isArray(event.data.samples)) finish(undefined, event.data.samples);
       else if (event.data.error) finish(new Error(String(event.data.error)));

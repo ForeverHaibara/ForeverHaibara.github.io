@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CharacterizationProposal, CoverageResult } from '../reasoning/selection/types';
 import type { ReasoningProblem } from '../reasoning/ir/types';
+import { REPLICA_SNAPSHOT_WARNING } from '../reasoning/sampling/types';
 
 interface Props {
   proposal: CharacterizationProposal | null;
@@ -18,6 +19,7 @@ const ConditionSuggestions: React.FC<Props> = ({ proposal, problem, coverage, fr
   const name = (id: string) => proposal?.problem.objects.find((object) => object.id === id)?.name ?? id;
   return <div className="space-y-2">
     {error && <p role="alert" className="break-words text-rose-700">{error}</p>}
+    {proposal?.sampling?.baselineMatched === false && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[10px] leading-4 text-amber-800"><strong>{REPLICA_SNAPSHOT_WARNING}</strong> Available conditions were kept from the current snapshot, without replica validation. Definitions may be incomplete; review Accepted and add any missing conditions manually.</p>}
     {proposal && <details className="ggb-reasoning-options">
       <summary>Suggested conditions · {proposal.coreIds.length} available</summary>
       <div className="mt-2 space-y-2">
