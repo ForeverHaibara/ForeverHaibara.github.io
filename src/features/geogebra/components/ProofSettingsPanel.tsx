@@ -151,7 +151,7 @@ export default function ProofSettingsPanel({ preferences, discovery, storageUnav
       onApply(next); discovery.setPreferences({ ...discoveryDraft, options }); setSavedFingerprint(fingerprint); setApplied(true);
     }}>
       <header className="ggb-proof-dialog-header">
-        <span className="ggb-proof-dialog-mark"><StudioIcon name="settings" size={22} /></span>
+        <span className="ggb-proof-dialog-mark"><StudioIcon name="sparkles" size={22} /></span>
         <div><h2 ref={titleRef} tabIndex={-1} id={`${id}-title`}>Proof settings</h2><p id={`${id}-intro`}>Search depth, runtime and discovery.</p></div>
         <StudioIconButton icon="close" label="Close proof settings" onClick={onClose} />
       </header>
