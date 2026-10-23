@@ -18,6 +18,23 @@ import numericals as ng
 from proof_algebra import Basis, ProofGraph, plus, scaled
 
 
+def normalize_computation_limits(value):
+    """Validate again at the Python boundary, including for exported JSON input.
+
+    Keep these defensive bounds aligned with reasoningPreferences.ts.
+    """
+    source = value if isinstance(value, dict) else {}
+    result = {}
+    for key, default, minimum, maximum in (
+        ("maxProofNodes", 1600, 100, 10000),
+        ("maxVectorRounds", 12, 1, 24),
+        ("maxVectorQueries", 100000, 100, 500000),
+    ):
+        number = source.get(key)
+        result[key] = max(minimum, min(maximum, int(number))) if type(number) in (int, float) and math.isfinite(number) else default
+    return result
+
+
 def symbol(domain, a, b):
     a, b = sorted((str(a), str(b)))
     return {"angle": f"dir({a},{b})", "length-add": f"len({a},{b})", "length-product": f"log(|{a} {b}|)"}[domain]
@@ -30,8 +47,9 @@ def logarithm(value):
 
 
 class Knowledge:
-    def __init__(self, points, hypothetical=False, vector_context=None):
-        self.graph = ProofGraph()
+    def __init__(self, points, hypothetical=False, vector_context=None, limits=None):
+        self.limits = limits or {}
+        self.graph = ProofGraph(self.limits.get("maxProofNodes", 1600))
         self.bases = {domain: Basis(self.graph, domain) for domain in ("angle", "length-add", "length-product")}
         self.points = {str(point): point for point in points}
         self.hypothetical = hypothetical
@@ -428,7 +446,8 @@ def generate_proof(data, validate_assumption):
     if any(not all(math.isfinite(float(value)) for value in point.value) for point in problem.points):
         raise ValueError("Non-finite proof coordinates")
     hypothetical = data.get("assumptionMode") == "hypothetical"
-    knowledge = Knowledge(problem.points, hypothetical, data.get("vectorContext"))
+    limits = normalize_computation_limits(data.get("computationLimits"))
+    knowledge = Knowledge(problem.points, hypothetical, data.get("vectorContext"), limits)
     symbols = {entry["id"]: entry["symbol"] for entry in data.get("names", [])}
     for branch in data.get("branches", []):
         if branch["role"] == "assumption":
@@ -468,7 +487,7 @@ def generate_proof(data, validate_assumption):
                 engine.current_assumption = None
         knowledge.sync_lengths()
     proved_queries = {}
-    for iteration in range(12 if knowledge.vector else 1):
+    for iteration in range(limits["maxVectorRounds"] if knowledge.vector else 1):
         before = (sum(len(basis.rows) for basis in knowledge.bases.values()),
                   len(engine.known_similar) if engine else 0)
         if engine:

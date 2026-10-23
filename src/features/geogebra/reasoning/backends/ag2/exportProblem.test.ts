@@ -3,8 +3,18 @@ import { candidate, discoveredMidpointProblem, midpointProblem } from '../../__f
 import { exportAg2Problem, exportAg2Queries, exportAg2Proof } from './exportProblem';
 import { isogonalConstruction, isogonalPredicates } from '../../__fixtures__/isogonal';
 import { createDiscoveryProblem } from '../../sources/discoveryProblem';
+import { reasoningPreset } from '../../preferences/reasoningPreferences';
 
 describe('conditional AG2 export', () => {
+  it('honors the additional-query budget, preserves an explicit goal and records computation limits', () => {
+    const settings = { ...reasoningPreset(), maxProofQueries: 1, maxProofNodes: 400, maxVectorRounds: 2 };
+    const selected = { acceptedIds: ['m-midpoint'], goalId: null };
+    const result = exportAg2Proof(midpointProblem(), selected, settings).value!;
+    expect(result.queries).toHaveLength(1);
+    expect(result.computationLimits).toEqual({ maxProofNodes: 400, maxVectorRounds: 2, maxVectorQueries: 100000 });
+    const explicit = exportAg2Proof(midpointProblem(), { ...selected, goalId: 'midsegment' }, settings).value!;
+    expect(explicit.queries.map((query) => query.id)).toEqual(['midsegment']);
+  });
   it('retains evidence-rejected hypotheses with an explicit mode and source mapping', () => {
     const problem = midpointProblem();
     problem.candidates[0].diagnostics = ['A sampled counterexample was found.'];

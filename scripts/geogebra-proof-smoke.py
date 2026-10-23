@@ -15,10 +15,21 @@ root = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(root / "public" / "geometry-reasoning"), str(root / "public" / "vendor" / "alphageometry2")]
 from ag2_bridge import solve_json
 from proof_algebra import Basis, ProofGraph, replay_algebra
+from proof_ddar import Knowledge, normalize_computation_limits
 from fractions import Fraction as F
 
 
 class ReadableProofTests(unittest.TestCase):
+    def test_computation_limits_are_bounded_and_control_recording(self):
+        limits = normalize_computation_limits({"maxProofNodes": 100, "maxVectorRounds": 999, "maxVectorQueries": -1})
+        self.assertEqual(limits, {"maxProofNodes": 100, "maxVectorRounds": 24, "maxVectorQueries": 100})
+        self.assertEqual(normalize_computation_limits({"maxProofNodes": float("inf")})["maxProofNodes"], 1600)
+        knowledge = Knowledge([], limits=limits)
+        for _ in range(110):
+            knowledge.graph.add("geometry", "test-rule")
+        self.assertEqual(len(knowledge.graph.nodes), 100)
+        self.assertTrue(knowledge.graph.limited)
+
     @classmethod
     def setUpClass(cls):
         generated = subprocess.check_output(["node", "node_modules/vite-node/vite-node.mjs", "scripts/geogebra-reasoning-fixtures.ts"], cwd=root, text=True, encoding="utf-8")

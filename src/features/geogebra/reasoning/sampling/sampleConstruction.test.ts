@@ -7,7 +7,7 @@ import { proposeConditions } from '../selection/proposeConditions';
 import { DEFAULT_CHARACTERIZATION_OPTIONS } from '../selection/types';
 import { acceptSuggestedConditions } from '../selection/relationCatalog';
 
-const setup = async () => {
+const setup = async (timeoutMs?: number) => {
   const listeners = new Set<(event: MessageEvent) => void>();
   const frame = { style: {}, contentWindow: { postMessage: vi.fn() }, setAttribute: vi.fn(), remove: vi.fn() };
   const append = vi.fn();
@@ -20,7 +20,7 @@ const setup = async () => {
   const exportGgb = vi.fn(async () => new Blob(['replica']));
   const engine = { callApi, exportGgb } as unknown as GeoGebraEngine;
   const controller = new AbortController(); const progress = vi.fn();
-  const result = sampleConstruction(engine, midpointProblem(), controller.signal, progress);
+  const result = sampleConstruction(engine, midpointProblem(), controller.signal, progress, timeoutMs);
   // Wait for read-only API calls and the Blob conversion, without real network or timers.
   await vi.waitFor(() => expect(append).toHaveBeenCalledOnce());
   const message = (data: object, overrides: object = {}) => {
@@ -34,6 +34,13 @@ const setup = async () => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('isolated construction sampling lifecycle', () => {
+  it('uses the configured copy-check timeout and releases its resources', async () => {
+    vi.useFakeTimers(); const task = await setup(5000);
+    const rejection = expect(task.result).rejects.toThrow('time budget');
+    await vi.advanceTimersByTimeAsync(4000); expect(task.frame.remove).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1000); await rejection;
+    expect(task.frame.remove).toHaveBeenCalledOnce(); expect(task.listeners.size).toBe(0);
+  });
   it('removes the replica and listeners when cancelled; never mutates the live API', async () => {
     const task = await setup();
     const rejection = expect(task.result).rejects.toThrow('stopped');

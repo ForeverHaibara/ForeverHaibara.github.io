@@ -16,6 +16,24 @@ from proof_algebra import replay_algebra
 
 
 class VectorProofTests(unittest.TestCase):
+    def test_custom_vector_budget_reports_partial_results(self):
+        result = self.run_case("B", computationLimits={"maxProofNodes": 1600, "maxVectorRounds": 1, "maxVectorQueries": 100})
+        proof = result["proof"]
+        self.assertTrue(proof["vectorDiagnostics"]["limited"])
+        self.assertTrue(proof["limited"])
+        self.assertEqual(proof["explanation"], "partial")
+        self.assertLessEqual(proof["vectorDiagnostics"]["rounds"], 1)
+        self.assertLessEqual(proof["vectorDiagnostics"]["queries"], 100)
+        self.assertTrue(proof["algebraReplay"]["valid"])
+
+    def test_round_limit_stops_feedback_before_the_default_closure(self):
+        result = self.run_case("B-products-feedback", computationLimits={"maxVectorRounds": 1})
+        proof = result["proof"]
+        self.assertEqual(proof["vectorDiagnostics"]["rounds"], 1)
+        self.assertTrue(proof["limited"])
+        self.assertEqual(proof["explanation"], "partial")
+        self.assertTrue(proof["algebraReplay"]["valid"])
+
     @classmethod
     def setUpClass(cls):
         raw = subprocess.check_output(["node", "node_modules/vite-node/vite-node.mjs", "scripts/geogebra-vector-fixtures.ts"], cwd=root, text=True, encoding="utf-8")

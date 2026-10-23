@@ -77,11 +77,11 @@ class VectorKnowledge:
         return product_row(operation, [term(left, right)])
 
     def member(self, operation, row):
-        self.queries += 1
-        if self.queries > 100000:
+        if self.exhausted or self.queries >= self.k.limits.get("maxVectorQueries", 100000):
             self.limited = True
             self.exhausted = True
             return None
+        self.queries += 1
         return self.bases[operation].membership(row)
 
     def add(self, operation, row, rule, parents, **content):

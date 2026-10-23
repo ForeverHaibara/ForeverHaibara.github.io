@@ -11,6 +11,14 @@ export interface DiscoveryPreferences {
   knownKinds: GeometryRelationKind[];
 }
 export const DISCOVERY_PREFERENCES_KEY = 'geogebra-discovery-preferences-v1';
+export const DISCOVERY_BUDGET_FIELDS = {
+  maxTriangles: { label: 'Triangle candidates', help: 'Maximum triangle candidates per discovery run.', min: 0, max: 1000000, light: 2000, deep: 20000 },
+  maxAngles: { label: 'Angle / vector candidates', help: 'Candidate allowance for each applicable angle or vector resource.', min: 0, max: 1000000, light: 5000, deep: 50000 },
+  maxComparisons: { label: 'Comparisons per resource', help: 'Separate allowance for each named comparison resource; not a global total.', min: 0, max: 1000000, light: 50000, deep: 500000 },
+  maxModels: { label: 'Generator models', help: 'Maximum models per generator family.', min: 0, max: 12, light: 3, deep: 8 },
+  maxRelations: { label: 'Returned relations', help: 'Maximum relations retained in the discovery catalog.', min: 0, max: 1000000, light: 200, deep: 1000 },
+} as const;
+export const DISCOVERY_BUDGET_KEYS = Object.keys(DISCOVERY_BUDGET_FIELDS) as Array<keyof typeof DISCOVERY_BUDGET_FIELDS>;
 export const defaultDiscoveryPreferences = (): DiscoveryPreferences => ({ automatic: true,
   options: { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: [...DEFAULT_RELATION_KINDS] }, visibleKinds: [...ALL_RELATION_KINDS], minimumValue: 0, knownKinds: [...ALL_RELATION_KINDS] });
 
@@ -39,9 +47,9 @@ export const normalizeDiscoveryPreferences = (value: unknown): DiscoveryPreferen
     const options = source.options as Record<string, unknown>;
     result.options.enabledKinds = migrate(options.enabledKinds, result.options.enabledKinds, DEFAULT_RELATION_KINDS);
     if (typeof options.compressConsequences === 'boolean') result.options.compressConsequences = options.compressConsequences;
-    for (const key of ['maxTriangles', 'maxAngles', 'maxComparisons', 'maxModels', 'maxRelations'] as const) {
+    for (const key of DISCOVERY_BUDGET_KEYS) {
       const number = options[key];
-      if (typeof number === 'number' && Number.isFinite(number)) result.options[key] = Math.round(Math.max(0, Math.min(key === 'maxModels' ? 12 : 1000000, number)));
+      if (typeof number === 'number' && Number.isFinite(number)) result.options[key] = Math.round(Math.max(DISCOVERY_BUDGET_FIELDS[key].min, Math.min(DISCOVERY_BUDGET_FIELDS[key].max, number)));
     }
   }
   return result;

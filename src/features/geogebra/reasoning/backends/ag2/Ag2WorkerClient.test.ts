@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { midpointProblem } from '../../__fixtures__/problems';
 import { exportAg2Problem } from './exportProblem';
 import { Ag2WorkerClient } from './Ag2WorkerClient';
+import { proofComputationLimits, reasoningPreset } from '../../preferences/reasoningPreferences';
 
 const problem = () => exportAg2Problem(midpointProblem(), { acceptedIds: ['m-midpoint', 'n-midpoint'], goalId: 'midsegment' }).value!;
 const answer = { status: 'derived', checks: [true], elapsedMs: 1, points: 5, assumptions: 4, certificate: null };
@@ -20,6 +21,26 @@ const setup = () => { TestWorker.instances = []; vi.stubGlobal('Worker', TestWor
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe('AG2 worker lifecycle', () => {
+  it('uses a snapshot of custom deadlines and forwards computation limits to Python', async () => {
+    vi.useFakeTimers(); const client = setup();
+    const settings = { ...reasoningPreset(), loadingSeconds: 15, solvingSeconds: 2, maxProofNodes: 300, maxVectorRounds: 3, maxVectorQueries: 200 };
+    const first = client.run(problem(), () => undefined, settings);
+    const rejected = expect(first).rejects.toThrow('time budget');
+    expect(TestWorker.instances[0].request).toMatchObject({ problem: { computationLimits: proofComputationLimits(settings) } });
+    settings.solvingSeconds = 90;
+    await vi.advanceTimersByTimeAsync(14000);
+    expect(TestWorker.instances[0].terminated).toBe(false);
+    TestWorker.instances[0].reply({ phase: 'solving' });
+    await vi.advanceTimersByTimeAsync(1999); expect(TestWorker.instances[0].terminated).toBe(false);
+    await vi.advanceTimersByTimeAsync(1); await rejected;
+    expect(TestWorker.instances[0].terminated).toBe(true);
+  });
+  it('enforces a custom loading deadline before any solving phase', async () => {
+    vi.useFakeTimers(); const client = setup();
+    const rejected = expect(client.run(problem(), () => undefined, { ...reasoningPreset(), loadingSeconds: 10 })).rejects.toThrow('time budget');
+    await vi.advanceTimersByTimeAsync(10000); await rejected;
+    expect(TestWorker.instances[0].terminated).toBe(true);
+  });
   it('keeps the loaded runtime for another independent problem', async () => {
     const client = setup();
     const first = client.run(problem(), () => undefined);

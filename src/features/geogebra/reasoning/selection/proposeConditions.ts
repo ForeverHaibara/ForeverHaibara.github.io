@@ -14,6 +14,7 @@ import type { CharacterizationOptions, CharacterizationProposal, ObjectCharacter
 import type { SamplingResult } from '../sampling/types';
 import { canonicalDirectionEquation } from '../../analysis/quantities/directedAngles';
 import { productEquationKey } from '../../geometry/vectorProducts';
+import { normalizeReasoningPreferences } from '../preferences/reasoningPreferences';
 
 const KINDS: GeometryRelationKind[] = ['collinear', 'parallel', 'perpendicular', 'concyclic', 'coincident-points', 'midpoint',
   'equal-lengths', 'directed-angles', 'length-multiple', 'similar-triangles', 'congruent-triangles', 'dot-products', 'cross-products'];
@@ -34,12 +35,10 @@ const keyOf = (predicate: GeometryPredicate): string => {
   if (predicate.kind === 'midpoint') return JSON.stringify([predicate.kind, predicate.point, pair(predicate.segment)]);
   return JSON.stringify(predicate);
 };
-const bounded = (value: number, fallback: number, maximum: number) => Number.isFinite(value) ? Math.max(1, Math.min(maximum, Math.floor(value))) : fallback;
 
 /** Target-free suggestions: dependency ownership and local rank, not command semantics. */
 export const proposeConditions = (graph: DependencyGraph, settings: CharacterizationOptions = DEFAULT_CHARACTERIZATION_OPTIONS, sampling?: SamplingResult): CharacterizationProposal => {
-  const options: CharacterizationOptions = { maxObjects: bounded(settings.maxObjects, 16, 24), maxScopePoints: bounded(settings.maxScopePoints, 10, 12),
-    maxCandidatesPerObject: bounded(settings.maxCandidatesPerObject, 80, 128), maxConditions: bounded(settings.maxConditions, 24, 40), allowEarlierContext: settings.allowEarlierContext };
+  const options = normalizeReasoningPreferences(settings);
   const problem: ReasoningProblem = createDiscoveryProblem(graph);
   const context = buildDependencyContext(problem.objects);
   const positions = new Map(context.ordered.map((object, i) => [object.id, i]));
@@ -70,8 +69,8 @@ export const proposeConditions = (graph: DependencyGraph, settings: Characteriza
     const search = (points: ReasoningObject[], contextIds: string[]) => {
       const allowed = new Set(points.map((point) => point.id));
       const scopedGraph = { ...graph, nodes: graph.nodes.map((node) => allowed.has(node.id) ? node : { ...node, coordinates: undefined }) };
-      const found = detectGeometryRelations(scopedGraph, graph.generatedAt, { enabledKinds: KINDS, maxTriangles: 3000, maxAngles: 3000,
-        maxComparisons: 40000, maxModels: 0, maxRelations: 800, compressConsequences: false });
+      const found = detectGeometryRelations(scopedGraph, graph.generatedAt, { enabledKinds: KINDS, maxTriangles: options.localMaxTriangles, maxAngles: options.localMaxAngles,
+        maxComparisons: options.localMaxComparisons, maxModels: 0, maxRelations: options.localMaxRelations, compressConsequences: false });
       if (found.diagnostics.length) report.diagnostics.push('Local numerical discovery reached a budget or reported incomplete scope.');
       const local = createDiscoveryProblem(scopedGraph, found);
       const atoms = new Map<string, { candidate: ConditionCandidate; gradients: Gradient[]; cost: number }>();

@@ -4,10 +4,11 @@ import type { ReasoningProblem } from '../ir/types';
 import { createSamplePlan, SAMPLING_SEED } from './samplePlan';
 import type { CoordinateSample, SamplingResult } from './types';
 import { REPLICA_SNAPSHOT_WARNING } from './types';
+import { reasoningPreset } from '../preferences/reasoningPreferences';
 
 /** Only read the live engine. All setCoords calls occur inside a disposable iframe. */
 export const sampleConstruction = async (engine: GeoGebraEngine, problem: ReasoningProblem, signal: AbortSignal,
-  onProgress: (count: number) => void): Promise<SamplingResult> => {
+  onProgress: (count: number) => void, timeoutMs = reasoningPreset().samplingSeconds * 1000): Promise<SamplingResult> => {
   const points = problem.objects.filter((object) => object.coordinates);
   if (points.length > 160) throw new Error('Replica sampling is limited to 160 finite points. Disable copy checking to inspect provisional suggestions.');
   const independent = await Promise.all(points.map(async (point) => {
@@ -58,7 +59,7 @@ export const sampleConstruction = async (engine: GeoGebraEngine, problem: Reason
       else if (Array.isArray(event.data.samples)) finish(undefined, event.data.samples);
       else if (event.data.error) finish(new Error(String(event.data.error)));
     };
-    const timer = setTimeout(() => finish(new Error('Replica sampling time budget reached.')), 45000);
+    const timer = setTimeout(() => finish(new Error('Replica sampling time budget reached.')), timeoutMs);
     signal.addEventListener('abort', abort, { once: true }); window.addEventListener('message', receive); document.body.append(frame);
   });
 };

@@ -5,6 +5,8 @@ import { canonicalDirectionEquation } from '../../../analysis/quantities/directe
 import { proofQueryCandidates } from './proofQueries';
 import { mapProductPoints, productRow } from '../../../geometry/vectorProducts';
 import type { VectorProductEquation } from '../../../geometry/vectorProducts';
+import { normalizeReasoningPreferences, proofComputationLimits, reasoningPreset } from '../../preferences/reasoningPreferences';
+import type { ReasoningPreferences } from '../../preferences/reasoningPreferences';
 
 export interface VectorContext {
   version: 1;
@@ -38,6 +40,7 @@ export interface Ag2Export {
   operation?: 'check' | 'proof';
   vectorContext?: VectorContext;
   ag2Compatible?: boolean;
+  computationLimits?: ReturnType<typeof proofComputationLimits>;
 }
 export interface Ag2ExportResult { value: Ag2Export | null; errors: string[]; }
 
@@ -228,13 +231,14 @@ export const exportAg2Queries = (problem: ReasoningProblem, acceptedIds: string[
   compileAg2Problem(problem, { acceptedIds, goalId: queryIds[0] ?? null }, queryIds);
 
 /** Explain a selected goal, or bounded additional consequences without requiring one. */
-export const exportAg2Proof = (problem: ReasoningProblem, selection: ConditionSelection): Ag2ExportResult => {
+export const exportAg2Proof = (problem: ReasoningProblem, selection: ConditionSelection, preferences: ReasoningPreferences = reasoningPreset()): Ag2ExportResult => {
+  const settings = normalizeReasoningPreferences(preferences);
   const queryIds: string[] = [];
   if (selection.goalId) queryIds.push(selection.goalId);
   else for (const candidate of proofQueryCandidates(problem.candidates, selection.acceptedIds)) {
-    if (queryIds.length >= 32) break;
+    if (queryIds.length >= settings.maxProofQueries) break;
     const trial = compileAg2Problem(problem, selection, [...queryIds, candidate.id]).value;
-    if (trial) {
+    if (trial && trial.goals.length <= AG2_LIMITS.proofGoals) {
       const rows = trial.queries.at(-1)!.goals;
       const previous = new Set(trial.queries.slice(0, -1).flatMap((query) => query.goals));
       const given = new Set(trial.assumptionSources.map((entry) => entry.predicate));
@@ -242,6 +246,7 @@ export const exportAg2Proof = (problem: ReasoningProblem, selection: ConditionSe
     }
   }
   const result = compileAg2Problem(problem, selection, queryIds);
-  if (result.value) result.value.operation = 'proof';
+  if (result.value && result.value.goals.length > AG2_LIMITS.proofGoals) return { value: null, errors: [`This proof exceeds the ${AG2_LIMITS.proofGoals}-predicate conclusion capacity. Select a smaller goal.`] };
+  if (result.value) { result.value.operation = 'proof'; result.value.computationLimits = proofComputationLimits(settings); }
   return result;
 };

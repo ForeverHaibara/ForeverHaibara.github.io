@@ -1,17 +1,16 @@
 import type { ReasoningProblem } from '../ir/types';
 import type { SamplingResult } from '../sampling/types';
+import { reasoningPreset } from '../preferences/reasoningPreferences';
+import type { ReasoningPreferences } from '../preferences/reasoningPreferences';
 
-export interface CharacterizationOptions {
+export interface CharacterizationOptions extends Partial<Pick<ReasoningPreferences, 'localMaxTriangles' | 'localMaxAngles' | 'localMaxComparisons' | 'localMaxRelations'>> {
   maxObjects: number;
   maxScopePoints: number;
   maxCandidatesPerObject: number;
   maxConditions: number;
   allowEarlierContext: boolean;
 }
-export const DEFAULT_CHARACTERIZATION_OPTIONS: CharacterizationOptions = {
-  maxObjects: 16, maxScopePoints: 10, maxCandidatesPerObject: 80,
-  maxConditions: 24, allowEarlierContext: true,
-};
+export const DEFAULT_CHARACTERIZATION_OPTIONS: CharacterizationOptions = reasoningPreset();
 export interface ObjectCharacterization {
   objectId: string;
   scopeIds: string[];

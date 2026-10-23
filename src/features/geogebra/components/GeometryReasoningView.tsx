@@ -21,6 +21,7 @@ import ReadableProofView from './ReadableProofView';
 import type { GeometryRelation } from '../analysis/geometryTypes';
 import ReasoningActions from './ReasoningActions';
 import { proofOutcome } from '../reasoning/proof/proofOutcome';
+import { useReasoningPreferences } from '../reasoning/preferences/ReasoningPreferencesContext';
 
 interface Props {
   engine: GeoGebraEngine;
@@ -33,6 +34,7 @@ interface Props {
 const emptySelection: ConditionSelection = { acceptedIds: [], goalId: null };
 
 const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, lastEventTime, discovery, objectLink }) => {
+  const reasoningPreferences = useReasoningPreferences();
   const baseProblem = useMemo(() => graph && discovery.result?.computedAt === graph.generatedAt
     ? createDiscoveryProblem(graph, discovery.result) : null, [graph, discovery.result]);
   const constructionFresh = Boolean(graph && graphStatus === 'ready' && lastEventTime <= graph.generatedAt);
@@ -60,13 +62,11 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
   // Snapshot identity above, rather than pending search settings, gates input.
   const fresh = Boolean(problem && constructionFresh);
   const exported = useMemo(() => problem ? exportAg2Problem(problem, selection) : null, [problem, selection]);
-  const proofRequest = useMemo(() => problem && selection.acceptedIds.length ? exportAg2Proof(problem, selection) : null, [problem, selection]);
+  const proofRequest = useMemo(() => problem && selection.acceptedIds.length ? exportAg2Proof(problem, selection, reasoningPreferences) : null, [problem, selection, reasoningPreferences]);
   const [phase, setPhase] = useState<'idle' | 'loading' | 'solving'>('idle');
   const [result, setResult] = useState<Ag2RunResult | null>(null);
   const [proofExported, setProofExported] = useState<Ag2Export | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [validateSamples, setValidateSamples] = useState(true);
-  const [earlierContext, setEarlierContext] = useState(true);
   const [coveragePhase, setCoveragePhase] = useState<'idle' | 'loading' | 'solving'>('idle');
   const [coverageState, setCoverage] = useState<{ proposal: CharacterizationProposal; result: CoverageResult } | null>(null);
   const coverage = coverageState?.proposal === proposal ? coverageState.result : null;
@@ -100,7 +100,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     invalidate(); const ticket = generation.current; setCoveragePhase('loading');
     client.current ??= new Ag2WorkerClient();
     try {
-      const answer = await evaluateCoverage({ ...proposal, problem, coreIds: resolveCatalogIds(proposal.coreIds, aliases) }, client.current, (next) => { if (ticket === generation.current) setCoveragePhase(next); });
+      const answer = await evaluateCoverage({ ...proposal, problem, coreIds: resolveCatalogIds(proposal.coreIds, aliases) }, client.current, (next) => { if (ticket === generation.current) setCoveragePhase(next); }, reasoningPreferences);
       if (ticket === generation.current) { setCoverage({ proposal, result: answer }); setCoveragePhase('idle'); }
     } catch (failure) { if (ticket === generation.current) { setError(failure instanceof Error ? failure.message : 'Coverage evaluation failed.'); setCoveragePhase('idle'); } }
   };
@@ -111,7 +111,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     setPhase('loading');
     client.current ??= new Ag2WorkerClient();
     try {
-      const answer = await client.current.run(exported.value, (next) => { if (ticket === generation.current) setPhase(next); });
+      const answer = await client.current.run(exported.value, (next) => { if (ticket === generation.current) setPhase(next); }, reasoningPreferences);
       if (ticket === generation.current) { setResult(answer); setPhase('idle'); }
     } catch (failure) {
       if (ticket === generation.current) { setError(failure instanceof Error ? failure.message : 'Reasoning failed.'); setPhase('idle'); }
@@ -122,13 +122,13 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     invalidate(); const ticket = generation.current; const payload = proofRequest.value;
     setPhase('loading'); client.current ??= new Ag2WorkerClient();
     try {
-      const answer = await client.current.run(payload, (next) => { if (ticket === generation.current) setPhase(next); });
+      const answer = await client.current.run(payload, (next) => { if (ticket === generation.current) setPhase(next); }, reasoningPreferences);
       if (ticket === generation.current) { setResult(answer); setProofExported(payload); setPhase('idle'); }
     } catch (failure) { if (ticket === generation.current) { setError(failure instanceof Error ? failure.message : 'Proof generation failed.'); setPhase('idle'); } }
   };
   const download = (project: boolean) => {
     if (!fresh || !problem || !project && (!exported?.value || exported.value.ag2Compatible === false)) return;
-    const content = project ? JSON.stringify({ version: 1, problem, selection, candidateAliases: Object.fromEntries(aliases), export: exported?.value ?? null, exportErrors: exported?.errors, proofExport: proofExported, result, characterization: proposal, coverage }, null, 2) : exported!.value!.text;
+    const content = project ? JSON.stringify({ version: 1, problem, selection, reasoningPreferences, candidateAliases: Object.fromEntries(aliases), export: exported?.value ?? null, exportErrors: exported?.errors, proofExport: proofExported, result, characterization: proposal, coverage }, null, 2) : exported!.value!.text;
     blobToDownload(new Blob([content], { type: project ? 'application/json' : 'text/plain;charset=utf-8' }), project ? 'geometry-conditions.json' : 'geometry-problems.ag2.txt');
   };
   const hasSelection = Boolean(selection.acceptedIds.length || selection.goalId);
@@ -144,7 +144,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
       progress={suggestions.status === 'sampling' ? `Checking construction copy · ${suggestions.progress}/6 configurations` : suggestions.status === 'searching' ? 'Searching local conditions…'
         : running ? phase === 'loading' || coveragePhase === 'loading' ? 'Preparing the reasoning engine…' : coveragePhase !== 'idle' ? 'Evaluating coverage…' : 'Deriving consequences…' : null}
       outcome={outcome}
-      onSuggest={() => { invalidate(); void suggestions.start(validateSamples, earlierContext); }} onGenerate={() => void generateProof()} onCheck={() => void run()} onExport={download}
+      onSuggest={() => { invalidate(); void suggestions.start(); }} onGenerate={() => void generateProof()} onCheck={() => void run()} onExport={download}
       onStop={() => { suggestions.stop(); invalidate(); }} onClear={() => changeSelection(emptySelection)} onRead={readResults} />
     {!fresh && <p role="status" className="rounded-lg bg-amber-50 p-2 text-amber-800">Discover relations or suggest conditions on the current construction to begin. Conditions and goals stay available until the construction changes.</p>}
     <ConditionSuggestions proposal={proposal} problem={problem} coverage={coverage} fresh={constructionFresh} busy={running || suggestions.status !== 'idle'}
@@ -153,8 +153,7 @@ const GeometryReasoningView: React.FC<Props> = ({ engine, graph, graphStatus, la
     <details className="ggb-reasoning-options">
       <summary>Reasoning options{selection.assumptionMode === 'hypothetical' ? ' · Hypotheses on' : ''}</summary>
       <div className="mt-2 space-y-2">
-        <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5" checked={validateSamples} disabled={running || suggestions.status !== 'idle'} onChange={(event) => setValidateSamples(event.target.checked)} /><span>Check suggestions on an independent construction copy</span></label>
-        <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5" checked={earlierContext} disabled={running || suggestions.status !== 'idle'} onChange={(event) => setEarlierContext(event.target.checked)} /><span>Search earlier related objects when upstream inputs are insufficient</span></label>
+        <p className="text-slate-500">Search depth, copy checks and computation budgets are in Proof settings in the top toolbar.</p>
         <label className="flex items-start gap-2 text-amber-800"><input type="checkbox" className="mt-0.5" checked={selection.assumptionMode === 'hypothetical'} disabled={!fresh || running || suggestions.status !== 'idle'} onChange={(event) => changeSelection({ ...selection, assumptionMode: event.target.checked ? 'hypothetical' : 'validated' })} /><span>Explore hypotheses (allow failed numeric checks)</span></label>
         {selection.assumptionMode === 'hypothetical' && <p className="text-[10px] leading-4 text-amber-800">Rejected evidence can be assumed explicitly. Symbolic conclusions depend on those hypotheses; coordinate disagreements remain visible.</p>}
         <p className="text-[10px] leading-4 text-slate-500">∡ uses directed angles modulo π. Local rank does not certify a unique global characterization.</p>
