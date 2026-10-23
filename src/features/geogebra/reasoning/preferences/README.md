@@ -1,15 +1,19 @@
 # Computation preferences
 
-The workspace toolbar opens a full-width **Proof settings** panel above the
-canvas. Inputs are drafts until **Apply settings** is selected. Closing discards
+The workspace toolbar opens a centered **Proof settings** modal without moving
+the canvas. Category tabs show one set of controls at a time; narrow screens use
+horizontal category navigation. The native dialog top layer provides focus containment
+and makes the background inert. Escape, the close button and the backdrop dismiss it.
+Inputs are drafts until **Apply settings** is selected. Closing discards
 unapplied edits. Numeric budget presets preserve evidence toggles and discovery
-type selections; **Reset proof defaults** restores proof preferences and discovery
+type selections; **Restore defaults** restores proof preferences and discovery
 budgets, while preserving discovery types, automatic mode and compression.
 
 `reasoningPreferences.ts` owns the proof parameter registry: types, labels, units,
 defaults, bounds, groups and preset values. Add numeric options there, connect the
 consumer and add regression coverage. The form and storage validator enumerate
-this registry. Missing or invalid stored fields fall back to current defaults;
+this registry. A new parameter group also needs a category in the panel's
+presentation-only `SECTIONS` list. Missing or invalid stored fields fall back to current defaults;
 unknown fields are ignored. Preferences use the versioned
 `geogebra-reasoning-preferences-v1` local-storage key, independently of construction
 drafts and object styles. Discovery keeps its existing storage key and registry.

@@ -54,7 +54,10 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const [reasoningPreferences, setReasoningPreferences] = useState(readReasoningPreferences);
   const [reasoningStorageUnavailable, setReasoningStorageUnavailable] = useState(false);
   const proofSettingsButtonRef = useRef<HTMLButtonElement>(null);
-  const closeProofSettings = () => { setProofSettingsOpen(false); proofSettingsButtonRef.current?.focus(); };
+  const closeProofSettings = () => {
+    setProofSettingsOpen(false);
+    window.requestAnimationFrame(() => proofSettingsButtonRef.current?.focus({ preventScroll: true }));
+  };
   const workspaceRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const fullscreenButtonRef = useRef<HTMLButtonElement>(null);
@@ -68,8 +71,8 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const closeSettings = () => { setSettingsOpen(false); settingsButtonRef.current?.focus(); };
 
   useEffect(() => {
-    if (analysisHidden || settingsOpen) objectLink.hover(null);
-  }, [analysisHidden, settingsOpen, objectLink.hover]);
+    if (analysisHidden || settingsOpen || proofSettingsOpen) objectLink.hover(null);
+  }, [analysisHidden, settingsOpen, proofSettingsOpen, objectLink.hover]);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.inert = settingsOpen;
@@ -142,7 +145,6 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
         </div>
       </header>
       <div className="ggb-workspace-content" ref={contentRef}>
-        {proofSettingsOpen && <ProofSettingsPanel preferences={reasoningPreferences} discovery={geometryRelations} storageUnavailable={reasoningStorageUnavailable} onApply={(value) => { const next = normalizeReasoningPreferences(value); setReasoningPreferences(next); setReasoningStorageUnavailable(!saveReasoningPreferences(next)); }} onClose={closeProofSettings} />}
         <div className="geogebra-studio-body relative isolate flex flex-col lg:flex-row">
           <main className="geogebra-studio-canvas relative min-w-0 flex-1 overflow-hidden bg-slate-100/70" aria-label="GeoGebra canvas">
             <div className="absolute inset-0"><GeoGebraCanvas engine={engine} onReady={onReady} onError={onError} /></div>
@@ -158,6 +160,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
           {lastResult && <div className={`ggb-command-status ${lastResult.success ? '' : 'error'}`} role="status" title={lastResult.command}><span className={`ggb-status-dot ${lastResult.success ? '' : 'error'}`} />{lastResult.success ? `${lastResult.command} → ${lastResult.labels.join(', ') || 'done'}` : lastResult.error}</div>}
         </div>
       </div>
+      {proofSettingsOpen && <ProofSettingsPanel preferences={reasoningPreferences} discovery={geometryRelations} storageUnavailable={reasoningStorageUnavailable} onApply={(value) => { const next = normalizeReasoningPreferences(value); setReasoningPreferences(next); setReasoningStorageUnavailable(!saveReasoningPreferences(next)); }} onClose={closeProofSettings} />}
       {settingsOpen && <><button className="ggb-settings-backdrop" type="button" aria-label="Dismiss settings" tabIndex={-1} onClick={closeSettings} /><GeoGebraSettingsPanel preferences={preferences} ready={ready} error={preferenceError} onChange={onPreferencesChange} onApplyToAll={onApplyPreferences} onClose={closeSettings} /></>}
     </div></ReasoningPreferencesContext.Provider>
     {fullscreen && focusMode && <div className="geogebra-focus-controls" role="group" aria-label="Canvas focus controls"><StudioIconButton autoFocus icon="focus" label="Show workspace tools" onClick={() => { setFocusMode(false); window.requestAnimationFrame(() => fullscreenButtonRef.current?.focus()); }} /><StudioIconButton icon="collapse" label="Exit fullscreen" onClick={toggleFullscreen} /></div>}
