@@ -69,6 +69,18 @@ export const mergeRelationCatalog = (base: ReasoningProblem | null, local: Reaso
 export const resolveCatalogIds = (ids: readonly string[], aliases: ReadonlyMap<string, string>): string[] =>
   [...new Set(ids.map((id) => aliases.get(id) ?? id))];
 
+/** Suggestions add premises, never replace explicit choices or assume the goal.
+ * Rejected evidence still requires the user's explicit hypothesis opt-in. */
+export const acceptSuggestedConditions = (selection: ConditionSelection, suggestedIds: readonly string[],
+  problem: ReasoningProblem, aliases: ReadonlyMap<string, string>): ConditionSelection => {
+  const candidates = new Map(problem.candidates.map((candidate) => [candidate.id, candidate]));
+  const additions = resolveCatalogIds(suggestedIds, aliases).filter((id) => {
+    const candidate = candidates.get(id);
+    return id !== selection.goalId && candidate && candidate.predicates.length && !candidate.diagnostics.length && !candidate.hypothesisEligible;
+  });
+  return { ...selection, acceptedIds: [...new Set([...selection.acceptedIds, ...additions])] };
+};
+
 /** Computation settings can replace the observation pool on the same snapshot.
  * Keep explicit inputs independently; a changed construction is reset upstream. */
 export const preserveSelectedCandidates = (current: ReasoningProblem | null, previous: ReasoningProblem | null,

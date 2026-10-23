@@ -39,7 +39,7 @@ const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, se
     <div className="flex flex-wrap gap-1" role="group" aria-label="Relation views">{modes.map(([mode, label, count]) => <button key={mode} type="button"
       aria-pressed={view === mode} onClick={() => { setView(mode); setLimit(100); }}
       className={`rounded-full px-2.5 py-1 text-[11px] ${view === mode ? 'bg-sky-700 font-semibold text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} ({count})</button>)}</div>
-    {view === 'rejected' && selection.assumptionMode !== 'hypothetical' && <p className="text-[10px] leading-4 text-amber-800">To use a rejected observation, enable Explore hypotheses in “Hypotheses, checks and export” above.</p>}
+    {view === 'rejected' && selection.assumptionMode !== 'hypothetical' && <p className="text-[10px] leading-4 text-amber-800">To use a rejected observation, enable Explore hypotheses in “Reasoning options” above.</p>}
     <CatalogFilterControls filter={filters[view]} selectedNames={objectLink.selectedNames} onChange={(filter) => { setFilters({ ...filters, [view]: filter }); setLimit(100); }} />
     <p role="status" aria-live="polite" className="text-[10px] leading-4 text-slate-500">
       {state.status === 'calculating' ? 'Computing observations… ' : state.stale ? 'Discovery is out of date · ' : ''}

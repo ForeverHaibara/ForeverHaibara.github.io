@@ -1,0 +1,50 @@
+.ggb-reasoning-actions {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  padding: 12px;
+  border: 1px solid #dbe6f5;
+  border-radius: 13px;
+  background: #fffffffa;
+  box-shadow: 0 4px 16px #2648710a;
+  backdrop-filter: blur(12px);
+}
+.ggb-reasoning-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 10px; color: #7b8aa0; }
+.ggb-reasoning-heading > span:first-child { font-size: 9px; font-weight: 650; letter-spacing: .13em; }
+.ggb-hypothesis-badge { color: #b45309; }
+.ggb-reasoning-primary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ggb-reasoning-primary button { display: flex; justify-content: center; align-items: center; gap: 7px; min-height: 46px; padding: 8px 9px; border: 1px solid transparent; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 1.4; cursor: pointer; text-align: left; }
+.ggb-reasoning-primary svg { flex-shrink: 0; }
+.ggb-suggest-action { color: #286195; background: #edf5ff; border-color: #dceafd !important; }
+.ggb-suggest-action:hover { background: #e1eeff; }
+.ggb-proof-action { background: #2463c2; color: white; box-shadow: 0 2px 5px #2563eb1a; }
+.ggb-proof-action:hover { background: #1d4fa4; }
+.ggb-reasoning-actions button:disabled { opacity: .4; cursor: default; box-shadow: none; }
+.ggb-reasoning-hint { margin: 9px 0 11px; font-size: 10px; line-height: 1.5; color: #8390a3; }
+.ggb-reasoning-goal { display: flex; align-items: baseline; gap: 9px; padding: 9px 0; border-top: 1px solid #ecf0f6; border-bottom: 1px solid #ecf0f6; }
+.ggb-reasoning-goal > span { flex-shrink: 0; font-size: 9px; letter-spacing: .1em; color: #8b98aa; }
+.ggb-reasoning-goal p { margin: 0; overflow-wrap: anywhere; color: #52657e; font-size: 10px; line-height: 1.6; }
+.ggb-reasoning-secondary { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding-top: 7px; }
+.ggb-reasoning-secondary button, .ggb-reasoning-export summary { display: flex; align-items: center; gap: 5px; border: 0; border-radius: 6px; background: transparent; padding: 5px 7px; color: #62748c; font-size: 10px; cursor: pointer; }
+.ggb-reasoning-secondary button:hover, .ggb-reasoning-export summary:hover { color: #2463c2; background: #f1f6fd; }
+.ggb-reasoning-secondary .ggb-reasoning-clear, .ggb-reasoning-secondary .ggb-reasoning-stop { margin-left: auto; }
+.ggb-reasoning-secondary .ggb-reasoning-stop { color: #b45309; }
+.ggb-reasoning-export { position: relative; }
+.ggb-reasoning-export summary { list-style: none; }
+.ggb-reasoning-export summary::-webkit-details-marker { display: none; }
+.ggb-reasoning-export > div { position: absolute; top: calc(100% + 3px); left: 0; min-width: 135px; z-index: 15; padding: 5px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; box-shadow: 0 8px 22px #2035561f; }
+.ggb-reasoning-export > div button { width: 100%; padding: 8px; }
+.ggb-reasoning-progress { display: flex; align-items: center; gap: 8px; padding-top: 8px; margin: 6px 0 0; border-top: 1px solid #edf1f6; color: #2563a2; font-size: 10px; line-height: 1.5; }
+.ggb-reasoning-progress .ggb-spinner { width: 12px; height: 12px; flex-shrink: 0; }
+.ggb-proof-outcome { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 9px; margin-top: 9px; border-radius: 7px; background: #f1f5f9; color: #52657d; font-size: 10px; }
+.ggb-proof-outcome > span { display: flex; align-items: center; gap: 5px; }
+.ggb-proof-outcome .ggb-status-dot { background: currentColor; width: 5px; height: 5px; }
+.ggb-proof-outcome[data-tone='success'] { color: #047857; background: #ecfdf5; }
+.ggb-proof-outcome[data-tone='warning'] { color: #a16207; background: #fff8e7; }
+.ggb-proof-outcome[data-tone='error'] { color: #be123c; background: #fff1f2; }
+.ggb-proof-outcome button { padding: 0; border: 0; background: transparent; color: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
+.ggb-proof-outcome button:hover { text-decoration: underline; }
+.ggb-reasoning-options { padding: 8px 10px; border: 1px solid #e7ecf3; border-radius: 9px; background: #fafbfd; font-size: 10px; color: #64748b; }
+.ggb-reasoning-options > summary { cursor: pointer; }
+.ggb-reasoning-options[open] > summary { color: #334155; font-weight: 600; }
+.ggb-reasoning-actions :focus-visible, .ggb-reasoning-options summary:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }

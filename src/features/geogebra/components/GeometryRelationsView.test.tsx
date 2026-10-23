@@ -24,6 +24,11 @@ describe('unified relations and reasoning UI', () => {
     expect(html).toContain('Discovery settings'); expect(html).toContain('List filters');
     expect(html).toContain('Reset filters'); expect(html).not.toContain('Show:');
     expect(html).toContain('Each view remembers its own filters');
+    const actions = html.slice(html.indexOf('aria-label="Proof workspace"'), html.indexOf('Suggestions are added automatically.'));
+    expect(actions).toContain('Suggest conditions'); expect(actions).toContain('Generate readable proof');
+    expect(actions).not.toContain('<details');
+    expect(html.indexOf('aria-label="Proof workspace"')).toBeLessThan(html.indexOf('Discovery settings'));
+    expect(html).toContain('Reasoning options'); expect(html).not.toContain('clears the goal');
     const conditions = html.match(/<input[^>]+aria-label="Accept condition: [^"]*"[^>]*>/g) ?? [];
     expect(conditions.some((input) => !input.includes('disabled'))).toBe(true);
   });

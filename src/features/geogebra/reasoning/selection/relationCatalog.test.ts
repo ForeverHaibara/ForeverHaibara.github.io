@@ -1,12 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { candidate, discoveredMidpointProblem, midpointProblem } from '../__fixtures__/problems';
 import { exportAg2Proof } from '../backends/ag2/exportProblem';
-import { buildCatalogEntries, defaultCatalogFilter, filterCatalogEntries, preserveSelectedCandidates, mergeRelationCatalog, predicateIdentity, resolveCatalogIds, retainCatalogSelection } from './relationCatalog';
+import { acceptSuggestedConditions, buildCatalogEntries, defaultCatalogFilter, filterCatalogEntries, preserveSelectedCandidates, mergeRelationCatalog, predicateIdentity, resolveCatalogIds, retainCatalogSelection } from './relationCatalog';
 import { detectGeometryRelations } from '../../analysis/geometryRelations';
 import { midpointConstruction } from '../__fixtures__/problems';
 import { DEFAULT_DISCOVERY_OPTIONS } from '../../analysis/relations/catalog';
 
 describe('single relation catalog', () => {
+
+  it('adds suggestions without replacing manual premises, clearing the goal, or assuming it through an alias', () => {
+    const problem = midpointProblem();
+    const selection = { acceptedIds: ['m-midpoint'], goalId: 'midsegment', assumptionMode: 'hypothetical' as const };
+    const aliases = new Map([['local-N', 'n-midpoint'], ['local-goal', 'midsegment']]);
+    const next = acceptSuggestedConditions(selection, ['local-N', 'local-N', 'local-goal', 'missing'], problem, aliases);
+    expect(next).toEqual({ ...selection, acceptedIds: ['m-midpoint', 'n-midpoint'] });
+    expect(selection.acceptedIds).toEqual(['m-midpoint']);
+    expect(exportAg2Proof(problem, next).value!.alreadyAssumed).toBe(false);
+  });
+
+  it('never automatically accepts rejected or unsupported evidence, including in hypothesis mode', () => {
+    const problem = midpointProblem();
+    problem.candidates[0].diagnostics = ['Counterexample'];
+    problem.candidates[0].hypothesisEligible = true;
+    problem.candidates[1].predicates = [];
+    const selection = { acceptedIds: [], goalId: null, assumptionMode: 'hypothetical' as const };
+    expect(acceptSuggestedConditions(selection, ['m-midpoint', 'n-midpoint'], problem, new Map())).toEqual(selection);
+  });
 
   it('preserves explicit conditions and goal after narrowing computation scope on the same snapshot', () => {
     const previous = midpointProblem();

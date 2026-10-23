@@ -38,12 +38,15 @@ AlphaGeometry2 DDAR 检查目标。总体路线、性质刻画与后续算法见
    查询支持 `AO CO`、`(O,A)=(O,C)`、`ABC DEF` 等结构化写法，Reset filters 重置当前视图。
 3. 点 Generate readable proof，可不选目标。第一次运行需联网下载固定版本 Python
    与 NumPy；之后同一面板的独立运行复用已加载的解释器。单独 Check goal
-   和导出入口位于 Hypotheses, checks and export。
+   入口位于同一操作卡下方；Export 菜单提供两种导出。
 4. 查看是否已接受、在给定条件下推出或未推出。未推出不表示目标为假。
 5. Export AG2 下载后端文本，Export project 保存本次条件、见证和来源。
 
 也可以先点击 Suggest conditions，默认在独立副本上检查六个变化构型。
-查看逐对象建议和不足，点击 Accept suggested conditions 一次接受，再选目标。
+有效建议完成后自动合并到已接受条件，保留手工条件和已选目标，并排除把当前目标本身作为自动前提。
+在 Accepted 视图手动移除不需要的条件；重绘目录不会重新接受它，只有新的建议运行或
+Add suggestions again 会再次添加。失败的数值检查仍需手动假设，绝不自动加入。
+逐对象建议、检查不足和 Evaluate coverage 收在 Suggested conditions 详情中。
 Evaluate coverage 可检查建议集能推出多少额外性质，不会自动增加条件。
 局部建议与全局发现中的同一命题合并显示采样证据，接受状态和来源 ID 保留映射。
 具体语义、数值精度及界面检查见 [统一关系目录](../analysis/docs/precision-and-unified-catalog.md)。
@@ -63,6 +66,12 @@ Evaluate coverage 可检查建议集能推出多少额外性质，不会自动�
 数值拒绝不会自动取消用户选择；结构错误仍单独报告。项目可在后端无法导出
 时保存条件、诊断和失败原因。详见 [P4 可读证明与实验假设](docs/readable-proofs.md)。
 Rejected 视图可以单独查看被拒绝的保留候选；搜索也会匹配诊断文字。
+假设开关和建议采样/搜索范围位于默认折叠的 Reasoning options。
+
+`ReasoningActions` 只负责固定操作卡和进度/结果呈现；`proofOutcome` 从实际后端结果区分
+目标已给定、已推出、未推出、部分解释、代数回放失败和矛盾。无目标时显示记录的新结论数。
+结果跳转按操作卡的实际高度留出空间，并把键盘焦点移到结果区域。`acceptSuggestedConditions`
+独立处理条件合并与目标排除；组件按 proposal 身份只自动应用一次。
 
 构图变化后，旧选择和结果失效；同快照计算范围缩小仍保留明确选择，池扩展映射语义未变的选择。停止会终止
 Worker，下次重新初始化。不使用远程推理服务，构图数据不发送到模型端。
