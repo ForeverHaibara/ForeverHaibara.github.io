@@ -1,7 +1,7 @@
 import React from 'react';
-import type { CharacterizationProposal, CoverageResult } from '../reasoning/selection/types';
-import type { ReasoningProblem } from '../reasoning/ir/types';
-import { REPLICA_SNAPSHOT_WARNING } from '../reasoning/sampling/types';
+import type { CharacterizationProposal, CoverageResult } from '../../reasoning/selection/types';
+import type { ReasoningProblem } from '../../reasoning/ir/types';
+import { REPLICA_SNAPSHOT_WARNING } from '../../reasoning/sampling/types';
 
 interface Props {
   proposal: CharacterizationProposal | null;

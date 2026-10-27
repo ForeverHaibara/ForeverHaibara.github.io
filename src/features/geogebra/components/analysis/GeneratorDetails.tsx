@@ -1,6 +1,6 @@
 import React from 'react';
-import type { DirectionModel, LengthModel } from '../analysis/geometryTypes';
-import { formatLineAngle, presentDirectionModel, presentLengthModel } from '../analysis/presentation/generatorPresentation';
+import type { DirectionModel, LengthModel } from '../../analysis/geometryTypes';
+import { formatLineAngle, presentDirectionModel, presentLengthModel } from '../../analysis/presentation/generatorPresentation';
 
 export const GeneratorDetails: React.FC<{ model?: DirectionModel; lengthModel?: LengthModel }> = ({ model, lengthModel }) => {
   const presentation = model ? presentDirectionModel(model) : lengthModel ? presentLengthModel(lengthModel) : null;

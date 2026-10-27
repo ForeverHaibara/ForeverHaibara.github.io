@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import GeoGebraCanvas from './GeoGebraCanvas';
-import GeoGebraCommandBar from './GeoGebraCommandBar';
+import GeoGebraCommandBar from '../command/GeoGebraCommandBar';
 import GeoGebraFileActions from './GeoGebraFileActions';
 import GeoGebraSidePanel from './GeoGebraSidePanel';
-import GeoGebraSettingsPanel from './GeoGebraSettingsPanel';
-import GeoGebraQuickStyle from './GeoGebraQuickStyle';
-import ProofSettingsPanel from './ProofSettingsPanel';
-import { ReasoningPreferencesContext } from '../reasoning/preferences/ReasoningPreferencesContext';
-import { normalizeReasoningPreferences, readReasoningPreferences, saveReasoningPreferences } from '../reasoning/preferences/reasoningPreferences';
+import GeoGebraSettingsPanel from '../settings/GeoGebraSettingsPanel';
+import GeoGebraQuickStyle from '../settings/GeoGebraQuickStyle';
+import ProofSettingsPanel from '../settings/ProofSettingsPanel';
+import { ReasoningPreferencesContext } from '../../reasoning/preferences/ReasoningPreferencesContext';
+import { normalizeReasoningPreferences, readReasoningPreferences, saveReasoningPreferences } from '../../reasoning/preferences/reasoningPreferences';
 import StudioIcon, { StudioIconButton } from './StudioIcon';
-import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, StudioSettings } from '../types';
-import type { DependencyGraph } from '../analysis/graphTypes';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import type { GgbPreferences, ObjectStyle } from '../settings/types';
-import { useObjectLink } from '../interaction/useObjectLink';
+import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, StudioSettings } from '../../types';
+import type { DependencyGraph } from '../../analysis/graphTypes';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
+import type { GgbPreferences, ObjectStyle } from '../../settings/types';
+import { useObjectLink } from '../../interaction/useObjectLink';
 import './geogebra-studio.css';
 
 interface GeoGebraStudioShellProps {

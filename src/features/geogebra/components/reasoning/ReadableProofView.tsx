@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { Ag2Export } from '../reasoning/backends/ag2/exportProblem';
-import type { ReadableProof } from '../reasoning/proof/types';
-import { focusProof, formatProofNode, formatProofPredicate, proofRuleLabel, proofToMarkdown } from '../reasoning/proof/formatProof';
-import { blobToDownload } from '../persistence/ggbFileCodec';
+import type { Ag2Export } from '../../reasoning/backends/ag2/exportProblem';
+import type { ReadableProof } from '../../reasoning/proof/types';
+import { focusProof, formatProofNode, formatProofPredicate, proofRuleLabel, proofToMarkdown } from '../../reasoning/proof/formatProof';
+import { blobToDownload } from '../../persistence/ggbFileCodec';
 import GeometryStatement from './GeometryStatement';
 
 interface Props { proof: ReadableProof; exported: Ag2Export; elapsedMs: number; }

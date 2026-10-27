@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
 
 const GeometryDiscoveryControls: React.FC<{ state: GeometryRelationsState }> = ({ state }) => {
   const { preferences, setPreferences } = state;

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ALL_RELATION_KINDS, RELATION_GROUPS } from '../analysis/relations/catalog';
-import type { GeometryRelationKind } from '../analysis/relations/catalog';
-import { changeRelationSelection } from '../analysis/preferences/relationSelection';
-import type { SelectionAction } from '../analysis/preferences/relationSelection';
+import { ALL_RELATION_KINDS, RELATION_GROUPS } from '../../analysis/relations/catalog';
+import type { GeometryRelationKind } from '../../analysis/relations/catalog';
+import { changeRelationSelection } from '../../analysis/preferences/relationSelection';
+import type { SelectionAction } from '../../analysis/preferences/relationSelection';
 
 const ACTIONS: Array<{ action: SelectionAction; label: string }> = [{ action: 'all', label: 'All' }, { action: 'none', label: 'None' }, { action: 'invert', label: 'Invert' }];
 interface Props {

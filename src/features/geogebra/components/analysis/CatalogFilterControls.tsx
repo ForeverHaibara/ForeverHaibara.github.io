@@ -1,7 +1,7 @@
 import React from 'react';
-import { ALL_RELATION_KINDS } from '../analysis/relations/catalog';
-import { defaultCatalogFilter } from '../reasoning/selection/relationCatalog';
-import type { CatalogFilter } from '../reasoning/selection/relationCatalog';
+import { ALL_RELATION_KINDS } from '../../analysis/relations/catalog';
+import { defaultCatalogFilter } from '../../reasoning/selection/relationCatalog';
+import type { CatalogFilter } from '../../reasoning/selection/relationCatalog';
 import { RelationTypeControls } from './RelationTypeControls';
 
 interface Props {

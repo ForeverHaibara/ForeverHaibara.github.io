@@ -115,7 +115,7 @@ AG2 的坐标检查可能比数值发现严格得多。普通模式的桥接层�
 | `backends/ag2/capabilities.ts` | 上游版本、能力及资源预算 |
 | `backends/ag2/exportProblem.ts` | 语义展开、校验、角分支、名称与坐标映射 |
 | `backends/ag2/Ag2WorkerClient.ts`、`ag2.worker.ts` | 加载、通信、取消及超时 |
-| `proof/`、`components/ReadableProofView.tsx` | 证明图协议、原始名称展示、聚焦和 Markdown |
+| `proof/`、`components/reasoning/ReadableProofView.tsx` | 证明图协议、原始名称展示、聚焦和 Markdown |
 | 根目录 `public/geometry-reasoning/proof_algebra.py`、`proof_ddar.py` | 精确来源消元、独立代数回放、带记录的 DDAR 适配 |
 | `../../../../public/geometry-reasoning/ag2_bridge.py` | 原生与浏览器共用的 Python 桥 |
 | `../../../../public/vendor/alphageometry2/` | 未修改的固定上游源码与许可 |

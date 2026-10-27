@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import GeometryReasoningView from './GeometryReasoningView';
-import { midpointConstruction } from '../reasoning/__fixtures__/problems';
-import { detectGeometryRelations } from '../analysis/geometryRelations';
-import { defaultDiscoveryPreferences } from '../analysis/preferences/discoveryPreferences';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import type { ObjectLink } from '../interaction/useObjectLink';
-import type { GeoGebraEngine } from '../types';
+import GeometryReasoningView from '../reasoning/GeometryReasoningView';
+import { midpointConstruction } from '../../reasoning/__fixtures__/problems';
+import { detectGeometryRelations } from '../../analysis/geometryRelations';
+import { defaultDiscoveryPreferences } from '../../analysis/preferences/discoveryPreferences';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
+import type { ObjectLink } from '../../interaction/useObjectLink';
+import type { GeoGebraEngine } from '../../types';
 
 describe('unified relations and reasoning UI', () => {
   it.each([false, true])('keeps catalog controls usable on the current snapshot with pending discovery settings: %s', (stale) => {

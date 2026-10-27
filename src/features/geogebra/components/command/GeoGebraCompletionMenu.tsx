@@ -1,8 +1,8 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { CompletionItem } from '../commands/completion/types';
-import { completionItemKey } from '../commands/completion/completionRegistry';
-import { geometryTypeLabel } from '../geometryObjectTypes';
+import type { CompletionItem } from '../../commands/completion/types';
+import { completionItemKey } from '../../commands/completion/completionRegistry';
+import { geometryTypeLabel } from '../../geometryObjectTypes';
 
 interface GeoGebraCompletionMenuProps {
   anchor: HTMLTextAreaElement;

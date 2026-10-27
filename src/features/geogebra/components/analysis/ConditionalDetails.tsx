@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { GeometryRelation } from '../analysis/geometryTypes';
-import { formatEquation, formatRelation } from '../analysis/presentation/formatRelation';
+import type { GeometryRelation } from '../../analysis/geometryTypes';
+import { formatEquation, formatRelation } from '../../analysis/presentation/formatRelation';
 
 export const ConditionalDetails: React.FC<{ relation: GeometryRelation }> = ({ relation }) => {
   const [visible, setVisible] = useState(16);

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ALL_RELATION_KINDS, DEFAULT_RELATION_KINDS, RELATION_GROUPS } from '../relations/catalog';
 import { defaultDiscoveryPreferences, normalizeDiscoveryPreferences } from './discoveryPreferences';
 import { changeRelationSelection } from './relationSelection';
-import { RelationTypeControls } from '../../components/RelationTypeControls';
+import { RelationTypeControls } from '../../components/analysis/RelationTypeControls';
 
 describe('global and scoped selection controls', () => {
   it('selects all, clears and inverts without altering types outside the scope', () => {

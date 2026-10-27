@@ -1,10 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import ConditionSuggestions from './ConditionSuggestions';
-import { midpointConstruction } from '../reasoning/__fixtures__/problems';
-import { proposeConditions } from '../reasoning/selection/proposeConditions';
-import { DEFAULT_CHARACTERIZATION_OPTIONS } from '../reasoning/selection/types';
-import { REPLICA_SNAPSHOT_WARNING } from '../reasoning/sampling/types';
+import { midpointConstruction } from '../../reasoning/__fixtures__/problems';
+import { proposeConditions } from '../../reasoning/selection/proposeConditions';
+import { DEFAULT_CHARACTERIZATION_OPTIONS } from '../../reasoning/selection/types';
+import { REPLICA_SNAPSHOT_WARNING } from '../../reasoning/sampling/types';
 
 describe('provisional condition warning', () => {
   it('shows the mismatch warning outside collapsed details, alongside usable suggestions', () => {

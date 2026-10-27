@@ -1,6 +1,6 @@
-import type { ProofOutcome } from '../reasoning/proof/proofOutcome';
+import type { ProofOutcome } from '../../reasoning/proof/proofOutcome';
 import { useRef, type Ref } from 'react';
-import StudioIcon from './StudioIcon';
+import StudioIcon from '../studio/StudioIcon';
 import './reasoning-workspace.css';
 
 interface Props {

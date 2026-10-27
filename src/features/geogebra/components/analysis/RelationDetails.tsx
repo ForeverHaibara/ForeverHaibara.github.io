@@ -1,7 +1,7 @@
 import React from 'react';
-import type { GeometryRelation } from '../analysis/geometryTypes';
-import type { ObjectLink } from '../interaction/useObjectLink';
-import { formatQuantityGroup, formatRelation } from '../analysis/presentation/formatRelation';
+import type { GeometryRelation } from '../../analysis/geometryTypes';
+import type { ObjectLink } from '../../interaction/useObjectLink';
+import { formatQuantityGroup, formatRelation } from '../../analysis/presentation/formatRelation';
 import { GeneratorDetails } from './GeneratorDetails';
 import { ConditionalDetails } from './ConditionalDetails';
 

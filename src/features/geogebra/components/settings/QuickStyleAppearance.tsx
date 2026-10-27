@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { LINE_STYLES, POINT_STYLES, type SelectedObjectStyle } from '../settings/objectStyles';
-import type { ObjectStyle } from '../settings/types';
+import { LINE_STYLES, POINT_STYLES, type SelectedObjectStyle } from '../../settings/objectStyles';
+import type { ObjectStyle } from '../../settings/types';
 
 export const commonStyle = <K extends keyof ObjectStyle>(objects: SelectedObjectStyle[], key: K) =>
   objects.length > 0 && objects.every((object) => object[key] === objects[0][key]) ? objects[0][key] : undefined;

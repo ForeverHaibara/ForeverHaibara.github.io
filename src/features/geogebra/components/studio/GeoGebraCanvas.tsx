@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef } from 'react';
-import type { GeoGebraEngine } from '../types';
+import type { GeoGebraEngine } from '../../types';
 
 interface GeoGebraCanvasProps {
   engine: GeoGebraEngine;

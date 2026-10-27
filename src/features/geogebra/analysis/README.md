@@ -51,7 +51,7 @@
 | `useGeometryRelations.ts`、`discovery.worker.ts` | 后台运行、取消／版本隔离、自动与单次运行；受限环境同步回退。 |
 | `*.test.ts` | 解析、图、数值稳定性、评分偏好和构型回归测试。 |
 
-入口是 [GeoGebraStudioPage](../../../pages/geogebra/GeoGebraStudioPage.tsx)，结果由 [GeometryRelationsView](../components/GeometryRelationsView.tsx) 显示。
+入口是 [GeoGebraStudioPage](../../../pages/geogebra/GeoGebraStudioPage.tsx)，结果由 [GeometryRelationsView](../components/analysis/GeometryRelationsView.tsx) 显示。
 
 ```text
 GeoGebra API → ConstructionSnapshot → 完整 DependencyGraph

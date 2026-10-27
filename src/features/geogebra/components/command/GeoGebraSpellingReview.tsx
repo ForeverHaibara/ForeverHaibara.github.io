@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SpellingCorrection } from '../commands/spellingSuggestions';
+import type { SpellingCorrection } from '../../commands/spellingSuggestions';
 
 interface GeoGebraSpellingReviewProps {
   corrections: readonly SpellingCorrection[];

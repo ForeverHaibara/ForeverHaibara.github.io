@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import type { ObjectLink } from '../interaction/useObjectLink';
-import { relationLabel } from '../analysis/relations/catalog';
-import { displayScore, scoreColors } from '../analysis/presentation/formatRelation';
-import type { ConditionSelection, ReasoningProblem } from '../reasoning/ir/types';
-import { formatPredicate } from '../reasoning/ir/formatPredicate';
-import { buildCatalogEntries, defaultCatalogFilter, filterCatalogEntries } from '../reasoning/selection/relationCatalog';
-import type { CatalogFilter, CatalogView } from '../reasoning/selection/relationCatalog';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
+import type { ObjectLink } from '../../interaction/useObjectLink';
+import { relationLabel } from '../../analysis/relations/catalog';
+import { displayScore, scoreColors } from '../../analysis/presentation/formatRelation';
+import type { ConditionSelection, ReasoningProblem } from '../../reasoning/ir/types';
+import { formatPredicate } from '../../reasoning/ir/formatPredicate';
+import { buildCatalogEntries, defaultCatalogFilter, filterCatalogEntries } from '../../reasoning/selection/relationCatalog';
+import type { CatalogFilter, CatalogView } from '../../reasoning/selection/relationCatalog';
 import { RelationDetails } from './RelationDetails';
 import CatalogFilterControls from './CatalogFilterControls';
-import type { GeometryRelation } from '../analysis/geometryTypes';
-import { formatProductEquation } from '../geometry/vectorProducts';
-import GeometryStatement from './GeometryStatement';
+import type { GeometryRelation } from '../../analysis/geometryTypes';
+import { formatProductEquation } from '../../geometry/vectorProducts';
+import GeometryStatement from '../reasoning/GeometryStatement';
 
 interface Props {
   state: GeometryRelationsState;

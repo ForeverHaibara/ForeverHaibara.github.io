@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import QuickStyleAppearance from './QuickStyleAppearance';
-import type { SelectedObjectStyle } from '../settings/objectStyles';
+import type { SelectedObjectStyle } from '../../settings/objectStyles';
 
 const point: SelectedObjectStyle = { name: 'P', type: 'point', typeLabel: 'Point', point: true, line: false, fill: false, stroke: false, xml: '', color: '#ff0000', size: 5, pointStyle: 0 };
 const line: SelectedObjectStyle = { ...point, name: 'l', type: 'segment', typeLabel: 'Segment', point: false, line: true, stroke: true, pointStyle: undefined, lineStyle: 2, strokeOpacity: .4 };

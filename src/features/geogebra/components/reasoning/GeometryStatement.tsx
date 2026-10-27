@@ -1,6 +1,6 @@
 import React from 'react';
-import KatexDisplay from '../../../components/KatexDisplay';
-import type { VectorNotation } from '../geometry/vectorProducts';
+import KatexDisplay from '../../../../components/KatexDisplay';
+import type { VectorNotation } from '../../geometry/vectorProducts';
 
 /** A shared accessible text fallback, with mathematical vector notation on screen. */
 const GeometryStatement: React.FC<{ format: (notation: VectorNotation) => string }> = ({ format }) => {

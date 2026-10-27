@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { projectGraph } from '../analysis/constructionGraph';
-import { objectNodeId, type DependencyGraph, type GraphNode } from '../analysis/graphTypes';
-import { geometryTypeLabel } from '../geometryObjectTypes';
-import type { ObjectLink } from '../interaction/useObjectLink';
+import { projectGraph } from '../../analysis/constructionGraph';
+import { objectNodeId, type DependencyGraph, type GraphNode } from '../../analysis/graphTypes';
+import { geometryTypeLabel } from '../../geometryObjectTypes';
+import type { ObjectLink } from '../../interaction/useObjectLink';
 
 interface DependencyGraphViewProps {
   graph: DependencyGraph | null;

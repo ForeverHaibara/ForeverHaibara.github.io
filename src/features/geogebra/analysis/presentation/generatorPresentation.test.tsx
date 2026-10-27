@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { DirectionModel, LengthModel } from '../geometryTypes';
 import { formatLengthMember, presentDirectionModel, presentLengthModel } from './generatorPresentation';
-import { GeneratorDetails } from '../../components/GeneratorDetails';
+import { GeneratorDetails } from '../../components/analysis/GeneratorDetails';
 
 const lengthModel: LengthModel = {
   anchor: ['D', 'E'], generators: [['D', 'F'], ['E', 'F']], constraintRank: 2,

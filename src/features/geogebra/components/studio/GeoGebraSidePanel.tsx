@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../config';
-import type { EngineCapabilities, GeoGebraEngine, GeometryEvent } from '../types';
-import DependencyGraphView from './DependencyGraphView';
-import type { DependencyGraph } from '../analysis/graphTypes';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import GeometryReasoningView from './GeometryReasoningView';
-import type { ObjectLink } from '../interaction/useObjectLink';
+import { MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../../config';
+import type { EngineCapabilities, GeoGebraEngine, GeometryEvent } from '../../types';
+import DependencyGraphView from '../analysis/DependencyGraphView';
+import type { DependencyGraph } from '../../analysis/graphTypes';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
+import GeometryReasoningView from '../reasoning/GeometryReasoningView';
+import type { ObjectLink } from '../../interaction/useObjectLink';
 
 interface GeoGebraSidePanelProps {
   engine: GeoGebraEngine;

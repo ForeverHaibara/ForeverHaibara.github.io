@@ -1,17 +1,17 @@
 import React, { useId, useMemo, useRef, useState } from 'react';
-import { formatApiResult, parseApiCall } from '../commands/apiConsoleParser';
-import { CommandHistory } from '../commands/commandHistory';
-import { executeCommandPipeline } from '../commands/commandPipeline';
-import type { ApiConsoleResult, CommandResult, GeoGebraEngine } from '../types';
-import type { CompletionRegistry } from '../commands/completion/completionRegistry';
-import { studioCompletionRegistry } from '../commands/completion/studioCompletionRegistry';
-import { useCommandCompletion } from '../commands/completion/useCommandCompletion';
+import { formatApiResult, parseApiCall } from '../../commands/apiConsoleParser';
+import { CommandHistory } from '../../commands/commandHistory';
+import { executeCommandPipeline } from '../../commands/commandPipeline';
+import type { ApiConsoleResult, CommandResult, GeoGebraEngine } from '../../types';
+import type { CompletionRegistry } from '../../commands/completion/completionRegistry';
+import { studioCompletionRegistry } from '../../commands/completion/studioCompletionRegistry';
+import { useCommandCompletion } from '../../commands/completion/useCommandCompletion';
 import GeoGebraCompletionMenu from './GeoGebraCompletionMenu';
-import { createObjectCompletionProvider } from '../commands/completion/objectCompletionProvider';
-import { createFileToolCompletionProvider } from '../commands/completion/fileToolCompletionProvider';
-import { useCommandSpelling } from '../commands/useCommandSpelling';
+import { createObjectCompletionProvider } from '../../commands/completion/objectCompletionProvider';
+import { createFileToolCompletionProvider } from '../../commands/completion/fileToolCompletionProvider';
+import { useCommandSpelling } from '../../commands/useCommandSpelling';
 import GeoGebraSpellingReview from './GeoGebraSpellingReview';
-import StudioIcon from './StudioIcon';
+import StudioIcon from '../studio/StudioIcon';
 
 interface GeoGebraCommandBarProps {
   engine: GeoGebraEngine | null;

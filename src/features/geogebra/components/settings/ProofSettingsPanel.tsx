@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { GeometryRelationsState } from '../analysis/useGeometryRelations';
-import { DISCOVERY_BUDGET_FIELDS, DISCOVERY_BUDGET_KEYS } from '../analysis/preferences/discoveryPreferences';
-import { DEFAULT_DISCOVERY_OPTIONS } from '../analysis/relations/catalog';
-import { REASONING_FIELDS, REASONING_FIELD_KEYS, reasoningPreset } from '../reasoning/preferences/reasoningPreferences';
-import type { ReasoningPreferences, ReasoningPreset } from '../reasoning/preferences/reasoningPreferences';
-import { RelationTypeControls } from './RelationTypeControls';
-import StudioIcon, { StudioIconButton } from './StudioIcon';
-import type { StudioIconName } from './StudioIcon';
+import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
+import { DISCOVERY_BUDGET_FIELDS, DISCOVERY_BUDGET_KEYS } from '../../analysis/preferences/discoveryPreferences';
+import { DEFAULT_DISCOVERY_OPTIONS } from '../../analysis/relations/catalog';
+import { REASONING_FIELDS, REASONING_FIELD_KEYS, reasoningPreset } from '../../reasoning/preferences/reasoningPreferences';
+import type { ReasoningPreferences, ReasoningPreset } from '../../reasoning/preferences/reasoningPreferences';
+import { RelationTypeControls } from '../analysis/RelationTypeControls';
+import StudioIcon, { StudioIconButton } from '../studio/StudioIcon';
+import type { StudioIconName } from '../studio/StudioIcon';
 import './proof-settings.css';
 
 interface Props {

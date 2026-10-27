@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { GeoGebraEngine } from '../types';
-import type { ObjectStyle } from '../settings/types';
-import { readObjectStyles, type SelectedObjectStyle } from '../settings/objectStyles';
-import StudioIcon from './StudioIcon';
-import { QUICK_STYLE_COLORS } from '../settings/quickStylePalette';
+import type { GeoGebraEngine } from '../../types';
+import type { ObjectStyle } from '../../settings/types';
+import { readObjectStyles, type SelectedObjectStyle } from '../../settings/objectStyles';
+import StudioIcon from '../studio/StudioIcon';
+import { QUICK_STYLE_COLORS } from '../../settings/quickStylePalette';
 import QuickStyleAppearance, { commonStyle as common } from './QuickStyleAppearance';
 
 

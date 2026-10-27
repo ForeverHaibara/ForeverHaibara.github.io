@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { GGB_PALETTES } from '../settings/defaults';
-import type { GgbPreferences } from '../settings/types';
-import { StudioIconButton } from './StudioIcon';
+import { GGB_PALETTES } from '../../settings/defaults';
+import type { GgbPreferences } from '../../settings/types';
+import { StudioIconButton } from '../studio/StudioIcon';
 
 interface Props {
   preferences: GgbPreferences;
