@@ -514,7 +514,7 @@
     },
     {
       "name": "AntigonalConjugate",
-      "description": "Antigonal image of P, with homogeneous continuation on the circumcircle.",
+      "description": "Antigonal image of P, the antipode of H on the hyperbola passing through ABCHP.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "antigonal"}
       ]
@@ -767,9 +767,10 @@
     },
     {
       "name": "OrthicAxis",
-      "description": "Trilinear polar of the orthocenter, extended continuously to right triangles.",
+      "description": "Trilinear polar of the orthocenter or the locus of points whose polar conic of a cubic is a rectangular hyperbola.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "builder": "orthicAxis"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "builder": "orthicAxis"},
+        {"params": [{"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "orthicAxisCubic"}
       ]
     },
     {
@@ -781,14 +782,14 @@
     },
     {
       "name": "StammlerHyperbola",
-      "description": "Stammler hyperbola through the in/excenters and circumcenter, including line-pair limits.",
+      "description": "Stammler hyperbola through the in/excenters and circumcenter.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "stammler"}
       ]
     },
     {
       "name": "OrthopolarConic",
-      "description": "Algebraic conic of orthopoles of lines through P, including degenerate limits.",
+      "description": "Algebraic conic of orthopoles of lines through P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "orthopolar"}
       ]
@@ -809,14 +810,14 @@
     },
     {
       "name": "CoTf3",
-      "description": "Scimemi image of P with respect to the conic, including circle and parabola limits.",
+      "description": "Scimemi image of P with respect to the conic.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "scimemi"}
       ]
     },
     {
-      "name": "InvCoTf3",
-      "description": "Inverse Scimemi image of P, including the finite rectangular-hyperbola limit.",
+      "name": "CoTf3Inv",
+      "description": "Inverse Scimemi image of P.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "inverseScimemi"}
       ]
@@ -1006,7 +1007,7 @@
     {
       "name": "NinePointConic",
       "aliases": ["QACo1"],
-      "description": "Conic through the six pairwise midpoints of ABCD, including degenerate configurations. Locus of centers of conics passing through ABCD.",
+      "description": "Conic through the six pairwise midpoints of ABCD.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "conic", "builder": "ninePointConic"}
       ]
@@ -1048,6 +1049,77 @@
       "description": "Orthopivotal cubic with orthopivot P; decomposed limits are retained.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "orthopivotal"}
+      ]
+    },
+    {
+      "name": "CircularCubic",
+      "description": "Unique circular cubic through seven points, when the seven constraints are independent.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}], "returns": "implicitCurve", "builder": "circularCubic"}
+      ]
+    },
+    {
+      "name": "CayleyBacharachPoint",
+      "description": "Ninth base point of the cubic pencil through eight points, or seventh finite base point of the circular-cubic pencil through six points.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}, {"name": "H", "type": "point"}], "returns": "point", "builder": "cayleyBacharach"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}], "returns": "point", "builder": "cayleyBacharach"}
+      ]
+    },
+    {
+      "name": "CircularPolarPoint",
+      "description": "Point whose first polar conic in a cubic is circular.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}], "returns": "point", "builder": "circularPolarPoint"}
+      ]
+    },
+    {
+      "name": "HessianCubic",
+      "description": "Hessian cubic of a plane cubic.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}], "returns": "implicitCurve", "builder": "hessianCubic"}
+      ]
+    },
+    {
+      "name": "HessianCorrespondent",
+      "description": "Conjugate point on the Hessian, as the singular point of the first polar conic.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "hessianCorrespondent"}
+      ]
+    },
+    {
+      "name": "MixedPolar",
+      "description": "Mixed polar line of two points with respect to a cubic.",
+      "overloads": [
+        {"params": [{"name": "P", "type": "point"}, {"name": "Q", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "mixedPolar"}
+      ]
+    },
+    {
+      "name": "Poloconic",
+      "description": "Conic enveloped by the polar lines of points on a line with respect to a cubic.",
+      "overloads": [
+        {"params": [{"name": "l", "type": "lineLike"}, {"name": "F", "type": "implicitCurve"}], "returns": "conic", "builder": "poloconic"}
+      ]
+    },
+    {
+      "name": "JacobianCubic",
+      "description": "Jacobian cubic of a net generated by three conics.",
+      "overloads": [
+        {"params": [{"name": "q1", "type": "conic"}, {"name": "q2", "type": "conic"}, {"name": "q3", "type": "conic"}], "returns": "implicitCurve", "builder": "jacobianCubic"}
+      ]
+    },
+    {
+      "name": "ConicLineCubic",
+      "description": "Reducible cubic consisting of a conic and the supporting line of a line-like object.",
+      "overloads": [
+        {"params": [{"name": "q", "type": "conic"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "conicLineCubic"}
+      ]
+    },
+    {
+      "name": "CubicPencil",
+      "description": "Unique member of the pencil generated by two cubics that passes through P.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "G", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "cubicPencil"}
       ]
     }
   ]

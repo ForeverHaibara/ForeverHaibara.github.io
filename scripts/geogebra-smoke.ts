@@ -5,6 +5,7 @@ import { createFileToolCompletionProvider } from '../src/features/geogebra/comma
 import { verifyBasicGeometry, verifyRadicalAxis } from './geogebra-basic-geometry-smoke';
 import { verifyConstructions } from './geogebra-constructions-smoke';
 import { verifyCubic } from './geogebra-cubic-smoke';
+import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -60,6 +61,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'cubic-tools') {
+      await verifyCubicTools(engine, report);
+      report('COMPLETE');
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('suite') === 'algebraic') {
       await verifyAlgebraicGeometry(engine, report);
       report('COMPLETE');

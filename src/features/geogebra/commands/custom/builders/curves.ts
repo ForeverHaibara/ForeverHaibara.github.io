@@ -10,7 +10,7 @@ const term = (coefficient: string, x: string, y: string, i: number, j: number) =
 export const CUBIC_COEFFICIENT_INDICES: readonly number[] = CUBIC_MONOMIALS.map(([i, j]) => i + 4 * j + 1);
 
 /** Native univariate polynomial coefficients, without CAS or point sampling. */
-const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
+export const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
   bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
     // Coefficients accepts a one-variable function, not an implicit curve or
     // a two-variable function. Keep a formal x even for constant restrictions;

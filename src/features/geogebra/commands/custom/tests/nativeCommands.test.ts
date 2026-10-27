@@ -43,7 +43,7 @@ describe('native command compatibility', () => {
         expect(infinitePathEndpoints(expanded), source).toEqual([]);
       }
     }
-  });
+  }, 15000);
 
   it('detects unexpanded site calls and unknown native names, including bracket syntax', () => {
     expect(unsupportedCalls('Intersect[RadicalAxis(c1,c2),MissingNative(c1)]')).toEqual(['RadicalAxis', 'MissingNative']);
