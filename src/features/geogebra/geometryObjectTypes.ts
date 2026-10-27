@@ -3,6 +3,7 @@ const TYPE_LABELS: Record<string, string> = {
   segment: 'Segment', ray: 'Ray', vector: 'Vector', conic: 'Conic',
   conicpart: 'Conic arc', circle: 'Circle', ellipse: 'Ellipse',
   hyperbola: 'Hyperbola', parabola: 'Parabola', polygon: 'Polygon',
+  intersectinglines: 'Intersecting lines', parallellines: 'Parallel lines', doubleline: 'Double line', emptyset: 'Empty conic',
   polyline: 'Polyline', function: 'Function', functionnvar: 'Multivariable function',
   curvecartesian: 'Parametric curve', curvecartesian3d: '3D parametric curve',
   implicitpoly: 'Implicit curve', implicitcurve: 'Implicit curve',

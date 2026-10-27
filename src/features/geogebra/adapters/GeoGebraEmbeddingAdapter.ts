@@ -58,6 +58,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
   private listeners = new Set<EngineEventListener>();
   private interactionListeners = new Set<(event: GeometryInteractionEvent) => void>();
   private selectionWriteDepth = 0;
+  private styleWriteDepth = 0;
   private registeredListeners: Array<() => void> = [];
   private resizeObserver: ResizeObserver | null = null;
   private observedLayoutElements: HTMLElement[] = [];
@@ -240,6 +241,13 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     }
   }
 
+  async updateStyleXml(name: string, xml: string): Promise<void> {
+    this.styleWriteDepth += 1;
+    try { await this.callApi('evalXML', [xml]); }
+    finally { this.styleWriteDepth -= 1; }
+    this.listeners.forEach((listener) => listener({ type: 'style', objectName: name, timestamp: Date.now() }));
+  }
+
   dispose(): void {
     this.lifecycle += 1;
     for (const unregister of this.registeredListeners.splice(0)) {
@@ -304,6 +312,7 @@ export class GeoGebraEmbeddingAdapter implements GeoGebraEngine {
     if (!applet) return;
 
     const emit = (type: GeometryEvent['type'], objectName?: string, previousName?: string) => {
+      if (this.styleWriteDepth > 0) return;
       const event: GeometryEvent = { type, objectName, previousName, timestamp: Date.now() };
       this.listeners.forEach((listener) => listener(event));
     };

@@ -25,6 +25,10 @@ export interface ObjectStyle {
   label?: boolean;
   size?: number;
   color?: string;
+  opacity?: number;
+  strokeOpacity?: number;
+  lineStyle?: number;
+  pointStyle?: number;
 }
 
 /** Studio baseline plus explicit per-property overrides; old draft baselines remain valid. */

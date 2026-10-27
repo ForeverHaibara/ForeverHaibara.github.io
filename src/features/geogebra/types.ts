@@ -52,6 +52,8 @@ export interface GeoGebraEngine {
   subscribe(listener: EngineEventListener): () => void;
   subscribeInteraction?(listener: (event: GeometryInteractionEvent) => void): () => void;
   selectObjects?(names: readonly string[]): Promise<void>;
+  /** Merge a single object's visual XML without reporting a construction edit. */
+  updateStyleXml?(name: string, xml: string): Promise<void>;
   dispose(): void;
 }
 

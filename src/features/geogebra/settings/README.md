@@ -32,6 +32,31 @@ preference controls an object property, add a getter/setter ownership mapping to
 API references: [Apps API](https://geogebra.github.io/docs/reference/en/GeoGebra_Apps_API/)
 and [perspectives](https://geogebra.github.io/docs/manual/en/commands/SetPerspective/).
 
+## Quick appearance controls
+
+`objectStyles.ts` owns native type/capability detection, getters, setters and
+the line/point style catalogs. Both the preference controller and quick inspector
+use it. Conics can report `IntersectingLines`, `ParallelLines`, `DoubleLine`,
+`EmptySet`, or even `Point`; the native element XML distinguishes their stable
+conic class from an actual point. The inspector also accepts common color and
+label edits on other object types without assigning them line defaults.
+
+Fill opacity uses `getFilling/setFilling`; stroke opacity is a separate native
+`lineStyle.opacity` byte. Only that attribute is patched in the object's XML,
+then merged with `evalXML` (never `setXML`). The adapter emits a style event for
+this operation instead of reporting a construction change. Point styles retain
+GeoGebra's native IDs, including its default and borderless circle options.
+
+Extended properties keep their original object appearance as their reset
+baseline, rather than adding new global preferences. Explicit overrides and
+native style edits survive reconstruction and draft restore; resetting a selected
+object restores that baseline. Optional unsupported getters do not disable the
+remaining controls. Opacity sliders commit on release or keyboard completion,
+and ignore stale reads while a newer edit is pending.
+
+`quickStylePalette.ts` stores the 27 GeoGebra 5 swatches sampled from the supplied
+image, in its original three-row order; it is separate from global color themes.
+
 ## Point colors
 
 `pointRoles.ts` classifies points using independence and the target construction

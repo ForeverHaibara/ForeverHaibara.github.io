@@ -1,7 +1,7 @@
 import type { GeoGebraEngine } from '../types';
 import type { GgbPreferences, ManagedStyles, ObjectStyle } from './types';
 import { readPointRole } from './pointRoles';
-import { LINE_TYPES } from './objectStyles';
+import { describeObjectStyle, readObjectStyleValues, STYLE_KEYS, validateObjectStyle, writeObjectStyle, type ObjectStyleInfo } from './objectStyles';
 
 const VIEW_KEYS = ['algebra', 'cas', 'spreadsheet', 'graphics2', 'graphics3d'] as const;
 const VIEW_CODES = ['A', 'C', 'S', 'D', 'T'];
@@ -20,7 +20,7 @@ export class PreferenceController {
   private unsubscribe: () => void;
   private writing = false;
   private restoringHistory = false;
-  private pointKinds = new Map<string, boolean>();
+  private objectKinds = new Map<string, ObjectStyleInfo>();
 
   constructor(private engine: GeoGebraEngine, private preferences: GgbPreferences, private onError: (message: string) => void) {
     this.unsubscribe = engine.subscribe((event) => {
@@ -33,13 +33,13 @@ export class PreferenceController {
         const previous = this.managed[event.previousName];
         if (previous) this.managed[event.objectName] = previous;
         delete this.managed[event.previousName];
-        const kind = this.pointKinds.get(event.previousName);
-        if (kind !== undefined) this.pointKinds.set(event.objectName, kind);
-        this.pointKinds.delete(event.previousName);
+        const kind = this.objectKinds.get(event.previousName);
+        if (kind !== undefined) this.objectKinds.set(event.objectName, kind);
+        this.objectKinds.delete(event.previousName);
       }
       if (event.type === 'style' && event.objectName && !this.writing && !this.timer) {
         const name = event.objectName;
-        const point = this.pointKinds.get(name);
+        const point = this.objectKinds.get(name);
         if (point !== undefined) {
           // Read at notification time, before a synchronous reconstruction can
           // replace the native objects. Only ownership writes are queued.
@@ -65,13 +65,14 @@ export class PreferenceController {
     });
   }
 
-  private enqueue(work: () => Promise<void>): Promise<void> {
+  private enqueue(work: () => Promise<void>, propagateError = false): Promise<void> {
     const generation = this.generation;
-    this.pending = this.pending.then(async () => {
+    const task = this.pending.then(async () => {
       if (this.disposed || generation !== this.generation) return;
       await work();
-    }).catch((error: unknown) => { if (!this.disposed) this.onError(error instanceof Error ? error.message : 'Could not apply preferences.'); });
-    return this.pending;
+    });
+    this.pending = task.catch((error: unknown) => { if (!this.disposed) this.onError(error instanceof Error ? error.message : 'Could not apply preferences.'); });
+    return propagateError ? task : this.pending;
   }
 
   private scheduleDocument() {
@@ -105,7 +106,7 @@ export class PreferenceController {
       await load();
       if (this.disposed) return;
       this.managed = Object.assign(Object.create(null), snapshot ?? {});
-      this.pointKinds.clear();
+      this.objectKinds.clear();
       this.active = true;
       await this.enqueue(() => this.applyDocument());
     } finally { this.suspended = false; }
@@ -144,15 +145,17 @@ export class PreferenceController {
   /** Explicit object edits always win, even when they match today's default. */
   editObjects(names: readonly string[], patch: ObjectStyle | null): Promise<void> {
     if (!this.active || this.suspended) return Promise.resolve();
-    if (patch?.color !== undefined && !/^#[\da-f]{6}$/i.test(patch.color)) return Promise.reject(new Error('Use a six-digit hex color.'));
+    if (patch) validateObjectStyle(patch);
     return this.enqueue(async () => {
       await this.engine.callApi('setUndoPoint', []);
       for (const name of names) {
-        if (!await this.styleMapping(name)) continue;
+        const info = await this.styleMapping(name);
+        if (!info) continue;
+        this.objectKinds.set(name, info);
         if (patch === null) await this.applyObject(name, true);
         else {
           const baseline = this.managed[name] ??= {};
-          for (const key of ['color', 'size', 'label'] as const) {
+          for (const key of STYLE_KEYS) {
             if (patch[key] === undefined) continue;
             await this.writeStyle(name, key, patch[key]!);
           }
@@ -160,14 +163,11 @@ export class PreferenceController {
         }
       }
       await this.engine.callApi('setUndoPoint', []);
-    });
+    }, true);
   }
 
   private async styleMapping(name: string) {
-    const type = String(await this.engine.callApi('getObjectType', [name]));
-    const point = /^point/i.test(type);
-    if (!point && !LINE_TYPES.test(type)) return null;
-    return { point, getters: { label: 'getLabelVisible', size: point ? 'getPointSize' : 'getLineThickness', color: 'getColor' } };
+    return describeObjectStyle(this.engine, name);
   }
 
   private async captureEdits(name: string) {
@@ -175,23 +175,19 @@ export class PreferenceController {
     if (!baseline) return;
     const mapping = await this.styleMapping(name);
     if (!mapping) return;
-    this.recordEdits(name, await this.readStyles(name, mapping.point));
+    this.objectKinds.set(name, mapping);
+    this.recordEdits(name, await this.readStyles(name, mapping));
   }
 
-  private async readStyles(name: string, point: boolean): Promise<ObjectStyle> {
-    const [label, size, color] = await Promise.all([
-      this.engine.callApi('getLabelVisible', [name]),
-      this.engine.callApi(point ? 'getPointSize' : 'getLineThickness', [name]),
-      this.engine.callApi('getColor', [name]),
-    ]);
-    return { label: Boolean(label), size: Number(size), color: String(color) };
+  private readStyles(name: string, info: ObjectStyleInfo): Promise<ObjectStyle> {
+    return readObjectStyleValues(this.engine, name, info);
   }
 
   private recordEdits(name: string, values: ObjectStyle) {
     const baseline = this.managed[name];
     if (!baseline) return;
-    for (const key of ['label', 'size', 'color'] as const) {
-      if (baseline[key] === undefined) continue;
+    for (const key of STYLE_KEYS) {
+      if (baseline[key] === undefined || values[key] === undefined) continue;
       const current = values[key];
       if (!same(current, baseline[key])) {
         (baseline.overrides ??= {})[key] = current as never;
@@ -202,12 +198,10 @@ export class PreferenceController {
   }
 
   private async writeStyle(name: string, key: keyof ObjectStyle, value: string | number | boolean) {
-    const mapping = await this.styleMapping(name);
+    const mapping = this.objectKinds.get(name) ?? await this.styleMapping(name);
     if (!mapping || this.disposed) return;
-    const method = key === 'label' ? 'setLabelVisible' : key === 'color' ? 'setColor' : mapping.point ? 'setPointSize' : 'setLineThickness';
-    const args = key === 'color' ? [name, ...[1, 3, 5].map((start) => parseInt(String(value).slice(start, start + 2), 16))] : [name, value];
     this.writing = true;
-    try { await this.engine.callApi(method, args); } finally { this.writing = false; }
+    try { await writeObjectStyle(this.engine, name, key, value, mapping); } finally { this.writing = false; }
   }
 
   dispose() {
@@ -246,7 +240,7 @@ export class PreferenceController {
 
   private async applyObjects(force: boolean, reconstructing = false) {
     const names = await this.engine.callApi('getAllObjectNames', []) as string[];
-    for (const name of Object.keys(this.managed)) if (!names.includes(name)) { delete this.managed[name]; this.pointKinds.delete(name); }
+    for (const name of Object.keys(this.managed)) if (!names.includes(name)) { delete this.managed[name]; this.objectKinds.delete(name); }
     if (!names.length) return;
     await this.engine.callApi('setRepaintingActive', [false]);
     try {
@@ -260,24 +254,31 @@ export class PreferenceController {
   }
 
   private async applyObject(name: string, force: boolean, reconstructing = false) {
-    const type = String(await this.engine.callApi('getObjectType', [name]));
-    const point = /^point/i.test(type);
-    if (!point && !LINE_TYPES.test(type)) return;
-    this.pointKinds.set(name, point);
+    const info = await this.styleMapping(name);
+    if (!info) return;
+    const { point, line } = info;
+    this.objectKinds.set(name, info);
+    const currentValues = await readObjectStyleValues(this.engine, name, info, info.xml);
+    if (!currentValues.color) return;
+    // Non-geometric objects get common quick edits, without inheriting line defaults.
+    if (!point && !line && !this.managed[name]) {
+      this.managed[name] = { ...currentValues };
+      return;
+    }
     const p = this.preferences;
     const role = point && p.pointColorMode === 'by-role' ? await readPointRole(this.engine, name) : 'free';
     const pointColor = role === 'constrained' ? p.constrainedPointColor : role === 'dependent' ? p.dependentPointColor : p.pointColor;
-    const desired = {
-      label: point ? p.pointLabels : p.lineLabels,
-      size: point ? p.pointSize : p.lineThickness,
-      color: point ? pointColor : p.lineColor,
-    };
     const baseline = this.managed[name] ?? {};
-    const getters = { label: 'getLabelVisible', size: point ? 'getPointSize' : 'getLineThickness', color: 'getColor' };
+    const desired: ObjectStyle = { ...currentValues };
+    // Extended styles have no global preference. Their original per-object
+    // appearance is the reset baseline, including styles imported from files.
+    for (const key of STYLE_KEYS) if (baseline[key] !== undefined) desired[key] = baseline[key] as never;
+    if (point || line) Object.assign(desired, { label: point ? p.pointLabels : p.lineLabels, size: point ? p.pointSize : p.lineThickness, color: point ? pointColor : p.lineColor });
     if (force) delete baseline.overrides;
-    for (const key of ['label', 'size', 'color'] as const) {
+    for (const key of STYLE_KEYS) {
       if (this.disposed) return;
-      const current = await this.engine.callApi(getters[key], [name]);
+      const current = currentValues[key];
+      if (current === undefined || desired[key] === undefined) continue;
       if (!force && !reconstructing && baseline.overrides?.[key] === undefined && baseline[key] !== undefined && !same(current, baseline[key])) {
         (baseline.overrides ??= {})[key] = current as never;
       }

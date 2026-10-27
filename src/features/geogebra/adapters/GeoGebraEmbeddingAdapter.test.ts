@@ -24,6 +24,19 @@ it('cancels a disposed initialization before it can inject a second applet', asy
   engine.dispose();
 });
 
+it('reports visual XML updates as styles instead of rebuilding the analysis graph', async () => {
+  let update!: (name: string) => void;
+  const evalXML = vi.fn(() => update('c'));
+  const { container } = mockEmbedding({ evalXML, registerUpdateListener: (listener: typeof update) => { update = listener; } });
+  const engine = new GeoGebraEmbeddingAdapter();
+  const events = vi.fn(); engine.subscribe(events);
+  await engine.initialize(container);
+  await engine.updateStyleXml('c', '<element type="conic" label="c"><lineStyle opacity="102"/></element>');
+  expect(events).toHaveBeenCalledOnce();
+  expect(events).toHaveBeenCalledWith(expect.objectContaining({ type: 'style', objectName: 'c' }));
+  engine.dispose();
+});
+
 it('reports native style undo records so autosave also sees edits without object updates', async () => {
   const registerStoreUndoListener = vi.fn();
   const unregisterStoreUndoListener = vi.fn();

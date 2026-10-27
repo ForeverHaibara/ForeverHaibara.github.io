@@ -4,7 +4,7 @@ import { DEFAULT_GGB_PREFERENCES } from './defaults';
 import { normalizePreferences } from './preferenceStore';
 import type { EngineEventListener, GeoGebraEngine, GeometryEvent } from '../types';
 
-type ObjectState = { type: string; label: boolean; size: number; color: string; role?: 'free' | 'constrained' | 'dependent' };
+type ObjectState = { type: string; label: boolean; size: number; color: string; role?: 'free' | 'constrained' | 'dependent'; opacity?: number; lineStyle?: number; pointStyle?: number; strokeOpacity?: number; storedType?: string };
 function fixture(objects: Record<string, ObjectState> = {}) {
   const listeners = new Set<EngineEventListener>();
   const callApi = vi.fn(async (method: string, args: unknown[]) => {
@@ -12,6 +12,17 @@ function fixture(objects: Record<string, ObjectState> = {}) {
     const object = objects[String(name)];
     if (method === 'getAllObjectNames') return Object.keys(objects);
     if (method === 'getObjectType') return object?.type ?? '';
+    if (method === 'getXML' && object && object.strokeOpacity !== undefined) return `<element type="${object.storedType ?? object.type}" label="${name}"><lineStyle thickness="${object.size}" type="0" opacity="${Math.round(object.strokeOpacity * 255)}"/></element>`;
+    if (method === 'evalXML') {
+      const source = String(name); const target = objects[source.match(/label="([^"]+)"/)![1]];
+      target.strokeOpacity = Number(source.match(/opacity="([^"]+)"/)![1]) / 255;
+    }
+    if (method === 'getFilling') return object.opacity;
+    if (method === 'getLineStyle') return object.lineStyle;
+    if (method === 'getPointStyle') return object.pointStyle;
+    if (method === 'setFilling') object.opacity = Number(value);
+    if (method === 'setLineStyle') object.lineStyle = Number(value);
+    if (method === 'setPointStyle') object.pointStyle = Number(value);
     if (method === 'isIndependent') return !object.role || object.role === 'free';
     if (method === 'getAlgorithmXML') return `<command name="${object.role === 'constrained' ? 'Point' : 'Intersect'}"><input a0="g"/><output a0="${name}"/></command>`;
     if (method === 'getLabelVisible') return object.label;
@@ -36,6 +47,47 @@ const line = (type = 'line'): ObjectState => ({ type, label: true, size: 1, colo
 afterEach(() => vi.useRealTimers());
 
 describe('GeoGebra preferences lifecycle and ownership', () => {
+  it('keeps fill, stroke, point and line styles through reconstruction, draft reload and selected reset', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ A: { ...point(), pointStyle: 0 }, c: { ...line('intersectinglines'), storedType: 'conic', opacity: 0, lineStyle: 0, strokeOpacity: 1 } });
+    await f.controller.loadDocument(async () => undefined);
+    await f.controller.editObjects(['A'], { pointStyle: 5 });
+    await f.controller.editObjects(['c'], { color: '#ff0000', opacity: .35, strokeOpacity: .4, lineStyle: 2 });
+    const saved = await f.controller.snapshot();
+    expect(f.objects.c).toMatchObject({ opacity: .35, strokeOpacity: .4, lineStyle: 2 });
+    f.emit('clear');
+    f.objects.A.pointStyle = 0;
+    Object.assign(f.objects.c, { color: '#000000', opacity: 0, strokeOpacity: 1, lineStyle: 0 });
+    f.emit('add', 'A'); f.emit('add', 'c');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.A.pointStyle).toBe(5);
+    expect(f.objects.c).toMatchObject({ color: '#ff0000', opacity: .35, strokeOpacity: .4, lineStyle: 2 });
+    f.controller.dispose();
+    const restored = new PreferenceController(f.engine, { ...DEFAULT_GGB_PREFERENCES }, f.errors);
+    f.objects.c.opacity = 0;
+    await restored.loadDocument(async () => undefined, saved);
+    expect(f.objects.c.opacity).toBe(.35);
+    await restored.editObjects(['A', 'c'], null);
+    expect(f.objects.A.pointStyle).toBe(0);
+    expect(f.objects.c).toMatchObject({ opacity: 0, strokeOpacity: 1, lineStyle: 0 });
+    expect(f.errors).not.toHaveBeenCalled();
+    restored.dispose();
+  });
+
+  it('records native advanced-style edits and does not assign line defaults to general objects', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ pic: { ...line('image'), opacity: .8 }, c: { ...line('parallellines'), opacity: 0, lineStyle: 0, strokeOpacity: 1 } });
+    await f.controller.loadDocument(async () => undefined);
+    expect(f.objects.pic.color).toBe('#000000');
+    f.objects.pic.opacity = .3; f.emit('style', 'pic');
+    f.objects.c.lineStyle = 4; f.emit('style', 'c');
+    f.emit('clear'); f.objects.pic.opacity = 1; f.objects.c.lineStyle = 0;
+    f.emit('add', 'pic'); f.emit('add', 'c');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.objects.pic.opacity).toBe(.3); expect(f.objects.c.lineStyle).toBe(4);
+    expect(f.errors).not.toHaveBeenCalled();
+    f.controller.dispose();
+  });
   it('applies a graphics-only perspective, rounding, hidden axes/grid and curve labels after loading', async () => {
     const f = fixture({ A: point(), c: line('conic'), f: line('function'), curve: line('curvecartesian'), text: line('text') });
     await f.controller.loadDocument(async () => undefined);
