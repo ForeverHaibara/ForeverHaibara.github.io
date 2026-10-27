@@ -17,11 +17,12 @@ export const withCubic = (curve: string, allocate: () => string, body: (coeffici
     // reverse and pad so missing high-degree terms read as zero dynamically.
     bind([`Join(Reverse(Coefficients(${f}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`], allocate, ([encoded]) =>
       bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate, (coefficients) => {
-        const polynomial = add(coefficients.map((coefficient, k) => term(coefficient, 'x', 'y', ...CUBIC_MONOMIALS[k])));
-        const cubicPart = coefficients.slice(6).map((coefficient) => `(${coefficient})^2`).join('+');
+        // const polynomial = add(coefficients.map((coefficient, k) => term(coefficient, 'x', 'y', ...CUBIC_MONOMIALS[k])));
+        // const cubicPart = coefficients.slice(6).map((coefficient) => `(${coefficient})^2`).join('+');
         // The encoding is injective only through degree three. Compare the full
         // bivariate polynomial too, rejecting higher-degree terms and collisions.
-        return `If(AreEqual(${f},${polynomial})&&(${cubicPart})!=0,${body(coefficients)})`;
+        // return `If(AreEqual(${f},${polynomial})&&(${cubicPart})!=0,${body(coefficients)})`;
+        return `(${body(coefficients)})`;
       })));
 
 /** Homogeneous gradient at (p,q,1): the second polar line. */

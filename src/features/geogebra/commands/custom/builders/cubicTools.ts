@@ -3,7 +3,7 @@ import { add, adjugate, barycentricPoint, bind, coefficientLine, coefficientList
 import type { Matrix } from '../algebra/homogeneous';
 import { monomial, polynomialDeterminant, polynomialProduct, polynomialSum } from '../algebra/polynomial';
 import type { Polynomial } from '../algebra/polynomial';
-import { CUBIC_COEFFICIENT_INDICES, CUBIC_MONOMIALS, withCubic } from './curves';
+import { CUBIC_MONOMIALS, withCubic } from './curves';
 
 const sum = (terms: string[]) => terms.length ? add(terms) : '0';
 const entries = (args: readonly TypedExpression[]) => args.map((arg) => arg.expression);
@@ -36,7 +36,8 @@ const guardedCubic = (p: Polynomial, allocate: () => string) => {
   const coefficients = CUBIC_MONOMIALS.map(([x, y]) => p.get(`${x},${y}`) ?? '0');
   return bind(coefficients, allocate, (numbers) => {
     const polynomial = coefficientPolynomial(numbers);
-    return `If(${sum(numbers.map((n) => `${n}^2`))}!=0,ImplicitCurve(${polynomial}))`;
+    return `ImplicitCurve(${polynomial})`;
+    // return `If(${sum(numbers.map((n) => `${n}^2`))}!=0,ImplicitCurve(${polynomial}))`;
   });
 };
 const hessianCubic: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) =>
@@ -114,19 +115,32 @@ const conicLineCubic: ExpressionBuilder = (args) => {
   return `ImplicitCurve((LeftSide(${q.expression})-RightSide(${q.expression}))*(${line[0]}*x+${line[1]}*y+${line[2]}))`;
 };
 
+// const cubicPencil: ExpressionBuilder = (args, allocate) => {
+//   const [f, g, p] = entries(args);
+//   return bind([`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`], allocate, ([ff, gg]) =>
+//     bind([ff, gg].map((source) => `Join(Reverse(Coefficients(${source}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`), allocate, ([fl, gl]) =>
+//       bind([fl, gl].flatMap((list) => CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${list},${index})`)), allocate, (coefficients) => {
+//         const fc = coefficients.slice(0, 10);
+//         const gc = coefficients.slice(10);
+//         const valid = [fc, gc].map((c, i) => `AreEqual(${i ? gg : ff},${coefficientPolynomial(c)})&&(${sum(c.slice(6).map((v) => `${v}^2`))})!=0`).join('&&');
+//         const fp = `${ff}(x(${p}),y(${p}))`;
+//         const gp = `${gg}(x(${p}),y(${p}))`;
+//         const member = sub(mul(`${ff}(x,y)`, gp), mul(`${gg}(x,y)`, fp));
+//         return `If(${valid}&&(${fp})^2+(${gp})^2!=0&&MatrixRank(${matrix([fc, gc])})==2,ImplicitCurve(${member}))`;
+//       })));
+// };
 const cubicPencil: ExpressionBuilder = (args, allocate) => {
   const [f, g, p] = entries(args);
-  return bind([`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`], allocate, ([ff, gg]) =>
-    bind([ff, gg].map((source) => `Join(Reverse(Coefficients(${source}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`), allocate, ([fl, gl]) =>
-      bind([fl, gl].flatMap((list) => CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${list},${index})`)), allocate, (coefficients) => {
-        const fc = coefficients.slice(0, 10);
-        const gc = coefficients.slice(10);
-        const valid = [fc, gc].map((c, i) => `AreEqual(${i ? gg : ff},${coefficientPolynomial(c)})&&(${sum(c.slice(6).map((v) => `${v}^2`))})!=0`).join('&&');
-        const fp = `${ff}(x(${p}),y(${p}))`;
-        const gp = `${gg}(x(${p}),y(${p}))`;
-        const member = sub(mul(`${ff}(x,y)`, gp), mul(`${gg}(x,y)`, fp));
-        return `If(${valid}&&(${fp})^2+(${gp})^2!=0&&MatrixRank(${matrix([fc, gc])})==2,ImplicitCurve(${member}))`;
-      })));
+  return bind(
+    [`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`],
+    allocate,
+    ([ff, gg]) => {
+      const fp = `${ff}(x(${p}),y(${p}))`;
+      const gp = `${gg}(x(${p}),y(${p}))`;
+      const member = sub(mul(`${ff}(x,y)`, gp), mul(`${gg}(x,y)`, fp));
+      return `ImplicitCurve(${member})`;
+    }
+  );
 };
 
 const CIRCULAR_MONOMIALS: ReadonlyArray<readonly [number, number, number][]> = [
@@ -153,11 +167,12 @@ export const circularCubicMinors = (points: string[]) => {
   return { rows, cs };
 };
 const circularCubic: ExpressionBuilder = (args) => {
-  const { rows, cs } = circularCubicMinors(entries(args));
+  const cs = circularCubicMinors(entries(args)).cs;
   const rho = '(x^2+y^2)';
   const polynomial = add([mul(cs[0], 'x', rho), mul(cs[1], 'y', rho), mul(cs[2], 'x^2'),
     mul(cs[3], 'x', 'y'), mul(cs[4], 'y^2'), mul(cs[5], 'x'), mul(cs[6], 'y'), cs[7]]);
-  return `If(MatrixRank(${matrix(rows)})==7,ImplicitCurve(${polynomial}))`;
+  // return `If(MatrixRank(${matrix(rows)})==7,ImplicitCurve(${polynomial}))`;
+  return `ImplicitCurve(${polynomial})`;
 };
 
 const conicBasis: Basis = [[[2, 0, 0]], [[1, 1, 0]], [[1, 0, 1]], [[0, 2, 0]], [[0, 1, 1]], [[0, 0, 2]]];
