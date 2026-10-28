@@ -59,4 +59,16 @@ describe('inserted cubic constructions', () => {
     expect(compileStudioCommand('CubicAsymptotes(F,2)', scope)).toContain('floor');
     expect(compileStudioCommand('Tangential(F,A)', scope)).toContain('Coefficients');
   });
+
+  it('creates independent pretangentials and three involution points with indexed access', () => {
+    const scope: CommandEnvironment = { objects: new Map<string, GeometryType>([['F', 'implicitCurve'], ['A', 'point']]), macros: new Set() };
+    const pre = compileStudioCommand('Pretangential(F,A)', scope).split('\n');
+    const involution = compileStudioCommand('CubicInvolution(F,A)', scope).split('\n');
+    expect(pre).toHaveLength(4);
+    expect(involution).toHaveLength(3);
+    expect(pre.every((line) => line.includes('Intersect(') && line.includes('Conic('))).toBe(true);
+    expect(involution.every((line) => line.includes('KeepIf(') && line.includes('Intersect('))).toBe(true);
+    expect(compileStudioCommand('Pretangential(F,A,2)', scope)).toContain('floor(2)');
+    expect(compileStudioCommand('CubicInvolution(F,A,2)', scope)).toContain('floor(2)');
+  });
 });

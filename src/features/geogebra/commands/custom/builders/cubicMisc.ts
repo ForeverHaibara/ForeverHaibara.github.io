@@ -1,5 +1,6 @@
 import type { ExpressionBuilder } from '../types';
-import { add, bind, homogeneous, independentOutputs, matrix, mul, supportingLine } from '../algebra/homogeneous';
+import { add, bind, coefficientLine, homogeneous, independentOutputs, matrix, mul, supportingLine } from '../algebra/homogeneous';
+import { CURVE_BUILDERS, cubicPolarLine, cubicRestriction, withCubic } from './curves';
 
 type Term = readonly [number, number];
 type Basis = readonly (readonly Term[])[];
@@ -91,6 +92,63 @@ const cubicAsymptotes: ExpressionBuilder = (args, allocate) => {
   return independentOutputs(outputs, args[1]?.expression);
 };
 
+/** F = (1+d/a·U) Q + V R in the tangent/normal frame at T.
+ *  Q=2gV+aU²+bUV+cV²; aR is used to avoid dividing by a. */
+const withContactConics = (curve: string, target: string, allocate: () => string,
+  body: (polar: string, residual: string, tangentQuadratic: string, flexLine: string) => string) => withCubic(curve, allocate, (coefficients) => {
+    const px = `x(${target})`; const py = `y(${target})`;
+    const [gx, gy] = cubicPolarLine(coefficients, px, py);
+    return bind([gx, gy], allocate, ([nx, ny]) => {
+      const tangent: [string, string] = [ny, `-(${nx})`];
+      const normal: [string, string] = [nx, ny];
+      const [d, a] = cubicRestriction(coefficients, px, py, ...tangent);
+      const [h, c] = cubicRestriction(coefficients, px, py, ...normal);
+      const plus: [string, string] = [`${tangent[0]}+${nx}`, `${tangent[1]}+${ny}`];
+      const minus: [string, string] = [`${tangent[0]}-${nx}`, `${tangent[1]}-${ny}`];
+      const [splus, bplus] = cubicRestriction(coefficients, px, py, ...plus);
+      const [sminus] = cubicRestriction(coefficients, px, py, ...minus);
+      return bind([d, a, h, c, splus, bplus, sminus], allocate, ([dd, aa, hh, cc, sp, bp, sm]) => {
+        const g = `(${nx}^2+${ny}^2)`;
+        const b = `(${bp}-${aa}-${cc})`;
+        const e = `((${sp}-${sm})/2-${hh})`;
+        const f = `((${sp}+${sm})/2-${dd})`;
+        const transform = `{{${ny},${nx},${px}},{-${nx},${ny},${py}},{0,0,1}}`;
+        const q = `ApplyMatrix(${transform},Conic({${aa},${cc},0,${b},0,2*${g}}))`;
+        const r = `ApplyMatrix(${transform},Conic({${aa}*${e}-${dd}*${b},${aa}*${hh},-${aa}*${g},${aa}*${f}-${dd}*${cc},-2*${g}*${dd},0}))`;
+        // At a flex aa=0, Q=V(2g+bU+cV). Its other line meets F at the
+        // three remaining contacts; line/cubic intersections work natively.
+        const lineX = `${b}*${ny}+${cc}*${nx}`;
+        const lineY = `-${b}*${nx}+${cc}*${ny}`;
+        const flexLine = coefficientLine([lineX, lineY, `2*(${g})^2-(${lineX})*${px}-(${lineY})*${py}`], allocate);
+        return body(q, r, aa, flexLine);
+      });
+    });
+  });
+
+const contactPointAt = (curve: string, target: string, index: number, allocate: () => string) =>
+  withContactConics(curve, target, allocate, (q, r, aa, flexLine) =>
+    `If(${aa}==0,${index === 1 ? target : `Intersect(${curve},${flexLine},${index - 1})`},Intersect(${q},${r},${index}))`);
+
+const pretangential: ExpressionBuilder = (args, allocate) => {
+  const [curve, target] = args.map((arg) => arg.expression);
+  return independentOutputs([1, 2, 3, 4].map((i) => contactPointAt(curve, target, i, allocate)), args[2]?.expression);
+};
+
+const cubicInvolution: ExpressionBuilder = (args, allocate) => {
+  const [curve, point] = args.map((arg) => arg.expression);
+  const tangentImage = CURVE_BUILDERS.thirdIntersection([
+    { expression: curve, type: 'implicitCurve' }, { expression: point, type: 'point' },
+  ], allocate) as string;
+  const branch = (index: number) => bind([tangentImage], allocate, ([target]) =>
+    withContactConics(curve, target, allocate, (q, r, aa, flexLine) => {
+      const candidate = allocate();
+      const keep = (list: string) => `Element(KeepIf(IsDefined(${candidate})&&!AreEqual(${candidate},${point}),${candidate},${list}),${index})`;
+      const flex = keep(`{${target},Intersect(${curve},${flexLine})}`);
+      return `If(${aa}==0,${flex},${keep(`{Intersect(${q},${r})}`)})`;
+    }));
+  return independentOutputs([1, 2, 3].map(branch), args[2]?.expression);
+};
+
 export const CUBIC_MISC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  circularCubicDirection, nodalCubic, strophoid, cubicAsymptotes,
+  circularCubicDirection, nodalCubic, strophoid, cubicAsymptotes, pretangential, cubicInvolution,
 };

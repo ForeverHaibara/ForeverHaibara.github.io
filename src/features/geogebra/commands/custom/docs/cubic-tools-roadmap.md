@@ -47,11 +47,11 @@
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
 | (PENDING) `PrehessianCubic(F[,i]) → implicitCurve × 3 / implicitCurve` | Prehessian cubics associated with F. | 候选令 `H=HessianCubic(F)`、`P_t=F+tH`。syzygetic pencil 中 `Hessian(P_t)=a(t)F+b(t)H`；用十系数向量的 Gram 投影求三次 `b(t)`，取其实根并以 `a(t)≠0` 核验。须设计零／一／三实根及无穷远成员的固定槽，并避免为三个输出重复计算大 Hessian。若三支无可区分次序，按 §2.1 全部画出并任取一支作嵌套返回。 |
-| (PENDING) `CubicInflexionPoints(F[,i]) → point × 3 / point` | Real finite flexes of a smooth cubic. | 求 `F∩HessianCubic(F)` 的实有限点并验证切触重数；当前嵌入式 GeoGebra 实测拒绝 `Intersect(F,HessianCubic(F))`，不能简单包装原生命令。复数九点、奇异／可约情形与穿越判别式时的槽位稳定性需要单独方案。 |
+| (PENDING) `CubicInflexionPoints(F[,i]) → point × 3 / point` | Real finite flexes of a smooth cubic. | CAS 启用后，若 Hessian 先作为命名对象 H 创建，`Solutions({F,H},{x,y})` 可动态给出实有限解。也已推导无命名辅助的六项 Hessian：令 f 为 F 左边减右边，`a=fxx,b=fxy,d=fyy,c=2fx−xa−yb,e=2fy−xb−yd,z=−4xfx−4yfy+x²a+2xyb+y²d`，在 f=0 上 Hessian 条件为 `adz+2bce−ae²−dc²−zb²=0`。此方程组**顶层** `Solutions` 可得正确实解，但在 `Point(Element(Solutions(...),i))` 等点构造内嵌时原生引擎拒绝；现有 `Intersect(F,H)` 也拒绝。须解决匿名 CAS 结果到独立点的传递，再验证三实拐点及无穷远槽。 |
 | `CubicAsymptotes(F[,i]) → line × 3 / line` | Up to three real asymptotes of a cubic. | 原生 `Asymptote(F)` 返回列表；先匿名绑定该列表再按固定 1、2、3 槽取出为独立线，否则直接 `Element(Asymptote(F),i)` 在当前引擎为 undefined。缺失实线保留 undefined 槽。|
 | `Tangential(F, A) → point` | Tangential point of A on F. | `ThirdIntersection` 的 alias；因此也共享其三参数割线重载。|
-| (PENDING) `Pretangential(F, A[,i]) → point × 4 / point` |  | 需解四次接触条件，并固定实根／undefined 槽；当前嵌入式 GeoGebra 也拒绝 `Intersect(F,PolarConic(A,F))`，不能用原生交点直接拆分。 |
-| (PENDING) `CubicInvolution(F, A[,i]) → point × 3 / point` |  | Steinerian involution；依赖三条 prehessian，亦是 tangential 的另外三个 pretangential。 |
+| `Pretangential(F, A[,i]) → point × 4 / point` | Real points whose tangential is A. | 在 A 的切线／法线局部坐标 U,V 中，将 F 分解为 `(1+dU/a)Q+VR`，Q 为一阶极二次曲线；原生 `Intersect(Q,R,i)` 拆出四个独立点。拐点 a=0 时 Q 含 V 因子，改用另一条直线与 F 的交点，加 A 本身。缺少实点保留 undefined 槽。 |
+| `CubicInvolution(F, A[,i]) → point × 3 / point` | Other points sharing A's tangential. | 先求 A 的 tangential T，再用上述 Q/R 构造 T 的四个 pretangentials，以 `KeepIf` 排除 A，输出三个独立点；不依赖 prehessian 的实现。 |
 | `CircularCubic(A,B,C,D,E,F,l) → implicitCurve` | | 重载，给定六点和一个直线方向的无穷远点，作三次圆环曲线。 |
 | `NodalCubic(A,B,C,D,E,F,G) → implicitCurve`| | 以 A 为node且经过BCDEFG的nodal cubic.nodal cubic关于node反演为二次曲线，有可能有利于分析作图方案，下同。|
 | `NodalCubic(A,B,C,D,E) → implicitCurve`| | 重载。以 A 为node且经过BCDE的圆环nodal cubic|
@@ -68,7 +68,9 @@
 
 
 
-插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra-cubic-misc-smoke.ts`。圆环双点三次曲线在 A 作反演会得到过 A 的二次曲线，尖点对应抛物线；已用这一路径试作双槽 `CuspidalCubic`，但原生绘制仍长时间无响应。先前的矩阵核法也很慢，因此均未加入库。现有 `NodalCubic` 仅用一次匿名绑定和至多 6×6 余子式，已能快速创建，暂不换成反演链。其余 PENDING 行也未宣称实现。
+插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra-cubic-misc-smoke.ts`。圆环双点三次曲线在 A 作反演会得到过 A 的二次曲线，尖点对应抛物线；已用这一路径试作双槽 `CuspidalCubic`，但原生绘制仍长时间无响应。先前的矩阵核法也很慢，因此均未加入库。现有 `NodalCubic` 仅用一次匿名绑定和至多 6×6 余子式，已能快速创建，暂不换成反演链。
+
+本轮另加入 `Pretangential` 与 `CubicInvolution` 的点值／编号重载。一般切点用两原生二次曲线求交；拐点改用原生直线与三次曲线求交。实机验证了四点／三点各自独立的 XML 点类、无命名辅助对象、点在曲线上及其切线过指定 tangential，并验证拐点输入下的 undefined 固定槽。`CubicInflexionPoints` 仍属 PENDING：单纯开启 CAS 可以消除 `Solutions` 的未定义结果，但顶层成功的六项 Hessian 方程组在嵌入点构造时被拒绝；暂不留下在常见输入上会失败的接口。其余 PENDING 行也未宣称实现。
 
 ## 后做：专门曲线与更精细的几何对象
 

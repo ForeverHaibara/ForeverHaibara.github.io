@@ -746,6 +746,22 @@
       ]
     },
     {
+      "name": "Pretangential",
+      "description": "The real points whose cubic tangential is A, returned as independent points.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}], "returns": "point", "builder": "pretangential"},
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "pretangential"}
+      ]
+    },
+    {
+      "name": "CubicInvolution",
+      "description": "The other real points of the cubic sharing A's tangential, returned as independent points.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}], "returns": "point", "builder": "cubicInvolution"},
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "cubicInvolution"}
+      ]
+    },
+    {
       "name": "PivotalIsogonalCubic",
       "description": "Locus where a point, its isogonal conjugate and pivot P are collinear.",
       "overloads": [
