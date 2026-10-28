@@ -31,16 +31,16 @@
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
-| `PivotalIsocubic(A,B,C,Ω,P) → implicitCurve` | Pivotal isocubic with isoconjugation pole Ω and pivot P. | 重心式 `uX(rY²−qZ²)+vY(pZ²−rX²)+wZ(qX²−pY²)=0`，等价于 `X,X*,P` 共线。先核对 Ω=K=X(6) 时与已实现 `PivotalIsogonalCubic` 成比例；Ω=G=X(2) 时核对等截情形。Ω 或 P 在边线等特殊位置允许非零分解式。 |
+| `PivotalCubic(A,B,C,Ω,P) → implicitCurve` | Pivotal isocubic with isoconjugation pole Ω and pivot P. | 重心式 `uX(rY²−qZ²)+vY(pZ²−rX²)+wZ(qX²−pY²)=0`，等价于 `X,X*,P` 共线。先核对 Ω=K=X(6) 时与已实现 `PivotalIsogonalCubic` 成比例；Ω=G=X(2) 时核对等截情形。Ω 或 P 在边线等特殊位置允许非零分解式。 |
 | `PivotalIsotomicCubic(A,B,C,P) → implicitCurve` | Pivotal cubic for isotomic conjugation with pivot P. | 上式取 Ω=G；作为与现有 `PivotalIsogonalCubic` 对称的常用入口，仅在实测说明此快捷名确有使用价值时加入。不能复制另一套算法。 |
+| `NonpivotalCubic(A,B,C,Ω,P,Q) → implicitCurve` | Nonpivotal isocubic with pole Ω, root P and point Q on the curve. | 先求 `Q*=(pY_Q Z_Q:qZ_Q X_Q:rX_Q Y_Q)`，再用 SITP §1.5.1 的对称式 `Σ_cyclic uX(Y_Q Z−Z_Q Y)(Y_Q* Z−Z_Q* Y)=0`；Q、Q* 自动在曲线上。避免直接暴露依赖 Ω/P/Q 齐次尺度的裸参数 k。Q 处于边线或构造坍缩时检测零式。 |
+| `NonpivotalCubic(A,B,C,Ω,P) → implicitCurve` |   | 重载。SITP 的 nK₀ 式：`uX(rY²+qZ²)+vY(pZ²+rX²)+wZ(qX²+pY²)=0`。这里的“零”相对所列规范形式，不是把任意方程的 `XYZ` 系数粗暴设零。输出非零式即可保留分解退化。 |
 | `QACu1Inv(A,B,C,P) → implicitCurve` | | 满足 P在ABCX的QACu1上的点X。一个性质是：设P的垂足三角形DEF, P在AX,BX,CX上射影为U,V,W，则DU,EV,FW共点（要除掉P在直线AB,BC,CA上的退化情况）。 |
-| `ApolarIsocubic(A,B,C,Ω,P) → implicitCurve` | Zero-parameter nonpivotal isocubic with pole Ω and root P. | SITP 的 nK₀ 式：`uX(rY²+qZ²)+vY(pZ²+rX²)+wZ(qX²+pY²)=0`。这里的“零”相对所列规范形式，不是把任意方程的 `XYZ` 系数粗暴设零。输出非零式即可保留分解退化。 |
-| `NonpivotalIsocubic(A,B,C,Ω,P,Q) → implicitCurve` | Nonpivotal isocubic with pole Ω, root P and point Q on the curve. | 先求 `Q*=(pY_Q Z_Q:qZ_Q X_Q:rX_Q Y_Q)`，再用 SITP §1.5.1 的对称式 `Σ_cyclic uX(Y_Q Z−Z_Q Y)(Y_Q* Z−Z_Q* Y)=0`；Q、Q* 自动在曲线上。避免直接暴露依赖 Ω/P/Q 齐次尺度的裸参数 k。Q 处于边线或构造坍缩时检测零式。 |
-| `IsogonalApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isogonal cubic with root P. | 复用 `ApolarIsocubic`，Ω=K=X(6)；优先作为易用快捷名审阅，不单独维护方程。 |
-| `IsotomicApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isotomic cubic with root P. | 同上，Ω=G=X(2)；与 `IsogonalApolarCubic` 做变换不变性和退化对照。 |
-| `ConicoPivotalIsocubic(A,B,C,N,P) → implicitCurve` | Conico-pivotal isocubic with singular point N and root P. | N=`(f:g:h)` 时输出 `Σ_cyclic uX(hY−gZ)²=0`；对应的极为 `(f²:g²:h²)`，N 为指定奇点，`X X*` 的包络是二次曲线。必须核查非零式、N 实为结点／尖点的条件，以及映射基点；不能宣称任意参数都给普通结点。见 SITP §8.1。 |
+<!-- | `IsogonalApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isogonal cubic with root P. | 复用 `ApolarCubic`，Ω=K=X(6)；优先作为易用快捷名审阅，不单独维护方程。较冗余，暂不需要。 | -->
+<!-- | `IsotomicApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isotomic cubic with root P. | 同上，Ω=G=X(2)；与 `IsogonalApolarCubic` 做变换不变性和退化对照。较冗余，暂不需要。  | -->
+| `ConicoPivotalCubic(A,B,C,N,P) → implicitCurve` | Conico-pivotal isocubic with singular point N and root P. | N=`(f:g:h)` 时输出 `Σ_cyclic uX(hY−gZ)²=0`；对应的极为 `(f²:g²:h²)`，N 为指定奇点，`X X*` 的包络是二次曲线。必须核查非零式、N 实为结点／尖点的条件，以及映射基点；不能宣称任意参数都给普通结点。见 SITP §8.1。 |
 
-这批先实现**族**，再考虑为目录曲线起专名；例如 `PivotalIsocubic(A,B,C,K,H)` 对应 [K006 Orthocubic](https://bernard-gibert.fr/ctc1.html)，但若项目所用原生 `Cubic(A,B,C,6)` 已支持，就直接用原生编号。Gibert 目录的 Knnn 是曲线目录号，GeoGebra 原生 `Cubic` 的可用编号则须在当前引擎逐一核验；[官方手册](https://geogebra.github.io/docs/manual/en/commands/Cubic/) 明说支持集合会变化。本文不把二者无条件等同。
+这批先实现**族**，再考虑为目录曲线起专名；例如 `PivotalCubic(A,B,C,K,H)` 对应 [K006 Orthocubic](https://bernard-gibert.fr/ctc1.html)，但若项目所用原生 `Cubic(A,B,C,6)` 已支持，就直接用原生编号。Gibert 目录的 Knnn 是曲线目录号，GeoGebra 原生 `Cubic` 的可用编号则须在当前引擎逐一核验；[官方手册](https://geogebra.github.io/docs/manual/en/commands/Cubic/) 明说支持集合会变化。本文不把二者无条件等同。
 
 ## 后做：专门曲线与更精细的几何对象
 
@@ -49,9 +49,9 @@
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
 | `OsculatingCircleOfCubic(F,P) → circle` | Osculating circle of a cubic at a smooth real point. | 对 F 的一、二阶偏导计算隐式曲率和法向圆心；P 须在 F 上且梯度非零，曲率为零时有限圆不存在。先实测原生 `OsculatingCircle(P,F)` 对 implicitCurve 的支持；若已可靠支持，不新增同义工具。[手册](https://geogebra.github.io/docs/manual/en/commands/OsculatingCircle/) 明列 function、curve、conic，未明确 implicitCurve。 |
-| `TuckerNodalCubic(A,B,C) → implicitCurve` | Tucker nodal cubic K015. | SITP §8.3 的 `ConicoPivotalIsocubic(A,B,C,G,G)`，重心式 `Σ X(Y−Z)²=0`；G 为指定奇点。仅在原生编号不支持且专名值得保留时加入。 |
+| `TuckerNodalCubic(A,B,C) → implicitCurve` | Tucker nodal cubic K015. | SITP §8.3 的 `ConicoPivotalCubic(A,B,C,G,G)`，重心式 `Σ X(Y−Z)²=0`；G 为指定奇点。仅在原生编号不支持且专名值得保留时加入。 |
 | `PelletierStrophoid(A,B,C) → implicitCurve` | Pelletier strophoid K040. | SITP §4.3.2 给出根 X(650) 的 isogonal nK₀ 短式 `Σ a(b−c)(b+c−a)X(c²Y²+b²Z²)=0`；核对边长与重心坐标、奇点和目录 [K040](https://bernard-gibert.fr/ctc1.html)，再决定是否提供名字。不要与旧源 S481 的未定义一般 `Strophoid(A,B,C)` 合并。 |
-| `KiCubic(A,B,C) → implicitCurve` | Ki cubic K073, inverse of the Neuberg cubic in the circumcircle. | 目录 [K073](https://www.bernard-gibert.fr/Exemples/k073.html) 还给出 `pK(X50,X3)`；候选为 `PivotalIsocubic(A,B,C,TriangleCenter(A,B,C,50),Circumcenter(A,B,C))`，并独立核对反演像的可约因子。先检测原生编号 73 的实际支持；不通过简单坐标反演默认结果仍是三次。 |
+| `KiCubic(A,B,C) → implicitCurve` | Ki cubic K073, inverse of the Neuberg cubic in the circumcircle. | 目录 [K073](https://www.bernard-gibert.fr/Exemples/k073.html) 还给出 `pK(X50,X3)`；候选为 `PivotalCubic(A,B,C,TriangleCenter(A,B,C,50),Circumcenter(A,B,C))`，并独立核对反演像的可约因子。先检测原生编号 73 的实际支持；不通过简单坐标反演默认结果仍是三次。 |
 | `MusselmanFirstCubic(A,B,C) → implicitCurve` | First Musselman cubic K026. | 以 [K026 条目](https://www.bernard-gibert.fr/Exemples/k026.html) 的两个圆族公共点重合条件或 SITP §6.5 的方程为定义，推导紧凑隐式式并验证重数；不拿一组特殊中心拟合。与既有计划暂缓的 K028（第三 Musselman）严格区分，原生编号 26 先实测。 |
 
 ## 研究队列：暂不承诺接口
