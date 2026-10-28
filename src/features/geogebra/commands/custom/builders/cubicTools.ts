@@ -115,32 +115,21 @@ const conicLineCubic: ExpressionBuilder = (args) => {
   return `ImplicitCurve((LeftSide(${q.expression})-RightSide(${q.expression}))*(${line[0]}*x+${line[1]}*y+${line[2]}))`;
 };
 
-// const cubicPencil: ExpressionBuilder = (args, allocate) => {
-//   const [f, g, p] = entries(args);
-//   return bind([`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`], allocate, ([ff, gg]) =>
-//     bind([ff, gg].map((source) => `Join(Reverse(Coefficients(${source}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`), allocate, ([fl, gl]) =>
-//       bind([fl, gl].flatMap((list) => CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${list},${index})`)), allocate, (coefficients) => {
-//         const fc = coefficients.slice(0, 10);
-//         const gc = coefficients.slice(10);
-//         const valid = [fc, gc].map((c, i) => `AreEqual(${i ? gg : ff},${coefficientPolynomial(c)})&&(${sum(c.slice(6).map((v) => `${v}^2`))})!=0`).join('&&');
-//         const fp = `${ff}(x(${p}),y(${p}))`;
-//         const gp = `${gg}(x(${p}),y(${p}))`;
-//         const member = sub(mul(`${ff}(x,y)`, gp), mul(`${gg}(x,y)`, fp));
-//         return `If(${valid}&&(${fp})^2+(${gp})^2!=0&&MatrixRank(${matrix([fc, gc])})==2,ImplicitCurve(${member}))`;
-//       })));
-// };
 const cubicPencil: ExpressionBuilder = (args, allocate) => {
   const [f, g, p] = entries(args);
-  return bind(
-    [`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`],
-    allocate,
-    ([ff, gg]) => {
-      const fp = `${ff}(x(${p}),y(${p}))`;
-      const gp = `${gg}(x(${p}),y(${p}))`;
-      const member = sub(mul(`${ff}(x,y)`, gp), mul(`${gg}(x,y)`, fp));
-      return `ImplicitCurve(${member})`;
-    }
-  );
+  const equations = [`LeftSide(${f})-RightSide(${f})`, `LeftSide(${g})-RightSide(${g})`];
+  const member = (ff: string, gg: string, x: string, y: string) => {
+    const fp = `${ff}(x(${p}),y(${p}))`;
+    const gp = `${gg}(x(${p}),y(${p}))`;
+    return sub(mul(`${ff}(${x},${y})`, gp), mul(`${gg}(${x},${y})`, fp));
+  };
+  const polynomial = bind(equations, allocate, ([ff, gg]) => member(ff, gg, 'x', 'y'));
+  // A cubic is zero iff it vanishes on this fixed unisolvent grid. This
+  // checks the final equation without extracting two ten-coefficient lists.
+  const grid = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
+  const guard = bind(equations, allocate, ([ff, gg]) =>
+    `${sum(grid.map(([x, y]) => `(${member(ff, gg, String(x), String(y))})^2`))}!=0`);
+  return `If(${guard},ImplicitCurve(${polynomial}))`;
 };
 
 const CIRCULAR_MONOMIALS: ReadonlyArray<readonly [number, number, number][]> = [
@@ -171,8 +160,9 @@ const circularCubic: ExpressionBuilder = (args) => {
   const rho = '(x^2+y^2)';
   const polynomial = add([mul(cs[0], 'x', rho), mul(cs[1], 'y', rho), mul(cs[2], 'x^2'),
     mul(cs[3], 'x', 'y'), mul(cs[4], 'y^2'), mul(cs[5], 'x'), mul(cs[6], 'y'), cs[7]]);
-  // return `If(MatrixRank(${matrix(rows)})==7,ImplicitCurve(${polynomial}))`;
-  return `ImplicitCurve(${polynomial})`;
+  // All eight minors vanish exactly when the seven constraints have no
+  // unique circular cubic. Avoid a second 7x8 MatrixRank computation.
+  return `If(${sum(cs.map((coefficient) => `(${coefficient})^2`))}!=0,ImplicitCurve(${polynomial}))`;
 };
 
 const conicBasis: Basis = [[[2, 0, 0]], [[1, 1, 0]], [[1, 0, 1]], [[0, 2, 0]], [[0, 1, 1]], [[0, 0, 2]]];

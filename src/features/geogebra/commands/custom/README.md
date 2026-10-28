@@ -5,6 +5,14 @@ The native input bar and object scripts are unchanged. No site macros, scripts,
 named temporary objects, update callbacks, or sampled coordinates are installed
 in the construction. Exported results retain native dependencies.
 
+Compilation happens when a command is entered. An existing GeoGebra object
+keeps its expanded native definition after the site's command implementation
+changes, including across a development-server restart or draft restore. To
+apply a revised tool, delete and recreate its output object with the current
+command; its input points need not be deleted. Deleting the input points also
+removes their dependent outputs, which can make redrawing appear to fix an old
+definition.
+
 The library is still unpublished and uses version **0.1.0**. Development
 milestones in the implementation notes are not release versions.
 

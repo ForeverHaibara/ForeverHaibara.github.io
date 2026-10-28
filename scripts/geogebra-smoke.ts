@@ -6,6 +6,7 @@ import { verifyBasicGeometry, verifyRadicalAxis } from './geogebra-basic-geometr
 import { verifyConstructions } from './geogebra-constructions-smoke';
 import { verifyCubic } from './geogebra-cubic-smoke';
 import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
+import { verifyIsocubics } from './geogebra-isocubics-smoke';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -61,6 +62,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'isocubics') {
+      await verifyIsocubics(engine, report);
+      report('COMPLETE');
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('suite') === 'cubic-tools') {
       await verifyCubicTools(engine, report);
       report('COMPLETE');

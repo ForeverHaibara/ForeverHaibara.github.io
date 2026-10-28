@@ -25,6 +25,12 @@ export const verifyCubicTools = async (engine: GeoGebraEngine, report: (message:
     ['CayleyBacharachPoint6', 'cb6=CayleyBacharachPoint(A6,B6,C6,D6,E6,F6)', 'cb6', 'point'],
   ];
   await run('F=ImplicitCurve(x^3+y^3+(x+y+1)^3)\nCF=ImplicitCurve(x*(x^2+y^2)+x^2-y^2)\nG=ImplicitCurve(x^3+y^3+x^2+1)\nP=(0,1)\nQ=(0,0)\nl:x=0\nq1=Conic(1,1,-1,0,0,0)\nq2=Conic(1,2,-1,0,1,0)\nq3=Conic(0,0,-1,1,0,1)');
+  if (selected === 'degenerate') {
+    await run('A=(0,0)\nF0=ImplicitCurve(x^3+y^3)\nG0=ImplicitCurve(x^3-y^3)\nO0=(0,0)\ncc0=CircularCubic(A,A,A,A,A,A,A)\ncp0=CubicPencil(F0,G0,O0)');
+    for (const label of ['cc0', 'cp0']) if (await api('isDefined', label)) throw new Error(`${label} incorrectly defines a zero cubic`);
+    report('PASS dependent seven-point and base-point pencil configurations are undefined');
+    return;
+  }
   if (!selected || selected === 'CircularCubic') await run('A=(2,-2)\nB=(2,-1)\nC=(2,0)\nD=(2,1)\nE=(3,4)\nT=(-3,4)\nU=(0,-5)');
   if (!selected || selected === 'CayleyBacharachPoint8') await run('A8=(0,0)\nB8=(1,0)\nC8=(2,0)\nD8=(0,1)\nE8=(1,1)\nF8=(2,1)\nG8=(0,2)\nH8=(1,2)');
   if (!selected || selected === 'CayleyBacharachPoint6') await run('A6=(2,sqrt(21))\nB6=(2,-sqrt(21))\nC6=(0,3)\nD6=(0,-3)\nE6=(5,0)\nF6=(-5,0)');

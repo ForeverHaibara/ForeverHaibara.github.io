@@ -28,7 +28,10 @@ describe('Construction catalog, type contracts and expansion budgets', () => {
       });
       const expanded = compileStudioCommand(`${tool.name}(${args.join(',')})`, scope);
       expect(expanded).not.toMatch(/Locus\(|SetValue\(|SetCoords\(|Execute\(|Derivative\(/u);
-      expect(expanded.length, `${tool.name}: ${expanded.length}`).toBeLessThan(tool.name === 'Conic' ? 100_000 : 30_000);
+      // CircularCubic reuses its eight required minors for the zero-polynomial
+      // guard; it avoids a separate dynamic MatrixRank computation.
+      const budget = tool.name === 'Conic' ? 100_000 : tool.name === 'CircularCubic' ? 45_000 : 30_000;
+      expect(expanded.length, `${tool.name}: ${expanded.length}`).toBeLessThan(budget);
       // Native names and finite support parameters are independently audited by nativeCommands.test.ts.
     }
   });

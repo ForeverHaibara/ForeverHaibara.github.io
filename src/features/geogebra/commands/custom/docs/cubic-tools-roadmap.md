@@ -1,8 +1,8 @@
 # 三次曲线自定义工具预选清单
 
-状态：**第一阶段已实现并通过逐项原生创建检查**（2026-10-28）；后续阶段仍是候选清单，可继续调整。英文名称和描述是用户可见文本；算法栏记录构造方法及尚待核验的边界。
+状态：**第一、二阶段已实现并通过原生创建检查**（2026-10-28）；后续阶段仍是候选清单，可继续调整。英文名称和描述是用户可见文本；算法栏记录构造方法及尚待核验的边界。
 
-本文沿用 [implementation-plan.md](implementation-plan.md) 第 2 节的类型、参数、齐次坐标、退化、连续性、输出槽位和性能约定。通常 A、B、C、P、Q、N、Ω 为 `point`，`l` 为 `lineLike`（取支撑直线），`q` 为 `conic`，曲线操作中的 `F`、`G` 为 `implicitCurve`；七点构造中的同名字母则仍为点。涉及 F/G 的通用三次工具在 GeoGebra 内**动态核验完整输入多项式恰为三次**。数学上未定义时可直接由原生零除等运算得到 undefined；数学上良定的情形应避免中间可约的 0/0。零多项式需在最终曲线边界处理。多值对象的画出与返回约定见实施计划 §2.1。
+本文沿用 [implementation-plan.md](implementation-plan.md) 第 2 节的类型、参数、齐次坐标、退化、连续性、输出槽位和性能约定。通常 A、B、C、P、Q、N、Ω 为 `point`，`l` 为 `lineLike`（取支撑直线），`q` 为 `conic`，曲线操作中的 `F`、`G` 为 `implicitCurve`；七点构造中的同名字母则仍为点。当前 `withCubic` 只提取十系数，**不再动态核验输入总次数**；这些接口以 F/G 确为三次曲线作为调用前提，非三次输入可能产生无意义结果。`CubicPencil` 直接组合方程，不额外提取两套十系数。数学上良定的情形应避免中间可约的 0/0。GeoGebra 实测把 `ImplicitCurve(0)` 报成已定义，故零多项式仍须在最终曲线边界拦截；其余本来未定义的退化可交给原生运算。多值对象约定见实施计划 §2.1。
 
 记号：`F₃(X,Y,Z)` 是输入仿射三次 F 的三次齐次化，`H_F` 是其 3×3 Hessian 矩阵；`(X:Y:Z)` 是变量点，`(x:y:z)` 是相对 ABC 的有向齐次重心，Ω=`(p:q:r)`，枢轴／根 P=`(u:v:w)`。这里的字母只供算法说明；实际签名始终按下表。涉及曲线和直线方程的乘法、行列式或叉积，都应先保留齐次形式，最后在原生引擎内生成对象。
 
@@ -12,7 +12,7 @@
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
-| `CircularCubic(A,B,C,D,E,F,G) → implicitCurve` | Circular cubic through seven points. | 在圆环三次曲线的八维线性空间中建立七点取值矩阵；其八个带符号 7×7 余子式给出唯一方程。矩阵秩不足时 undefined。 |
+| `CircularCubic(A,B,C,D,E,F,G) → implicitCurve` | Circular cubic through seven points. | 在圆环三次曲线的八维线性空间中建立七点取值矩阵；八个带符号 7×7 余子式给出方程。所有余子式为零时无唯一曲线，以其平方和守卫最终输出，不另算 `MatrixRank`。 |
 | `CayleyBacharachPoint(A,B,C,D,E,F,G,H) → point` | Ninth base point of the cubic pencil through eight points. | 用三组 6×6 圆锥曲线行列式及三组 10×10 三次切向行列式计算齐次权重，再以前三个非共线点组合。前三点共线时在 GeoGebra 内交换第三、第四点，避免良定网格配置出现可约的 0/0。需假设八点确定三次曲线束且第九点唯一有限。 |
 | `CayleyBacharachPoint(A,B,C,D,E,F) → point` | Seventh finite base point of the circular-cubic pencil through six points. | 同一 Cayley–Bacharach 行列式构造，改用圆的四维空间与圆环三次的八维空间；复圆环点自动作为另两个基点。使用 4×4 和 8×8 行列式。 |
 | `OrthicAxis(F) → line` | Locus of points whose first polar conic is a rectangular hyperbola. | `PolarConic(P,F)` 的二次项迹 `A(P)+C(P)=0` 给出 P 的齐次直线；是三角形 OrthicAxis 的自然推广，并重载现有三点接口。整平面满足时由全零直线自然得到 undefined。 |
@@ -23,19 +23,19 @@
 | `Poloconic(l,F) → conic` | Poloconic of a line with respect to a cubic. | 把 l 写成齐次线系数向量 L，输出 `Lᵀ adj(H_F(X)) L=0`；它是 l 上各点的三次极线的包络，不是四个 pole 的点列表。伴随矩阵退化为零时 undefined。见 SITP §2.3.2。 |
 | `JacobianCubic(q1,q2,q3) → implicitCurve` | Jacobian cubic of a net of three conics. | 对三个二次齐次式取梯度列（或行）的 3×3 行列式；三圆／三一般 conic 都可输入，非独立网导致零式则 undefined。用于核对若干 nK 构造。见 SITP §§1.5.7–1.5.8。 |
 | `ConicLineCubic(q,l) → implicitCurve` | Reducible cubic formed by a conic and a line. | 相乘二次曲线与支撑直线的齐次方程；明确保留分量和重数，不能按显示形状拟合九点。若仿射最高次消失，应解释射影无穷远分量与后续“三次输入”守卫的关系。 |
-| `CubicPencil(F,G,P) → implicitCurve` | Member of a cubic pencil passing through a specified point. | 输出 `F₃(X)G₃(P)−G₃(X)F₃(P)=0`。此写法对 F/G 各自乘非零常数不变；P 是共同基点、两曲线成比例或线性组合恒零时不唯一，返回 undefined。实现中并行提取两组系数核验次数，最终用已绑定的原生多项式函数组合，避免两套十系数 `Zip` 串套。 |
+| `CubicPencil(F,G,P) → implicitCurve` | Member of a cubic pencil passing through a specified point. | 输出 `F(X)G(P)−G(X)F(P)=0`。此写法对 F/G 各自乘非零常数不变；当前按 F/G 为三次的输入契约处理，直接绑定两个原生方程，不额外提取系数或检查矩阵秩。组合恒零时用固定的十点单值多项式恒等判据返回 undefined；这些是代数求值点，不是在曲线上创建自由采样点。 |
 
 ## 再做：等共轭三次曲线族与其它
 
-此处 “isocubic” 严格指相对 ABC 的 circum-cubic，在一个指定的对角倒数型 isoconjugation 下不变。**现有** `Isoconjugate(A,B,C,X,P)` 的五点接口表示固定 X 的变换，不能误当成“极 Ω”接口；六点接口也有自己的定像语义。新曲线直接用 Ω 的重心系数 `p:q:r` 定义 `X*=(pYZ:qZX:rXY)`。在顶点、边线及不可定义的有理映射处先保留清分母后的完整代数闭包，同时在描述中说明哪些点是映射的基点。[SITP §§1.2–1.5、8.1](https://bernard-gibert.fr/files/Resources/SITP.pdf) 给出下列族的定义。
+此处 “isocubic” 严格指相对 ABC 的 circum-cubic，在一个指定的对角倒数型 isoconjugation 下不变。**现有** `Isoconjugate(A,B,C,X,P)` 的五点接口表示固定 X 的变换，不能误当成“极 Ω”接口；六点接口也有自己的定像语义。新曲线直接用 Ω 的重心系数 `p:q:r` 定义 `X*=(pYZ:qZX:rXY)`。在顶点、边线及不可定义的有理映射处保留清分母后的完整代数闭包。[SITP §§1.2–1.5、8.1](https://bernard-gibert.fr/files/Resources/SITP.pdf) 给出下列族的定义。本阶段五个名称、六个签名均已加入工具库；只以非零系数条件拦截恒零方程，不对特定顶点或边线另设 `MatrixRank`／分类判断。
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
 | `PivotalCubic(A,B,C,Ω,P) → implicitCurve` | Pivotal isocubic with isoconjugation pole Ω and pivot P. | 重心式 `uX(rY²−qZ²)+vY(pZ²−rX²)+wZ(qX²−pY²)=0`，等价于 `X,X*,P` 共线。先核对 Ω=K=X(6) 时与已实现 `PivotalIsogonalCubic` 成比例；Ω=G=X(2) 时核对等截情形。Ω 或 P 在边线等特殊位置允许非零分解式。 |
-| `PivotalIsotomicCubic(A,B,C,P) → implicitCurve` | Pivotal cubic for isotomic conjugation with pivot P. | 上式取 Ω=G；作为与现有 `PivotalIsogonalCubic` 对称的常用入口，仅在实测说明此快捷名确有使用价值时加入。不能复制另一套算法。 |
-| `NonpivotalCubic(A,B,C,Ω,P,Q) → implicitCurve` | Nonpivotal isocubic with pole Ω, root P and point Q on the curve. | 先求 `Q*=(pY_Q Z_Q:qZ_Q X_Q:rX_Q Y_Q)`，再用 SITP §1.5.1 的对称式 `Σ_cyclic uX(Y_Q Z−Z_Q Y)(Y_Q* Z−Z_Q* Y)=0`；Q、Q* 自动在曲线上。避免直接暴露依赖 Ω/P/Q 齐次尺度的裸参数 k。Q 处于边线或构造坍缩时检测零式。 |
-| `NonpivotalCubic(A,B,C,Ω,P) → implicitCurve` |   | 重载。SITP 的 nK₀ 式：`uX(rY²+qZ²)+vY(pZ²+rX²)+wZ(qX²+pY²)=0`。这里的“零”相对所列规范形式，不是把任意方程的 `XYZ` 系数粗暴设零。输出非零式即可保留分解退化。 |
-| `QACu1Inv(A,B,C,P) → implicitCurve` | | 满足 P在ABCX的QACu1上的点X。一个性质是：设P的垂足三角形DEF, P在AX,BX,CX上射影为U,V,W，则DU,EV,FW共点（要除掉P在直线AB,BC,CA上的退化情况）。 |
+| `PivotalIsotomicCubic(A,B,C,P) → implicitCurve` | Pivotal cubic for isotomic conjugation with pivot P. | 上式取 Ω=G，即极的重心为 `(1:1:1)`；复用同一方程生成器，没有另一套算法。 |
+| `NonpivotalCubic(A,B,C,Ω,P,Q) → implicitCurve` | Nonpivotal isocubic with pole Ω, root P and point Q on the curve. | 先求 `Q*=(pY_Q Z_Q:qZ_Q X_Q:rX_Q Y_Q)`，再用 SITP §1.5.1 的对称式 `Σ_cyclic uX(Y_Q Z−Z_Q Y)(Y_Q* Z−Z_Q* Y)=0`；Q、Q* 自动在曲线上。避免直接暴露依赖 Ω/P/Q 齐次尺度的裸参数 k；七个齐次系数全零时 undefined。 |
+| `NonpivotalCubic(A,B,C,Ω,P) → implicitCurve` | Zero-parameter nonpivotal isocubic with pole Ω and root P. | 重载。SITP 的 nK₀ 式：`uX(rY²+qZ²)+vY(pZ²+rX²)+wZ(qX²+pY²)=0`。这里的“零”相对所列规范形式，不是把任意方程的 `XYZ` 系数粗暴设零。 |
+| `QACu1Inv(A,B,C,P) → implicitCurve` | Locus of fourth vertices X for which P lies on QA-Cu1(A,B,C,X). | 把既有 QA-Cu1 的第四点重心坐标作为变量，固定曲线点为 P，得到关于 X 的三次式。用该式在仿射重心图中的十系数判断恒零。P 的垂足三角形与投影线共点性质是可另行验证的描述；P 在三边上时该替代性质不适用，不改变本工具的方程定义。 |
 <!-- | `IsogonalApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isogonal cubic with root P. | 复用 `ApolarCubic`，Ω=K=X(6)；优先作为易用快捷名审阅，不单独维护方程。较冗余，暂不需要。 | -->
 <!-- | `IsotomicApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isotomic cubic with root P. | 同上，Ω=G=X(2)；与 `IsogonalApolarCubic` 做变换不变性和退化对照。较冗余，暂不需要。  | -->
 | `ConicoPivotalCubic(A,B,C,N,P) → implicitCurve` | Conico-pivotal isocubic with singular point N and root P. | N=`(f:g:h)` 时输出 `Σ_cyclic uX(hY−gZ)²=0`；对应的极为 `(f²:g²:h²)`，N 为指定奇点，`X X*` 的包络是二次曲线。必须核查非零式、N 实为结点／尖点的条件，以及映射基点；不能宣称任意参数都给普通结点。见 SITP §8.1。 |
@@ -70,6 +70,8 @@
 ## 实施顺序与验收门槛
 
 第一阶段验收记录（2026-10-28）：12 个签名逐项在嵌入式 GeoGebra 中创建成功，输出 XML 类型正确，且每次只新增承诺的输出对象。已独立核对 Hessian 对应点、圆极点、poloconic 方程、普通八点与圆环六点 Cayley–Bacharach 结果；八点结果随输入移动，曲线束随指定点移动并在导出重开后保持定义。自动代数测试、TypeScript 检查与生产构建通过。完整的退化配置扫描及创建／拖动计时仍属于后续验收。
+
+第二阶段验收记录（2026-10-28）：五个名称、六个签名在嵌入式 GeoGebra 中逐项创建成功，输出为独立 `implicitpoly`，无命名辅助对象。原生核对了枢轴 P、指定点 Q、QA 逆曲线上的 P 及锥枢轴奇点 N 的曲线关联；自动代数测试核对了枢轴共线行列式、等截特化、等共轭像、奇点导数和 QA 逆方程。顶点导致的四种恒零配置返回 undefined，移动输入离开退化位置后恢复；六条曲线均通过导出重开。实测 `ImplicitCurve(0)` 会被错误报告为已定义，因此只对最终零多项式保留数值系数守卫。普通配置的一次创建记录：五个等共轭族签名约 0.3–0.5 秒，`QACu1Inv` 约 3.4 秒；后者拖动 P 更新约 3.2 秒。这些是单次观测，不能代替系统性能基准。
 
 1. **定义审阅**：先确认表中的名称、参数顺序和哪些专名确实需要快捷入口。检查 `library.json` 名称／别名冲突、GeoGebra 原生 `Cubic` 编号和 `OsculatingCircle` 支持；原生功能充分时将对应行移为 Native。
 2. **共用代数原语**：沿用现有原生十系数提取及完整多项式核对；逐个推导齐次化、Hessian、伴随矩阵、二次曲线梯度。只在 JS 生成符号表达式，输入点和系数始终由 GeoGebra 动态计算。输出曲线须验证非零、次数及正确几何类型；射影三次在仿射图中降次的情况单独标记。

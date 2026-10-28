@@ -1121,6 +1121,42 @@
       "overloads": [
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "G", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "cubicPencil"}
       ]
+    },
+    {
+      "name": "PivotalCubic",
+      "description": "Pivotal isocubic with conjugation pole Omega and pivot P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalCubic"}
+      ]
+    },
+    {
+      "name": "PivotalIsotomicCubic",
+      "description": "Pivotal isocubic for isotomic conjugation with pivot P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalIsotomicCubic"}
+      ]
+    },
+    {
+      "name": "NonpivotalCubic",
+      "description": "Nonpivotal isocubic with conjugation pole Omega and root P; optionally choose its member through Q.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"}
+      ]
+    },
+    {
+      "name": "QACu1Inv",
+      "description": "Locus of fourth vertices X for which P lies on QA-Cu1(A,B,C,X).",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "qaCu1Inverse"}
+      ]
+    },
+    {
+      "name": "ConicoPivotalCubic",
+      "description": "Conico-pivotal cubic with designated singular point N and root P.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "N", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "conicoPivotalCubic"}
+      ]
     }
   ]
 }

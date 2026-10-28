@@ -5,6 +5,7 @@ import type { Matrix } from '../algebra/homogeneous';
 import { TRIANGLE_BUILDERS } from './triangle';
 import { CURVE_BUILDERS } from './curves';
 import { CUBIC_TOOL_BUILDERS } from './cubicTools';
+import { ISOCUBIC_BUILDERS } from './isocubics';
 import { CONIC_BUILDERS } from './conics';
 import { QUADRANGLE_BUILDERS } from './quadrangle';
 import { TRIANGLE_CURVE_BUILDERS } from './triangleCurves';
@@ -139,6 +140,6 @@ const conicBranch: ExpressionBuilder = (args, allocate) => {
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
   brocard, anticevian, trilinearPolar, trilinearPole,
-  ...TRIANGLE_BUILDERS, ...CURVE_BUILDERS, ...CUBIC_TOOL_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
+  ...TRIANGLE_BUILDERS, ...CURVE_BUILDERS, ...CUBIC_TOOL_BUILDERS, ...ISOCUBIC_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
 };
 

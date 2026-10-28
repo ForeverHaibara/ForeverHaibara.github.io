@@ -50,14 +50,14 @@ describe('Geometry type dispatch and symbolic construction boundaries', () => {
     }
   });
 
-  it('uses univariate coefficient encoding and a dynamic cubic-degree guard without CAS or sampled path points', () => {
+  it('uses univariate coefficient encoding for declared cubic inputs without CAS or sampled path points', () => {
     for (const source of ['Polar(P,f)', 'PolarConic(P,f)', 'ThirdIntersection(f,P)', 'ThirdIntersection(f,P,B)']) {
       const expression = compile(source);
       expect(expression).toContain('LeftSide');
       expect(expression).toContain('RightSide');
       expect(expression).toMatch(/Reverse\(Coefficients\(v\d+\(x,x\^4\)\+0\*x\)\)/u);
       expect(expression).toContain('{0,0,0,0,0,0,0,0,0,0,0,0,0}');
-      expect(expression).toContain('AreEqual');
+      expect(expression).not.toContain('AreEqual');
       expect(expression).not.toMatch(/Derivative\(|Point\(|Intersect\(|Cubic\(/u);
       expect(expression.length, source).toBeLessThan(20_000);
     }
