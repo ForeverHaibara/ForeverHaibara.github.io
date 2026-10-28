@@ -739,6 +739,7 @@
     {
       "name": "ThirdIntersection",
       "description": "Residual cubic intersection after two known secant intersections, or after tangent contact at one smooth point.",
+      "aliases": ["Tangential"],
       "overloads": [
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "thirdIntersection"},
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "thirdIntersection"}
@@ -1053,9 +1054,10 @@
     },
     {
       "name": "CircularCubic",
-      "description": "Unique circular cubic through seven points, when the seven constraints are independent.",
+      "description": "Circular cubic through seven points, or six points and a direction at infinity, when the constraints are independent.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}], "returns": "implicitCurve", "builder": "circularCubic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}], "returns": "implicitCurve", "builder": "circularCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "circularCubicDirection"}
       ]
     },
     {
@@ -1156,6 +1158,35 @@
       "description": "Conico-pivotal cubic with designated singular point N and root P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "N", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "conicoPivotalCubic"}
+      ]
+    },
+    {
+      "name": "CubicAsymptotes",
+      "description": "Up to three real finite asymptote lines of a cubic, as independent outputs; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "cubicAsymptotes"},
+        {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "i", "type": "number"}], "returns": "line", "builder": "cubicAsymptotes"}
+      ]
+    },
+    {
+      "name": "NodalCubic",
+      "description": "Cubic with node A through the supplied points; shorter overloads are circular, and four-point overloads have orthogonal nodal tangents.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}], "returns": "implicitCurve", "builder": "nodalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "implicitCurve", "builder": "nodalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "nodalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"}
+      ]
+    },
+    {
+      "name": "Strophoid",
+      "description": "Orthogonal nodal circular cubic, angle-bisector locus, or moving-circle locus, according to the overload.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "strophoid"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "strophoid"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "implicitCurve", "builder": "strophoid"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "strophoid"}
       ]
     }
   ]

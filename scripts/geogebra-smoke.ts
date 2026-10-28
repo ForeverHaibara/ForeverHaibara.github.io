@@ -6,6 +6,7 @@ import { verifyBasicGeometry, verifyRadicalAxis } from './geogebra-basic-geometr
 import { verifyConstructions } from './geogebra-constructions-smoke';
 import { verifyCubic } from './geogebra-cubic-smoke';
 import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
+import { verifyCubicMisc } from './geogebra-cubic-misc-smoke';
 import { verifyIsocubics } from './geogebra-isocubics-smoke';
 import { verifyQaPerformance } from './geogebra-qa-performance';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
@@ -63,6 +64,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'cubic-misc') {
+      await verifyCubicMisc(engine, report);
+      report('COMPLETE');
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('suite') === 'isocubics') {
       await verifyIsocubics(engine, report);
       report('COMPLETE');
