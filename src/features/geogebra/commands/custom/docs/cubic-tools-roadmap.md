@@ -42,6 +42,33 @@
 
 这批先实现**族**，再考虑为目录曲线起专名；例如 `PivotalCubic(A,B,C,K,H)` 对应 [K006 Orthocubic](https://bernard-gibert.fr/ctc1.html)，但若项目所用原生 `Cubic(A,B,C,6)` 已支持，就直接用原生编号。Gibert 目录的 Knnn 是曲线目录号，GeoGebra 原生 `Cubic` 的可用编号则须在当前引擎逐一核验；[官方手册](https://geogebra.github.io/docs/manual/en/commands/Cubic/) 明说支持集合会变化。本文不把二者无条件等同。
 
+## 插入做：三次曲线的其他工具
+
+| English name / signature → output | English description | 候选算法 |
+|---|---|---|
+| `PrehessianCubic(F[,i]) → implicitCurve × 3 / implicitCurve` | Prehessian cubics associated with F. | 尚须核定三个成员的规范方程、索引和退化语义。若三支无可区分次序，按 §2.1 画出全部并任取一支作为嵌套返回值。 |
+| (POSTPONED) `CubicSingularPoints(F[,i]) → point × 3 / point` | Real finite singular points of a cubic. | 同解 `F₃=∂XF₃=∂YF₃=∂ZF₃=0`，可约曲线可有多个交点；须先设计至多三个固定槽位的稳定编号，并区分重合分量导致的无限解族。不能删除 undefined 槽。  暂不做，因为一般的非奇异三次曲线无奇点。|
+| `CubicInflexionPoints(F[,i]) → point × 3 / point` | Real finite flexes of a smooth cubic. | 求 `F∩HessianCubic(F)` 的实有限点并验证切触重数；复数九点、奇异／可约情形与穿越判别式时的槽位稳定性需要单独方案。 |
+| `CubicAsymptotes(F[,i]) → line × 3 / line` |  | 目前geogebra有自带的Asymptote ，但是好像返回的是一个整体列表。这个CubicAsymptote应该拆分返回。|
+| `Tangential(F, A) → point` |  | ThirdIntersection的alias|
+| `Pretangential(F, A[,i]) → point × 4 / point` |  |  |
+| `CubicInvolution(F, A[,i]) → point × 3 / point` |  |Steinerian involution ，prehessian的hessian conjugate，也是tangential的另外三个pretangential |
+| `CircularCubic(A,B,C,D,E,F,l) → implicitCurve` | | 重载，给定六点和一个直线方向的无穷远点，作三次圆环曲线。 |
+| `NodalCubic(A,B,C,D,E,F,G) → implicitCurve`| | 以 A 为node且经过BCDEFG的nodal cubic.nodal cubic关于node反演为二次曲线，有可能有利于分析作图方案，下同。|
+| `NodalCubic(A,B,C,D,E) → implicitCurve`| | 重载。以 A 为node且经过BCDE的圆环nodal cubic|
+| `NodalCubic(A,B,C,D,l) → implicitCurve`| | 重载。以 A 为node且经过BCD，且直线l方向为无穷远点的nodal cubic|
+| `NodalCubic(A,B,C,D) → implicitCurve`| | 重载。以 A 为node且经过BCD的斜环索线|
+| `NodalCubic(A,B,C,l) → implicitCurve`| | 重载。以 A 为node且经过BC，且直线l方向为无穷远点的nodal cubic|
+| `Strophoid(A,B,C,D) → implicitCurve`| | 同NodalCubic。|
+| `Strophoid(A,B,C,l) → implicitCurve`| | 同NodalCubic。|
+| `Strophoid(A,B,C) → implicitCurve`| | XA平分（内角或外角）∠BXC的点X轨迹。|
+| `Strophoid(A,B,l) → implicitCurve`| | 重载。对直线l上一动点C，圆(C,CA)与BC的两个交点的轨迹。当l不经过A，依旧可以作图，只是不是环索线（不用拒绝输入）。当l经过A时，它是环索线的一个定义，且是XA平分∠BXl（方向无穷远点）的轨迹，因此与前一条相容。|
+| `CuspidalCubic(A,B,C,D,E,F) → implicitCurve`| | 重载。以 A 为cusp点且经过BCDEF的cuspidal cubic|
+| `CuspidalCubic(A,B,C,D) → implicitCurve`| | 重载。以 A 为cusp点且经过BCD的圆环cuspidal cubic|
+| `CuspidalCubic(A,B,C,l) → implicitCurve`| | 重载。以 A 为cusp点且经过BC，且直线l方向为无穷远点的圆环cuspidal cubic|
+
+
+
 ## 后做：专门曲线与更精细的几何对象
 
 下表有明确的几何定义或可查的方程，但依赖前两阶段的原语、原生编号审计和单独的退化证明。专名须与目录页面逐项交叉核对，不能只用九点拟合冒充定义。
@@ -60,9 +87,6 @@
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
-| `PrehessianCubic(F[,i]) → implicitCurve × 3 / implicitCurve` | Prehessian cubics associated with F. | 尚须核定三个成员的规范方程、索引和退化语义。若三支无可区分次序，按 §2.1 画出全部并任取一支作为嵌套返回值。 |
-| `CubicSingularPoints(F[,i]) → point × 3 / point` | Real finite singular points of a cubic. | 同解 `F₃=∂XF₃=∂YF₃=∂ZF₃=0`，可约曲线可有多个交点；须先设计至多三个固定槽位的稳定编号，并区分重合分量导致的无限解族。不能删除 undefined 槽。 |
-| `CubicInflectionPoints(F[,i]) → point × 3 / point` | Real finite flexes of a smooth cubic. | 求 `F∩HessianCubic(F)` 的实有限点并验证切触重数；复数九点、奇异／可约情形与穿越判别式时的槽位稳定性需要单独方案。 |
 | Native: `Asymptote(F)` | Asymptotes of an implicit curve. | GeoGebra 已提供 `Asymptote(implicitCurve)`；先用原生命令，暂不增加同义的 `CubicAsymptotes`。 |
 | `CubicGroupAdd(F,O,P,Q) → point` | Sum of two points on a nonsingular cubic with flex O as identity. | 弦切法两次使用已实现 `ThirdIntersection`；P=Q 和中间点 O 需切线重载，曲线必须光滑不可约，O 必须是有限拐点。必须先说明群律原点、加法符号和连续分支，不能把任意 `ThirdIntersection` 当成群和。 |
 | `PerspectiveCubic(A,B,C,D,E,P) → implicitCurve` | Cubic associated with two ordered triangles in perspective. | 旧计划 §10.1 的有向面积三因子式可作为候选，但两个三角形的对应顺序和通行定义仍未核定；此处用 P 作第六点名以免与曲线 F/G 混淆。核定后才确定名称及符号。 |
