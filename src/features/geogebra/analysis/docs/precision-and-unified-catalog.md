@@ -70,9 +70,9 @@
 npm test -- --run --maxWorkers=2
 npx tsc --noEmit
 npm run build
-python scripts/geogebra-proof-smoke.py
-python scripts/geogebra-pedal-smoke.py
-python scripts/geogebra-reasoning-smoke.py
+python scripts/geogebra/reasoning/geogebra-proof-smoke.py
+python scripts/geogebra/reasoning/geogebra-pedal-smoke.py
+python scripts/geogebra/reasoning/geogebra-reasoning-smoke.py
 ```
 
 浏览器在独立 localhost 场景设置 GGB 为两位小数，P=(3,1e-8)。原生显示

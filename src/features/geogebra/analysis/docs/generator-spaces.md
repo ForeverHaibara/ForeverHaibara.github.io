@@ -129,8 +129,8 @@ Worker 令页面在密集数据下仍可停止，不等于每个数据集都满�
 
 ```sh
 npm test -- --run src/features/geogebra/analysis --maxWorkers=2
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts --scale
 ```
 
 在非特殊三角形 A/B/C 的坐标构型中，ABC 模型用两个生成元加 π 表示 12 条线，point cover 为 A、B、C、H、I、O，G 不在其中。仅方向模型时，17 组等角可降至 3 组；再复用 Euler 线的共线载体后，当前最终版本不再逐条展示这 17 组等角，保留一个方向生成摘要及原有共线／垂直等观测。旋转、平移、换单位仍保持 O/H/I 与 G 的区分。该例的中心坐标由几何公式计算，测试没有根据 `TriangleCenter` 名字给模型特殊待遇。

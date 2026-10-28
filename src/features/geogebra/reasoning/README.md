@@ -127,9 +127,9 @@ AG2 的坐标检查可能比数值发现严格得多。普通模式的桥接层�
 
 ```sh
 npm test -- --run src/features/geogebra/reasoning --maxWorkers=2
-python scripts/geogebra-reasoning-smoke.py
-python scripts/geogebra-proof-smoke.py
-python scripts/geogebra-pedal-smoke.py
+python scripts/geogebra/reasoning/geogebra-reasoning-smoke.py
+python scripts/geogebra/reasoning/geogebra-proof-smoke.py
+python scripts/geogebra/reasoning/geogebra-pedal-smoke.py
 npx tsc --noEmit
 npm run build
 ```

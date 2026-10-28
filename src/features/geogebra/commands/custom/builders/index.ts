@@ -4,12 +4,10 @@ import { add, mul, transpose, product, adjugate, determinant, cross, bind, homog
 import type { Matrix } from '../algebra/homogeneous';
 import { TRIANGLE_BUILDERS } from './triangle';
 import { CURVE_BUILDERS } from './curves';
-import { CUBIC_TOOL_BUILDERS } from './cubicTools';
-import { CUBIC_MISC_BUILDERS } from './cubicMisc';
-import { ISOCUBIC_BUILDERS } from './isocubics';
+import { CUBIC_TOOL_BUILDERS, CUBIC_MISC_BUILDERS } from './cubicConstructions';
+import { ISOCUBIC_BUILDERS, TRIANGLE_CURVE_BUILDERS } from './triangleCubics';
 import { CONIC_BUILDERS } from './conics';
 import { QUADRANGLE_BUILDERS } from './quadrangle';
-import { TRIANGLE_CURVE_BUILDERS } from './triangleCurves';
 import { QUADRILATERAL_BUILDERS } from './quadrilateral';
 
 const conjugate = (isogonal: boolean): ExpressionBuilder => (args, allocate) => {

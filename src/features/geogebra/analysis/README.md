@@ -148,8 +148,8 @@ d(x,y) = min [ upDistance(x,a) + upDistance(y,a) ]
 
 ```sh
 npm test -- --run src/features/geogebra/analysis
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-relation-scoring.ts
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-relation-scoring.ts
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts --scale
 ```
 
-[实验脚本](../../../../scripts/geogebra-relation-scoring.ts) 输出可复核的依赖构型评分表；分析测试另外使用真实坐标验证中点／黑盒共线、陪位中线、同圆点、Pappus 线及超过八点的关系组。脚本中的构型名称只说明依赖背景，不参与评分。
+[实验脚本](../../../../scripts/geogebra/analysis/geogebra-relation-scoring.ts) 输出可复核的依赖构型评分表；分析测试另外使用真实坐标验证中点／黑盒共线、陪位中线、同圆点、Pappus 线及超过八点的关系组。脚本中的构型名称只说明依赖背景，不参与评分。

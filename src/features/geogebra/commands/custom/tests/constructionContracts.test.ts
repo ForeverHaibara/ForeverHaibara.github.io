@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compileStudioCommand } from '../commandCompiler';
 import { studioToolLibrary, selectOverload } from '../toolLibrary';
 import { scimemiCoordinates } from '../builders/conics';
-import { qaCubicCoefficients } from '../builders/triangleCurves';
+import { qaCubicCoefficients } from '../builders/triangleCubics';
 import { complexBasisCoefficient, QUARTIC_MONOMIALS } from '../builders/curveTransforms';
 import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../algebra/polynomial';
 import type { CommandEnvironment, GeometryType, ParameterType } from '../types';

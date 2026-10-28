@@ -8,7 +8,7 @@
 
 - 正式 builder 只修复 `midpointCubic` 中的 `2*${c}` 为 `2*(${c})`。三参数重载传入的 c 是复合表达式，原先漏乘了一份 `n·M`；四点重载传入单变量，几何公式不变。
 - 原生回归：`M=(1,1), S=(2,1), n:x=0`，正确曲线在 `(0,1)` 的方程残差为 **0**，修复前为 −1。
-- 实验候选位于根目录 `scripts/geogebra-qlcu1-equation.ts`。输出 **11,813 字符**，只有坐标提取、四则运算、非退化守卫和一个 `ImplicitCurve`；没有 `Zip/Element`、复数转换或辅助几何对象。现有展开为 **526 字符、五层 Zip/Element**。
+- 实验候选位于根目录 `scripts/geogebra/browser/geogebra-qlcu1-equation.ts`。输出 **11,813 字符**，只有坐标提取、四则运算、非退化守卫和一个 `ImplicitCurve`；没有 `Zip/Element`、复数转换或辅助几何对象。现有展开为 **526 字符、五层 Zip/Element**。
 - 两种原生曲线在三组 C 坐标下，按十个确定三次多项式的三角形格点核对比例一致性；相对误差最大约 `1.55e-13`。独立单元测试另外核对共轭中点定义在平移、旋转和缩放下的一致性。
 - 非退化守卫保留有限密克点、非零 κ 和确定牛顿线的要求；此次实验没有为新增退化延拓作承诺。
 
@@ -66,10 +66,10 @@ F  = (nx wx + ny wy + 2c)(wx²+wy²)
 
 ## 复现与数据
 
-运行 `npm run dev`，在足够大的前台浏览器窗口打开 `/scripts/geogebra-qlcu1-benchmark.html`，保持 3 rounds／12 updates，点击 **Run comparison**。测量时保持窗口与视口不变，不运行其他构建任务。结果面板及 Raw results 会记录实际版本、DPR、视口和逐次数据。
+运行 `npm run dev`，在足够大的前台浏览器窗口打开 `/scripts/geogebra/browser/geogebra-qlcu1-benchmark.html`，保持 3 rounds／12 updates，点击 **Run comparison**。测量时保持窗口与视口不变，不运行其他构建任务。结果面板及 Raw results 会记录实际版本、DPR、视口和逐次数据。
 
 - [原始数据](qlcu1-timings.json)（时间保留至 0.1 ms）。
-- 实验入口：`scripts/geogebra-qlcu1-benchmark.html`、`scripts/geogebra-qlcu1-benchmark.ts`。
-- 独立方程生成器及测试：`scripts/geogebra-qlcu1-equation.ts`、`scripts/geogebra-qlcu1-equation.test.ts`。
+- 实验入口：`scripts/geogebra/browser/geogebra-qlcu1-benchmark.html`、`scripts/geogebra/browser/geogebra-qlcu1-benchmark.ts`。
+- 独立方程生成器及测试：`scripts/geogebra/browser/geogebra-qlcu1-equation.ts`、`scripts/geogebra/browser/geogebra-qlcu1-equation.test.ts`。
 
 短式接入后自动检查：Vitest **12 个文件、116 项通过**，包含与共轭中点定义的一致性、平行四边形降次及垂直角情形；TypeScript 与生产构建通过。原实验另修复一处既有测试对工具目录首项的依赖：重载歧义检查现按名称选取已知三点签名，目录重排不再影响它。

@@ -62,8 +62,8 @@
 [完整数据](examples/midsegment-proof.json) 由真实原生引擎生成，含 22 个相关
 步骤、5 个回放通过的代数步骤、3 个坐标分支、0 个解释缺口。
 
-重新生成：`node node_modules/vite-node/vite-node.mjs scripts/geogebra-proof-example.ts`。
-原生检查：`python scripts/geogebra-proof-smoke.py`。当前 12 项回归覆盖中位线、
+重新生成：`node node_modules/vite-node/vite-node.mjs scripts/geogebra/reasoning/geogebra-proof-example.ts`。
+原生检查：`python scripts/geogebra/reasoning/geogebra-proof-smoke.py`。当前 12 项回归覆盖中位线、
 有向角、长度比、共圆、无目标生成、普通角分支、错误坐标假设、矛盾、模角倍数、
 系数篡改与来源缺口。另有全仓库 363 项 TypeScript 测试，保留既有原生 AG2 回归。
 

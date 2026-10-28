@@ -107,7 +107,7 @@ d·log L + (Σaᵢ−d)·log L₀ − Σaᵢ·log Gᵢ
 npm test -- --run --maxWorkers=2
 npx tsc --noEmit
 npm run build
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts --scale
 ```
 
 本地 Standard 样本（毫秒，单次测量，非时延保证）：

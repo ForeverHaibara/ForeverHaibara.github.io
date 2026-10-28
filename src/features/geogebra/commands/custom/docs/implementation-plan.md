@@ -554,20 +554,20 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 
 最终自动检查：`npm test -- --run --testTimeout=15000` **13 个文件、123 项通过**，`npx tsc --noEmit`、`npm run build` 通过。全库原生命令名审计曾超过默认 5 秒阈值，复验采用 15 秒阈值，未修改仓库默认配置。构建仍有既有 Gradio 模块外置和包体提示。
 
-原生验收入口为 `/scripts/geogebra-curve-optimization-smoke.html`，按 `group=curves|mixed|transform|polynomial-transform|cubic|native-primitives|zero` 分组，另提供单条命令诊断输入。本轮分阶段取得前六组的 COMPLETE 记录，包括独立方程比例、六个中点及三垂足、全部混合输入解的五条件残差与独立输出数、奇异槽恢复、动态圆型及线对、八次像的归一化残差和独立方程、圆型三次的二次变换、次数限制以及保存重开。zero 的全零拒绝、拖动恢复及五种未定义输入断言已看到通过，最终重开终态未全部读取。最终版本的整批人工拖动计时尚未完成，不宣称全部配置的提速比例。
+原生验收入口为 `/scripts/geogebra/browser/geogebra-curve-optimization-smoke.html`，按 `group=curves|mixed|transform|polynomial-transform|cubic|native-primitives|zero` 分组，另提供单条命令诊断输入。本轮分阶段取得前六组的 COMPLETE 记录，包括独立方程比例、六个中点及三垂足、全部混合输入解的五条件残差与独立输出数、奇异槽恢复、动态圆型及线对、八次像的归一化残差和独立方程、圆型三次的二次变换、次数限制以及保存重开。zero 的全零拒绝、拖动恢复及五种未定义输入断言已看到通过，最终重开终态未全部读取。最终版本的整批人工拖动计时尚未完成，不宣称全部配置的提速比例。
 
 早期验证页让 applet 以 body 高度调整尺寸，日志增长又增高 body，产生尺寸反馈；现已固定为 800×480 父容器并限制日志高度。该阶段的等待和控制超时不作为性能数据。当前脚本逐条创建后立即隐藏诊断对象，便于核验数学及持久依赖；它不是绘制帧率基准。
 
 ### P3 最初实现记录（2026-10-16）
 
 - 本开发阶段从 103 增至 **137 个工具名**，P3 新增 **34 名／42 重载**，包含 QLTf1 的五种强类型重载和三组点对的可选编号。工具补全、文件宏优先、独立输出与原生持久依赖沿用现有编译器；没有安装宏、命名辅助对象、脚本或 JavaScript 坐标快照。
-- 新增 `builders/triangle.ts`、`builders/conics.ts`、`builders/quadrangle.ts`、`builders/triangleCurves.ts`、`builders/quadrilateral.ts`、`algebra/polynomial.ts`、`builders/curveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
+- 新增 `builders/triangle.ts`、`builders/conics.ts`、`builders/quadrangle.ts`、`builders/triangleCubics.ts`、`builders/quadrilateral.ts`、`algebra/polynomial.ts`、`builders/curveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
 - QLTf1 曲线变换先将实系数转换为 `z^i conjugate(z)^j` 系数。反演交换相应幂，原生动态选 `m=max(i,j)` 后清分母，恰好消去人工引入的所有 `rho=(x−Mx)²+(y−My)²` 因子；随后将共轭项合并为实多项式。不需要符号 CAS、曲线采样或数值多项式插值。输入至多四次时输出至多八次，使用基数 5 编码与原生完整多项式相等检查，支持动态次数／圆型极限。
 - QL-Qu3 保留 E、F 的齐次坐标，将固定点转换为圆方程行 `(Ux²+Uy²,UxUw,UyUw,Uw²)`。各圆系数先匿名绑定，再作稀疏多项式行列式；恒等为零的五次项直接去除。一对边平行时无需生成无穷远仿射交点，第三个圆允许作为直线型代数极限；多个约束同时消失、全零多项式仍 undefined。QL 圆心链仍要求有限的分量三角形外心，不宣称全部平行配置都有有限结果。
 - 点对编号重载直接将 i 传入原生交点指令，或直接用符号 `(3−2i)` 选择复平方根分支，避免先求两个完整分支再从匿名列表抽取。双输出仍是两个独立对象；无实交点保留 undefined 槽。
 - 最终展开预算（代表性长输入标签）：QLQu3 **9,327 字符**，QLTf1 四次多项式重载 **4,618 字符**，其他重载均不足 2k 字符；全部低于 30k 审阅线。此长度检查不证明原生求值或绘制耗时。
 - 自动检查：新增 `tests/constructionContracts.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
-- 实机入口为 `/scripts/geogebra-smoke.html?suite=algebraic`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
+- 实机入口为 `/scripts/geogebra/browser/geogebra-smoke.html?suite=algebraic`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
 - **已取得的实机证据**：整批运行前 20 项通过，包括三轴、Soddy、LiangZelich、Stammler／Orthopolar、Cundy–Parry、两种 Co-Tf3、QAP2/3/4/5、Plücker／Newton 点对重载和固定点双输出的类型／对象数检查。CoTf3 专项及修订后的 QL2P3 双输出／编号单输出专项分别得到 **COMPLETE**。
 - **尚未完成的实机验收**：整批运行及 QLTf1 曲线专项随后遇到浏览器 CDP 控制超时，无法读取最终状态；这不是明确的几何失败，也不能据此确认通过。QL 中心／圆、各曲线重载、完整几何残差、动态恢复及导出重开仍需完成整批专项。特别是高次曲线变换的实际引擎性能尚未验证；本轮未发布、提交或部署这些改动。
 
@@ -586,7 +586,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - 新增显式 `compose` 定义。可复用其他自定义工具、原生命令及按顺序声明的局部表达式；`expression` 仍只调用原生命令。按重载检测循环依赖，保留嵌套及 500,000 字符上限；文件同名宏不改变内部依赖，调用入口仍尊重文件工具优先级。
 - 多输出直接发出独立几何表达式；匿名列表或 Zip 只作内部实现，不返回列表对象。末尾整数 i 在 GeoGebra 中动态选取，不读取数值到 JavaScript。
 - SpiekerCenter 使用 X(10)；HarmonicConjugate 使用圆上／直线统一的复数交比公式；两个 Similarity 均完成四点、五点重载；Antipode 接受中心二次曲线。X(13) 的英文描述也已纠正，它不是 first isodynamic point；FermatPoint 仍为 P2。
-- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra-smoke.html?suite=basic`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，已人工运行。
+- 已运行 Vitest：6 个测试文件、78 项通过；生产构建通过。TypeScript 检查仍受未改动的 MarkdownRenderer、TriplesPage 中已有错误阻挡。实际引擎入口为 `/scripts/geogebra/browser/geogebra-smoke.html?suite=basic`，涵盖所有新增重载、对象类型、辅助对象计数、几何恒等式、拖动及导出重开，已人工运行。
 
 ### P2 实现记录
 
@@ -594,7 +594,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - 保留并使用 P1 的 `compose` 跨工具复用；Hagge、mixtilinear、inconic、四边形抛物线等复用已有自定义工具和原生命令。复杂齐次代数集中到三角形／曲线 builder，共用匿名绑定与矩阵原语抽出至 `algebra/homogeneous.ts`。
 - 所有几何分支、次数／秩检查、索引选择均在 GeoGebra 表达式内部动态计算。JavaScript 只根据固定对象类型与参数个数选择重载、生成表达式；没有坐标快照或采样拟合。多输出保持独立对象。CyclocevianConjugate、Orthocorrespondent 特别在齐次层复合，避免中间无穷远对象中断有限结果。
 - 自动测试覆盖共轭对合、Ceva／cross 关系、有向外点、边上及中间无穷远极限、六中点曲线和平行四边形退化、公切线等半径／相切极限、齐次极化、剩余根、类型映射、原生重载兼容及表达式预算。Vitest 全套 **8 个文件、94 项通过**；生产构建通过。TypeScript 全量检查仍有 P1 已记录的未改动文件错误。
-- 实机入口：`/scripts/geogebra-smoke.html?suite=constructions`。脚本包含全部 59 个新增重载、几何类 XML、辅助对象计数、共轭关系、相切／焦点性质、直角／等腰／平行四边形退化、三次次数检查、拖动及导出重开。本会话浏览器清单为空，**尚未运行此脚本，不能将自动表达式测试视作原生引擎已验收**。
+- 实机入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=constructions`。脚本包含全部 59 个新增重载、几何类 XML、辅助对象计数、共轭关系、相切／焦点性质、直角／等腰／平行四边形退化、三次次数检查、拖动及导出重开。本会话浏览器清单为空，**尚未运行此脚本，不能将自动表达式测试视作原生引擎已验收**。
 
 ### 内置指令兼容性审计（2026-10-16）
 
@@ -602,7 +602,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - 本开发阶段新增 `RadicalAxis(circle,circle)`，工具库现有 **103 个命令名**。`RadicalCenter` 改为 compose 展开根轴。四点 `SteinerLineQ` 最终直接使用坐标线性方程，四线 SteinerLineQ 及两个 TangentParabola 重载复用此坐标实现。`expression` 不展开自定义工具的规则保持不变。
 - 实机进一步发现 `Point(l,0)` 对完整直线给出无穷远点，不能把射线／线段上参数 0 有限的约定直接用于 lineLike。支撑线提取统一使用参数 **1/4、1/2**，修复 SecondIntersection、Orthopole、NewtonLine、AntiSteinerPoint、MiquelPoint、SteinerLineQ、TangentParabola 的相应重载；共用齐次 builder 的线段／射线提取同步使用这组参数。依据见 [PathParameter 官方映射](https://geogebra.github.io/docs/manual/en/commands/PathParameter/)。
 - `tests/nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
-- 专项实机入口：`/scripts/geogebra-smoke.html?suite=radical`，覆盖相离／相交／内外相切／竖直圆心线／同心重合、根心等幂关系、两个 SteinerLineQ 与 TangentParabola 重载，以及其他受影响的支撑线工具和 line/segment/ray 一致性、拖动和导出重开。完整 P2 验收状态仍按上节记录。
+- 专项实机入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=radical`，覆盖相离／相交／内外相切／竖直圆心线／同心重合、根心等幂关系、两个 SteinerLineQ 与 TangentParabola 重载，以及其他受影响的支撑线工具和 line/segment/ray 一致性、拖动和导出重开。完整 P2 验收状态仍按上节记录。
 - 前一版（SteinerLineQ 复用根轴时）已在实际嵌入式 GeoGebra 运行此专项脚本并得到 **COMPLETE**，包括根轴经过同心退化后恢复，以及其他受影响重载的拖动／导出重开。该版 Vitest **9 个文件、97 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告既有 MarkdownRenderer、TriplesPage 错误。此次专项验收不替代完整 P2 验收。
 - 后续按审阅意见将 SteinerLineQ 四点版改为上述直接坐标方程，并补充方程与两直径圆幂差的代数一致性测试，包含水平／竖直和同心退化；相关自动测试 **4 个文件、48 项通过**，按用户要求不再运行真实引擎验收。
 
@@ -611,7 +611,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - 实机复现 `Polar`、`PolarConic`、两个 `ThirdIntersection` 重载共用的 `Derivative(...)(0,0)` 写法被原生解析器拒绝。命令名出现在指令表中不能证明这种命令结果后缀调用合法；导数构造还涉及 CAS 计算，原检查只覆盖命令名，未覆盖这层语法。
 - 共享系数提取改为原生一元多项式展开：对 `f=LeftSide(F)-RightSide(F)` 作符号代入 `f(x,x^4)+0*x`，将三次单项式 `x^i y^j` 编码为互异的 `x^(i+4j)`，再由 `Coefficients` 提取。该命令只接收一元函数，不直接接收 implicitCurve 或二元函数；原生实现的多项式展开分支不需要 CAS。没有采样曲线点、插值或 JavaScript 系数快照。
 - 将降幂系数表 Reverse 后补零，支持稀疏多项式及动态最高项消失。仍用 `AreEqual` 比较重建二元多项式与完整原函数，并要求三次项非零；例如 `x^4-y+x^3` 的高次项在代入时相消，仍会被完整二元比较拒绝。
-- 专项入口为 `/scripts/geogebra-smoke.html?suite=cubic`。自动测试覆盖编码无碰撞、稀疏系数补零、表达式中不再包含 Derivative；实机脚本覆盖四个重载、全部十个系数、竖直割线／拐点、非三次输入、动态次数、三种构造来源及导出重开。完整 P2 验收仍单独记录。
+- 专项入口为 `/scripts/geogebra/browser/geogebra-smoke.html?suite=cubic`。自动测试覆盖编码无碰撞、稀疏系数补零、表达式中不再包含 Derivative；实机脚本覆盖四个重载、全部十个系数、竖直割线／拐点、非三次输入、动态次数、三种构造来源及导出重开。完整 P2 验收仍单独记录。
 - 本轮专项实机脚本已得到 **COMPLETE**，系数变动与导出重开后的依赖检查通过。Vitest **9 个文件、99 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告原有 MarkdownRenderer、TriplesPage 错误。
 - 源码核对：[CmdCoefficients](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/cas/CmdCoefficients.java)、[AlgoCoefficients](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/cas/AlgoCoefficients.java)、[AlgoLeftRightSide](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/advanced/AlgoLeftRightSide.java)。
 

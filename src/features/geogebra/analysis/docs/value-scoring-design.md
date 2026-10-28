@@ -134,10 +134,10 @@ V = 100 × (1-exp(-max(0,L-1)/τ)), τ=8
 
 ## 5. 实验结果
 
-可运行 [评分实验脚本](../../../../../scripts/geogebra-relation-scoring.ts)：
+可运行 [评分实验脚本](../../../../../scripts/geogebra/analysis/geogebra-relation-scoring.ts)：
 
 ```sh
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-relation-scoring.ts
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-relation-scoring.ts
 ```
 
 该脚本只构造依赖图，不调用 GeoGebra 或证明器。几何构型名称不参与评分。结果：

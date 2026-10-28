@@ -70,9 +70,9 @@ I 的覆盖由 11/13 增至 13/13。后端原本已能推出这些目标，收�
 ## 回归与复现
 
 ```sh
-python scripts/geogebra-pedal-smoke.py
-python scripts/geogebra-proof-smoke.py
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-pedal-examples.ts
+python scripts/geogebra/reasoning/geogebra-pedal-smoke.py
+python scripts/geogebra/reasoning/geogebra-proof-smoke.py
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/reasoning/geogebra-pedal-examples.ts
 npm test -- --run --maxWorkers=2
 npx tsc --noEmit
 npm run build

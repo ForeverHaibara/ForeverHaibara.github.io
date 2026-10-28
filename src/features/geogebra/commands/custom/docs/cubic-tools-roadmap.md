@@ -8,7 +8,7 @@
 
 ## 先做：通用代数构造与极性工具
 
-这一阶段复用现有十系数读取及必要的匿名绑定，并与当前 `Polar`、`PolarConic`、`ThirdIntersection` 交叉验证。下面各项已进入 `library.json` 和 `builders/cubicTools.ts`。逐项创建、类型及无命名辅助对象检查已通过；更多退化配置与定量性能验收仍待做。创建和拖动耗时都需记录，尤其检查行列式及多层 `Zip`，不能仅按生成表达式的长度评价。
+这一阶段复用现有十系数读取及必要的匿名绑定，并与当前 `Polar`、`PolarConic`、`ThirdIntersection` 交叉验证。下面各项已进入 `library.json` 和 `builders/cubicConstructions.ts`。逐项创建、类型及无命名辅助对象检查已通过；更多退化配置与定量性能验收仍待做。创建和拖动耗时都需记录，尤其检查行列式及多层 `Zip`，不能仅按生成表达式的长度评价。
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
@@ -68,7 +68,7 @@
 
 
 
-插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra-cubic-misc-smoke.ts`。圆环双点三次曲线在 A 作反演会得到过 A 的二次曲线，尖点对应抛物线；已用这一路径试作双槽 `CuspidalCubic`，但原生绘制仍长时间无响应。先前的矩阵核法也很慢，因此均未加入库。现有 `NodalCubic` 仅用一次匿名绑定和至多 6×6 余子式，已能快速创建，暂不换成反演链。
+插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra/browser/geogebra-cubic-misc-smoke.ts`。圆环双点三次曲线在 A 作反演会得到过 A 的二次曲线，尖点对应抛物线；已用这一路径试作双槽 `CuspidalCubic`，但原生绘制仍长时间无响应。先前的矩阵核法也很慢，因此均未加入库。现有 `NodalCubic` 仅用一次匿名绑定和至多 6×6 余子式，已能快速创建，暂不换成反演链。
 
 本轮另加入 `Pretangential` 与 `CubicInvolution` 的点值／编号重载。一般切点用两原生二次曲线求交；拐点改用原生直线与三次曲线求交。实机验证了四点／三点各自独立的 XML 点类、无命名辅助对象、点在曲线上及其切线过指定 tangential，并验证拐点输入下的 undefined 固定槽。`CubicInflexionPoints` 仍属 PENDING：单纯开启 CAS 可以消除 `Solutions` 的未定义结果，但顶层成功的六项 Hessian 方程组在嵌入点构造时被拒绝；暂不留下在常见输入上会失败的接口。其余 PENDING 行也未宣称实现。
 

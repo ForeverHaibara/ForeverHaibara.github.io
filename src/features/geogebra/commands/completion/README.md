@@ -54,7 +54,7 @@ studioCompletionRegistry.register({
 
 ## Catalog updates
 
-`geogebraCommandNames.ts` contains names from the [official command index](https://geogebra.github.io/docs/manual/en/commands/All_Commands/). Update it deliberately with `node scripts/update_geogebra_commands.mjs`; no network request is made while typing. Availability of an indexed command still depends on the loaded GeoGebra app and view. Add optional descriptions and illustrative signatures in `commandHelp.ts`.
+`geogebraCommandNames.ts` contains names from the [official command index](https://geogebra.github.io/docs/manual/en/commands/All_Commands/). Update it deliberately with `node scripts/geogebra/tools/update_geogebra_commands.mjs`; no network request is made while typing. Availability of an indexed command still depends on the loaded GeoGebra app and view. Add optional descriptions and illustrative signatures in `commandHelp.ts`.
 
 ## Keyboard behavior
 

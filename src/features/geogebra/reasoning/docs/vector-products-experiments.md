@@ -74,12 +74,12 @@
 npm test -- --run --maxWorkers=2
 npx tsc --noEmit
 npm run build
-python -B scripts/geogebra-vector-smoke.py
-python -B scripts/geogebra-proof-smoke.py
-python -B scripts/geogebra-reasoning-smoke.py
-python -B scripts/geogebra-pedal-smoke.py
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-vector-examples.ts
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
+python -B scripts/geogebra/reasoning/geogebra-vector-smoke.py
+python -B scripts/geogebra/reasoning/geogebra-proof-smoke.py
+python -B scripts/geogebra/reasoning/geogebra-reasoning-smoke.py
+python -B scripts/geogebra/reasoning/geogebra-pedal-smoke.py
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/reasoning/geogebra-vector-examples.ts
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts --scale
 ```
 
 原生脚本使用本地 Python 与 NumPy；示例生成器还会写入上述 examples 文件。新实现不依赖 SymPy，也不会创建 GeoGebra 辅助对象。

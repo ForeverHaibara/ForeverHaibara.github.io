@@ -87,7 +87,7 @@ EL/L₀=(1/2)(EF/L₀)     → 2EL=EF，L₀ 不再增加价值
 npm test -- --run
 npx tsc --noEmit
 npm run build
-node node_modules/vite-node/vite-node.mjs scripts/geogebra-discovery-benchmark.ts --scale
+node node_modules/vite-node/vite-node.mjs scripts/geogebra/analysis/geogebra-discovery-benchmark.ts --scale
 ```
 
 一次无并行构建争用的本地标准预算样本如下，单位 ms；这是当前样本，不是性能保证：

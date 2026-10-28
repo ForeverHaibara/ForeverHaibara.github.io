@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kernelMinors, CUBIC_MISC_BUILDERS } from '../builders/cubicMisc';
+import { kernelMinors, CUBIC_MISC_BUILDERS } from '../builders/cubicConstructions';
 import { compileStudioCommand } from '../commandCompiler';
 import type { CommandEnvironment, GeometryType, TypedExpression } from '../types';
 
