@@ -11,6 +11,24 @@ export const verifyIsocubics = async (engine: GeoGebraEngine, report: (message: 
   };
   const selected = new URLSearchParams(window.location.search).get('tool');
   await run('A=(0,0)\nB=(6,0)\nC=(1,4)\nO=(2,1)\nP=(2,3)\nQ=(3,1)\nN=(1.5,1.2)');
+  if (selected === 'qa-neuberg') {
+    await run('isoPoint=TriangleCenter(A,B,C,15)\ncenter3=TriangleCenter(A,B,C,3)\ninv=QACu1Inv(A,B,C,isoPoint)\nneub=OrthopivotalCubic(A,B,C,center3)');
+    if (!await api('isDefined', 'inv') || !await api('isDefined', 'neub')) throw new Error('isodynamic specialization is undefined');
+    await run('inverseFunction(x,y)=LeftSide(inv)-RightSide(inv)\nneubergFunction(x,y)=LeftSide(neub)-RightSide(neub)');
+    const samples = [[2, 1], [3, 2], [4, 1], [-1, 2]];
+    const pairs = await Promise.all(samples.map(async ([x, y]) => [
+      Number(await api('getValue', `inverseFunction(${x},${y})`)),
+      Number(await api('getValue', `neubergFunction(${x},${y})`)),
+    ]));
+    const reference = pairs.find(([, second]) => Number.isFinite(second) && Math.abs(second) > 1e-6);
+    if (!reference) throw new Error('no nonzero Neuberg reference sample');
+    const scale = reference[0] / reference[1];
+    if (!pairs.every(([first, second]) => Number.isFinite(first) && Number.isFinite(second)
+      && Math.abs(first - scale * second) <= 1e-6 * Math.max(1, Math.abs(first), Math.abs(scale * second))))
+      throw new Error(`QA inverse at X15 differs from Neuberg cubic: ${JSON.stringify(pairs)}`);
+    report('PASS QACu1Inv at X15 is proportional to Neuberg cubic K001');
+    return;
+  }
   if (selected === 'qa-interior') {
     await api('setCoordSystem', -2, 8, -2, 6);
     await run('D=(-1,2)\nqa=QACu1(A,B,C,D)\nqi=QACu1Inv(A,B,C,P)');

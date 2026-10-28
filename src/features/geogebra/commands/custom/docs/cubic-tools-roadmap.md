@@ -35,7 +35,7 @@
 | `PivotalIsotomicCubic(A,B,C,P) → implicitCurve` | Pivotal cubic for isotomic conjugation with pivot P. | 上式取 Ω=G，即极的重心为 `(1:1:1)`；复用同一方程生成器，没有另一套算法。 |
 | `NonpivotalCubic(A,B,C,Ω,P,Q) → implicitCurve` | Nonpivotal isocubic with pole Ω, root P and point Q on the curve. | 先求 `Q*=(pY_Q Z_Q:qZ_Q X_Q:rX_Q Y_Q)`，再用 SITP §1.5.1 的对称式 `Σ_cyclic uX(Y_Q Z−Z_Q Y)(Y_Q* Z−Z_Q* Y)=0`；Q、Q* 自动在曲线上。避免直接暴露依赖 Ω/P/Q 齐次尺度的裸参数 k；七个齐次系数全零时 undefined。 |
 | `NonpivotalCubic(A,B,C,Ω,P) → implicitCurve` | Zero-parameter nonpivotal isocubic with pole Ω and root P. | 重载。SITP 的 nK₀ 式：`uX(rY²+qZ²)+vY(pZ²+rX²)+wZ(qX²+pY²)=0`。这里的“零”相对所列规范形式，不是把任意方程的 `XYZ` 系数粗暴设零。 |
-| `QACu1Inv(A,B,C,P) → implicitCurve` | Locus of fourth vertices X for which P lies on QA-Cu1(A,B,C,X). | 把既有 QA-Cu1 的第四点重心坐标作为变量，固定曲线点为 P，得到关于 X 的三次式。用该式在仿射重心图中的十系数判断恒零。P 的垂足三角形与投影线共点性质是可另行验证的描述；P 在三边上时该替代性质不适用，不改变本工具的方程定义。 |
+| `QACu1Inv(A,B,C,P) → implicitCurve` | Locus of fourth vertices X for which P lies on QA-Cu1(A,B,C,X). | 等价垂足刻画：固定 P 的垂足三角形 D/E/F，P 在 AX、BX、CX 上的投影 U/V/W 满足 DU、EV、FW 共点；共点行列式须约去 X 所在三边的三个虚增因子。实际实现从原 QA 方程约简为七项重心三次式，先绑定七个数值系数，并以其平方和拦截零多项式。见[性能实验](benchmarks/qa-cubics-performance.md)。 |
 <!-- | `IsogonalApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isogonal cubic with root P. | 复用 `ApolarCubic`，Ω=K=X(6)；优先作为易用快捷名审阅，不单独维护方程。较冗余，暂不需要。 | -->
 <!-- | `IsotomicApolarCubic(A,B,C,P) → implicitCurve` | Zero-parameter nonpivotal isotomic cubic with root P. | 同上，Ω=G=X(2)；与 `IsogonalApolarCubic` 做变换不变性和退化对照。较冗余，暂不需要。  | -->
 | `ConicoPivotalCubic(A,B,C,N,P) → implicitCurve` | Conico-pivotal isocubic with singular point N and root P. | N=`(f:g:h)` 时输出 `Σ_cyclic uX(hY−gZ)²=0`；对应的极为 `(f²:g²:h²)`，N 为指定奇点，`X X*` 的包络是二次曲线。必须核查非零式、N 实为结点／尖点的条件，以及映射基点；不能宣称任意参数都给普通结点。见 SITP §8.1。 |
@@ -72,6 +72,8 @@
 第一阶段验收记录（2026-10-28）：12 个签名逐项在嵌入式 GeoGebra 中创建成功，输出 XML 类型正确，且每次只新增承诺的输出对象。已独立核对 Hessian 对应点、圆极点、poloconic 方程、普通八点与圆环六点 Cayley–Bacharach 结果；八点结果随输入移动，曲线束随指定点移动并在导出重开后保持定义。自动代数测试、TypeScript 检查与生产构建通过。完整的退化配置扫描及创建／拖动计时仍属于后续验收。
 
 第二阶段验收记录（2026-10-28）：五个名称、六个签名在嵌入式 GeoGebra 中逐项创建成功，输出为独立 `implicitpoly`，无命名辅助对象。原生核对了枢轴 P、指定点 Q、QA 逆曲线上的 P 及锥枢轴奇点 N 的曲线关联；自动代数测试核对了枢轴共线行列式、等截特化、等共轭像、奇点导数和 QA 逆方程。顶点导致的四种恒零配置返回 undefined，移动输入离开退化位置后恢复；六条曲线均通过导出重开。实测 `ImplicitCurve(0)` 会被错误报告为已定义，因此只对最终零多项式保留数值系数守卫。普通配置的一次创建记录：五个等共轭族签名约 0.3–0.5 秒，`QACu1Inv` 约 3.4 秒；后者拖动 P 更新约 3.2 秒。这些是单次观测，不能代替系统性能基准。
+
+后续同日对 `QACu1` / `QACu1Inv` 的定量比较见[专项记录](benchmarks/qa-cubics-performance.md)。逆曲线已改用七系数式；上段的 3.4／3.2 秒是改动前的一次观测。
 
 1. **定义审阅**：先确认表中的名称、参数顺序和哪些专名确实需要快捷入口。检查 `library.json` 名称／别名冲突、GeoGebra 原生 `Cubic` 编号和 `OsculatingCircle` 支持；原生功能充分时将对应行移为 Native。
 2. **共用代数原语**：沿用现有原生十系数提取及完整多项式核对；逐个推导齐次化、Hessian、伴随矩阵、二次曲线梯度。只在 JS 生成符号表达式，输入点和系数始终由 GeoGebra 动态计算。输出曲线须验证非零、次数及正确几何类型；射影三次在仿射图中降次的情况单独标记。

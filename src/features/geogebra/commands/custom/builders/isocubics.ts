@@ -1,5 +1,5 @@
 import type { ExpressionBuilder } from '../types';
-import { add, bind, mul, sub, triangleAreas, triangleSideSquares, barycentricVariables } from '../algebra/homogeneous';
+import { add, bind, coefficientList, mul, sub, triangleAreas, triangleSideSquares, barycentricVariables } from '../algebra/homogeneous';
 import { monomial, polynomialProduct, polynomialScale, polynomialSum } from '../algebra/polynomial';
 import type { Polynomial } from '../algebra/polynomial';
 import { qaCubicCoefficients } from './triangleCurves';
@@ -118,6 +118,37 @@ export const qaInverseEquation = (sideSquares: string[], variable: string[], fix
   }));
 };
 
+/** Seven circum-cubic coefficients in the variable fourth vertex's barycentrics. */
+export const qaInverseBarycentricCoefficients = (s: string[], f: string[]): string[] => {
+  const square = (value: string) => `(${value})^2`;
+  const edge = [0, 1, 2].flatMap((i) => {
+    const j = (i + 1) % 3; const k = (i + 2) % 3;
+    return [
+      add([`-${term(s[i], sub(s[i], add([s[j], s[k]])), f[j], square(f[k]))}`,
+        term(s[j], sub(s[j], s[i]), f[i], square(f[k])),
+        `-${term(square(s[k]), f[i], square(f[j]))}`]),
+      add([`-${term(s[i], sub(s[i], s[j]), f[j], square(f[k]))}`,
+        term(s[j], sub(s[j], add([s[i], s[k]])), f[i], square(f[k])),
+        term(square(s[k]), square(f[i]), f[j])]),
+    ];
+  });
+  const mixed = add([0, 1, 2].flatMap((i) => {
+    const j = (i + 1) % 3; const k = (i + 2) % 3;
+    return [term(s[i], sub(s[i], s[j]), square(f[j]), f[k]),
+      `-${term(s[i], sub(s[i], s[k]), f[j], square(f[k]))}`];
+  }));
+  return [...edge, mixed];
+};
+
+export const qaInverseSevenTermEquation = (variable: string[], coefficients: string[]): string => add([
+  ...[0, 1, 2].flatMap((i) => {
+    const j = (i + 1) % 3;
+    return [term(coefficients[2 * i], `${variable[i]}^2`, variable[j]),
+      term(coefficients[2 * i + 1], variable[i], `${variable[j]}^2`)];
+  }),
+  term(coefficients[6], ...variable),
+]);
+
 /** Ten coefficients in the affine barycentric chart D=(s:t:1). */
 export const qaInverseCoefficients = (sideSquares: string[], fixed: string[]): string[] => {
   const v: Polynomial[] = [monomial(1, 0, '1'), monomial(0, 1, '1'), monomial(0, 0, '1')];
@@ -141,10 +172,13 @@ export const qaInverseCoefficients = (sideSquares: string[], fixed: string[]): s
 const qaInverse: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, p] = expressions(args);
   const values = [...triangleSideSquares([a, b, c]), ...triangleAreas([a, b, c, p])];
-  const equation = bind(values, allocate, (v) => qaInverseEquation(v.slice(0, 3), barycentricVariables([a, b, c]), v.slice(3)));
-  const guard = bind(values, allocate, (v) => nonzero(qaInverseCoefficients(v.slice(0, 3), v.slice(3))));
+  const data = bind(values, allocate, (v) =>
+    coefficientList(qaInverseBarycentricCoefficients(v.slice(0, 3), v.slice(3))));
+  const coefficients = (list: string) => Array.from({ length: 7 }, (_, i) => `Element(${list},${i + 1})`);
+  const equation = bind([data], allocate, ([list]) =>
+    qaInverseSevenTermEquation(barycentricVariables([a, b, c]), coefficients(list)));
+  const guard = bind([data], allocate, ([list]) => nonzero(coefficients(list)));
   return `If(${guard},ImplicitCurve(${equation}))`;
-  // return `ImplicitCurve(${equation})`;
 };
 
 export const ISOCUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {

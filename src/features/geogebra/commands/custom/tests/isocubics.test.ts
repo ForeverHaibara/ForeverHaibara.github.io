@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaInverseEquation, qaInverseCoefficients } from '../builders/isocubics';
+import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaInverseEquation, qaInverseCoefficients, qaInverseBarycentricCoefficients, qaInverseSevenTermEquation } from '../builders/isocubics';
 
 const evaluate = (source: string, [x, y, z]: number[]) => Number(Function('x', 'y', 'z', `return ${source.replace(/\^/gu, '**')}`)(x, y, z));
-const numbers = (values: number[]) => values.map(String);
+const numbers = (values: readonly number[]) => values.map(String);
 const determinant = (a: number[], b: number[], c: number[]) =>
   a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
 const conjugate = ([x, y, z]: number[], [p, q, r]: number[]) => [p * y * z, q * z * x, r * x * y];
@@ -66,5 +66,42 @@ describe('second-stage cubic equations', () => {
     const monomials = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
     const reconstructed = coefficients.reduce((sum, c, i) => sum + c * affine[0] ** monomials[i][0] * affine[1] ** monomials[i][1], 0);
     expect(reconstructed).toBeCloseTo(evaluate(equation, affine), 6);
+  });
+
+  it('expresses the QA inverse as a seven-term circumcubic in its fourth vertex', () => {
+    for (const [sides, fixed] of [
+      [[5, 13, 10], [3, 4, 6]],
+      [[41, 17, 36], [11, 7, 6]],
+      [[1, 1, 1], [2, 3, 4]],
+    ] as const) {
+      const coefficients = qaInverseBarycentricCoefficients(numbers(sides), numbers(fixed));
+      const seven = qaInverseSevenTermEquation(xyz, coefficients);
+      const original = qaInverseEquation(numbers(sides), xyz, numbers(fixed));
+      for (const point of [[1, 2, 3], [2, 7, 11], [5, 1, 2], [3, 4, 5]]) {
+        expect(evaluate(seven, point)).toBeCloseTo(evaluate(original, point), 6);
+      }
+    }
+  });
+
+  it('specializes at either isodynamic point to the Neuberg cubic K001', () => {
+    // A=(0,0), B=(6,0), C=(1,4); X30 is the Euler-line direction (69:-63:-6).
+    const squared = [41, 17, 36];
+    const lengths = squared.map(Math.sqrt);
+    const neuberg = pivotalEquation(xyz, numbers(squared), ['69', '-63', '-6']);
+    const samples = [[1, 1, 1], [2, 3, 4], [3, 1, 2]];
+    for (const sign of [1, -1]) {
+      const fixed = lengths.map((side, i) => {
+        const j = (i + 1) % 3; const k = (i + 2) % 3;
+        const sin = 24 / (lengths[j] * lengths[k]);
+        const cos = (squared[j] + squared[k] - squared[i]) / (2 * lengths[j] * lengths[k]);
+        return side * (sin / 2 + sign * Math.sqrt(3) * cos / 2);
+      });
+      const inverse = qaInverseSevenTermEquation(xyz,
+        qaInverseBarycentricCoefficients(numbers(squared), numbers(fixed)));
+      const scale = evaluate(inverse, samples[0]) / evaluate(neuberg, samples[0]);
+      for (const sample of samples) {
+        expect(evaluate(inverse, sample) / evaluate(neuberg, sample)).toBeCloseTo(scale, 8);
+      }
+    }
   });
 });

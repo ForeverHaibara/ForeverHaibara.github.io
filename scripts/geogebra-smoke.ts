@@ -7,6 +7,7 @@ import { verifyConstructions } from './geogebra-constructions-smoke';
 import { verifyCubic } from './geogebra-cubic-smoke';
 import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
 import { verifyIsocubics } from './geogebra-isocubics-smoke';
+import { verifyQaPerformance } from './geogebra-qa-performance';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -64,6 +65,11 @@ button.onclick = async () => {
     await api('newConstruction');
     if (new URLSearchParams(window.location.search).get('suite') === 'isocubics') {
       await verifyIsocubics(engine, report);
+      report('COMPLETE');
+      return;
+    }
+    if (new URLSearchParams(window.location.search).get('suite') === 'qa-performance') {
+      await verifyQaPerformance(engine, report);
       report('COMPLETE');
       return;
     }
