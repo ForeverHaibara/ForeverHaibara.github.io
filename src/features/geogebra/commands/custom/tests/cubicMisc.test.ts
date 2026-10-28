@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kernelMinors, CUBIC_MISC_BUILDERS } from '../builders/cubicConstructions';
+import { kernelMinors, CUBIC_BUILDERS } from '../builders/cubics';
 import { compileStudioCommand } from '../commandCompiler';
 import type { CommandEnvironment, GeometryType, TypedExpression } from '../types';
 
@@ -38,7 +38,7 @@ describe('inserted cubic constructions', () => {
   });
 
   it('uses the signed angle condition for the three-point strophoid', () => {
-    const curve = CUBIC_MISC_BUILDERS.strophoid([point('A'), point('B'), point('C')], () => 'v1') as string;
+    const curve = CUBIC_BUILDERS.strophoid([point('A'), point('B'), point('C')], () => 'v1') as string;
     const scope = { A: [0, 0], B: [2, 0], C: [0, 3] };
     for (const [x, y] of [[0, 0], [2, 0], [0, 3]]) expect(polynomial(curve, scope, x, y)).toBeCloseTo(0, 8);
     const h = 1e-4;
@@ -47,7 +47,7 @@ describe('inserted cubic constructions', () => {
   });
 
   it('eliminates the moving circle center even when its line misses the node', () => {
-    const curve = CUBIC_MISC_BUILDERS.strophoid([point('A'), point('B'), line('l')], () => 'v1') as string;
+    const curve = CUBIC_BUILDERS.strophoid([point('A'), point('B'), line('l')], () => 'v1') as string;
     const scope = { A: [0, 0], B: [1, 0], l: [1, 0, -2] };
     for (const s of [1 + Math.sqrt(5 / 2), 1 - Math.sqrt(5 / 2)])
       expect(polynomial(curve, scope, 1 + s, s)).toBeCloseTo(0, 7);

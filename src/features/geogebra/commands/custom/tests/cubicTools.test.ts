@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cayleyBacharachMinors, circularCubicMinors, cubicHessian } from '../builders/cubicConstructions';
+import { cayleyBacharachMinors, circularCubicMinors, cubicHessian } from '../builders/cubics';
 
 const determinant = (input: number[][]) => {
   const rows = input.map((row) => [...row]);

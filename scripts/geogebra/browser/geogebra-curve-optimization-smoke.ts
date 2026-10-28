@@ -1,7 +1,7 @@
 import { GeoGebraEmbeddingAdapter } from '../../../src/features/geogebra/adapters/GeoGebraEmbeddingAdapter';
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import { verifyCubic } from './geogebra-cubic-smoke';
-import { qaCubicCoefficients } from '../../../src/features/geogebra/commands/custom/builders/triangleCubics';
+import { qaCu1Coefficients } from '../../../src/features/geogebra/commands/custom/builders/triangleCubics';
 
 const engine = new GeoGebraEmbeddingAdapter();
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -156,7 +156,7 @@ document.querySelector<HTMLButtonElement>('#run')!.onclick = async () => {
       const s = ['10','18','16']; const p = ['8','0','4'];
       const q = ['13','-9','8']; // D in ABC: cross(B-D,C-D), cross(C-D,A-D), cross(A-D,B-D).
       const qaT = q.map((v,i) => { const j=(i+1)%3,k=(i+2)%3; return `${s[i]}*(${v}+${q[j]})*(${v}+${q[k]})-${s[j]}*${v}*(${v}+${q[j]})-${s[k]}*${v}*(${v}+${q[k]})`; });
-      const qa = qaCubicCoefficients(s,q,qaT); const xyz=['A','B','C'];
+      const qa = qaCu1Coefficients(s,q,qaT); const xyz=['A','B','C'];
       await run(`NativeQA=TriangleCurve(A,B,C,${[0,1,2].flatMap((i) => [`(${qa[2*i]})*${xyz[(i+1)%3]}^2*${xyz[(i+2)%3]}`,`(${qa[2*i+1]})*${xyz[(i+1)%3]}*${xyz[(i+2)%3]}^2`]).join('+')}=0)`);
       await run('nativeFunction=LeftSide(NativeQA)-RightSide(NativeQA)'); await samePolynomial('QA','nativeFunction(x,y)',3);
       await run(`NativePivot=TriangleCurve(A,B,C,${p[2]}*${s[1]}*A^2*C-${p[2]}*${s[0]}*B^2*C-${p[1]}*${s[2]}*A^2*B+${p[1]}*${s[0]}*B*C^2+${p[0]}*${s[2]}*A*B^2-${p[0]}*${s[1]}*A*C^2=0)\nnativeFunction=LeftSide(NativePivot)-RightSide(NativePivot)`);

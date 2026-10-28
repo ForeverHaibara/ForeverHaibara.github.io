@@ -65,7 +65,7 @@ export const conicoPivotalEquation = (xyz: string[], [f, g, h]: string[], root: 
   ]);
 };
 
-const pivotal: ExpressionBuilder = (args, allocate) => {
+const pivotalIsoconjugateCubic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, pole, pivot] = expressions(args);
   const xyz = barycentricVariables([a, b, c]);
   const values = [...triangleAreas([a, b, c, pole]), ...triangleAreas([a, b, c, pivot])];
@@ -73,14 +73,14 @@ const pivotal: ExpressionBuilder = (args, allocate) => {
   return cubic(equation, pivotalCoefficients(values.slice(0, 3), values.slice(3)));
 };
 
-const pivotalIsotomic: ExpressionBuilder = (args) => {
+const pivotalIsotomicCubic: ExpressionBuilder = (args) => {
   const [a, b, c, pivot] = expressions(args);
   const xyz = barycentricVariables([a, b, c]);
   const root = triangleAreas([a, b, c, pivot]);
   return cubic(pivotalEquation(xyz, ['1', '1', '1'], root), pivotalCoefficients(['1', '1', '1'], root));
 };
 
-const nonpivotal: ExpressionBuilder = (args, allocate) => {
+const nonpivotalIsoconjugateCubic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, pole, root, point] = expressions(args);
   const xyz = barycentricVariables([a, b, c]);
   const quantities = [...triangleAreas([a, b, c, pole]), ...triangleAreas([a, b, c, root])];
@@ -93,7 +93,7 @@ const nonpivotal: ExpressionBuilder = (args, allocate) => {
     : pivotalCoefficients(quantities.slice(0, 3), quantities.slice(3)));
 };
 
-const conicoPivotal: ExpressionBuilder = (args, allocate) => {
+const conicoPivotalCubic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, singular, root] = expressions(args);
   const xyz = barycentricVariables([a, b, c]);
   const values = [...triangleAreas([a, b, c, singular]), ...triangleAreas([a, b, c, root])];
@@ -102,14 +102,14 @@ const conicoPivotal: ExpressionBuilder = (args, allocate) => {
 };
 
 /** Evaluate QA-Cu1(A,B,C,D) at P while D=(x,y) varies. */
-export const qaInverseEquation = (sideSquares: string[], variable: string[], fixed: string[]) => {
+export const qaCu1InverseEquation = (sideSquares: string[], variable: string[], fixed: string[]) => {
   const t = variable.map((v, i) => {
     const j = (i + 1) % 3; const k = (i + 2) % 3;
     return sub(sub(term(sideSquares[i], add([v, variable[j]]), add([v, variable[k]])),
       term(sideSquares[j], v, add([v, variable[j]]))),
     term(sideSquares[k], v, add([v, variable[k]])));
   });
-  const coefficients = qaCubicCoefficients(sideSquares, variable, t);
+  const coefficients = qaCu1Coefficients(sideSquares, variable, t);
   return add([0, 1, 2].flatMap((i) => {
     const j = (i + 1) % 3; const k = (i + 2) % 3;
     return [term(coefficients[2 * i], `${fixed[j]}^2`, fixed[k]),
@@ -118,7 +118,7 @@ export const qaInverseEquation = (sideSquares: string[], variable: string[], fix
 };
 
 /** Seven circum-cubic coefficients in the variable fourth vertex's barycentrics. */
-export const qaInverseBarycentricCoefficients = (s: string[], f: string[]): string[] => {
+export const qaCu1InverseBarycentricCoefficients = (s: string[], f: string[]): string[] => {
   const square = (value: string) => `(${value})^2`;
   const edge = [0, 1, 2].flatMap((i) => {
     const j = (i + 1) % 3; const k = (i + 2) % 3;
@@ -139,7 +139,7 @@ export const qaInverseBarycentricCoefficients = (s: string[], f: string[]): stri
   return [...edge, mixed];
 };
 
-export const qaInverseSevenTermEquation = (variable: string[], coefficients: string[]): string => add([
+export const qaCu1InverseSevenTermEquation = (variable: string[], coefficients: string[]): string => add([
   ...[0, 1, 2].flatMap((i) => {
     const j = (i + 1) % 3;
     return [term(coefficients[2 * i], `${variable[i]}^2`, variable[j]),
@@ -149,7 +149,7 @@ export const qaInverseSevenTermEquation = (variable: string[], coefficients: str
 ]);
 
 /** Ten coefficients in the affine barycentric chart D=(s:t:1). */
-export const qaInverseCoefficients = (sideSquares: string[], fixed: string[]): string[] => {
+export const qaCu1InverseCoefficients = (sideSquares: string[], fixed: string[]): string[] => {
   const v: Polynomial[] = [monomial(1, 0, '1'), monomial(0, 1, '1'), monomial(0, 0, '1')];
   const product = (...ps: Polynomial[]) => ps.reduce(polynomialProduct);
   const t = v.map((entry, i) => {
@@ -168,34 +168,46 @@ export const qaInverseCoefficients = (sideSquares: string[], fixed: string[]): s
     .map(([x, y]) => equation.get(`${x},${y}`) ?? '0');
 };
 
-const qaInverse: ExpressionBuilder = (args, allocate) => {
+const qaCu1Inverse: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, p] = expressions(args);
   const values = [...triangleSideSquares([a, b, c]), ...triangleAreas([a, b, c, p])];
   const data = bind(values, allocate, (v) =>
-    coefficientList(qaInverseBarycentricCoefficients(v.slice(0, 3), v.slice(3))));
+    coefficientList(qaCu1InverseBarycentricCoefficients(v.slice(0, 3), v.slice(3))));
   const coefficients = (list: string) => Array.from({ length: 7 }, (_, i) => `Element(${list},${i + 1})`);
   const equation = bind([data], allocate, ([list]) =>
-    qaInverseSevenTermEquation(barycentricVariables([a, b, c]), coefficients(list)));
+    qaCu1InverseSevenTermEquation(barycentricVariables([a, b, c]), coefficients(list)));
   const guard = bind([data], allocate, ([list]) => nonzero(coefficients(list)));
   return `If(${guard},ImplicitCurve(${equation}))`;
 };
 
 export const ISOCUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  pivotalCubic: pivotal,
-  pivotalIsotomicCubic: pivotalIsotomic,
-  nonpivotalCubic: nonpivotal,
-  conicoPivotalCubic: conicoPivotal,
-  qaCu1Inverse: qaInverse,
+  pivotalCubic: pivotalIsoconjugateCubic,
+  pivotalIsotomicCubic: pivotalIsotomicCubic,
+  nonpivotalCubic: nonpivotalIsoconjugateCubic,
+  conicoPivotalCubic: conicoPivotalCubic,
+  qaCu1Inverse: qaCu1Inverse,
+};
+
+export const pivotalIsogonalCubic: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c] = args.map((arg) => arg.expression);
+  const [u, v, w] = barycentricVariables([a, b, c]);
+  const polynomial = bind([...triangleAreas(args.map((arg) => arg.expression)), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
+    ([p, q, r, aa, bb, cc]) => add([
+      mul(r, bb, `${u}^2`, w), `-${mul(r, aa, `${v}^2`, w)}`, `-${mul(q, cc, `${u}^2`, v)}`,
+      mul(q, aa, v, `${w}^2`), mul(p, cc, u, `${v}^2`), `-${mul(p, bb, u, `${w}^2`)}`,
+    ]));
+  const valid = `${args.map((arg) => `IsDefined(${arg.expression})`).join('&&')}&&!AreCollinear(${a},${b},${c})`;
+  return `If(${valid},${polynomialCurve(`If(${valid},${polynomial},1+0*x+0*y)`)})`;
 };
 
 // Triangle-based QA and orthopivotal cubics share the same barycentric frame.
 /** Six cyclic yz*(r*y-q*z) coefficients of QA-Cu1. */
-export const qaCubicCoefficients = (s: string[], p: string[], t: string[]) => [0, 1, 2].flatMap((i) => {
+export const qaCu1Coefficients = (s: string[], p: string[], t: string[]) => [0, 1, 2].flatMap((i) => {
   const j = (i + 1) % 3; const k = (i + 2) % 3;
   return [mul(s[i], t[i], p[k]), `-${mul(s[i], t[i], p[j])}`];
 });
 
-const triangleCubic = (orthopivotal: boolean): ExpressionBuilder => (args, allocate) => {
+const qaCu1OrOrthopivotalCubic = (orthopivotal: boolean): ExpressionBuilder => (args, allocate) => {
   const vertices = expressions(args).slice(0, 3);
   const data = bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args))], allocate, (values) => {
     const s = values.slice(0, 3); const p = values.slice(3);
@@ -211,7 +223,7 @@ const triangleCubic = (orthopivotal: boolean): ExpressionBuilder => (args, alloc
       const j = (i + 1) % 3; const k = (i + 2) % 3;
       return `${s[i]}*(${v}+${p[j]})*(${v}+${p[k]})-${s[j]}*${v}*(${v}+${p[j]})-${s[k]}*${v}*(${v}+${p[k]})`;
     }), allocate, (t) => {
-      return coefficientList(qaCubicCoefficients(s, p, t));
+      return coefficientList(qaCu1Coefficients(s, p, t));
     });
   });
   const polynomial = bind([data], allocate, ([list]) => {
@@ -231,4 +243,4 @@ const triangleCubic = (orthopivotal: boolean): ExpressionBuilder => (args, alloc
   return `If(${expressions(args).map((p) => `IsDefined(${p})`).join('&&')}&&!AreCollinear(${vertices.join(',')})&&(${nonzero}),${polynomialCurve(polynomial)})`;
 };
 
-export const TRIANGLE_CURVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { qaCubic: triangleCubic(false), orthopivotal: triangleCubic(true) };
+export const TRIANGLE_CURVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { qaCubic: qaCu1OrOrthopivotalCubic(false), orthopivotal: qaCu1OrOrthopivotalCubic(true) };

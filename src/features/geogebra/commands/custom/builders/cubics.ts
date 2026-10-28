@@ -1,14 +1,90 @@
 import type { ExpressionBuilder, TypedExpression } from '../types';
 import { add, adjugate, barycentricPoint, bind, coefficientLine, coefficientList, cross, homogeneous, matrix, mul, sub, independentOutputs, supportingLine } from '../algebra/homogeneous';
 import type { Matrix } from '../algebra/homogeneous';
-import { monomial, polynomialDeterminant, polynomialProduct, polynomialSum } from '../algebra/polynomial';
+import { monomial, polynomialDeterminant, polynomialProduct, polynomialSum, encodedPolynomialCoefficients } from '../algebra/polynomial';
 import type { Polynomial } from '../algebra/polynomial';
-import { CUBIC_MONOMIALS, withCubic, CURVE_BUILDERS, cubicPolarLine, cubicRestriction } from './curves';
 
 const sum = (terms: string[]) => terms.length ? add(terms) : '0';
 const entries = (args: readonly TypedExpression[]) => args.map((arg) => arg.expression);
 const value = (p: string, axis: 0 | 1) => `${axis ? 'y' : 'x'}(${p})`;
 const power = (v: string, n: number) => n === 0 ? '1' : n === 1 ? v : `(${v})^${n}`;
+
+/** Coefficients of x^i y^j, constant first, through total degree three. */
+export const CUBIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
+const term = (coefficient: string, x: string, y: string, i: number, j: number) => mul(coefficient, power(x, i), power(y, j));
+/** Encode x^i*y^j as x^(i+4j); cubic monomials have distinct exponents. */
+export const CUBIC_COEFFICIENT_INDICES: readonly number[] = CUBIC_MONOMIALS.map(([i, j]) => i + 4 * j + 1);
+
+/** Native cubic coefficient extraction, assuming the input is a cubic. */
+export const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
+  bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
+    // Coefficients accepts a one-variable function, not an implicit curve or
+    // a two-variable function. Keep a formal x even for constant restrictions;
+    // reverse and pad so missing high-degree terms read as zero dynamically.
+    bind([encodedPolynomialCoefficients(f, 4, 13)], allocate, ([encoded]) =>
+      bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate,
+        (coefficients) => `(${body(coefficients)})`)));
+
+/** Homogeneous gradient at (p,q,1): the second polar line. */
+export const cubicPolarLine = (coefficients: string[], p: string, q: string): string[] => [0, 1, 2].map((axis) =>
+  add(coefficients.flatMap((coefficient, k) => {
+    const [i, j] = CUBIC_MONOMIALS[k];
+    const degree = [i, j, 3 - i - j][axis];
+    return degree ? [term(mul(String(degree), coefficient), p, q, i - (axis === 0 ? 1 : 0), j - (axis === 1 ? 1 : 0))] : [];
+  })));
+
+/** First homogeneous polar, in native Conic coefficient order. */
+export const cubicPolarConic = (coefficients: string[], p: string, q: string): string[] => {
+  const output = new Map(['20', '02', '00', '11', '10', '01'].map((key) => [key, [] as string[]]));
+  coefficients.forEach((coefficient, k) => {
+    const [i, j] = CUBIC_MONOMIALS[k];
+    if (i) output.get(`${i - 1}${j}`)!.push(mul(String(i), p, coefficient));
+    if (j) output.get(`${i}${j - 1}`)!.push(mul(String(j), q, coefficient));
+    if (3 - i - j) output.get(`${i}${j}`)!.push(mul(String(3 - i - j), coefficient));
+  });
+  return [...output.values()].map((terms) => add(terms));
+};
+
+/** t^3 and t^2 coefficients of f(p+t*v), used after removing known roots. */
+export const cubicRestriction = (c: string[], p: string, q: string, u: string, v: string): string[] => [
+  add([term(c[6], u, v, 3, 0), term(c[7], u, v, 2, 1), term(c[8], u, v, 1, 2), term(c[9], u, v, 0, 3)]),
+  add([mul(c[3], u, u), mul(c[4], u, v), mul(c[5], v, v), mul('3', c[6], p, u, u),
+    mul(c[7], add([mul(q, u, u), mul('2', p, u, v)])),
+    mul(c[8], add([mul(p, v, v), mul('2', q, u, v)])), mul('3', c[9], q, v, v)]),
+];
+
+const cubicSecondPolarLine: ExpressionBuilder = (args, allocate) => {
+  const [p, curve] = args.map((arg) => arg.expression);
+  return withCubic(curve, allocate, (coefficients) => coefficientLine(cubicPolarLine(coefficients, `x(${p})`, `y(${p})`), allocate));
+};
+const cubicFirstPolarConic: ExpressionBuilder = (args, allocate) => {
+  const [p, curve] = args.map((arg) => arg.expression);
+  return `Conic(${withCubic(curve, allocate, (coefficients) => coefficientList(cubicPolarConic(coefficients, `x(${p})`, `y(${p})`)))})`;
+};
+const thirdIntersection: ExpressionBuilder = (args, allocate) => {
+  const [curve, p, q] = args.map((arg) => arg.expression);
+  return withCubic(curve, allocate, (coefficients) => {
+    const direction = q ? [`x(${q})-x(${p})`, `y(${q})-y(${p})`] : (() => {
+      const gradient = cubicPolarLine(coefficients, `x(${p})`, `y(${p})`);
+      return [gradient[1], `-(${gradient[0]})`];
+    })();
+    return bind(direction, allocate, ([u, v]) =>
+      bind(cubicRestriction(coefficients, `x(${p})`, `y(${p})`, u, v), allocate, ([a, b]) =>
+        `(${p})+(-${b}/${a}${q ? '-1' : ''})*(${u},${v})`));
+  });
+};
+
+const cubicThroughNinePoints: ExpressionBuilder = (args, allocate) => {
+  const points = args.map((arg) => arg.expression);
+  return bind([`${add(points)}/9`], allocate, ([origin]) =>
+    bind([`sqrt(${add(points.map((p) => `Distance(${p},${origin})^2`))}/9)`], allocate, ([scale]) =>
+      bind(points.map((p) => `((${p})-${origin})/${scale}`), allocate, (normalized) => {
+        const rows = normalized.map((p) => CUBIC_MONOMIALS.map(([i, j]) => mul(power(`x(${p})`, i), power(`y(${p})`, j))));
+        return `If(MatrixRank(${matrix(rows)})==9,Translate(Dilate(ImplicitCurve({${normalized.join(',')}}),${scale},(0,0)),Vector(${origin})))`;
+      })));
+};
+
+const CUBIC_POLAR_AND_INTERSECTION_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { cubicPolar: cubicSecondPolarLine, cubicPolarConic: cubicFirstPolarConic, thirdIntersection, cubicThroughPoints: cubicThroughNinePoints };
 
 /** H_F(X)=Hx X+Hy Y+Hz Z, with the six repeated entries left symmetric. */
 export const cubicHessian = (c: string[]): string[][][] => [0, 1, 2].map((a) => [0, 1, 2].map((b) => [0, 1, 2].map((basis) =>
@@ -32,18 +108,17 @@ const determinant3 = (m: Matrix) => add([
   mul(m[0][2], sub(mul(m[1][0], m[2][1]), mul(m[1][1], m[2][0]))),
 ]);
 
-const guardedCubic = (p: Polynomial, allocate: () => string) => {
+const cubicFromPolynomialCoefficients = (p: Polynomial, allocate: () => string) => {
   const coefficients = CUBIC_MONOMIALS.map(([x, y]) => p.get(`${x},${y}`) ?? '0');
   return bind(coefficients, allocate, (numbers) => {
     const polynomial = coefficientPolynomial(numbers);
     return `ImplicitCurve(${polynomial})`;
-    // return `If(${sum(numbers.map((n) => `${n}^2`))}!=0,ImplicitCurve(${polynomial}))`;
   });
 };
 const hessianCubic: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) =>
-  guardedCubic(polynomialDeterminant(cubicHessian(c).map((row) => row.map(linearPolynomial))), allocate));
+  cubicFromPolynomialCoefficients(polynomialDeterminant(cubicHessian(c).map((row) => row.map(linearPolynomial))), allocate));
 
-const orthicAxis: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) => {
+const cubicOrthicAxis: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) => {
   const h = cubicHessian(c);
   return coefficientLine([0, 1, 2].map((i) => add([h[0][0][i], h[1][1][i]])), allocate);
 });
@@ -105,7 +180,7 @@ const jacobianCubic: ExpressionBuilder = (args, allocate) => {
   return bind(qs.map((q) => `Coefficients(${q})`), allocate, (lists) => {
     const gradients = lists.map((list) => conicGradient([1, 2, 3, 4, 5, 6].map((i) => `Element(${list},${i})`)));
     const rows = gradients.map((row) => row.map(linearPolynomial));
-    return guardedCubic(polynomialDeterminant(rows), allocate);
+    return cubicFromPolynomialCoefficients(polynomialDeterminant(rows), allocate);
   });
 };
 
@@ -192,8 +267,8 @@ const cayleyBacharach: ExpressionBuilder = (args, allocate) => {
     barycentricPoint(anchored.slice(0, 3), [mul(cx, dy, dz), mul(dx, cy, dz), mul(dx, dy, cz)]));
 };
 
-export const CUBIC_TOOL_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  circularCubic, cayleyBacharach, orthicAxisCubic: orthicAxis, circularPolarPoint,
+const CUBIC_PROJECTIVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  circularCubic, cayleyBacharach, orthicAxisCubic: cubicOrthicAxis, circularPolarPoint,
   hessianCubic, hessianCorrespondent, mixedPolar, poloconic, jacobianCubic,
   conicLineCubic, cubicPencil,
 };
@@ -330,7 +405,7 @@ const pretangential: ExpressionBuilder = (args, allocate) => {
 
 const cubicInvolution: ExpressionBuilder = (args, allocate) => {
   const [curve, point] = args.map((arg) => arg.expression);
-  const tangentImage = CURVE_BUILDERS.thirdIntersection([
+  const tangentImage = thirdIntersection([
     { expression: curve, type: 'implicitCurve' }, { expression: point, type: 'point' },
   ], allocate) as string;
   const branch = (index: number) => bind([tangentImage], allocate, ([target]) =>
@@ -343,6 +418,10 @@ const cubicInvolution: ExpressionBuilder = (args, allocate) => {
   return independentOutputs([1, 2, 3].map(branch), args[2]?.expression);
 };
 
-export const CUBIC_MISC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+const CUBIC_CONTACT_AND_INTERPOLATION_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   circularCubicDirection, nodalCubic, strophoid, cubicAsymptotes, pretangential, cubicInvolution,
+};
+
+export const CUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  ...CUBIC_POLAR_AND_INTERSECTION_BUILDERS, ...CUBIC_PROJECTIVE_BUILDERS, ...CUBIC_CONTACT_AND_INTERPOLATION_BUILDERS,
 };

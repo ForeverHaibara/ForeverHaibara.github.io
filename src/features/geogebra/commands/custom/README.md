@@ -25,11 +25,11 @@ Implementation files are grouped by responsibility:
 |---|---|
 | `builders/index.ts` | Registers builders and implements general point/conic constructions. |
 | `builders/triangle.ts` | Triangle maps, axes and conics. |
-| `builders/triangleCubics.ts` | Triangle-based cubic families, including isoconjugate, QA and orthopivotal constructions. |
-| `builders/cubicConstructions.ts` | General cubic constructions, including Hessians, interpolation, contact and asymptotes. |
-| `builders/conics.ts`, `builders/curves.ts` | Conic transformations, common tangents and cubic coefficient/polar/intersection operations. |
+| `builders/triangleCubics.ts` | Triangle-based cubic families, including pivotal isogonal, QA-Cu1, its inverse and orthopivotal constructions. |
+| `builders/cubics.ts` | General cubic coefficients, polars, intersections, Hessians, interpolation, contact and asymptotes. |
+| `builders/conics.ts` | Conic transformations and common tangents. |
 | `builders/quadrangle.ts`, `builders/quadrilateral.ts` | Unordered four-point and ordered four-line geometry respectively. |
-| `builders/curveTransforms.ts` | Polynomial curve conjugation. |
+| `builders/curves.ts` | Conjugation of conics and bounded-degree polynomial curves; shared coefficient encoding lives in `algebra/polynomial.ts`. |
 | `algebra/` | Homogeneous coordinates, matrices, anonymous bindings and sparse polynomials. |
 | `tests/` | Compiler, catalog, alias, type-contract and algebra tests. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
@@ -112,6 +112,7 @@ Complex symbolic construction generators are registered in `builders/index.ts`.
 Their domain modules are listed above; shared expression operations live in
 `algebra/homogeneous.ts`, and `algebra/polynomial.ts` builds sparse polynomials.
 They are referenced by `builder` instead of `expression`.
+Builder registry keys referenced by `library.json` remain stable even when internal functions have more specific names (for example `qaCu1Inverse`, `qlCu1FromPointPairAndLine`, and `qlQu3FromFourVertices`).
 Builders receive expressions/types and a hygienic local-name allocator, never
 an engine or numeric input values. This boundary can later support additional
 backends without changing the command names or signatures.

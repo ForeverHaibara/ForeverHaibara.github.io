@@ -120,7 +120,7 @@ const inconicCenter: ExpressionBuilder = (args, allocate) => {
 const steinerInellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['1', '1', '1', '-2', '-2', '-2']);
 const steinerCircumellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['0', '0', '0', '1', '1', '1']);
 
-const apollonius: ExpressionBuilder = (args, allocate) => {
+const apolloniusCircle: ExpressionBuilder = (args, allocate) => {
   const [a, b, c] = args.map((arg) => arg.expression);
   const coefficients = bind([`Distance(${c},${a})^2`, `Distance(${a},${b})^2`, `x(${c})-x(${b})`, `y(${c})-y(${b})`], allocate, ([u, v, dx, dy]) =>
     coefficientList(translatedConicCoefficients([`${u}-${v}`, `${u}-${v}`, `-${v}*(${dx}^2+${dy}^2)`, '0', `2*${v}*${dx}`, `2*${v}*${dy}`], b)));
@@ -129,7 +129,7 @@ const apollonius: ExpressionBuilder = (args, allocate) => {
 
 const expressions = (args: Parameters<ExpressionBuilder>[0]) => args.map((arg) => arg.expression);
 
-const orthicAxis: ExpressionBuilder = (args, allocate) => {
+const triangleOrthicAxis: ExpressionBuilder = (args, allocate) => {
   const vertices = args.map(homogeneous);
   return bind(triangleSideSquares(expressions(args)), allocate, (s) => {
     const weights = s.map((v, i) => `(${s[(i + 1) % 3]}+${s[(i + 2) % 3]}-${v})`);
@@ -138,10 +138,10 @@ const orthicAxis: ExpressionBuilder = (args, allocate) => {
   });
 };
 
-const stammler: ExpressionBuilder = (args, allocate) => barycentricConic(expressions(args), bind(triangleSideSquares(expressions(args)), allocate, (s) =>
+const stammlerHyperbola: ExpressionBuilder = (args, allocate) => barycentricConic(expressions(args), bind(triangleSideSquares(expressions(args)), allocate, (s) =>
   coefficientList([...s.map((v, i) => `((${s[(i + 1) % 3]})-(${s[(i + 2) % 3]}))/(${v})`), '0', '0', '0'])));
 
-const liangZelich: ExpressionBuilder = (args, allocate) => {
+const liangZelichPerspector: ExpressionBuilder = (args, allocate) => {
   const vertices = expressions(args).slice(0, 3);
   return bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args)), `TriangleCenter(${vertices.join(',')},3)`], allocate, (values) => {
     const s = values.slice(0, 3); const p = values.slice(3, 6); const o = values[6];
@@ -166,7 +166,7 @@ const cundyParry = (psi: boolean): ExpressionBuilder => (args, allocate) => {
       }));
   });
 };
-const orthopolar: ExpressionBuilder = (args, allocate) => {
+const orthopolarConic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, p] = expressions(args);
   const xy = (v: string) => [`x(${v})`, `y(${v})`];
   const dot = (u: string[], v: string[]) => add(u.map((x, i) => mul(x, v[i])));
@@ -187,6 +187,6 @@ export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isoconjugate, crosspoint, cevapoint, cevaConjugate, crossConjugate, cyclocevian, antigonal,
   cevianAffine: affineMap(false), pedalAffine: affineMap(true), orthotransversal, orthocorrespondent,
   isogonalLine: lineConjugate(true), isotomicLine: lineConjugate(false),
-  inconicCenter, steinerInellipse, steinerCircumellipse, apollonius,
-  orthicAxis, stammler, liangZelich, cundyPhi: cundyParry(false), cundyPsi: cundyParry(true), orthopolar,
+  inconicCenter, steinerInellipse, steinerCircumellipse, apollonius: apolloniusCircle,
+  orthicAxis: triangleOrthicAxis, stammler: stammlerHyperbola, liangZelich: liangZelichPerspector, cundyPhi: cundyParry(false), cundyPsi: cundyParry(true), orthopolar: orthopolarConic,
 };

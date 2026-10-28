@@ -2,7 +2,7 @@ import type { ExpressionBuilder, TypedExpression } from '../types';
 import { add, bind, cross, homogeneous, independentOutputs, coefficientLine, coefficientList, supportingLine } from '../algebra/homogeneous';
 import { circlePairRow, //polynomialExpression, polynomialDeterminant,
    coaxalQuarticCoefficients, radialQuarticExpression, polynomialCurve } from '../algebra/polynomial';
-import { conjugateConicData, conjugatePolynomialData, conjugateImagePolynomial, nativePolynomialEligible } from './curveTransforms';
+import { conjugateConicData, conjugatePolynomialData, conjugateImagePolynomial, nativePolynomialEligible } from './curves';
 
 type Allocate = () => string;
 type QLBody = (m: string, u: string, v: string, vertices: string[]) => string;
@@ -22,7 +22,7 @@ const withNewton = (vertices: string[], m: string, allocate: Allocate, body: (n:
 const translatedConic = (m: string, coefficients: string[]) => `Translate(Conic({${coefficients.join(',')}}),Vector(${m}))`;
 const imageLine = ([nx, ny, c]: string[], u: string, v: string) => [c, c, '0', '0', `${u}*${nx}+${v}*${ny}`, `${v}*${nx}-${u}*${ny}`];
 
-const qlTransform: ExpressionBuilder = (args, allocate) => {
+const clawsonSchmidtConjugation: ExpressionBuilder = (args, allocate) => {
   const object = args[4]; const p = object.expression;
   if (object.type === 'point') return withQL(args, allocate, (m, u, v) => `(${m})+ToPoint(ToComplex((${u},${v}))/ToComplex((${p})-(${m})))`);
   // Only the two points defining the transformation pass through local bindings.
@@ -85,7 +85,7 @@ const midpointCubic = (m: string, u: string, v: string, n: string[]) => `Implici
 /** Directed angles APB = DPC (mod pi): cross(PA,PB)*dot(PD,PC) - cross(PD,PC)*dot(PA,PB).
  * Expand each cross product to degree one; no auxiliary geometry or denominators.
  */
-const qlCubicCoordinates: ExpressionBuilder = (args) => {
+const qlCu1FromFourVertices: ExpressionBuilder = (args) => {
   const [a, b, c, d] = args.map(({ expression: p }) => [`x(${p})`, `y(${p})`]);
   const angle = ([ax, ay]: string[], [bx, by]: string[]) => [
     `((${ay}-${by})*x+(${bx}-${ax})*y+${ax}*${by}-${ay}*${bx})`,
@@ -94,7 +94,7 @@ const qlCubicCoordinates: ExpressionBuilder = (args) => {
   const [lab, qab] = angle(a, b); const [ldc, qdc] = angle(d, c);
   return `ImplicitCurve(${lab}*${qdc}-${ldc}*${qab})`;
 };
-const qlCubic: ExpressionBuilder = (args, allocate) => {
+const qlCu1FromPointPairAndLine: ExpressionBuilder = (args, allocate) => {
   if (args.length === 4) return withQL(args, allocate, (m, u, v, vertices) => withNewton(vertices, m, allocate, (n) => midpointCubic(m, u, v, n)));
   const [a, b] = args.map((arg) => arg.expression);
   const valid = `IsDefined(${a})&&IsDefined(${b})&&IsDefined(${supportingLine(args[2])})`;
@@ -103,7 +103,7 @@ const qlCubic: ExpressionBuilder = (args, allocate) => {
   return `If(${valid},${polynomialCurve(`If(${valid},${polynomial},1+0*x+0*y)`)})`;
 };
 
-// const qlQuartic: ExpressionBuilder = (args, allocate) => {
+// const qlQu3FromFourVertices: ExpressionBuilder = (args, allocate) => {
 //   const vs = args.slice(0, 4).map((arg) => arg.expression);
 //   return bind([`${add(vs)}/4`], allocate, ([origin]) =>
 //     bind([`sqrt((${vs.map((p) => `Distance(${p},${origin})^2`).join('+')})/4)`], allocate, ([scale]) =>
@@ -132,7 +132,7 @@ const qlCubic: ExpressionBuilder = (args, allocate) => {
 //         }))));
 // };
 
-const qlQuartic: ExpressionBuilder = (args, allocate) => {
+const qlQu3FromFourVertices: ExpressionBuilder = (args, allocate) => {
   const vs = args.slice(0, 4).map((arg) => arg.expression);
   const data = bind([`${add(vs)}/4`], allocate, ([origin]) =>
     bind([`sqrt((${vs.map((p) => `Distance(${p},${origin})^2`).join('+')})/4)`], allocate, ([scale]) =>
@@ -165,7 +165,7 @@ const qlQuartic: ExpressionBuilder = (args, allocate) => {
 
 
 export const QUADRILATERAL_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  qlTransform, qlPlucker: qlPair(1), qlNewtonPair: qlPair(2), qlFixedPair: qlPair(3),
+  qlTransform: clawsonSchmidtConjugation, qlPlucker: qlPair(1), qlNewtonPair: qlPair(2), qlFixedPair: qlPair(3),
   qlMiquelCircle: miquelCircle, qlMiquelCenter: qlCenters(4), qlClawsonCenter: qlCenters(5), qlDimidiumCenter: qlCenters(6),
-  qlp20, qlCubic, qlCubicCoordinates, qlQuartic,
+  qlp20, qlCubic: qlCu1FromPointPairAndLine, qlCubicCoordinates: qlCu1FromFourVertices, qlQuartic: qlQu3FromFourVertices,
 };

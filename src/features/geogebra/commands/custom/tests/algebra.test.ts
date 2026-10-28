@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS, CUBIC_COEFFICIENT_INDICES } from '../builders/curves';
+import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS, CUBIC_COEFFICIENT_INDICES } from '../builders/cubics';
 import { isoconjugateWeights, crosspointWeights, cevapointWeights, cevaConjugateWeights, crossConjugateWeights, cyclocevianWeights, antigonalWeights, orthotransversalCoordinates } from '../builders/triangle';
 import { centeredConicShape } from '../builders/quadrangle';
 import { commonTangentNormal } from '../builders/conics';

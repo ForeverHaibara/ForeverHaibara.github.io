@@ -8,7 +8,7 @@
 
 ## 先做：通用代数构造与极性工具
 
-这一阶段复用现有十系数读取及必要的匿名绑定，并与当前 `Polar`、`PolarConic`、`ThirdIntersection` 交叉验证。下面各项已进入 `library.json` 和 `builders/cubicConstructions.ts`。逐项创建、类型及无命名辅助对象检查已通过；更多退化配置与定量性能验收仍待做。创建和拖动耗时都需记录，尤其检查行列式及多层 `Zip`，不能仅按生成表达式的长度评价。
+这一阶段复用现有十系数读取及必要的匿名绑定，并与当前 `Polar`、`PolarConic`、`ThirdIntersection` 交叉验证。下面各项已进入 `library.json` 和 `builders/cubics.ts`。逐项创建、类型及无命名辅助对象检查已通过；更多退化配置与定量性能验收仍待做。创建和拖动耗时都需记录，尤其检查行列式及多层 `Zip`，不能仅按生成表达式的长度评价。
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|

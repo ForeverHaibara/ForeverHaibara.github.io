@@ -23,7 +23,7 @@
 - **Implemented (P3)**：工具已进入版本 0.1.0，自动验证通过；实机验证仅限第 11 节记录的实际通过项目，不代表完整 P3 验收通过。
 - **Defer**：记录定义问题或性价比问题，不进入当前实现队列。
 
-下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `builders/index.ts`、`builders/triangle.ts`、`builders/curves.ts` 为准，共用表达式原语见 `algebra/homogeneous.ts`。
+下表记录当前实现算法及暂缓方案，公式不一定是可直接粘贴的 GeoGebra 命令。实际原生表达式以 `library.json` 及 `builders/index.ts`、`builders/triangle.ts`、`builders/cubics.ts` 为准，共用表达式原语见 `algebra/homogeneous.ts`。
 
 ### 已确认的源工具问题
 
@@ -561,7 +561,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 ### P3 最初实现记录（2026-10-16）
 
 - 本开发阶段从 103 增至 **137 个工具名**，P3 新增 **34 名／42 重载**，包含 QLTf1 的五种强类型重载和三组点对的可选编号。工具补全、文件宏优先、独立输出与原生持久依赖沿用现有编译器；没有安装宏、命名辅助对象、脚本或 JavaScript 坐标快照。
-- 新增 `builders/triangle.ts`、`builders/conics.ts`、`builders/quadrangle.ts`、`builders/triangleCubics.ts`、`builders/quadrilateral.ts`、`algebra/polynomial.ts`、`builders/curveTransforms.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
+- 新增 `builders/triangle.ts`、`builders/conics.ts`、`builders/quadrangle.ts`、`builders/triangleCubics.ts`、`builders/quadrilateral.ts`、`algebra/polynomial.ts`、`builders/curves.ts`，只负责符号表达式生成。短组合仍通过 compose 调用已有工具。QAP2 将候选 4×5 求核进一步简化：平移到 D 并归一化，消掉常数项，以 3×4 矩阵的四个 3×3 余子式求中心，避免冗余的垂心输入。OrthicAxis 在右角之前约因子，Co-Tf3 不选主轴，QAP4 不先有限化等角共轭。
 - QLTf1 曲线变换先将实系数转换为 `z^i conjugate(z)^j` 系数。反演交换相应幂，原生动态选 `m=max(i,j)` 后清分母，恰好消去人工引入的所有 `rho=(x−Mx)²+(y−My)²` 因子；随后将共轭项合并为实多项式。不需要符号 CAS、曲线采样或数值多项式插值。输入至多四次时输出至多八次，使用基数 5 编码与原生完整多项式相等检查，支持动态次数／圆型极限。
 - QL-Qu3 保留 E、F 的齐次坐标，将固定点转换为圆方程行 `(Ux²+Uy²,UxUw,UyUw,Uw²)`。各圆系数先匿名绑定，再作稀疏多项式行列式；恒等为零的五次项直接去除。一对边平行时无需生成无穷远仿射交点，第三个圆允许作为直线型代数极限；多个约束同时消失、全零多项式仍 undefined。QL 圆心链仍要求有限的分量三角形外心，不宣称全部平行配置都有有限结果。
 - 点对编号重载直接将 i 传入原生交点指令，或直接用符号 `(3−2i)` 选择复平方根分支，避免先求两个完整分支再从匿名列表抽取。双输出仍是两个独立对象；无实交点保留 undefined 槽。

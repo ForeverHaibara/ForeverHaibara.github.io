@@ -1,93 +1,98 @@
-import type { ExpressionBuilder } from '../types';
-import { add, mul, bind, coefficientLine, triangleAreas, matrix, barycentricVariables, coefficientList } from '../algebra/homogeneous';
-import { polynomialCurve } from '../algebra/polynomial';
+import { add, bind, mul, coefficientList } from '../algebra/homogeneous';
+import { encodedPolynomialCoefficients } from '../algebra/polynomial';
 
-/** Coefficients of x^i y^j, constant first, through total degree three. */
-export const CUBIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
-const power = (value: string, degree: number) => degree === 0 ? '1' : degree === 1 ? value : `(${value})^${degree}`;
-const term = (coefficient: string, x: string, y: string, i: number, j: number) => mul(coefficient, power(x, i), power(y, j));
-/** Encode x^i*y^j as x^(i+4j); cubic monomials have distinct exponents. */
-export const CUBIC_COEFFICIENT_INDICES: readonly number[] = CUBIC_MONOMIALS.map(([i, j]) => i + 4 * j + 1);
+type Allocate = () => string;
+export const QUARTIC_MONOMIALS: ReadonlyArray<readonly [number, number]> = Array.from({ length: 5 }, (_, n) =>
+  Array.from({ length: n + 1 }, (_, j) => [n - j, j] as const)).flat();
+const sum = (vs: string[]) => vs.length ? add(vs) : '0';
+const choose = (n: number, k: number) => {
+  let v = 1;
+  for (let i = 1; i <= k; i++) v = v * (n - i + 1) / i;
+  return v;
+};
 
-/** Native cubic coefficient extraction, assuming the input is a cubic. */
-export const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
+/** Coefficient of z^i conjugate(z)^j under x=(z+zb)/2, y=(z-zb)/(2i). */
+export const complexBasisCoefficient = (coefficients: string[], monomials: ReadonlyArray<readonly [number, number]>, i: number, j: number): [string, string] => {
+  const real: string[] = []; const imaginary: string[] = [];
+  monomials.forEach(([a, b], index) => {
+    if (a + b !== i + j) return;
+    let weight = 0;
+    for (let k = 0; k <= a; k++) {
+      const l = i - k;
+      if (l >= 0 && l <= b) weight += choose(a, k) * choose(b, l) * (-1) ** (b - l) / 2 ** (a + b);
+    }
+    if (weight) (b % 2 ? imaginary : real).push(mul(String(weight * [1, -1, -1, 1][b % 4]), coefficients[index]));
+  });
+  return [sum(real), sum(imaginary)];
+};
+
+const complexPairs = (degree: number) => Array.from({ length: degree + 1 }, (_, n) => Array.from({ length: Math.floor(n / 2) + 1 }, (_, j) => [n - j, j])).flat();
+
+/** Numerical image data only; never carry the output function through these Zips. */
+const imagePolynomialData = (coefficients: string[], monomials: ReadonlyArray<readonly [number, number]>, center: string, u: string, v: string, allocate: Allocate) => {
+  const degree = Math.max(...monomials.map(([a, b]) => a + b));
+  const pairs = complexPairs(degree);
+  return bind(pairs.flatMap(([i, j]) => complexBasisCoefficient(coefficients, monomials, i, j)), allocate, (components) =>
+    bind(pairs.map(([i, j], index) => `ToPoint(ToComplex((${components[2 * index]},${components[2 * index + 1]}))*ToComplex((${u},${v}))^${i}*conjugate(ToComplex((${u},${v})))^${j})`), allocate, (images) => {
+      // In complex coordinates inversion exchanges z^i*zb^j with z^(m-i)*zb^(m-j).
+      // Choosing m=max(i,j) cancels every artificial rho factor, including dynamic
+      // degree drops and circles. This is exact algebra, not a geometric branch choice.
+      let result = '';
+      for (let m = 1; m <= degree; m++) {
+        const group = sum(pairs.flatMap(([i], index) => i === m ? [`${components[2 * index]}^2+${components[2 * index + 1]}^2`] : []));
+        result = `If(${group}!=0,${m}${result ? `,${result}` : ''})`;
+      }
+      return coefficientList([result, `x(${center})`, `y(${center})`, ...images.flatMap((p) => [`x(${p})`, `y(${p})`])]);
+    }));
+};
+
+/** Exactly one outer function binding, after every numerical image coefficient. */
+export const conjugateImagePolynomial = (data: string, degree: number, allocate: Allocate) => bind([data], allocate, ([list]) => {
+  const at = (i: number) => `Element(${list},${i})`;
+  const x = `(x-${at(2)})`; const y = `(y-${at(3)})`; const rho = `(${x}^2+${y}^2)`;
+  const real = ['1', x, `(${x}^2-${y}^2)`, `(${x}^3-3*${x}*${y}^2)`, `(${x}^4-6*${x}^2*${y}^2+${y}^4)`];
+  const imaginary = ['0', y, `(2*${x}*${y})`, `(3*${x}^2*${y}-${y}^3)`, `(4*${x}^3*${y}-4*${x}*${y}^3)`];
+  let polynomial = '';
+  for (let m = 1; m <= degree; m++) {
+    const terms = complexPairs(degree).flatMap(([i, j], index) => i > m ? [] : [i === j
+      ? `${at(4 + 2*index)}*${rho}^${m-i}`
+      : `2*(${at(4 + 2*index)}*${real[i-j]}+${at(5 + 2*index)}*${imaginary[i-j]})*${rho}^${m-i}`]);
+    polynomial = `If(${at(1)}==${m},${sum(terms)}${polynomial ? `,${polynomial}` : ''})`;
+  }
+  return polynomial;
+});
+
+export const conjugateConicData = (q: string, center: string, u: string, v: string, allocate: Allocate) =>
+  bind([`Coefficients(${q})`], allocate, ([list]) =>
+    bind([1, 2, 3, 4, 5, 6].map((i) => `Element(${list},${i})`), allocate, ([a, b, f, h, d, e]) =>
+      bind([`${a}*x(${center})^2+${b}*y(${center})^2+${h}*x(${center})*y(${center})+${d}*x(${center})+${e}*y(${center})+${f}`,
+        `2*${a}*x(${center})+${h}*y(${center})+${d}`, `2*${b}*y(${center})+${h}*x(${center})+${e}`, a, h, b], allocate,
+      (coefficients) => imagePolynomialData(coefficients, QUARTIC_MONOMIALS.slice(0, 6), center, u, v, allocate))));
+
+export const conjugatePolynomialData = (curve: string, center: string, u: string, v: string, allocate: Allocate) =>
   bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
-    // Coefficients accepts a one-variable function, not an implicit curve or
-    // a two-variable function. Keep a formal x even for constant restrictions;
-    // reverse and pad so missing high-degree terms read as zero dynamically.
-    bind([`Join(Reverse(Coefficients(${f}(x,x^4)+0*x)),{${Array(13).fill('0').join(',')}})`], allocate, ([encoded]) =>
-      bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate,
-        (coefficients) => `(${body(coefficients)})`)));
+    bind([`${f}(x+x(${center}),y+y(${center}))`], allocate, ([local]) =>
+      bind([encodedPolynomialCoefficients(local, 5, 21)], allocate, ([encoded]) =>
+        bind(QUARTIC_MONOMIALS.map(([i, j]) => `Element(${encoded},${i + 5 * j + 1})`), allocate, (coefficients) => {
+          const reconstructed = add(coefficients.map((c, k) => mul(c, `x^${QUARTIC_MONOMIALS[k][0]}`, `y^${QUARTIC_MONOMIALS[k][1]}`)));
+          return `If(AreEqual(${local},${reconstructed}),${imagePolynomialData(coefficients, QUARTIC_MONOMIALS, center, u, v, allocate)})`;
+        }))));
 
-/** Homogeneous gradient at (p,q,1): the second polar line. */
-export const cubicPolarLine = (coefficients: string[], p: string, q: string): string[] => [0, 1, 2].map((axis) =>
-  add(coefficients.flatMap((coefficient, k) => {
-    const [i, j] = CUBIC_MONOMIALS[k];
-    const degree = [i, j, 3 - i - j][axis];
-    return degree ? [term(mul(String(degree), coefficient), p, q, i - (axis === 0 ? 1 : 0), j - (axis === 1 ? 1 : 0))] : [];
-  })));
-
-/** First homogeneous polar, in native Conic coefficient order. */
-export const cubicPolarConic = (coefficients: string[], p: string, q: string): string[] => {
-  const output = new Map(['20', '02', '00', '11', '10', '01'].map((key) => [key, [] as string[]]));
-  coefficients.forEach((coefficient, k) => {
-    const [i, j] = CUBIC_MONOMIALS[k];
-    if (i) output.get(`${i - 1}${j}`)!.push(mul(String(i), p, coefficient));
-    if (j) output.get(`${i}${j - 1}`)!.push(mul(String(j), q, coefficient));
-    if (3 - i - j) output.get(`${i}${j}`)!.push(mul(String(3 - i - j), coefficient));
-  });
-  return [...output.values()].map((terms) => add(terms));
-};
-
-/** t^3 and t^2 coefficients of f(p+t*v), used after removing known roots. */
-export const cubicRestriction = (c: string[], p: string, q: string, u: string, v: string): string[] => [
-  add([term(c[6], u, v, 3, 0), term(c[7], u, v, 2, 1), term(c[8], u, v, 1, 2), term(c[9], u, v, 0, 3)]),
-  add([mul(c[3], u, u), mul(c[4], u, v), mul(c[5], v, v), mul('3', c[6], p, u, u),
-    mul(c[7], add([mul(q, u, u), mul('2', p, u, v)])),
-    mul(c[8], add([mul(p, v, v), mul('2', q, u, v)])), mul('3', c[9], q, v, v)]),
-];
-
-const polar: ExpressionBuilder = (args, allocate) => {
-  const [p, curve] = args.map((arg) => arg.expression);
-  return withCubic(curve, allocate, (coefficients) => coefficientLine(cubicPolarLine(coefficients, `x(${p})`, `y(${p})`), allocate));
-};
-const polarConic: ExpressionBuilder = (args, allocate) => {
-  const [p, curve] = args.map((arg) => arg.expression);
-  return `Conic(${withCubic(curve, allocate, (coefficients) => coefficientList(cubicPolarConic(coefficients, `x(${p})`, `y(${p})`)))})`;
-};
-const thirdIntersection: ExpressionBuilder = (args, allocate) => {
-  const [curve, p, q] = args.map((arg) => arg.expression);
-  return withCubic(curve, allocate, (coefficients) => {
-    const direction = q ? [`x(${q})-x(${p})`, `y(${q})-y(${p})`] : (() => {
-      const gradient = cubicPolarLine(coefficients, `x(${p})`, `y(${p})`);
-      return [gradient[1], `-(${gradient[0]})`];
-    })();
-    return bind(direction, allocate, ([u, v]) =>
-      bind(cubicRestriction(coefficients, `x(${p})`, `y(${p})`, u, v), allocate, ([a, b]) =>
-        `(${p})+(-${b}/${a}${q ? '-1' : ''})*(${u},${v})`));
-  });
-};
-
-const pivotal: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c] = args.map((arg) => arg.expression);
-  const [u, v, w] = barycentricVariables([a, b, c]);
-  const polynomial = bind([...triangleAreas(args.map((arg) => arg.expression)), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
-    ([p, q, r, aa, bb, cc]) => add([
-      mul(r, bb, `${u}^2`, w), `-${mul(r, aa, `${v}^2`, w)}`, `-${mul(q, cc, `${u}^2`, v)}`,
-      mul(q, aa, v, `${w}^2`), mul(p, cc, u, `${v}^2`), `-${mul(p, bb, u, `${w}^2`)}`,
-    ]));
-  const valid = `${args.map((arg) => `IsDefined(${arg.expression})`).join('&&')}&&!AreCollinear(${a},${b},${c})`;
-  return `If(${valid},${polynomialCurve(`If(${valid},${polynomial},1+0*x+0*y)`)})`;
-};
-
-const cubicThroughPoints: ExpressionBuilder = (args, allocate) => {
-  const points = args.map((arg) => arg.expression);
-  return bind([`${add(points)}/9`], allocate, ([origin]) =>
-    bind([`sqrt(${add(points.map((p) => `Distance(${p},${origin})^2`))}/9)`], allocate, ([scale]) =>
-      bind(points.map((p) => `((${p})-${origin})/${scale}`), allocate, (normalized) => {
-        const rows = normalized.map((p) => CUBIC_MONOMIALS.map(([i, j]) => mul(power(`x(${p})`, i), power(`y(${p})`, j))));
-        return `If(MatrixRank(${matrix(rows)})==9,Translate(Dilate(ImplicitCurve({${normalized.join(',')}}),${scale},(0,0)),Vector(${origin})))`;
+/** Native inversion keeps rho^degree, so use it only when no rho can cancel.
+ * The highest pure complex term is nonzero exactly when the leading real
+ * homogeneous form is not divisible by x²+y². Circular families use the
+ * reduced polynomial path above, including all dynamic degree drops.
+ */
+export const nativePolynomialEligible = (curve: string, allocate: Allocate, validateOnly = false) =>
+  bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
+    bind([encodedPolynomialCoefficients(f, 5, 21)], allocate, ([encoded]) =>
+      bind(QUARTIC_MONOMIALS.map(([i, j]) => `Element(${encoded},${i + 5 * j + 1})`), allocate, (cs) => {
+        const reconstructed = add(cs.map((c, k) => mul(c, `x^${QUARTIC_MONOMIALS[k][0]}`, `y^${QUARTIC_MONOMIALS[k][1]}`)));
+        if (validateOnly) return `AreEqual(${f},${reconstructed})&&${add(cs.slice(1).map((c) => `${c}^2`))}!=0`;
+        const cases = [1, 2, 3, 4].map((degree) => {
+          const higher = cs.filter((_, k) => QUARTIC_MONOMIALS[k][0] + QUARTIC_MONOMIALS[k][1] > degree);
+          const pure = complexBasisCoefficient(cs, QUARTIC_MONOMIALS, degree, 0);
+          return `((${higher.length ? add(higher.map((c) => `${c}^2`)) : '0'})==0&&${add(pure.map((c) => `(${c})^2`))}!=0)`;
+        });
+        return `AreEqual(${f},${reconstructed})&&(${cases.join('||')})`;
       })));
-};
-
-export const CURVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { cubicPolar: polar, cubicPolarConic: polarConic, thirdIntersection, pivotal, cubicThroughPoints };

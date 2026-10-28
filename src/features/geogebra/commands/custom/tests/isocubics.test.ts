@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaInverseEquation, qaInverseCoefficients, qaInverseBarycentricCoefficients, qaInverseSevenTermEquation } from '../builders/triangleCubics';
+import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaCu1InverseEquation, qaCu1InverseCoefficients, qaCu1InverseBarycentricCoefficients, qaCu1InverseSevenTermEquation } from '../builders/triangleCubics';
 
 const evaluate = (source: string, [x, y, z]: number[]) => Number(Function('x', 'y', 'z', `return ${source.replace(/\^/gu, '**')}`)(x, y, z));
 const numbers = (values: readonly number[]) => values.map(String);
@@ -58,10 +58,10 @@ describe('second-stage cubic equations', () => {
       const j = (i + 1) % 3; const k = (i + 2) % 3;
       return value + sides[i] * t[i] * (d[k] * p[j] ** 2 * p[k] - d[j] * p[j] * p[k] ** 2);
     }, 0);
-    const equation = qaInverseEquation(numbers(sides), xyz, numbers(p));
+    const equation = qaCu1InverseEquation(numbers(sides), xyz, numbers(p));
     expect(evaluate(equation, d)).toBeCloseTo(expected, 5);
     expect(evaluate(equation, d.map((v) => 2 * v))).toBeCloseTo(8 * expected, 4);
-    const coefficients = qaInverseCoefficients(numbers(sides), numbers(p)).map((c) => evaluate(c, [0, 0, 0]));
+    const coefficients = qaCu1InverseCoefficients(numbers(sides), numbers(p)).map((c) => evaluate(c, [0, 0, 0]));
     const affine = [d[0] / d[2], d[1] / d[2], 1];
     const monomials = [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [0, 2], [3, 0], [2, 1], [1, 2], [0, 3]];
     const reconstructed = coefficients.reduce((sum, c, i) => sum + c * affine[0] ** monomials[i][0] * affine[1] ** monomials[i][1], 0);
@@ -74,9 +74,9 @@ describe('second-stage cubic equations', () => {
       [[41, 17, 36], [11, 7, 6]],
       [[1, 1, 1], [2, 3, 4]],
     ] as const) {
-      const coefficients = qaInverseBarycentricCoefficients(numbers(sides), numbers(fixed));
-      const seven = qaInverseSevenTermEquation(xyz, coefficients);
-      const original = qaInverseEquation(numbers(sides), xyz, numbers(fixed));
+      const coefficients = qaCu1InverseBarycentricCoefficients(numbers(sides), numbers(fixed));
+      const seven = qaCu1InverseSevenTermEquation(xyz, coefficients);
+      const original = qaCu1InverseEquation(numbers(sides), xyz, numbers(fixed));
       for (const point of [[1, 2, 3], [2, 7, 11], [5, 1, 2], [3, 4, 5]]) {
         expect(evaluate(seven, point)).toBeCloseTo(evaluate(original, point), 6);
       }
@@ -96,8 +96,8 @@ describe('second-stage cubic equations', () => {
         const cos = (squared[j] + squared[k] - squared[i]) / (2 * lengths[j] * lengths[k]);
         return side * (sin / 2 + sign * Math.sqrt(3) * cos / 2);
       });
-      const inverse = qaInverseSevenTermEquation(xyz,
-        qaInverseBarycentricCoefficients(numbers(squared), numbers(fixed)));
+      const inverse = qaCu1InverseSevenTermEquation(xyz,
+        qaCu1InverseBarycentricCoefficients(numbers(squared), numbers(fixed)));
       const scale = evaluate(inverse, samples[0]) / evaluate(neuberg, samples[0]);
       for (const sample of samples) {
         expect(evaluate(inverse, sample) / evaluate(neuberg, sample)).toBeCloseTo(scale, 8);

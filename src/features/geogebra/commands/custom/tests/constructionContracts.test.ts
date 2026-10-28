@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { compileStudioCommand } from '../commandCompiler';
 import { studioToolLibrary, selectOverload } from '../toolLibrary';
 import { scimemiCoordinates } from '../builders/conics';
-import { qaCubicCoefficients } from '../builders/triangleCubics';
-import { complexBasisCoefficient, QUARTIC_MONOMIALS } from '../builders/curveTransforms';
+import { qaCu1Coefficients } from '../builders/triangleCubics';
+import { complexBasisCoefficient, QUARTIC_MONOMIALS } from '../builders/curves';
 import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../algebra/polynomial';
 import type { CommandEnvironment, GeometryType, ParameterType } from '../types';
 
@@ -133,7 +133,7 @@ describe('Conic and polynomial identities', () => {
       const j = (i + 1) % 3; const k = (i + 2) % 3;
       return s[i] * (v + p[j]) * (v + p[k]) - s[j] * v * (v + p[j]) - s[k] * v * (v + p[k]);
     });
-    const coefficients = qaCubicCoefficients(strings(s), strings(p), strings(t)).map((v) => scalar(v));
+    const coefficients = qaCu1Coefficients(strings(s), strings(p), strings(t)).map((v) => scalar(v));
     for (const [x, y] of [[1, 1], [-0.2, 2.5], [3, -1]]) {
       const bary = [1 - x / 4 - y / 12, x / 4 - y / 4, y / 3];
       const actual = bary.reduce((v, _, i) => {

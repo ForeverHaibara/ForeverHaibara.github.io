@@ -6,6 +6,10 @@ import { add, mul, determinant, sub } from './homogeneous';
  */
 export const polynomialCurve = (expression: string) => `ImplicitCurve(${expression})`;
 
+/** Encode x^i y^j as powers of x, padding absent high coefficients with zeros. */
+export const encodedPolynomialCoefficients = (f: string, stride: number, padding: number) =>
+  `Join(Reverse(Coefficients(${f}(x,x^${stride})+0*x)),{${Array(padding).fill('0').join(',')}})`;
+
 /** Sparse symbolic polynomials. Values are engine expressions, never snapshots. */
 export type Polynomial = Map<string, string>;
 export const monomial = (x: number, y: number, coefficient: string): Polynomial => new Map([[`${x},${y}`, coefficient]]);
