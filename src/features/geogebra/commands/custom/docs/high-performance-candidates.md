@@ -1,12 +1,12 @@
 # High 档工具优化候选与下一轮实施顺序
 
-日期：2026-10-29。状态：**代码盘点与实验计划；本轮未改实现**。适用范围是现有工具库的自定义工具；Low／Medium／High 的执行语义见 [实施说明](named-intermediates-implementation.md)。以下“优先级”表示值得先测，并非已证明命名路径更快。
+日期：2026-10-29。状态：**实施中；High 的 `CommonTangents` 已通过首轮实机验证**。适用范围是现有工具库的自定义工具；Low／Medium／High 的执行语义见 [实施说明](named-intermediates-implementation.md)。以下“优先级”表示值得先测，并非已证明命名路径更快。实测结果见 [High 阶段记录](benchmarks/named-intermediates-high-expansion.md)。
 
 ## 筛选依据
 
 High 档允许经过验证的几何辅助对象，但**辅助对象个数本身不是收益**。优先看昂贵表达式是否被多个分支／守卫重复展开，是否有多输出共享前置量，以及高次曲线的符号计算是否在嵌套 `Element(Zip(...),1)` 内反复求值。再看创建、输入拖动、整页刷新、文件大小与对象数量。若中间结果只使用一次、表达式短或 GeoGebra 已原生缓存，拆成对象可能只有额外开销。
 
-已有实机证据可作校准：五切线 `Conic` 与编号 `Pretangential` 的逐层命名收益很大；`QACu1Inv` 的简单共享列表及逐层命名没有稳定收益；`QLQu3` 的旧基线曾长时间无响应，尚无可信的相对加速数字；`PivotalCubic` 与 `NonpivotalCubic` 的朴素命名分别约 466→3019 ms、575→4700 ms。`CubicPencil` 朴素命名也变慢。细节见 [首轮基准](benchmarks/named-intermediates-performance.md) 与 [第二阶段筛选](benchmarks/named-intermediates-expansion.md)。
+已有实机证据可作校准：五切线 `Conic` 与编号 `Pretangential` 的逐层命名收益很大；`CommonTangents` 共享双输出前置量后也有正向样本。`QACu1Inv` 的简单共享列表及逐层命名没有稳定收益；`QACu1` 与 `OrthopivotalCubic` 的数值逐层命名创建分别约 332→3132 ms、255→2076 ms，仍走匿名路径。`QLQu3` 的旧基线再次长时间无响应，尚无可信的相对加速数字；`PivotalCubic` 与 `NonpivotalCubic` 的朴素命名分别约 466→3019 ms、575→4700 ms。`CubicPencil` 朴素命名也变慢。细节见 [首轮基准](benchmarks/named-intermediates-performance.md)、[第二阶段筛选](benchmarks/named-intermediates-expansion.md)及 [High 阶段记录](benchmarks/named-intermediates-high-expansion.md)。
 
 ## 候选队列
 
@@ -15,9 +15,10 @@ High 档允许经过验证的几何辅助对象，但**辅助对象个数本身�
 | P0 | `QLQu3(A,B,C,D)` | `qlQu3FromFourVertices` 有中心、缩放、四个归一化点、坐标、交叉积、18 个数据项、四次系数的多层绑定；同一大 `data` 又分别进入零判定和多项式，可能重复完整生成。High 可容纳点型中间量。 | 对比现有匿名、仅共享 `data`、逐层命名和**只命名复用节点**。设单次限时与独立进程；先保住退化、动态阶数与现有四次曲线等价性，超时不推断加速幅度。 |
 | P0 | `QLTf1` 的圆锥曲线／隐式曲线输入 | `withQL` 为变换中心、固定点及降阶图像多次展开；`conjugatePolynomialData` 还提取 15 个四次系数，再进行复数基变换。原生变换与降阶分支由 `If` 选择。 | 分别测点／线／圆／圆锥曲线／三次和四次隐式曲线重载。先共享几何中心与已用的数值数据；只在对应分支可安全求值时物化，防止未选分支改变定义域或制造无谓成本。 |
 | P0 | 不带编号的 `Pretangential(F,P)`、`CubicInvolution(F,P)` | 前者四个接触点分别调用 `withContactConics`；后者三个分支重复 `thirdIntersection`、接触二次曲线和 `KeepIf`。编号 `Pretangential` 已获益，未编号形式仍需共享前置计算。 | 建立一次调用、多个输出共享的前置 DAG。保持独立输出标签与未定义分支；`CubicInvolution` 的 `KeepIf` 局部作用域、点／向量类型须先解，再决定物化范围。 |
-| P1 | `QACu1(A,B,C,D)`、`OrthopivotalCubic(A,B,C,P)` | `qaCu1OrOrthopivotalCubic` 先生成共同 `data`，再分别用于多项式和非零守卫；还有三角形边长、面积及六个循环系数。 | 先比较共享数据或六个系数与朴素逐层命名；保证零多项式、共线与未定义点的 guard 不被提前求值破坏。可在这两个同源 builder 中统一一套 DAG。 |
+| P2 | `QACu1(A,B,C,D)`、`OrthopivotalCubic(A,B,C,P)` | 两者已拆为独立公式入口，只共用三角形数据框架；`data` 同时用于多项式和非零守卫。全部中间量均适用于 Medium，无需几何辅助对象。 | **逐层命名已实测大幅变慢，未启用。** 后续只测试选择性复用 `data`／系数的方案，同时保持零多项式、共线与未定义点的 guard。 |
 | P1 | 七点 `CircularCubic`、`CayleyBacharachPoint` | 七点圆三次曲线的八个行列式同时用于零判定和最终多项式，当前没有 `bind` 共享；Cayley–Bacharach 的多个行列式和点结果也较重。 | 对行列式逐个物化与共享一个系数列表分别测量。后者曾出现点→向量类型变化，必须先解决原生类型契约；不能因前者通过就推广到后者。 |
-| P1 | `QL2P1`／`QL2P2`／`QL2P3` 的无编号双输出，以及 `CommonTangents` 双输出 | 各分支分别调用 `withQL` 或重复求两圆中心、半径和公切线公共法向量；编号输出通常只需要一个分支。 | 编号与无编号分开测。优先把公共前置量跨两个输出共享，不把每个分支的私有量全部物化；比较两点坐标／两线方程与退化根。 |
+| P1 | `QL2P1`／`QL2P2`／`QL2P3` 的无编号双输出 | 两支分别调用 `withQL`，可借鉴已实现的多输出 `bind()` 共享共同前置量。需要几何中心时属于 High。 | 编号与无编号分开测；先共享公共前置量，比较两点坐标与退化根。点／向量类型需要单独验证。 |
+| 已启用 High | `CommonTangents(c1,c2,s[,i])` | 两条线共用圆心、半径、中心差和距离数据；无编号结果共用一组辅助对象。两个圆心为几何点，因此不适用于 Medium。 | 已验证编号、无编号及交叉公切线样本；继续在整页负载下观察对象数、文件体积与交互预算。 |
 | P1 | `CubicAsymptotes(F)`、`CubicInvolution` 的多值抽取 | `CubicAsymptotes` 三次使用同一 `Asymptote(F)` 列表；带编号时只需对应元素。 | 测列表一次共享的收益；列表含几何线，需检查元素类型、列表项顺序与空列表／重复渐近线。与通用多输出前置 DAG 一起做。 |
 | P2 | `QACu1Inv`、`CubicPencil` | 两者都在守卫和最终式中重复部分数据，但前两轮的朴素命名／简单共享已无稳定收益或变慢。 | 只在通用共享 DAG 完成后回测“消除重复求值”这一新方案，不把旧的逐层命名结果当作可启用依据。 |
 | P2 | `PivotalCubic`、`NonpivotalCubic`、`ConicoPivotalCubic`、`PivotalIsogonalCubic` | 三角形面积同时参与曲线和守卫；结构相近，但逐层命名有显著性能反例。 | 先剖析耗时是否来自 GeoGebra 的 `ImplicitCurve` 与辅助数值依赖图交互，优先试单个共享系数节点，确认无退步才扩大。 |
@@ -36,4 +37,4 @@ High 档允许经过验证的几何辅助对象，但**辅助对象个数本身�
 
 每项在相同构造、相同输入轨迹下交错运行 Low、Medium、High 候选，先预热，至少重复多轮；分开记录编译、原生创建、动态更新、整页拖动可交互、关系刷新、自动保存、`.ggb` 大小和内存。对高次曲线设超时并记录失败率。比较普通与退化位置、未定义→恢复、编号／无编号、多输出顺序、对象原生类型、方程等价（允许非零比例）、文件重开与撤销。不得只凭单次创建更快或公式更短启用。
 
-下一轮建议顺序：先搭建共享 DAG 的最小原型并测 `QLQu3`；随后处理 `Pretangential` 无编号与 `QL2P*` 这类跨输出共享；再测 `QLTf1` 分支型高次变换；接着检查 `QACu1`／`OrthopivotalCubic` 与七点 `CircularCubic` 的守卫共享。`CubicInvolution` 在作用域和类型保持机制明确后进入实施。每个重载只有在语义矩阵通过、整页确有收益且未造成明显其它回归时才加入 High 策略表。
+后续顺序：先以已验证的 `CommonTangents` 多输出共享结构处理 `Pretangential` 无编号与 `QL2P*`，同时设计选择性物化以避免把各分支私有量全部变成对象；再测 `QLTf1` 分支型高次变换。`QLQu3` 需要先做可中断的旧路径基线，再谈候选比较。`QACu1`／`OrthopivotalCubic` 只在可选择单个共享节点后复测；七点 `CircularCubic` 的守卫共享仍待测试。`CubicInvolution` 在作用域和类型保持机制明确后进入实施。每个重载只有在语义矩阵通过、整页确有收益且未造成明显其它回归时才加入策略表。

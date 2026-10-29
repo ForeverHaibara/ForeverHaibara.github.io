@@ -1,4 +1,4 @@
-import type { TypedExpression } from '../types';
+import type { BuiltExpression, TypedExpression } from '../types';
 
 export type Matrix = string[][];
 export const add = (terms: string[]) => `(${terms.join('+')})`;
@@ -25,14 +25,26 @@ export type BindingAllocator = (() => string) & {
 };
 
 /** One formula source; the compiler may lower typed bindings to construction objects. */
-export const bind = (values: string[], allocate: BindingAllocator, body: (names: string[]) => string,
-  kinds?: BindValueKind | BindValueKind[]): string => {
+export function bind(values: string[], allocate: BindingAllocator, body: (names: string[]) => string,
+  kinds?: BindValueKind | BindValueKind[]): string;
+export function bind(values: string[], allocate: BindingAllocator, body: (names: string[]) => BuiltExpression,
+  kinds?: BindValueKind | BindValueKind[]): BuiltExpression;
+export function bind(values: string[], allocate: BindingAllocator, body: (names: string[]) => string | BuiltExpression,
+  kinds?: BindValueKind | BindValueKind[]): string | BuiltExpression;
+export function bind(values: string[], allocate: BindingAllocator, body: (names: string[]) => string | BuiltExpression,
+  kinds?: BindValueKind | BindValueKind[]): string | BuiltExpression {
   const names = values.map(() => allocate());
-  const expression = body(names);
+  const result = body(names);
   const declared = kinds === undefined ? undefined : Array.isArray(kinds) ? kinds : values.map(() => kinds);
-  return allocate.captureBinding?.(names, values, expression, declared)
+  const wrap = (expression: string) => allocate.captureBinding?.(names, values, expression, declared)
     ?? `Element(Zip(${expression},${names.map((name, i) => `${name},{${values[i]}}`).join(',')}),1)`;
-};
+  if (typeof result === 'string') return wrap(result);
+  if (result.outputExpressions) {
+    const outputExpressions = result.outputExpressions.map(wrap);
+    return { ...result, expression: outputExpressions[0], outputExpressions };
+  }
+  return { ...result, expression: wrap(result.expression) };
+}
 
 export const supportingLine = (arg: TypedExpression) => arg.type === 'line' ? arg.expression
   : `Line(Point(${arg.expression},0.25),Point(${arg.expression},0.5))`;

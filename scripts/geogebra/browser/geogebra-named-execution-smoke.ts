@@ -27,15 +27,18 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     nodalCubic: { setup: 'shift=0\nA=(0,0)\nB=(1/2+shift,1/2)\nC=(1/2,-1/2)\nD=(4/5,8/5)\nE=(4/5,-8/5)\nF=(9/10,27/10)\nG=(-2,3)', command: 'out=NodalCubic(A,B,C,D,E,F,G)', move: () => api('setValue', 'shift', 0.1) },
     nodalCubicSmall: { setup: 'shift=0\nA=(0,0)\nB=(1/2+shift,1/2)\nC=(1/2,-1/2)\nD=(4/5,8/5)\nE=(4/5,-8/5)', command: 'out=NodalCubic(A,B,C,D,E)', move: () => api('setValue', 'shift', 0.1) },
     miquelCircle: { setup: 'shift=0\nA=(0,0)\nB=(4+shift,0)\nC=(3,3)\nD=(0,2)', command: 'out=QLCi3(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
+    commonTangents: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1,1)', move: () => api('setValue', 'shift', 1) },
+    commonTangentsMulti: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1)', move: () => api('setValue', 'shift', 1) },
+    commonTangentsCrossed: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,-1)', move: () => api('setValue', 'shift', 1) },
     hessian: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=HessianCubic(F)', move: () => api('setValue', 'shift', 0.1) },
     jacobian: { setup: 'shift=0\nq1=Conic({1,2,-1,0,shift,0})\nq2=Conic({2,1,-1,1,0,0})\nq3=Conic({1,-1,-1,0,1,0})', command: 'out=JacobianCubic(q1,q2,q3)', move: () => api('setValue', 'shift', 0.1) },
   };
   const selected = cases[tool];
   if (!selected) throw new Error(`Unknown named execution tool ${tool}`);
-  const snapshot = async () => {
-    const type = String(await api('getObjectType', 'out'));
-    const value = String(await api('getValueString', 'out'));
-    const defined = Boolean(await api('isDefined', 'out'));
+  const snapshot = async (label = 'out') => {
+    const type = String(await api('getObjectType', label));
+    const value = String(await api('getValueString', label));
+    const defined = Boolean(await api('isDefined', label));
     return { type, value, defined };
   };
   const run = async (named: boolean) => {
@@ -43,20 +46,28 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const setup = await engine.executeCommand(selected.setup);
     if (!setup.success) throw new Error(`Setup failed: ${setup.error}`);
     const started = performance.now();
-    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? tool === 'miquelCircle' ? 'high' : 'medium' : 'low' });
+    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed'].includes(tool) ? 'high' : 'medium' : 'low' });
     const create = performance.now() - started;
     if (!result.success) throw new Error(`${named ? 'named' : 'anonymous'} failed: ${result.error}`);
+    if (tool === 'commonTangentsMulti' && (result.labels.length !== 2 || !result.labels.includes('out')))
+      throw new Error(`Expected two tangent labels, received ${result.labels.join(',')}`);
     const before = await snapshot();
+    const outputBefore = await Promise.all(result.labels.map((label) => snapshot(label)));
     const names = await api('getAllObjectNames') as string[];
     const helpers = names.filter(isInternalHelperName);
     if (named && !helpers.length || !named && helpers.length) throw new Error(`Unexpected helper count ${helpers.length}`);
     if (result.labels.some(isInternalHelperName)) throw new Error('Internal helper leaked into result labels');
-    if (named && tool === 'miquelCircle') for (const helper of helpers) {
-      if (await api('getObjectType', helper) !== 'point') throw new Error(`${helper} is not a point`);
+    if (named && (tool === 'miquelCircle' || tool.startsWith('commonTangents'))) for (const helper of helpers) {
       if (await api('getVisible', helper)) throw new Error(`${helper} is visible`);
       if (!/<auxiliary\s+val="true"\s*\/>/u.test(String(await api('getXML', helper)))) throw new Error(`${helper} is not auxiliary`);
     }
-    if (named && tool === 'miquelCircle') {
+    if (named && tool === 'miquelCircle') for (const helper of helpers)
+      if (await api('getObjectType', helper) !== 'point') throw new Error('Miquel helper is not a point');
+    if (named && tool.startsWith('commonTangents')) {
+      const helperTypes = await Promise.all(helpers.map((helper) => api('getObjectType', helper)));
+      if (helperTypes.filter((type) => type === 'point').length !== 2) throw new Error('Expected two shared circle centers');
+    }
+    if (named && (tool === 'miquelCircle' || tool.startsWith('commonTangents'))) {
       const snapshot = await new GeoGebraConstructionSource(engine).read();
       const graph = collapseInternalHelpers(buildDependencyGraph(snapshot.objects));
       if (graph.nodes.some((node) => isInternalHelperName(node.name))) throw new Error('Auxiliary point leaked into relation graph');
@@ -66,14 +77,18 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const updateStarted = performance.now();
     await selected.move();
     const after = await snapshot();
+    const outputAfter = await Promise.all(result.labels.map((label) => snapshot(label)));
     report(`${named ? 'NAMED' : 'BASE'} update ${(performance.now() - updateStarted).toFixed(1)} ms; type ${after.type}; defined ${after.defined}; changed ${before.value !== after.value}`);
-    return { before, after, helpers: helpers.length };
+    return { before, after, outputBefore, outputAfter, helpers: helpers.length, labels: result.labels };
   };
   const baseline = await run(false);
   const named = await run(true);
   if (baseline.before.type !== named.before.type || baseline.after.type !== named.after.type
     || baseline.before.defined !== named.before.defined || baseline.after.defined !== named.after.defined)
     throw new Error(`Object type changed: ${baseline.after.type} vs ${named.after.type}`);
+  if (tool.startsWith('commonTangents') && (JSON.stringify(baseline.outputBefore) !== JSON.stringify(named.outputBefore)
+    || JSON.stringify(baseline.outputAfter) !== JSON.stringify(named.outputAfter)))
+    throw new Error('Common tangent output changed');
   if (['orthicAxis', 'orthicAxisDegenerate', 'poloconic', 'poloconicDegenerate', 'poloconicSegment',
     'circularCubicDirection', 'circularCubicDirectionSegment', 'nodalCubic', 'nodalCubicSmall', 'miquelCircle'].includes(tool)
     && (baseline.before.value !== named.before.value || baseline.after.value !== named.after.value))
@@ -81,13 +96,14 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
   // Other fixtures may normalize equivalent polynomials by a nonzero factor.
   report(`BASE equation: ${baseline.after.value.slice(0, 180)}`);
   report(`NAMED equation: ${named.after.value.slice(0, 180)}`);
-  if (tool === 'miquelCircle') {
+  if (tool === 'miquelCircle' || tool.startsWith('commonTangents')) {
     const exported = await engine.exportGgb();
     await engine.importGgb(new File([exported], 'geometry-auxiliary.ggb'));
     const reopened = await api('getAllObjectNames') as string[];
-    if (reopened.filter(isInternalHelperName).length !== 6 || !reopened.includes('out')) throw new Error('Geometry helpers did not survive file reopen');
+    if (reopened.filter(isInternalHelperName).length !== named.helpers || named.labels.some((label) => !reopened.includes(label)))
+      throw new Error('Geometry helpers did not survive file reopen');
     const lifecycle = new InternalHelperLifecycle(engine);
-    await api('deleteObject', 'out');
+    for (const label of named.labels) await api('deleteObject', label);
     await lifecycle.reconcile();
     lifecycle.dispose();
     if ((await api('getAllObjectNames') as string[]).some(isInternalHelperName)) throw new Error('Orphan geometry helpers were not collected');

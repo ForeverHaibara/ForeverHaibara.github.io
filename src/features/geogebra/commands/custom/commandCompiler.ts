@@ -199,6 +199,8 @@ const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
 };
 const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   qlMiquelCircle: (args) => args.length === 4 && args.every((type) => type === 'point'),
+  commonTangents: (args) => [3, 4].includes(args.length) && args[0] === 'circle'
+    && args[1] === 'circle' && args.slice(2).every((type) => type === 'number'),
 };
 const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 'function', 'point', 'vector', 'line', 'circle', 'conic', 'implicitCurve']);
 

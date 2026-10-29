@@ -1,6 +1,6 @@
 # 命名辅助对象扩展到几何类型：技术调查与实施计划
 
-日期：2026-10-29。状态：**High 档与一个点型辅助工具试点已实现；其余类型和工具仍按本计划逐项验证**。现有实现见 [实施说明](named-intermediates-implementation.md)，原规划见 [历史规划](named-intermediates-plan.md)。
+日期：2026-10-29。状态：**High 档与 `QLCi3`、`CommonTangents` 两个点型辅助工具试点已实现；其余类型和工具仍按本计划逐项验证**。现有实现见 [实施说明](named-intermediates-implementation.md)，本轮数据见 [High 阶段记录](benchmarks/named-intermediates-high-expansion.md)，原规划见 [历史规划](named-intermediates-plan.md)。
 
 高优先级工具盘点、共享前置量方案与下一轮实施顺序见 [High 档性能候选](high-performance-candidates.md)。
 
@@ -8,7 +8,7 @@
 
 GeoGebra 的 auxiliary 是对象属性，并不限定数值类型。官方 [Algebra View 手册](https://geogebra.github.io/docs/manual/en/Algebra_View/)说明辅助对象默认不在代数视图展示，并可由用户打开“显示辅助对象”；[Apps API](https://geogebra.github.io/docs/reference/en/GeoGebra_Apps_API/)提供 `setAuxiliary`、`setVisible`、`setLabelVisible`。因此隐藏几何中间点、线、圆锥曲线等在界面机制上可行。它们仍是可由名称、API、原生输入及文件数据访问的构造对象；隐藏不是私有名字空间，也不能保证 GeoGebra 原生的所有工具忽略它们。CAS 侧栏不自动生成 CAS 输入行，仍须实机核对在 CAS 中显式引用的行为。
 
-本站目前的 `collapseInternalHelpers` 按内部标签收缩节点，与对象类型无关；`useDependencyGraph` 将收缩后的图送给关系发现，所以经过可靠识别的内部几何对象原则上不会作为发现候选。然而 `GeoGebraConstructionSource.read()` 先枚举并读取**全部**对象、提取点坐标，然后才收缩图；大量几何辅助对象仍增加原生 API、解析、保存文件及原生重算成本。仅凭 `setVisible(false)` 无法达到“几乎不影响其他功能”。目标应明确为：对本站的用户语义功能零可见污染、对 GeoGebra 原生构造保留依赖、整页交互与文件成本在可接受预算内。
+本站目前的 `collapseInternalHelpers` 按内部标签收缩节点，与对象类型无关；`useDependencyGraph` 将收缩后的图送给关系发现，所以经过可靠识别的内部几何对象不会作为发现候选。`GeoGebraConstructionSource.read()` 已先用 XML auxiliary 标记验证内部标签，跳过辅助点坐标读取，再收缩依赖图；大量几何辅助对象仍增加原生对象、解析、保存文件及原生重算成本。仅凭 `setVisible(false)` 无法达到“几乎不影响其他功能”。目标应明确为：对本站的用户语义功能零可见污染、对 GeoGebra 原生构造保留依赖、整页交互与文件成本在可接受预算内。
 
 已有命名试验还发现，`ThirdIntersection`、`CircularPolarPoint`、`CayleyBacharachPoint` 的命名版本把点输出变成向量。这表明允许几何绑定不是简单扩大类型白名单：GeoGebra 对命名赋值、`Element(Zip(...),1)` 和点／向量算式的类型推断可能不同。几何辅助物化前，必须先证明最终对象类型、坐标、定义状态、动态更新和退化恢复一致。
 
@@ -38,7 +38,7 @@ GeoGebra 的 auxiliary 是对象属性，并不限定数值类型。官方 [Alge
 - **统一身份识别**：不能仅凭 `ggbaux...` 前缀把任何对象当内部对象。内存中使用本次计划登记；导入后用组 ID、XML auxiliary 标记、原生类及依赖一致性重建。无法确认身份时保守保留并作为普通对象处理，防止用户同名对象被隐藏或误删。
 - **构造与发现**：在构造源读取前先按可信内部清单过滤发现候选，避免先为每个辅助点取坐标；仍需获取足够定义信息建立依赖并收缩链。为用户语义图保留“正式输入→输出”的边，关系发现、依赖评分、证明导出统一消费这个投影。内部几何节点既不计点数，也不进入线、圆、三角形或角度候选。
 - **事件、样式和交互**：内部几何 add/update/style 事件应批量处理，输出变化后触发一次发现刷新和保存。现有补全、样式控制、对象链接、选中状态与命令结果继续排除内部对象；图形隐藏不应被全局样式或“显示全部对象”逻辑意外重置。原生输入栏仍可引用它们，用户显式引用后生命周期必须保留整组。
-- **生命周期与文件**：`verifiedHelpers` 当前只接受 numeric/list/function，几何类型扩展时要用允许类的精确集合、XML auxiliary 与登记共同核验。删除孤儿按组逆依赖序进行；用户重命名或改写内部对象时放弃自动删除。撤销、重做、导出重开与旧非几何文件都应保持原来的依赖与隐藏状态。
+- **生命周期与文件**：`verifiedHelpers` 已接受经过允许类集合及 XML auxiliary 标记验证的点型对象；进一步扩展线、圆锥曲线或几何列表时仍需精确核验。删除孤儿按组逆依赖序进行；用户重命名或改写内部对象时放弃自动删除。撤销、重做、导出重开与旧非几何文件都应保持原来的依赖与隐藏状态。
 - **性能预算**：几何对象的原生重算、图形对象登记、关系源读取和 `.ggb` 大小可能高于数值对象。分别设置总节点数、几何节点数、最大列表长度与文件／刷新预算；以整页收益决定是否启用某重载，而非仅看命令创建耗时。
 
 ## 设置与兼容

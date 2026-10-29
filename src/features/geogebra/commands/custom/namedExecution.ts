@@ -29,8 +29,10 @@ export const executeNamedPlan = async (engine: GeoGebraEngine, plan: CompiledBin
     const result = await engine.executeCommand(command);
     resultLabels = result.labels;
     const after = await engine.callApi('getAllObjectNames', []) as string[];
-    const outputs = assignmentName ? after.includes(assignmentName) ? [assignmentName] : []
-      : result.labels.filter((name) => !existing.has(name) && !helperNames.has(name) && after.includes(name));
+    const generatedOutputs = result.labels.filter((name) => !existing.has(name) && !helperNames.has(name) && after.includes(name));
+    const outputs = assignmentName ? after.includes(assignmentName)
+      ? [assignmentName, ...generatedOutputs.filter((name) => name !== assignmentName)] : []
+      : generatedOutputs;
     if (!result.success || !outputs.length) {
       await cleanup();
       return { success: false, command, labels: [],

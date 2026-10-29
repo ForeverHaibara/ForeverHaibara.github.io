@@ -53,12 +53,19 @@ export const createBindingCapture = () => {
     const names = new Map([...nodes.values()].flatMap((node) => node.names.map((name) => [name, `ggbaux${groupId}n${name}`] as const)));
     const rename = (sourceText: string) => sourceText.replace(/\bv\d+\b/gu, (name) => names.get(name) ?? name);
     const helpers: CompiledBindingPlan['helpers'] = [];
+    // A multi-output bind prints one anonymous wrapper per output, but all
+    // outputs refer to the same allocated names in the named backend.
+    const emitted = new Set<string>();
     const rendered = new Map<string, string>();
     const render = (node: BindingNode): string => {
       const cached = rendered.get(node.token);
       if (cached !== undefined) return cached;
       node.names.forEach((name, i) => {
-        helpers.push({ name: names.get(name)!, expression: rename(expand(node.values[i], render)), kind: node.kinds![i] });
+        const helperName = names.get(name)!;
+        if (!emitted.has(helperName)) {
+          helpers.push({ name: helperName, expression: rename(expand(node.values[i], render)), kind: node.kinds![i] });
+          emitted.add(helperName);
+        }
       });
       const body = expand(node.body, render);
       rendered.set(node.token, body);

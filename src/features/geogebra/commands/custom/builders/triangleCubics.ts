@@ -207,40 +207,46 @@ export const qaCu1Coefficients = (s: string[], p: string[], t: string[]) => [0, 
   return [mul(s[i], t[i], p[k]), `-${mul(s[i], t[i], p[j])}`];
 });
 
-const qaCu1OrOrthopivotalCubic = (orthopivotal: boolean): ExpressionBuilder => (args, allocate) => {
+const orthopivotalCoefficients = (s: string[], p: string[]) => p.flatMap((v, i) => {
+  const j = (i + 1) % 3; const k = (i + 2) % 3;
+  return [`(${s[k]}*${v}-(${s[k]}+${s[i]}-${s[j]})*${p[k]})`,
+    `-(${s[j]}*${v}-(${s[i]}+${s[j]}-${s[k]})*${p[j]})`];
+});
+const qaParameters = (s: string[], p: string[]) => p.map((v, i) => {
+  const j = (i + 1) % 3; const k = (i + 2) % 3;
+  return `${s[i]}*(${v}+${p[j]})*(${v}+${p[k]})-${s[j]}*${v}*(${v}+${p[j]})-${s[k]}*${v}*(${v}+${p[k]})`;
+});
+const qaTerms = (cs: string[], xyz: string[]) => [0, 1, 2].flatMap((i) => {
+  const j = (i + 1) % 3; const k = (i + 2) % 3;
+  return [mul(cs[2*i], `${xyz[j]}^2`, xyz[k]), mul(cs[2*i+1], xyz[j], `${xyz[k]}^2`)];
+});
+const orthopivotalTerms = (cs: string[], xyz: string[]) => [0, 1, 2].flatMap((i) => {
+  const j = (i + 1) % 3; const k = (i + 2) % 3;
+  return [mul(cs[2*i], xyz[i], `${xyz[j]}^2`), mul(cs[2*i+1], xyz[i], `${xyz[k]}^2`)];
+});
+const triangleCubicFromData = (args: Parameters<ExpressionBuilder>[0], allocate: Parameters<ExpressionBuilder>[1],
+  makeData: (s: string[], p: string[]) => string, terms: (cs: string[], xyz: string[]) => string): string => {
   const vertices = expressions(args).slice(0, 3);
   const data = bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args))], allocate, (values) => {
     const s = values.slice(0, 3); const p = values.slice(3);
-    if (orthopivotal) {
-      const coefficients = p.flatMap((v, i) => {
-        const j = (i + 1) % 3; const k = (i + 2) % 3;
-        return [`(${s[k]}*${v}-(${s[k]}+${s[i]}-${s[j]})*${p[k]})`,
-          `-(${s[j]}*${v}-(${s[i]}+${s[j]}-${s[k]})*${p[j]})`];
-      });
-      return coefficientList(coefficients);
-    }
-    return bind(p.map((v, i) => {
-      const j = (i + 1) % 3; const k = (i + 2) % 3;
-      return `${s[i]}*(${v}+${p[j]})*(${v}+${p[k]})-${s[j]}*${v}*(${v}+${p[j]})-${s[k]}*${v}*(${v}+${p[k]})`;
-    }), allocate, (t) => {
-      return coefficientList(qaCu1Coefficients(s, p, t));
-    });
-  });
+    return makeData(s, p);
+  }, 'number');
   const polynomial = bind([data], allocate, ([list]) => {
     const cs = Array.from({ length: 6 }, (_, i) => `Element(${list},${i + 1})`);
     const xyz = barycentricVariables(vertices);
-    const terms = [0, 1, 2].flatMap((i) => {
-      const j = (i + 1) % 3; const k = (i + 2) % 3;
-      // Keep QA's cyclic yz*(r*y-q*z) pairs intact.
-      return orthopivotal ? [mul(cs[2*i], xyz[i], `${xyz[j]}^2`), mul(cs[2*i+1], xyz[i], `${xyz[k]}^2`)]
-        : [mul(cs[2*i], `${xyz[j]}^2`, xyz[k]), mul(cs[2*i+1], xyz[j], `${xyz[k]}^2`)];
-    });
-    return `If(${squaredNorm(cs)}!=0,${add(terms)},1+0*x+0*y)`;
-  });
+    return `If(${squaredNorm(cs)}!=0,${terms(cs, xyz)},1+0*x+0*y)`;
+  }, 'numberList');
   // An undefined function can still produce a defined GeoImplicitCurve in the
   // engine. Keep the all-zero guard on the final curve, outside every Zip.
-  const nonzero = bind([data], allocate, ([list]) => `${squaredNorm(Array.from({ length: 6 }, (_, i) => `Element(${list},${i + 1})`))}!=0`);
+  const nonzero = bind([data], allocate, ([list]) => `${squaredNorm(Array.from({ length: 6 }, (_, i) => `Element(${list},${i + 1})`))}!=0`, 'numberList');
   return `If(${expressions(args).map((p) => `IsDefined(${p})`).join('&&')}&&!AreCollinear(${vertices.join(',')})&&(${nonzero}),${polynomialCurve(polynomial)})`;
 };
 
-export const TRIANGLE_CURVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { qaCubic: qaCu1OrOrthopivotalCubic(false), orthopivotal: qaCu1OrOrthopivotalCubic(true) };
+const qaCubic: ExpressionBuilder = (args, allocate) => triangleCubicFromData(args, allocate,
+  (s, p) => bind(qaParameters(s, p), allocate, (t) => coefficientList(qaCu1Coefficients(s, p, t)), 'number'),
+  (cs, xyz) => add(qaTerms(cs, xyz)));
+const orthopivotalCubic: ExpressionBuilder = (args, allocate) => triangleCubicFromData(args, allocate,
+  (s, p) => coefficientList(orthopivotalCoefficients(s, p)),
+  (cs, xyz) => add(orthopivotalTerms(cs, xyz)));
+
+export const TRIANGLE_CURVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { qaCubic, orthopivotal: orthopivotalCubic };

@@ -7,6 +7,7 @@ const environment = (): CommandEnvironment => ({
     ...['A', 'B', 'C', 'D', 'E', 'G', 'H', 'P'].map((name) => [name, 'point'] as [string, GeometryType]),
     ...['f', 'g', 'h', 'j', 'k', 'l'].map((name) => [name, 'line'] as [string, GeometryType]),
     ['F', 'implicitCurve'], ['q1', 'conic'], ['q2', 'conic'], ['q3', 'conic'],
+    ['c1', 'circle'], ['c2', 'circle'],
   ]), macros: new Set(),
 });
 const id = '0123456789abcdef';
@@ -35,7 +36,8 @@ describe('one formula source with two binding lowerings', () => {
   });
 
   it('keeps unsupported and scope-sensitive tools anonymous', () => {
-    for (const source of ['QACu1Inv(A,B,C,P)', 'QLQu3(A,B,C,D)', 'Conic(A,f,g,h,j)', 'Polar(P,F)',
+    for (const source of ['QACu1Inv(A,B,C,P)', 'QACu1(A,B,C,D)', 'OrthopivotalCubic(A,B,C,P)',
+      'QLQu3(A,B,C,D)', 'Conic(A,f,g,h,j)', 'Polar(P,F)',
       'ThirdIntersection(F,A,B)', 'CayleyBacharachPoint(A,B,C,D,E,G,H,P)', 'CubicPencil(F,F,P)',
       'OrthicAxis(A,B,C)', 'CircularCubic(A,B,C,D,E,G,H)',
       'NodalCubic(A,B,C,D)', 'NodalCubic(A,B,C,D,l)', 'Zip(Pretangential(F,P,1),P,{A,B})']) {
@@ -74,5 +76,19 @@ describe('one formula source with two binding lowerings', () => {
     expect(high.helpers).toHaveLength(6);
     expect(high.helpers.every((helper) => helper.kind === 'point')).toBe(true);
     expect(high.output).not.toContain('Element(Zip(');
+  });
+
+  it('shares geometric prefix bindings across CommonTangents outputs only in High', () => {
+    for (const source of ['CommonTangents(c1,c2,1)', 'CommonTangents(c1,c2,1,1)']) {
+      const medium = compileStudioPlan(`out=${source}`, environment(), id);
+      const high = compileStudioPlan(`out=${source}`, environment(), id, 'high');
+      expect(medium.materialized).toBe(false);
+      expect(high.materialized).toBe(true);
+      expect(high.helpers).toHaveLength(19);
+      expect(high.helpers.filter((helper) => helper.expression === 'Center(c1)')).toHaveLength(1);
+      expect(high.helpers.filter((helper) => helper.expression === 'Radius(c1)')).toHaveLength(1);
+      expect(high.output).not.toContain('GGBBINDTOKEN');
+      expect(high.output.split('\n')).toHaveLength(source === 'CommonTangents(c1,c2,1,1)' ? 1 : 2);
+    }
   });
 });

@@ -20,12 +20,13 @@ export const commonTangentNormal = (dx: string, dy: string, difference: string, 
 
 const commonTangents: ExpressionBuilder = (args, allocate) => {
   const [c1, c2, s] = args.map((arg) => arg.expression);
-  const output = (sign: number) => bind([`Center(${c1})`, `Center(${c2})`, `Radius(${c1})`, `Radius(${c2})`], allocate, ([o1, o2, r1, r2]) =>
+  return bind([`Center(${c1})`, `Center(${c2})`, `Radius(${c1})`, `Radius(${c2})`], allocate, ([o1, o2, r1, r2]) =>
     bind([`x(${o2})-x(${o1})`, `y(${o2})-y(${o1})`, `${r1}-(${s})*${r2}`], allocate, ([dx, dy, difference]) =>
-      bind([`${dx}^2+${dy}^2`, `sqrt(${dx}^2+${dy}^2-${difference}^2)`], allocate, ([squared, height]) =>
-        bind(commonTangentNormal(dx, dy, difference, squared, height, sign), allocate, ([nx, ny]) =>
-          `If((${s})^2==1,${coefficientLine([nx, ny, `-${r1}-${nx}*x(${o1})-${ny}*y(${o1})`], allocate)})`))));
-  return independentOutputs([output(1), output(-1)], args[3]?.expression);
+      bind([`${dx}^2+${dy}^2`, `sqrt(${dx}^2+${dy}^2-${difference}^2)`], allocate, ([squared, height]) => {
+        const output = (sign: number) => bind(commonTangentNormal(dx, dy, difference, squared, height, sign), allocate, ([nx, ny]) =>
+          `If((${s})^2==1,${coefficientLine([nx, ny, `-${r1}-${nx}*x(${o1})-${ny}*y(${o1})`], allocate)})`, 'number');
+        return independentOutputs([output(1), output(-1)], args[3]?.expression);
+      }, 'number'), 'number'), ['point', 'point', 'number', 'number']);
 };
 
 export const CONIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { commonTangents, scimemi: scimemi(false), inverseScimemi: scimemi(true) };
