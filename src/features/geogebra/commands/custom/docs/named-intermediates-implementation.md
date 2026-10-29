@@ -1,6 +1,6 @@
 # 命名非几何中间量：首版实现
 
-日期：2026-10-29。实验与设计背景分别见 [性能记录](benchmarks/named-intermediates-performance.md) 和 [历史规划](named-intermediates-plan.md)。
+日期：2026-10-29。实验与设计背景分别见 [性能记录](benchmarks/named-intermediates-performance.md) 和 [历史规划](named-intermediates-plan.md)。未来允许几何辅助对象的调查与分阶段方案见 [几何扩展计划](named-intermediates-geometry-plan.md)。
 
 ## 用户行为
 
