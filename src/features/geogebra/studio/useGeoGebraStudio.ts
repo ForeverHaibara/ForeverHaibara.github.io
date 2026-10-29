@@ -29,7 +29,9 @@ const readSettings = (): StudioSettings => {
       ? Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, parsed.sidePanelWidth))
       : DEFAULT_STUDIO_SETTINGS.sidePanelWidth;
     const helperMode = ['low', 'medium', 'high'].includes(parsed.helperMode ?? '')
-      ? parsed.helperMode! : parsed.allowNonGeometricHelpers === true ? 'medium' : 'low';
+      ? parsed.helperMode! : typeof parsed.allowNonGeometricHelpers === 'boolean'
+        ? parsed.allowNonGeometricHelpers ? 'medium' : 'low'
+        : DEFAULT_STUDIO_SETTINGS.helperMode;
     const { allowNonGeometricHelpers: _legacy, ...stored } = parsed;
     return { ...DEFAULT_STUDIO_SETTINGS, ...stored, sidePanelWidth, helperMode };
   } catch {

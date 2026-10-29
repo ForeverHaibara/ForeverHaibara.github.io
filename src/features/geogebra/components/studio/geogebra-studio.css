@@ -704,12 +704,17 @@
 }
 
 .ggb-policy-option input {
-  margin-top: 3px;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  margin: 1px 0 0;
   accent-color: #2563eb;
 }
 
 .ggb-policy-option strong {
+  display: block;
   font-size: 11px;
+  line-height: 16px;
   font-weight: 600;
   color: #475569;
 }
