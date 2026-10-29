@@ -31,7 +31,9 @@ describe('Gibert catalogue IDs and execution boundary', () => {
 
   it('compiles every supported ID without exceeding the named execution budget', () => {
     for (const record of records) {
-      const result = plan(`"${record.id}"`);
+      let result: ReturnType<typeof plan>;
+      try { result = plan(`"${record.id}"`); }
+      catch (error) { throw new Error(`${record.id}: ${String(error)}`); }
       expect(result.materialized, record.id).toBe(true);
       expect(result.output.length + result.helpers.reduce((n,h)=>n+h.expression.length+h.name.length,0), record.id).toBeLessThan(500_000);
     }
@@ -89,7 +91,10 @@ describe('Gibert catalogue IDs and execution boundary', () => {
 type Recipe = {locals: string[][];coefficients:string[];monomials:number[][];terms:Array<[number,number,string]>};
 const recipes = recipesJson as unknown as Record<string,Recipe>;
 // Test-only scalar evaluator for generated arithmetic. Production never uses eval.
-const scalar = (text: string, values: Record<string,number>) => Number(Function(...Object.keys(values),`return ${text.replace(/\^/gu,'**')}`)(...Object.values(values)));
+const scalar = (text: string, values: Record<string,number>) => {
+  try { return Number(Function(...Object.keys(values),`return ${text.replace(/-\(([^()]*)\)\^(\d+)/gu,'-(($1)^$2)').replace(/\b([a-z]\w*)\^(\d+)\b/gu,'($1**$2)').replace(/\^/gu,'**')}`)(...Object.values(values))); }
+  catch (error) { throw new Error(`Cannot evaluate ${text}: ${String(error)}`); }
+};
 const reference = (id: string, side: number[], uvw: number[]) => {
   const sa = side.map((a,i) => (side[(i+1)%3]+side[(i+2)%3]-a)/2);
   const d = side.map((_,i) => side[(i+2)%3]*uvw[(i+1)%3]**2-side[(i+1)%3]*uvw[(i+2)%3]**2);
@@ -109,6 +114,30 @@ describe('offline curve coefficients versus independent barycentric definitions'
     expect(new Set(catalogue.map((r)=>r.id)).size).toBe(catalogue.length);
     expect(catalogue.find((r)=>r.id==='Q005')?.degree).toBe(3);
     expect(records.map((r)=>r.id)).toEqual(Object.keys(recipes));
+  });
+
+  it('preserves directly parsed source equations, including odd powers of side lengths', () => {
+    const vertices = [[0,0],[6,0],[1,4]];
+    const side = vertices.map((_,i) => { const b=vertices[(i+1)%3],c=vertices[(i+2)%3]; return (b[0]-c[0])**2+(b[1]-c[1])**2; });
+    const frame = vertices.flatMap((_,i) => { const b=vertices[(i+1)%3],c=vertices[(i+2)%3]; return [b[1]-c[1],c[0]-b[0],b[0]*c[1]-b[1]*c[0]]; });
+    for (const record of records.filter((r)=>Number(r.id.slice(1,4)) >= 111 && !/\bcyclic/u.test(r.equation))) {
+      const id = record.id;
+      const recipe = recipes[id];
+      const values: Record<string,number> = {a2:side[0],b2:side[1],c2:side[2],a:Math.sqrt(side[0]),b:Math.sqrt(side[1]),c:Math.sqrt(side[2]),sa:(side[1]+side[2]-side[0])/2,sb:(side[2]+side[0]-side[1])/2,sc:(side[0]+side[1]-side[2])/2};
+      for (const [name,text] of recipe.locals) values[name]=scalar(text,values);
+      recipe.coefficients.forEach((text,i)=>{ values[`k${i}`]=scalar(text,values); });
+      frame.forEach((value,i)=>{ values[`p${i}`]=value; });
+      const coefficients = recipe.terms.map(([, ,text])=>scalar(text,values));
+      for (const [x,y] of [[.2,.3],[2,1],[-1,3]]) {
+        const uvw=[0,1,2].map((i)=>frame[3*i]*x+frame[3*i+1]*y+frame[3*i+2]);
+        const expected=scalar(record.equation,{...values,u:uvw[0],v:uvw[1],w:uvw[2]});
+        const terms=recipe.terms.map(([i,j],k)=>coefficients[k]*x**i*y**j);
+        const actual=terms.reduce((a,b)=>a+b,0);
+        const scale=Math.max(1,Math.abs(expected),terms.reduce((a,b)=>a+Math.abs(b),0));
+        expect(Math.abs(actual-expected)/scale,id).toBeLessThan(5e-10);
+      }
+      if (['Q121','Q128'].includes(id)) expect(plan(`"${id}"`).helpers.some((helper)=>helper.expression.includes('sqrt(')),id).toBe(true);
+    }
   });
 
   it('reproduces the correct degree and world equation on general, reflected and transformed triangles', () => {

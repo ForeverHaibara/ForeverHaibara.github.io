@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from html.parser import HTMLParser
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
+from generate_related_curves import a as side_a, b as side_b, c as side_c
+from related_curve_points import centers
 
 
 class Page(HTMLParser):
@@ -24,16 +26,13 @@ class Page(HTMLParser):
 def convert(text):
     def side(match):
         exponent = int(match[2])
-        if exponent % 2: raise ValueError('odd side exponent')
-        return match[1] + '2' + (f'^{exponent // 2}' if exponent > 2 else '')
+        square, odd = divmod(exponent, 2)
+        factors = ([match[1]] if odd else []) + ([match[1] + '2' + (f'^{square}' if square > 1 else '')] if square else [])
+        return '*'.join(factors) or '1'
     text = re.sub(r'\b([abc])\^(\d+)', side, text)
-    return re.sub(r'\b([xyz])\b', lambda m: {'x':'u','y':'v','z':'w'}[m[1]], ' '.join(text.split()))
+    text = re.sub(r'(?<=[0-9a-z)])\s+(?=[0-9a-z(])', '*', text)
+    return re.sub(r'\b([xyz])\b', lambda m: {'x':'u','y':'v','z':'w'}[m[1]], ''.join(text.split()))
 
-
-def centers(a, b, c):
-    aa, bb, cc = a*a, b*b, c*c
-    sa = s.Rational(bb+cc-aa, 2); sb = s.Rational(cc+aa-bb, 2); sc = s.Rational(aa+bb-cc, 2)
-    return {1:(a,b,c), 2:(1,1,1), 3:(aa*sa,bb*sb,cc*sc), 4:(sb*sc,sc*sa,sa*sb), 6:(aa,bb,cc)}
 
 
 if __name__ == '__main__':
@@ -63,19 +62,19 @@ if __name__ == '__main__':
             content = ' '.join(html.text).split('Related Curves',1)[-1]
             # Only use points listed near the beginning, not incidental later mentions.
             prefix = content[:1600]
-            mentioned = [i for i in (1,2,3,4,6) if re.search(r'X\s*\(\s*'+str(i)+r'\s*\)',prefix)]
+            mentioned = [i for i in (1,2,3,4,5,6,7,8,20,59,80) if re.search(r'X\s*\(\s*'+str(i)+r'\s*\)',prefix)]
             checked = []
             for index in mentioned:
                 good = True
                 for a,b,c in [(13,14,15),(5,6,7)]:
                     xyz = centers(a,b,c)[index]
-                    value = f.subs({a2:a*a,b2:b*b,c2:c*c,u:xyz[0],v:xyz[1],w:xyz[2]})
+                    value = f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:xyz[0],v:xyz[1],w:xyz[2]})
                     if value != 0: good = False; break
                 if good: checked.append(index)
             sample_points = []
             if re.search(r'midpoints? of ABC', prefix, re.I):
                 for coords, sample_expression in [((0,1,1),'(B+C)/2'),((1,0,1),'(C+A)/2'),((1,1,0),'(A+B)/2')]:
-                    if all(f.subs({a2:a*a,b2:b*b,c2:c*c,u:coords[0],v:coords[1],w:coords[2]}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
+                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:coords[0],v:coords[1],w:coords[2]}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
                         sample_points.append(sample_expression)
             if not checked and not sample_points: raise ValueError('no source-listed simple center or midpoint verified')
             record = {'id':identifier,'name':catalogue[identifier]['name'],'degree':degree,

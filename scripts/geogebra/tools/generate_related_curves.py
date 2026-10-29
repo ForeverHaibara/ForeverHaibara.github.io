@@ -15,9 +15,10 @@ CUSTOM = ROOT / 'src/features/geogebra/commands/custom'
 SOURCE = CUSTOM / 'data/related-curves/curves.json'
 OUTPUT = CUSTOM / 'generated/relatedCurves.json'
 a2, b2, c2, u, v, w, x, y = s.symbols('a2 b2 c2 u v w x y')
+a, b, c = s.symbols('a b c')
 SYMBOLS = dict(zip(('a2', 'b2', 'c2', 'u', 'v', 'w'), (a2, b2, c2, u, v, w)))
-SYMBOLS.update(sa=(b2+c2-a2)/2, sb=(c2+a2-b2)/2, sc=(a2+b2-c2)/2)
-ROTATE = {a2: b2, b2: c2, c2: a2, u: v, v: w, w: u}
+SYMBOLS.update(a=a, b=b, c=c, sa=(b2+c2-a2)/2, sb=(c2+a2-b2)/2, sc=(a2+b2-c2)/2)
+ROTATE = {a2: b2, b2: c2, c2: a2, a: b, b: c, c: a, u: v, v: w, w: u}
 
 
 def parse_equation(text):

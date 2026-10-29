@@ -1,0 +1,294 @@
+[
+  {
+    "id": 114,
+    "selector": "114",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      511,
+      567
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 2983.2999999523163,
+    "expandedLength": 419292,
+    "objectCount": 63,
+    "updates": [
+      41.700000047683716,
+      28.59999990463257,
+      43.40000009536743,
+      33.10000014305115,
+      30.899999856948853,
+      31.100000143051147,
+      30.299999952316284,
+      31.40000009536743
+    ],
+    "updateMedian": 31.25000011920929,
+    "centers": [
+      {
+        "index": 3,
+        "residual": 2.5556937573200363e-17
+      },
+      {
+        "index": 4,
+        "residual": 0
+      }
+    ],
+    "samplePoints": 0,
+    "conditionalCenters": [],
+    "equilateralDefined": false,
+    "ggbBytes": 24531,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 121,
+    "selector": "121",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 812.6000001430511,
+    "expandedLength": 47561,
+    "objectCount": 61,
+    "updates": [
+      4.799999952316284,
+      5.699999809265137,
+      5.1000001430511475,
+      6.400000095367432,
+      4.700000047683716,
+      6.400000095367432,
+      4.200000047683716,
+      4.200000047683716
+    ],
+    "updateMedian": 4.950000047683716,
+    "centers": [
+      {
+        "index": 1,
+        "residual": -2.6575357115896238e-17
+      }
+    ],
+    "samplePoints": 0,
+    "conditionalCenters": [],
+    "equilateralDefined": false,
+    "ggbBytes": 8295,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 155,
+    "selector": "155",
+    "mode": "medium",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 716.2999999523163,
+    "expandedLength": 60179,
+    "objectCount": 61,
+    "updates": [
+      5,
+      6.799999952316284,
+      8.799999952316284,
+      8.100000143051147,
+      5.099999904632568,
+      4.400000095367432,
+      6.400000095367432,
+      4.799999952316284
+    ],
+    "updateMedian": 5.75,
+    "centers": [
+      {
+        "index": 80,
+        "residual": 2.2337988737865355e-17
+      }
+    ],
+    "samplePoints": 0,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 8527,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 171,
+    "selector": "171",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 6087.899999856949,
+    "expandedLength": 363195,
+    "objectCount": 123,
+    "updates": [
+      26.800000190734863,
+      30.299999952316284,
+      27.5,
+      44.5,
+      31.299999952316284,
+      35.700000047683716,
+      25.40000009536743,
+      23.600000143051147
+    ],
+    "updateMedian": 28.899999976158142,
+    "centers": [
+      {
+        "index": 1,
+        "residual": -4.597262652209814e-16
+      },
+      {
+        "index": 20,
+        "residual": 8.012372050994246e-15
+      }
+    ],
+    "samplePoints": 0,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 22651,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 200,
+    "selector": "200",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 2568,
+    "expandedLength": 80749,
+    "objectCount": 134,
+    "updates": [
+      13.700000047683716,
+      10.400000095367432,
+      16.100000143051147,
+      13.199999809265137,
+      9.400000095367432,
+      8.700000047683716,
+      13.200000047683716,
+      12.199999809265137
+    ],
+    "updateMedian": 12.699999809265137,
+    "centers": [],
+    "samplePoints": 1,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 11868,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 201,
+    "selector": "201",
+    "mode": "medium",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 1180,
+    "expandedLength": 104496,
+    "objectCount": 46,
+    "updates": [
+      17.700000047683716,
+      16.299999952316284,
+      11.799999952316284,
+      19,
+      13,
+      12.099999904632568,
+      17.5,
+      14.199999809265137
+    ],
+    "updateMedian": 15.24999988079071,
+    "centers": [],
+    "samplePoints": 1,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 10886,
+    "cleanup": true,
+    "success": true
+  },
+  {
+    "id": 120,
+    "selector": "120",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      1280,
+      720
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 758.9000000953674,
+    "expandedLength": 37373,
+    "objectCount": 38,
+    "updates": [
+      9.299999952316284,
+      11.400000095367432,
+      5.700000047683716,
+      6.5,
+      14.200000047683716,
+      9,
+      5.599999904632568,
+      9.400000095367432
+    ],
+    "updateMedian": 9.149999976158142,
+    "centers": [
+      {
+        "index": 59,
+        "residual": -6.259564020489537e-18
+      }
+    ],
+    "samplePoints": 0,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 7066,
+    "cleanup": true,
+    "success": true
+  }
+]

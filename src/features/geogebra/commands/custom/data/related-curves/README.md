@@ -14,10 +14,10 @@ snapshot hashes, HTTP metadata, automatic updates or separate version history.
   `samplePoints`, `conditionalCenters`, `infiniteCenters`, `unavailableCenters`.
   `centers` contains finite test candidates, not every center claimed by a page.
 
-All equations are homogeneous in barycentrics `u,v,w`, with `a2=BC²`, `b2=CA²`,
+All equations are homogeneous in barycentrics `u,v,w`, with `a=BC`, `b=CA`, `c=AB`, and `a2=BC²`, `b2=CA²`,
 `c2=AB²`, `sa=(b2+c2-a2)/2`, cyclically `sb,sc`. `cyclic(f)` simultaneously
-cycles `(a2,b2,c2;u,v,w)` three ways and sums; `cyclicProduct(f)` multiplies.
-Only integer arithmetic and nonnegative integer powers are supported initially.
+cycles `(a,b,c; a2,b2,c2; u,v,w)` three ways and sums; `cyclicProduct(f)` multiplies.
+The equation language supports integer arithmetic and nonnegative integer powers; runtime side lengths are the nonnegative square roots of the side squares.
 Trilinear, rational and nonhomogeneous sources require an explicit mathematical
 conversion before entry; never paste them as though they were barycentric.
 
@@ -49,4 +49,4 @@ Q000 and Q035 are unimplemented families; a recognized suffix does not imply
 that a variant has been implemented.
 Do not register each new record as a separate public command or alias.
 
-For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT files. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses two exact triangles for the recognized simple centers (including X(4)) and sample points; it also checks the Q034, Q074 and Q099 relationships symbolically. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.
+For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT files. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses two exact triangles for the recognized simple centers (including X(4), X(5), X(7), X(8), X(20), X(59) and X(80)) and sample points; it also checks the Q034, Q074 and Q099 relationships symbolically, and Q200/Q201 by exact substitution. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.

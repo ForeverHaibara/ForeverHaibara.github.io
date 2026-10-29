@@ -1,10 +1,15 @@
 """Check available simple catalogue points using exact barycentric arithmetic."""
 import json
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
+from generate_related_curves import a as side_a, b as side_b, c as side_c
+from related_curve_points import centers
 
 midpoints = {'Q036A': (0, 1, 1), 'Q036B': (1, 0, 1), 'Q036C': (1, 1, 0)}
 sample_coordinates = {'(B+C)/2': (0,1,1), '(C+A)/2': (1,0,1), '(A+B)/2': (1,1,0),
                       '-A+B+C': (-1,1,1), 'A-B+C': (1,-1,1), 'A+B-C': (1,1,-1)}
+
+excenter_a = '((-Distance(B,C))*A+Distance(C,A)*B+Distance(A,B)*C)/(-Distance(B,C)+Distance(C,A)+Distance(A,B))'
+midpoint_incenter_excenter_a = f'(TriangleCenter(A,B,C,1)+{excenter_a})/2'
 
 records = json.loads(SOURCE.read_text(encoding='utf8'))
 
@@ -13,16 +18,17 @@ for record in records:
     count = 0
     for a, b, c in [(13, 14, 15), (5, 6, 7)]:
         aa, bb, cc = a*a, b*b, c*c
-        sa = s.Rational(bb + cc - aa, 2)
-        sb = s.Rational(cc + aa - bb, 2)
-        sc = s.Rational(aa + bb - cc, 2)
-        points = {1: (a, b, c), 2: (1, 1, 1), 3: (aa*sa, bb*sb, cc*sc), 4: (sb*sc, sc*sa, sa*sb), 6: (aa, bb, cc)}
+        points = centers(a, b, c)
+        ex = (-a, b, c)
+        inc = (a, b, c)
+        halfway = tuple(inc[i]*sum(ex) + ex[i]*sum(inc) for i in range(3))
+        samples = sample_coordinates | {excenter_a: ex, midpoint_incenter_excenter_a: halfway}
         candidates = [(f'X({index})', points[index]) for index in record['centers'] if index in points]
-        if record['id'] in midpoints and midpoints[record['id']] not in [sample_coordinates.get(point) for point in record.get('samplePoints', [])]:
+        if record['id'] in midpoints and midpoints[record['id']] not in [samples.get(point) for point in record.get('samplePoints', [])]:
             candidates.append(('opposite midpoint', midpoints[record['id']]))
-        candidates.extend((point, sample_coordinates[point]) for point in record.get('samplePoints', []) if point in sample_coordinates)
+        candidates.extend((point, samples[point]) for point in record.get('samplePoints', []) if point in samples)
         for label, coordinates in candidates:
-            value = equation.subs({a2: aa, b2: bb, c2: cc, u: coordinates[0], v: coordinates[1], w: coordinates[2]})
+            value = equation.subs({side_a: a, side_b: b, side_c: c, a2: aa, b2: bb, c2: cc, u: coordinates[0], v: coordinates[1], w: coordinates[2]})
             if value != 0:
                 raise SystemExit(f"{record['id']} {label} on {a},{b},{c}: residual {value}")
             count += 1
@@ -41,3 +47,16 @@ sa, sb, sc = (b2+c2-a2)/2, (c2+a2-b2)/2, (a2+b2-c2)/2
 polar = a2*sa*s.diff(q034,u) + b2*sb*s.diff(q034,v) + c2*sc*s.diff(q034,w)
 assert s.expand(equation_for('Q099') - polar) == 0, 'Q099 must be the polar of O in Q034'
 print('Q034/Q074/Q099: derived relationships checked symbolically')
+
+# Q201 is the homothetic image of Q200 about the incenter with ratio 1/2.
+for side_a_value, side_b_value, side_c_value in [(13, 14, 15), (5, 6, 7)]:
+    values = {side_a:side_a_value, side_b:side_b_value, side_c:side_c_value,
+              a2:side_a_value**2, b2:side_b_value**2, c2:side_c_value**2}
+    side_sum = side_a_value + side_b_value + side_c_value
+    coord_sum = u+v+w
+    pullback = equation_for('Q200').subs(values).subs(
+        {u:2*side_sum*u-side_a_value*coord_sum, v:2*side_sum*v-side_b_value*coord_sum,
+         w:2*side_sum*w-side_c_value*coord_sum}, simultaneous=True)
+    ratio = s.cancel(pullback / equation_for('Q201').subs(values))
+    assert ratio != 0 and not ratio.free_symbols, 'Q200/Q201 homothety mismatch'
+print('Q200/Q201: homothety checked on two exact triangles')

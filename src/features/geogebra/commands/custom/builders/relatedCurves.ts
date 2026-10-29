@@ -45,6 +45,7 @@ export const gibertCurve: ExpressionBuilder = (args, allocate) => {
   });
   return bind(triangleSideSquares(vertices), allocate, (sides) => {
     const bindings = new Map(['a2', 'b2', 'c2'].map((name, i) => [name, sides[i]]));
+    ['a', 'b', 'c'].forEach((name, i) => bindings.set(name, `sqrt(${sides[i]})`));
     const locals = (index: number): string => {
       if (index < recipe.locals.length) {
         const [name, value] = recipe.locals[index];
