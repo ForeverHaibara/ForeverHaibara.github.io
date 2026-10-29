@@ -9,6 +9,7 @@ import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
 import { verifyCubicMisc } from './geogebra-cubic-misc-smoke';
 import { verifyIsocubics } from './geogebra-isocubics-smoke';
 import { verifyQaPerformance } from './geogebra-qa-performance';
+import { verifyMaterializationPerformance } from './geogebra-materialization-performance';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -76,6 +77,11 @@ button.onclick = async () => {
     }
     if (new URLSearchParams(window.location.search).get('suite') === 'qa-performance') {
       await verifyQaPerformance(engine, report);
+      report('COMPLETE');
+      return;
+    }
+    if (new URLSearchParams(window.location.search).get('suite') === 'materialization') {
+      await verifyMaterializationPerformance(engine, report);
       report('COMPLETE');
       return;
     }
