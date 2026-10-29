@@ -25,7 +25,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 | `PivotalCubic`、`NonpivotalCubic`、`CubicPencil` | 非几何，Medium 候选 | 实验后回退 | 朴素命名创建明显变慢。 |
 | `ThirdIntersection`、`CircularPolarPoint`、`CayleyBacharachPoint` | 涉及几何值，High 候选 | 实验后回退 | 曾出现正式输出点→向量；`CircularPolarPoint` 还出现定义状态变化。 |
 | 三次曲线 `Polar(P,F)` | 非几何，Medium 候选 | 实验后回退 | 退化样本执行结果与匿名路径不同。 |
-| `QLQu3` | 含点，High 候选 | 未启用，基线超时 | 匿名基线两次长时间无响应，尚无可信的相对收益数据。 |
+| `QLQu3(A,B,C,D)` | 中心与四个归一化向量加数值，High | 已启用 High | Low 匿名基线反复超时；High 在一般位置约 5.4 s 创建原生四次曲线、动态更新约 50 ms，文件重开与辅助清理通过。Medium 无法物化整条绑定链。 |
 
 未列出的工具默认匿名；是否支持命名必须按 builder 和重载逐项验证。单行且局部值只用一次的简单构造优先级低。
 
@@ -50,7 +50,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 | 顺序 | 待探究工具／共性工作 | 先解决的问题与验收点 |
 |---|---|---|
 | P0 | 无编号 `Pretangential(F,P)`、`QL2P1/2/3` 双输出 | 用共享前置绑定减少重复；编号与无编号分别测。`QL2P*` 涉及点型值，先核对点／向量类型和两输出顺序。 |
-| P0 | `QLQu3`、`QLTf1` 的高次曲线分支 | 为旧路径设置可中断的独立基线；比较仅命名真正复用节点、逐层命名和匿名。按输入类型与 `If` 分支单独测，不能从超时推断加速。 |
+| P0 | `QLQu3` 的后续优化、`QLTf1` 的高次曲线分支 | `QLQu3` 已有可用的 High 路径；继续测更多退化输入、整页交互和 55 个辅助对象的文件成本，再比较只命名复用节点的方案。`QLTf1` 按输入类型与 `If` 分支单独测。 |
 | P1 | 七点 `CircularCubic`、`CayleyBacharachPoint` | 检查多个行列式／系数是否可共享；后者先解决点→向量类型反例。 |
 | P1 | `CubicAsymptotes`、`CubicInvolution` | 共享多值抽取与前置量；验证几何列表元素类型及 `KeepIf` 局部作用域。 |
 | P2 | `QACu1`、`OrthopivotalCubic`、`QACu1Inv`、`Pivotal*` | 只在有选择性物化机制后重测单个复用系数或守卫，避免重演逐层命名退步。 |

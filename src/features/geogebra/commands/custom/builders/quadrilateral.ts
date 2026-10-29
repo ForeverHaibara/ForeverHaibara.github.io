@@ -134,6 +134,8 @@ const qlCu1FromPointPairAndLine: ExpressionBuilder = (args, allocate) => {
 
 const qlQu3FromFourVertices: ExpressionBuilder = (args, allocate) => {
   const vs = args.slice(0, 4).map((arg) => arg.expression);
+  // GeoGebra stores the arithmetic mean as a vector; the four normalized
+  // differences are vectors too. Their coordinates remain valid x/y inputs.
   const data = bind([`${add(vs)}/4`], allocate, ([origin]) =>
     bind([`sqrt((${vs.map((p) => `Distance(${p},${origin})^2`).join('+')})/4)`], allocate, ([scale]) =>
       bind(vs.map((p) => `((${p})-${origin})/${scale}`), allocate, (normalized) =>
@@ -147,18 +149,18 @@ const qlQu3FromFourVertices: ExpressionBuilder = (args, allocate) => {
               return bind(data.flat(), allocate, (cs) =>
                 bind(coaxalQuarticCoefficients([cs.slice(0, 6), cs.slice(6, 12), cs.slice(12, 18)]), allocate, (coefficients) => {
                   return coefficientList([...coefficients, `x(${origin})`, `y(${origin})`, scale]);
-                }));
-            });
-          });
-        }))));
+                }, 'number'), 'number');
+            }, 'number');
+          }, 'number');
+        }, 'number'), 'vector'), 'number'), 'vector');
   // One function binding outside the entire numerical pipeline. Returning a
   // function through every nested Zip still triggers expensive symbolic copies.
-  const nonzero = bind([data], allocate, ([list]) => `${add(Array.from({ length: 9 }, (_, i) => `Element(${list},${i + 1})^2`))}!=0`);
+  const nonzero = bind([data], allocate, ([list]) => `${add(Array.from({ length: 9 }, (_, i) => `Element(${list},${i + 1})^2`))}!=0`, 'numberList');
   const polynomial = bind([data], allocate, ([list]) => {
     const values = Array.from({ length: 12 }, (_, i) => `Element(${list},${i + 1})`);
     const cs = values.slice(0, 9);
     return `If(${add(cs.map((v) => `${v}^2`))}!=0,${radialQuarticExpression(cs, `((x-${values[9]})/${values[11]})`, `((y-${values[10]})/${values[11]})`)},1+0*x+0*y)`;
-  });
+  }, 'numberList');
   return `If(${vs.map((p) => `IsDefined(${p})`).join('&&')}&&(${nonzero}),${polynomialCurve(polynomial)})`;
 };
 

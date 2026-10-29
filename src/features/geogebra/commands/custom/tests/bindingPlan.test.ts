@@ -91,4 +91,14 @@ describe('one formula source with two binding lowerings', () => {
       expect(high.output.split('\n')).toHaveLength(source === 'CommonTangents(c1,c2,1,1)' ? 1 : 2);
     }
   });
+
+  it('requires High for the vector and numeric QLQu3 binding chain', () => {
+    const source = 'out=QLQu3(A,B,C,D)';
+    expect(compileStudioPlan(source, environment(), id).materialized).toBe(false);
+    const high = compileStudioPlan(source, environment(), id, 'high');
+    expect(high.materialized).toBe(true);
+    expect(high.helpers).toHaveLength(55);
+    expect(high.helpers.filter((helper) => helper.kind === 'vector')).toHaveLength(5);
+    expect(high.output).not.toContain('Element(Zip(');
+  });
 });

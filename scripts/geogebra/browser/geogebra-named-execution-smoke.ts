@@ -30,6 +30,7 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     commonTangents: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1,1)', move: () => api('setValue', 'shift', 1) },
     commonTangentsMulti: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1)', move: () => api('setValue', 'shift', 1) },
     commonTangentsCrossed: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,-1)', move: () => api('setValue', 'shift', 1) },
+    qlQuartic: { setup: 'shift=0\nA=(0,0)\nB=(4,0)\nC=(3,3)\nD=(-1,2+shift)', command: 'out=QLQu3(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
     hessian: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=HessianCubic(F)', move: () => api('setValue', 'shift', 0.1) },
     jacobian: { setup: 'shift=0\nq1=Conic({1,2,-1,0,shift,0})\nq2=Conic({2,1,-1,1,0,0})\nq3=Conic({1,-1,-1,0,1,0})', command: 'out=JacobianCubic(q1,q2,q3)', move: () => api('setValue', 'shift', 0.1) },
   };
@@ -46,7 +47,7 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const setup = await engine.executeCommand(selected.setup);
     if (!setup.success) throw new Error(`Setup failed: ${setup.error}`);
     const started = performance.now();
-    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed'].includes(tool) ? 'high' : 'medium' : 'low' });
+    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed', 'qlQuartic'].includes(tool) ? 'high' : 'medium' : 'low' });
     const create = performance.now() - started;
     if (!result.success) throw new Error(`${named ? 'named' : 'anonymous'} failed: ${result.error}`);
     if (tool === 'commonTangentsMulti' && (result.labels.length !== 2 || !result.labels.includes('out')))
@@ -81,6 +82,34 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     report(`${named ? 'NAMED' : 'BASE'} update ${(performance.now() - updateStarted).toFixed(1)} ms; type ${after.type}; defined ${after.defined}; changed ${before.value !== after.value}`);
     return { before, after, outputBefore, outputAfter, helpers: helpers.length, labels: result.labels };
   };
+  if (tool === 'qlQuartic') {
+    const named = await run(true);
+    if (named.before.type !== 'implicitpoly' || !named.before.defined || !named.after.defined
+      || named.before.value === named.after.value || !/[xy]⁴/u.test(named.before.value))
+      throw new Error('High quartic did not produce a dynamic degree-four implicit curve');
+    const names = await api('getAllObjectNames') as string[];
+    const helpers = names.filter(isInternalHelperName);
+    for (const helper of helpers) {
+      if (await api('getVisible', helper)) throw new Error(`${helper} is visible`);
+      if (!/<auxiliary\s+val="true"\s*\/>/u.test(String(await api('getXML', helper))))
+        throw new Error(`${helper} is not auxiliary`);
+    }
+    const graph = collapseInternalHelpers(buildDependencyGraph((await new GeoGebraConstructionSource(engine).read()).objects));
+    if (graph.nodes.some((node) => isInternalHelperName(node.name)) || !graph.nodes.some((node) => node.name === 'out'))
+      throw new Error('High quartic leaked into relation graph');
+    const exported = await engine.exportGgb();
+    await engine.importGgb(new File([exported], 'ql-quartic-high.ggb'));
+    if (!await api('isDefined', 'out') || (await api('getAllObjectNames') as string[]).filter(isInternalHelperName).length !== named.helpers)
+      throw new Error('High quartic failed to reopen');
+    const lifecycle = new InternalHelperLifecycle(engine);
+    await api('deleteObject', 'out');
+    await lifecycle.reconcile();
+    lifecycle.dispose();
+    if ((await api('getAllObjectNames') as string[]).some(isInternalHelperName)) throw new Error('High quartic helpers were not collected');
+    report(`High quartic equation: ${named.after.value.slice(0, 180)}`);
+    report('PASS qlQuartic High-only candidate');
+    return;
+  }
   const baseline = await run(false);
   const named = await run(true);
   if (baseline.before.type !== named.before.type || baseline.after.type !== named.after.type
