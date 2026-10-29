@@ -27,7 +27,7 @@ test points, then run from the repository root:
 ```text
 python scripts/geogebra/tools/generate_related_curves.py
 python scripts/geogebra/tools/generate_related_curves.py --check
-npx vitest run src/features/geogebra/commands/custom/tests/relatedCurves.test.ts
+npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurves.test.ts
 ```
 
 Python with SymPy is an offline authoring dependency, not a website dependency.

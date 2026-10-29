@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { compileStudioCommand, containsStudioCall } from '../commandCompiler';
-import { resolveToolAliases, studioToolCatalog, studioToolLibrary, studioTools } from '../toolLibrary';
-import { studioCompletionRegistry } from '../../completion/studioCompletionRegistry';
-import { getCompletionContext } from '../../completion/completionContext';
-import type { CommandEnvironment, ToolDefinition, ToolLibrary } from '../types';
+import { compileStudioCommand, containsStudioCall } from '../../commandCompiler';
+import { resolveToolAliases, studioToolCatalog, studioToolLibrary, studioTools } from '../../toolLibrary';
+import { studioCompletionRegistry } from '../../../completion/studioCompletionRegistry';
+import { getCompletionContext } from '../../../completion/completionContext';
+import type { CommandEnvironment, ToolDefinition, ToolLibrary } from '../../types';
 
 const fixture = (): ToolLibrary => ({
   schemaVersion: 1, id: 'test.aliases', version: '0.1.0', tools: [{

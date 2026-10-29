@@ -31,7 +31,9 @@ Implementation files are grouped by responsibility:
 | `builders/quadrangle.ts`, `builders/quadrilateral.ts` | Unordered four-point and ordered four-line geometry respectively. |
 | `builders/curves.ts` | Conjugation of conics and bounded-degree polynomial curves; shared coefficient encoding lives in `algebra/polynomial.ts`. |
 | `algebra/` | Homogeneous coordinates, matrices, anonymous bindings and sparse polynomials. |
-| `tests/` | Compiler, catalog, alias, type-contract and algebra tests. |
+| `tests/compiler/` | Command parsing, dispatch, binding, aliases and named execution. |
+| `tests/contracts/` | Catalog overloads, native command compatibility and type boundaries. |
+| `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
 
 ## Manage the library
@@ -474,7 +476,7 @@ classes and helper counts, conjugation identities, conic limits, supporting
 lines, dragging and export/reopen. Add `&tool=CoTf3` (or another exact tool name)
 to run just its catalog overloads. The browser suite is separate from Vitest;
 current completion and any native-engine limitations are recorded in the PLAN.
-`tests/constructionContracts.test.ts` checks expansion budgets, dispatch, independent outputs,
+`tests/contracts/constructionContracts.test.ts` checks expansion budgets, dispatch, independent outputs,
 Scimemi similarities, complex quartic coefficients and independent circle-pencil
 and QA-cubic identities, including a homogeneous infinite-diagonal limit.
 
@@ -484,7 +486,7 @@ vertical secants, inflections, noncubic rejection (including encoding collisions
 dynamic degree changes, native triangle cubics, pivotal cubics, nine-point cubics,
 coefficient updates and export/reopen. This is separate from the constructions suite.
 
-`tests/nativeCommands.test.ts` checks the final expressions for every catalog overload
+`tests/contracts/nativeCommands.test.ts` checks the final expressions for every catalog overload
 against the saved native command index, with explicit scalar/coordinate functions
 and generated anonymous local calls. It covers builders, composed dependencies,
 independent outputs and input type families. This catches missing native names;

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { compileStudioCommand } from '../commandCompiler';
-import { outerCalls } from '../commandSyntax';
-import { barycentricVariables, translatedConicCoefficients } from '../algebra/homogeneous';
-import { circlePairRow, coaxalQuarticCoefficients, polynomialDeterminant, polynomialExpression, radialQuarticExpression } from '../algebra/polynomial';
-import type { GeometryType } from '../types';
-import { conjugateImagePolynomial } from '../builders/curves';
+import { compileStudioCommand } from '../../commandCompiler';
+import { outerCalls } from '../../commandSyntax';
+import { barycentricVariables, translatedConicCoefficients } from '../../algebra/homogeneous';
+import { circlePairRow, coaxalQuarticCoefficients, polynomialDeterminant, polynomialExpression, radialQuarticExpression } from '../../algebra/polynomial';
+import type { GeometryType } from '../../types';
+import { conjugateImagePolynomial } from '../../builders/curves';
 
 const scalar = (source: string, x = 0, y = 0) => Number(Function('x', 'y', `return ${source.replace(/\^/gu, '**')}`)(x, y));
 const strings = (xs: number[]) => xs.map((x) => `(${x})`);

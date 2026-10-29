@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS, CUBIC_COEFFICIENT_INDICES } from '../builders/cubics';
-import { isoconjugateWeights, crosspointWeights, cevapointWeights, cevaConjugateWeights, crossConjugateWeights, cyclocevianWeights, antigonalWeights, orthotransversalCoordinates } from '../builders/triangle';
-import { centeredConicShape } from '../builders/quadrangle';
-import { commonTangentNormal } from '../builders/conics';
+import { cubicPolarConic, cubicPolarLine, cubicRestriction, CUBIC_MONOMIALS, CUBIC_COEFFICIENT_INDICES } from '../../builders/cubics';
+import { isoconjugateWeights, crosspointWeights, cevapointWeights, cevaConjugateWeights, crossConjugateWeights, cyclocevianWeights, antigonalWeights, orthotransversalCoordinates } from '../../builders/triangle';
+import { centeredConicShape } from '../../builders/quadrangle';
+import { commonTangentNormal } from '../../builders/conics';
 
 // Evaluate the scalar algebra emitted by the builders. No geometry engine is
 // simulated: native construction/API behavior belongs to the browser suite.

@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import recipesJson from '../generated/relatedCurves.json';
-import records from '../data/related-curves/curves.json';
-import catalogue from '../data/related-curves/catalogue.json';
-import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
-import { createBindingCapture } from '../bindingPlan';
-import { studioTools } from '../toolLibrary';
-import { normalizeGibertId } from '../builders/relatedCurves';
-import { executeCommandPipeline } from '../../commandPipeline';
-import type { CommandEnvironment, ToolDefinition } from '../types';
-import type { GeoGebraEngine } from '../../../types';
+import recipesJson from '../../generated/relatedCurves.json';
+import records from '../../data/related-curves/curves.json';
+import catalogue from '../../data/related-curves/catalogue.json';
+import { compileStudioCommand, compileStudioPlan } from '../../commandCompiler';
+import { createBindingCapture } from '../../bindingPlan';
+import { studioTools } from '../../toolLibrary';
+import { normalizeGibertId } from '../../builders/relatedCurves';
+import { executeCommandPipeline } from '../../../commandPipeline';
+import type { CommandEnvironment, ToolDefinition } from '../../types';
+import type { GeoGebraEngine } from '../../../../types';
 
 const scope = (): CommandEnvironment => ({objects: new Map([['A','point'],['B','point'],['C','point'],['n','number']]), macros: new Set()});
 const plan = (id: string, mode: 'medium' | 'high' = 'medium') => compileStudioPlan(`out=GibertCurve(A,B,C,${id})`,scope(),'0123456789abcdef',mode);

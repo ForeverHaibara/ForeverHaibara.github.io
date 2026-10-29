@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { GeoGebraEngine } from '../../../types';
-import { executeCommandPipeline } from '../../commandPipeline';
-import { isInternalHelperName } from '../internalHelpers';
-import { verifiedHelpers } from '../helperLifecycle';
+import type { GeoGebraEngine } from '../../../../types';
+import { executeCommandPipeline } from '../../../commandPipeline';
+import { isInternalHelperName } from '../../internalHelpers';
+import { verifiedHelpers } from '../../helperLifecycle';
 
 const makeEngine = (createOutput: boolean) => {
   const objects = new Map<string, string>(['f', 'g', 'h', 'j', 'k'].map((name) => [name, 'line']));

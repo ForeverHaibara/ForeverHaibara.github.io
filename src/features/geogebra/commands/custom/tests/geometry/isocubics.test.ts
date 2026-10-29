@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaCu1InverseEquation, qaCu1InverseCoefficients, qaCu1InverseBarycentricCoefficients, qaCu1InverseSevenTermEquation } from '../builders/triangleCubics';
+import { apolarEquation, conicoPivotalEquation, nonpivotalEquation, pivotalEquation, qaCu1InverseEquation, qaCu1InverseCoefficients, qaCu1InverseBarycentricCoefficients, qaCu1InverseSevenTermEquation } from '../../builders/triangleCubics';
 
 const evaluate = (source: string, [x, y, z]: number[]) => Number(Function('x', 'y', 'z', `return ${source.replace(/\^/gu, '**')}`)(x, y, z));
 const numbers = (values: readonly number[]) => values.map(String);

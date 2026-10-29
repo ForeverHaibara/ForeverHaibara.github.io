@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
-import type { CommandEnvironment, GeometryType } from '../types';
+import { compileStudioCommand, compileStudioPlan } from '../../commandCompiler';
+import type { CommandEnvironment, GeometryType } from '../../types';
 
 const environment = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([

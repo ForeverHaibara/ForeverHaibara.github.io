@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { GEOGEBRA_COMMAND_NAMES } from '../../completion/geogebraCommandNames';
-import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
-import { outerCalls } from '../commandSyntax';
-import { studioToolLibrary } from '../toolLibrary';
-import type { CommandEnvironment, GeometryType, ParameterType } from '../types';
+import { GEOGEBRA_COMMAND_NAMES } from '../../../completion/geogebraCommandNames';
+import { compileStudioCommand, compileStudioPlan } from '../../commandCompiler';
+import { outerCalls } from '../../commandSyntax';
+import { studioToolLibrary } from '../../toolLibrary';
+import type { CommandEnvironment, GeometryType, ParameterType } from '../../types';
 
 // The manual's command index excludes scalar parser functions and coordinates.
 // This checks names only; overload availability still needs native-engine checks.

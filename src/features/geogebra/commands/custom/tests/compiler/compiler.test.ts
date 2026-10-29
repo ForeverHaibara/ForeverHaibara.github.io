@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { EngineEventListener, GeoGebraEngine } from '../../../types';
-import { executeCommandPipeline } from '../../commandPipeline';
-import { getCompletionContext } from '../../completion/completionContext';
-import { studioCompletionRegistry } from '../../completion/studioCompletionRegistry';
-import { compileStudioCommand, compileStudioPlan, containsStudioCall } from '../commandCompiler';
-import { normalizeGeometryType, readFileTools } from '../commandEnvironment';
-import { outerCalls, splitTopLevel } from '../commandSyntax';
-import { selectOverload, studioToolLibrary, studioTools, validateToolLibrary } from '../toolLibrary';
-import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload } from '../types';
+import type { EngineEventListener, GeoGebraEngine } from '../../../../types';
+import { executeCommandPipeline } from '../../../commandPipeline';
+import { getCompletionContext } from '../../../completion/completionContext';
+import { studioCompletionRegistry } from '../../../completion/studioCompletionRegistry';
+import { compileStudioCommand, compileStudioPlan, containsStudioCall } from '../../commandCompiler';
+import { normalizeGeometryType, readFileTools } from '../../commandEnvironment';
+import { outerCalls, splitTopLevel } from '../../commandSyntax';
+import { selectOverload, studioToolLibrary, studioTools, validateToolLibrary } from '../../toolLibrary';
+import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload } from '../../types';
 
 const environment = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([['A', 'point'], ['B', 'point'], ['C', 'point'], ['D', 'point'], ['E', 'point'], ['P', 'point'], ['l', 'line'], ['m', 'line'], ['n', 'line'], ['o', 'line'], ['r', 'line'], ['s', 'segment'], ['t', 'ray'], ['circle', 'circle']]),

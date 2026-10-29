@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
-import { studioToolLibrary, selectOverload } from '../toolLibrary';
-import { scimemiCoordinates } from '../builders/conics';
-import { qaCu1Coefficients } from '../builders/triangleCubics';
-import { complexBasisCoefficient, QUARTIC_MONOMIALS } from '../builders/curves';
-import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../algebra/polynomial';
-import type { CommandEnvironment, GeometryType, ParameterType } from '../types';
+import { compileStudioCommand, compileStudioPlan } from '../../commandCompiler';
+import { studioToolLibrary, selectOverload } from '../../toolLibrary';
+import { scimemiCoordinates } from '../../builders/conics';
+import { qaCu1Coefficients } from '../../builders/triangleCubics';
+import { complexBasisCoefficient, QUARTIC_MONOMIALS } from '../../builders/curves';
+import { circlePairRow, polynomialDeterminant, polynomialExpression } from '../../algebra/polynomial';
+import type { CommandEnvironment, GeometryType, ParameterType } from '../../types';
 
 const environment = (): CommandEnvironment => ({ objects: new Map<string, GeometryType>([
   ...['A', 'B', 'C', 'D', 'P'].map((p) => [p, 'point'] as [string, GeometryType]),

@@ -525,7 +525,7 @@ QLCi3 与 QLP4 的依赖选一条单向路线；其余先建外心块，再派�
 - 根目录只保留编译器、语法／环境、类型、工具库、JSON 目录及 README。构造器按数学职责进入 `builders/`，表达式代数进入 `algebra/`，测试进入 `tests/`，本文移至 `docs/implementation-plan.md`。三角形构造、圆锥变换、无序四点形、三角形曲线各自归位；不再以开发阶段命名源文件或测试文件。
 - 原生验收脚本也改用职责名称：`geogebra-basic-geometry-smoke.ts`、`geogebra-constructions-smoke.ts`、`geogebra-algebraic-geometry-smoke.ts`。对应 suite 参数为 `basic`、`constructions`、`algebraic`；`radical`、`cubic` 专项保留。公开几何命令的名称与签名保留。
 - `library.json` 只保存 **135 个规范定义及 2 个别名**，仍暴露 **137 个可调用名称**。别名集中在规范定义的 aliases 数组；规范目录由 `studioToolCatalog` 导出，解析后的 `studioToolLibrary`／`studioTools` 供编译、补全、拼写和全库检查共用。共享 overload 对象也让既有循环检测自然覆盖别名。
-- 新增 `tests/aliases.test.ts`：多别名及多重载、与规范名展开一致、非法／自引用／大小写重名、嵌套和独立输出、通过别名形成的组合循环、文件宏优先及补全描述与签名。数学构造公式在此次整理中没有改变，未重跑原生几何验收；上一次实机通过与待验收范围仍按下节记录。
+- 新增 `tests/compiler/aliases.test.ts`：多别名及多重载、与规范名展开一致、非法／自引用／大小写重名、嵌套和独立输出、通过别名形成的组合循环、文件宏优先及补全描述与签名。数学构造公式在此次整理中没有改变，未重跑原生几何验收；上一次实机通过与待验收范围仍按下节记录。
 - 整理后自动检查：Vitest **11 个文件、114 项通过**，`npx tsc --noEmit` 与 `npm run build` 均通过；构建仍有既有 Gradio Node 模块外置及大包提示。构造契约测试现遍历完整工具库及其别名，不再固定开发阶段的工具清单。
 - 由于以上开发改动均未上传 GitHub，工具库统一回退并保持 **0.1.0**，schemaVersion 仍为 1；既往开发阶段的数量与验收记录保留，取消其递增发行版本的表述。后续真实发布后再按接口及格式变化递增版本。
 
@@ -550,7 +550,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 
 实机确认当前引擎可能把 `ImplicitCurve(未定义的函数)` 标为已定义。因此全零、多项式次数、参考几何有效性的守卫必须控制最终曲线，不能只藏在函数内部。未采用的方程分支给 `1+0*x+0*y`（无零点，同时保留二元函数类型），避免在内部生成整个平面。`Polynomial` 虽能展开普通二元函数，但未定义的 Element/Zip 可能退化成非函数类型并使它拒绝命令；本实现不在曲线边界加这个包装，保留未定义位置及恢复能力。
 
-自动检查新增 `tests/curveOptimization.test.ts`，覆盖曲线创建位置、有向面积替换、含直线退化的平移系数，以及九系数径向式与独立完整共轴行列式的比较（含齐次缩放及无穷远交点）。另检查 QLTf1 在原生变换输入及备选多项式上提前守卫；只在最终输出 If 中选择曲线仍会让两条昂贵路径都求值。九点 Cubic 的测试同步接受用户已采用的原生 ImplicitCurve 实现，不恢复旧的 MatrixRank／归一化包装。
+自动检查新增 `tests/geometry/curveOptimization.test.ts`，覆盖曲线创建位置、有向面积替换、含直线退化的平移系数，以及九系数径向式与独立完整共轴行列式的比较（含齐次缩放及无穷远交点）。另检查 QLTf1 在原生变换输入及备选多项式上提前守卫；只在最终输出 If 中选择曲线仍会让两条昂贵路径都求值。九点 Cubic 的测试同步接受用户已采用的原生 ImplicitCurve 实现，不恢复旧的 MatrixRank／归一化包装。
 
 最终自动检查：`npm test -- --run --testTimeout=15000` **13 个文件、123 项通过**，`npx tsc --noEmit`、`npm run build` 通过。全库原生命令名审计曾超过默认 5 秒阈值，复验采用 15 秒阈值，未修改仓库默认配置。构建仍有既有 Gradio 模块外置和包体提示。
 
@@ -566,7 +566,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - QL-Qu3 保留 E、F 的齐次坐标，将固定点转换为圆方程行 `(Ux²+Uy²,UxUw,UyUw,Uw²)`。各圆系数先匿名绑定，再作稀疏多项式行列式；恒等为零的五次项直接去除。一对边平行时无需生成无穷远仿射交点，第三个圆允许作为直线型代数极限；多个约束同时消失、全零多项式仍 undefined。QL 圆心链仍要求有限的分量三角形外心，不宣称全部平行配置都有有限结果。
 - 点对编号重载直接将 i 传入原生交点指令，或直接用符号 `(3−2i)` 选择复平方根分支，避免先求两个完整分支再从匿名列表抽取。双输出仍是两个独立对象；无实交点保留 undefined 槽。
 - 最终展开预算（代表性长输入标签）：QLQu3 **9,327 字符**，QLTf1 四次多项式重载 **4,618 字符**，其他重载均不足 2k 字符；全部低于 30k 审阅线。此长度检查不证明原生求值或绘制耗时。
-- 自动检查：新增 `tests/constructionContracts.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
+- 自动检查：新增 `tests/contracts/constructionContracts.test.ts` 的 9 项测试，覆盖所有新重载与预算、独立输出、强类型／卫生作用域、Co-Tf3 相似及互逆、完整四次复系数重建、共轴四次式、无穷远对角点延拓及 QA-Cu1 的独立符号例子。现有全库原生命令名检查自动涵盖新增工具。全套 Vitest **10 个文件、108 项通过**，`npx tsc --noEmit` 与生产构建均通过；构建仍有现有 Gradio Node 模块外置及大包提示。
 - 实机入口为 `/scripts/geogebra/browser/geogebra-smoke.html?suite=algebraic`，可附 `&tool=QL2P3` 等确切工具名只测其重载。脚本检查全部 42 重载的输出类与辅助对象计数，以及共轭、退化、拖动、导出重开。测试时暂关重绘并隐藏诊断输出，完成后恢复重绘，避免叠画多条隐式曲线。
 - **已取得的实机证据**：整批运行前 20 项通过，包括三轴、Soddy、LiangZelich、Stammler／Orthopolar、Cundy–Parry、两种 Co-Tf3、QAP2/3/4/5、Plücker／Newton 点对重载和固定点双输出的类型／对象数检查。CoTf3 专项及修订后的 QL2P3 双输出／编号单输出专项分别得到 **COMPLETE**。
 - **尚未完成的实机验收**：整批运行及 QLTf1 曲线专项随后遇到浏览器 CDP 控制超时，无法读取最终状态；这不是明确的几何失败，也不能据此确认通过。QL 中心／圆、各曲线重载、完整几何残差、动态恢复及导出重开仍需完成整批专项。特别是高次曲线变换的实际引擎性能尚未验证；本轮未发布、提交或部署这些改动。
@@ -601,7 +601,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 - 以本地 `GEOGEBRA_COMMAND_NAMES`、[官方 All Commands](https://geogebra.github.io/docs/manual/en/commands/All_Commands/) 和 [Commands.java](https://github.com/geogebra/geogebra/blob/main/source/shared/common/src/main/java/org/geogebra/common/kernel/commands/Commands.java) 核对原生命令名。`RadicalAxis` 不在公开命令表中，也不是 Commands 枚举中的输入命令；本计划此前将它列为 Native 是错误的。
 - 本开发阶段新增 `RadicalAxis(circle,circle)`，工具库现有 **103 个命令名**。`RadicalCenter` 改为 compose 展开根轴。四点 `SteinerLineQ` 最终直接使用坐标线性方程，四线 SteinerLineQ 及两个 TangentParabola 重载复用此坐标实现。`expression` 不展开自定义工具的规则保持不变。
 - 实机进一步发现 `Point(l,0)` 对完整直线给出无穷远点，不能把射线／线段上参数 0 有限的约定直接用于 lineLike。支撑线提取统一使用参数 **1/4、1/2**，修复 SecondIntersection、Orthopole、NewtonLine、AntiSteinerPoint、MiquelPoint、SteinerLineQ、TangentParabola 的相应重载；共用齐次 builder 的线段／射线提取同步使用这组参数。依据见 [PathParameter 官方映射](https://geogebra.github.io/docs/manual/en/commands/PathParameter/)。
-- `tests/nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
+- `tests/contracts/nativeCommands.test.ts` 静态检查工具库所有重载的最终展开表达式（含 builder、locals、compose、多输出、conic/circle、line/segment/ray 和混合 Conic 点线组合）。只允许指令表中的名称、明确列出的标量／坐标函数和编译器匿名局部调用；不把自定义名称混入原生命令表。未发现其他缺失的原生命令名。此检查**不证明参数签名、几何结果或所有引擎版本可用性**。
 - 专项实机入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=radical`，覆盖相离／相交／内外相切／竖直圆心线／同心重合、根心等幂关系、两个 SteinerLineQ 与 TangentParabola 重载，以及其他受影响的支撑线工具和 line/segment/ray 一致性、拖动和导出重开。完整 P2 验收状态仍按上节记录。
 - 前一版（SteinerLineQ 复用根轴时）已在实际嵌入式 GeoGebra 运行此专项脚本并得到 **COMPLETE**，包括根轴经过同心退化后恢复，以及其他受影响重载的拖动／导出重开。该版 Vitest **9 个文件、97 项通过**，生产构建通过；全量 TypeScript 检查仍仅报告既有 MarkdownRenderer、TriplesPage 错误。此次专项验收不替代完整 P2 验收。
 - 后续按审阅意见将 SteinerLineQ 四点版改为上述直接坐标方程，并补充方程与两直径圆幂差的代数一致性测试，包含水平／竖直和同心退化；相关自动测试 **4 个文件、48 项通过**，按用户要求不再运行真实引擎验收。

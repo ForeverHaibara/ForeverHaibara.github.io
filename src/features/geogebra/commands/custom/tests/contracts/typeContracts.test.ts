@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { compileStudioCommand } from '../commandCompiler';
-import { normalizeGeometryType, readCommandEnvironment } from '../commandEnvironment';
-import type { GeoGebraEngine } from '../../../types';
-import type { CommandEnvironment, GeometryType } from '../types';
+import { compileStudioCommand } from '../../commandCompiler';
+import { normalizeGeometryType, readCommandEnvironment } from '../../commandEnvironment';
+import type { GeoGebraEngine } from '../../../../types';
+import type { CommandEnvironment, GeometryType } from '../../types';
 
 const scope = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([['A', 'point'], ['B', 'point'], ['C', 'point'], ['D', 'point'], ['P', 'point'], ['X', 'point'], ['Y', 'point'], ['l', 'line'], ['s', 'segment'], ['r', 'ray'], ['q', 'conic'], ['c', 'circle'], ['f', 'implicitCurve']]),
