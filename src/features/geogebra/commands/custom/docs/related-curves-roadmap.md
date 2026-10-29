@@ -1,6 +1,6 @@
 # 三角形高次曲线：GibertCurve 接入记录与后续计划
 
-日期：2026-10-29。**已接入 35 条**：Q002–Q005、Q010–Q012、Q014、Q016–Q017、Q019、Q021–Q024、Q028–Q029、Q032–Q033、Q036A/B/C、Q037–Q041、Q044、Q047–Q049、Q051、Q056、Q142、Q202。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，本次抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)。
+日期：2026-10-29。**已接入 49 条**：Q002–Q005、Q010–Q012、Q014、Q016–Q017、Q019、Q021–Q024、Q028–Q029、Q032–Q034、Q036A/B/C、Q037–Q041、Q044、Q047–Q049、Q051、Q054、Q056、Q064–Q065、Q067、Q071、Q073–Q076、Q090–Q091、Q095、Q099、Q142、Q202。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)。
 
 ## 本轮采用的约定
 
@@ -12,7 +12,7 @@
 
 已读取 [Related Curves 总目录](http://bernard-gibert.fr/relatedcurves.html)，记录 **203 个目录位置 Q000–Q202，无缺号**，见 [catalogue.json](../data/related-curves/catalogue.json)。这是网页目录项数，不是原子曲线总数：Q000、Q035、Q036 等含多个成员。仅凭目录文字不能确定次数的 10 项保留 null，不猜测。
 
-先前检查 15 个代表页面与三个已链接 TXT，本次进一步检查 Q021–Q060 页面及其中一批已链接 TXT，详见 [来源审计](related-curves-source-audit.md)。发现：
+先前检查 15 个代表页面与三个已链接 TXT，后续检查 Q021–Q100 页面及其中一批已链接 TXT，详见 [来源审计](related-curves-source-audit.md)。发现：
 
 - Q005 是三次曲线；按用户要求，也使用统一的 GibertCurve 接口。
 - 五条首批曲线都有可核实的短重心式，Q033 的一般式需代入外心的重心系数。

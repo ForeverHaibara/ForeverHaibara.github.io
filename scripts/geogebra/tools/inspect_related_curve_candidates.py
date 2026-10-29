@@ -33,7 +33,7 @@ def convert(text):
 def centers(a, b, c):
     aa, bb, cc = a*a, b*b, c*c
     sa = s.Rational(bb+cc-aa, 2); sb = s.Rational(cc+aa-bb, 2); sc = s.Rational(aa+bb-cc, 2)
-    return {1:(a,b,c), 2:(1,1,1), 3:(aa*sa,bb*sb,cc*sc), 6:(aa,bb,cc)}
+    return {1:(a,b,c), 2:(1,1,1), 3:(aa*sa,bb*sb,cc*sc), 4:(sb*sc,sc*sa,sa*sb), 6:(aa,bb,cc)}
 
 
 if __name__ == '__main__':
@@ -63,7 +63,7 @@ if __name__ == '__main__':
             content = ' '.join(html.text).split('Related Curves',1)[-1]
             # Only use points listed near the beginning, not incidental later mentions.
             prefix = content[:1600]
-            mentioned = [i for i in (1,2,3,6) if re.search(r'X\s*\(\s*'+str(i)+r'\s*\)',prefix)]
+            mentioned = [i for i in (1,2,3,4,6) if re.search(r'X\s*\(\s*'+str(i)+r'\s*\)',prefix)]
             checked = []
             for index in mentioned:
                 good = True
