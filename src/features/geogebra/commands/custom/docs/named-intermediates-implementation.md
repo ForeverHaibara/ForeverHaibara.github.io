@@ -1,14 +1,33 @@
 # 命名中间量：Low／Medium／High 实现
 
-日期：2026-10-29。实验与设计背景分别见 [性能记录](benchmarks/named-intermediates-performance.md) 和 [历史规划](named-intermediates-plan.md)。未来允许几何辅助对象的调查与分阶段方案见 [几何扩展计划](named-intermediates-geometry-plan.md)。
+日期：2026-10-29。本文件是命名中间量的唯一设计、实现状态与后续计划入口；原生实验数据集中在 [性能记录](benchmarks/named-intermediates-performance.md)。
 
 ## 用户行为
 
 Workspace settings → Behavior → Custom tool performance 使用 **Low / Medium / High** 三档，当前默认 High，保存在浏览器本地。旧版关闭／开启偏好分别迁移到 Low／Medium。Medium 沿用下面的非几何辅助对象；High 额外允许经过验证的几何辅助对象。设置只影响以后从本站命令栏执行的合格自定义工具；已有构造、原生 GeoGebra 输入栏、文件工具和 `.ggb` 文件本身的语义不变。输出依然是原生 GeoGebra 对象，保存后不依赖本站脚本更新。
 
-当前启用命名路径的 builder 重载：五条直线／射线／线段输入的 `Conic`，带编号 `i` 的 `Pretangential(F,P,i)`，以及 `PolarConic(P,F)`、`HessianCubic(F)`、`MixedPolar(P,Q,F)`、`JacobianCubic(q1,q2,q3)`、三次曲线输入的 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束重载 `CircularCubic(A,B,C,D,E,F,l)`、五点及七点重载 `NodalCubic(...)`。这是按 builder／重载选择的白名单，不按输入文本中的命令名称替换。`QACu1Inv` 的实验收益不稳定，`QLQu3` 含点值绑定，继续用匿名路径；其它较快或尚未验证的工具也保持原状。
+## 工具状态矩阵
 
-High 档的几何试点包括 `QLCi3(A,B,C,D)`（别名 `MiquelCircle`）与 `CommonTangents(c1,c2,s[,i])`。前者把两个交点与四个三角形中心建成六个隐藏的点型 auxiliary 对象；实机样本创建约 56→11 ms。后者共享两个圆心及数值前置量，无编号形式的两条线共用 19 个辅助对象，其中两个是点；交叉公切线样本创建约 42→20 ms。两者都验证了输出类型、方程、动态更新、关系图收缩、`.ggb` 导出重开与删除输出后的孤儿清理。[High 阶段记录](benchmarks/named-intermediates-high-expansion.md)列出本轮样本及保留匿名的反例。
+表中“回退”表示曾生成并测试命名候选，但**正式白名单未启用**；High 包含 Medium 的已启用重载。以 `commandCompiler.ts` 中的 `NAMED_OVERLOADS`／`GEOMETRIC_OVERLOADS` 为代码真值，别名随同一 builder 生效。下列耗时均是筛选样本，详细条件见性能记录。
+
+| 工具／重载 | 所需辅助类型与档位 | 当前状态 | 证据或原因 |
+|---|---|---|---|
+| 五条直线／射线／线段 `Conic` | 数值，Medium | 已启用 | 原生创建约 921→32 ms；混合线型、平行退化已核对。 |
+| 编号 `Pretangential(F,P,i)` | 数值、数值列表、函数，Medium | 已启用 | 第一分支约 993→133 ms；四个编号均通过原生回归。无编号形式尚未启用。 |
+| `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` | 非几何，Medium | 已启用 | 原生类型、方程与动态更新已核对。 |
+| 三次曲线 `OrthicAxis(F)`、`Poloconic(l,F)` | 非几何，Medium | 已启用 | 样本创建约 89→41、423→279 ms；含退化与线段输入检查。 |
+| 方向约束 `CircularCubic(A,B,C,D,E,F,l)` | 非几何，Medium | 已启用 | 样本创建约 418→257 ms；其它重载未自动推广。 |
+| 五点／七点 `NodalCubic` | 非几何，Medium | 已启用 | 更新收益明显；五点创建收益受样本波动影响。其它重载未启用。 |
+| `QLCi3(A,B,C,D)`／`MiquelCircle` | 六个点，High | 已启用 | 样本创建约 56→11 ms；文件重开、依赖图与孤儿清理通过。 |
+| `CommonTangents(c1,c2,s[,i])` | 两个点加数值，High | 已启用 | 双输出共享 19 个辅助对象，样本创建约 38→19 ms；两个结果标签及文件生命周期通过。因圆心为点，不适用 Medium。 |
+| `QACu1Inv` | 非几何，Medium 候选 | 实验后回退 | 共享列表与逐层命名均无稳定收益。 |
+| `QACu1`、`OrthopivotalCubic` | 非几何，Medium 候选 | 实验后回退 | 逐层命名创建约 332→3132、255→2076 ms；已拆成独立 builder 入口以便以后选择性复用。 |
+| `PivotalCubic`、`NonpivotalCubic`、`CubicPencil` | 非几何，Medium 候选 | 实验后回退 | 朴素命名创建明显变慢。 |
+| `ThirdIntersection`、`CircularPolarPoint`、`CayleyBacharachPoint` | 涉及几何值，High 候选 | 实验后回退 | 曾出现正式输出点→向量；`CircularPolarPoint` 还出现定义状态变化。 |
+| 三次曲线 `Polar(P,F)` | 非几何，Medium 候选 | 实验后回退 | 退化样本执行结果与匿名路径不同。 |
+| `QLQu3` | 含点，High 候选 | 未启用，基线超时 | 匿名基线两次长时间无响应，尚无可信的相对收益数据。 |
+
+未列出的工具默认匿名；是否支持命名必须按 builder 和重载逐项验证。单行且局部值只用一次的简单构造优先级低。
 
 ## 编译与安全边界
 
@@ -20,6 +39,20 @@ High 档的几何试点包括 `QLCi3(A,B,C,D)`（别名 `MiquelCircle`）与 `Co
 
 ## 验证与后续扩展
 
-真实引擎对普通、混合线型与平行线退化的五线 `Conic`，`Pretangential` 的四个编号，以及 `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` 比较了开关前后的类型、显示结果和输入变化后的更新。第二阶段还比较了 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束 `CircularCubic`、五点及七点 `NodalCubic`；测试脚本对这些新增路径逐字核对创建前后及输入变化后的显示方程。还验证了部分执行失败的回滚、撤销／重做、`.ggb` 导出重开、用户引用保护与孤儿清理。单元测试覆盖默认匿名文本、白名单、重载限制、作用域回退、输出校验和语义图收缩。第二阶段的筛选数据见 [扩展实验](benchmarks/named-intermediates-expansion.md)。
+真实引擎对普通、混合线型与平行线退化的五线 `Conic`，`Pretangential` 的四个编号，以及 `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` 比较了档位切换前后的类型、显示结果和输入变化后的更新。后续还比较了 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束 `CircularCubic`、五点及七点 `NodalCubic`、`QLCi3` 和 `CommonTangents`；测试脚本对这些新增路径核对创建前后及输入变化后的显示方程。还验证了部分执行失败的回滚、撤销／重做、`.ggb` 导出重开、用户引用保护与孤儿清理。单元测试覆盖默认匿名文本、白名单、重载限制、作用域回退、输出校验和语义图收缩。各阶段筛选数据统一见 [性能记录](benchmarks/named-intermediates-performance.md)。
 
-以后增加工具时，在 builder 的 `bind()` 声明值类型，先补普通／退化／动态／文件重开等价测试和创建、更新性能数据。只含数值／数值列表／函数的正向候选进入 `NAMED_OVERLOADS`；确需点、线等几何值的正向候选进入 `GEOMETRIC_OVERLOADS`，只在 High 启用。`QACu1` 和 `OrthopivotalCubic` 已拆成各自的公式入口，共享的只是三角形数据框架；它们的逐层数值命名创建明显变慢，因此均未列入白名单。不要仅因表达式长或可命名就启用。当前不自动物化某些绑定而保留其它绑定，也不写 CAS；这两项需要独立的作用域与依赖语义验证。
+## 架构边界与下一步
+
+坚持一套公式、多种降低方式；不要维护数学公式副本，也不要从最终字符串正则提取 `Zip`。目前 `bind()` 捕获绑定，按依赖顺序生成匿名或命名计划；多输出可共享本次调用的前置绑定。编译阶段不采样坐标，执行阶段核对原生类型、正式输出和辅助标记。按重载分别进入非几何 `NAMED_OVERLOADS` 或仅 High 的 `GEOMETRIC_OVERLOADS`。目前仍是**整次调用全物化或全匿名**；局部 `Zip`／`KeepIf`／`Sequence`／`Curve`／`Sum`／`Product` 作用域、未知列表元素类型、未选 `If` 分支的提前求值，都不能靠文本扫描越过。点／向量、圆锥曲线退化、含几何元素列表需单独的类型契约。CAS 变量尚未纳入现有工作区依赖、保存和生命周期语义，暂不使用。
+
+关系发现先用内部标签与 XML auxiliary 元数据识别对象，再跳过辅助点坐标并收缩依赖图；其余补全、样式和命令结果也排除内部对象。隐藏只影响本站默认视图与图形显示：用户仍可用原生 GeoGebra 命令、API 或文件访问辅助对象，原生关系功能也不受本站过滤器约束。目标是本站用户语义功能不受污染，同时让原生构造保留依赖，并把整页交互与文件成本控制在可接受预算内。
+
+| 顺序 | 待探究工具／共性工作 | 先解决的问题与验收点 |
+|---|---|---|
+| P0 | 无编号 `Pretangential(F,P)`、`QL2P1/2/3` 双输出 | 用共享前置绑定减少重复；编号与无编号分别测。`QL2P*` 涉及点型值，先核对点／向量类型和两输出顺序。 |
+| P0 | `QLQu3`、`QLTf1` 的高次曲线分支 | 为旧路径设置可中断的独立基线；比较仅命名真正复用节点、逐层命名和匿名。按输入类型与 `If` 分支单独测，不能从超时推断加速。 |
+| P1 | 七点 `CircularCubic`、`CayleyBacharachPoint` | 检查多个行列式／系数是否可共享；后者先解决点→向量类型反例。 |
+| P1 | `CubicAsymptotes`、`CubicInvolution` | 共享多值抽取与前置量；验证几何列表元素类型及 `KeepIf` 局部作用域。 |
+| P2 | `QACu1`、`OrthopivotalCubic`、`QACu1Inv`、`Pivotal*` | 只在有选择性物化机制后重测单个复用系数或守卫，避免重演逐层命名退步。 |
+
+下一阶段先给捕获图记录节点依赖、类型、作用域、所属输出、引用次数与估计成本，再做**选择性物化**原型：安全且有复用的节点命名，私有或可能改变惰性语义的节点保留匿名。成本模型只提名，正式白名单仍由真实 GeoGebra 的普通／退化／动态／文件重开等价测试和创建、拖动、关系刷新、自动保存、`.ggb` 体积及整页交互数据决定。`QLCu1`、`ConicLineCubic` 等短式、一次使用中间量的构造暂不优先。不能证明语义等价或没有实际收益的重载继续匿名。

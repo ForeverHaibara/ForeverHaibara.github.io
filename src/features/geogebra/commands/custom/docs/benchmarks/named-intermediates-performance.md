@@ -1,8 +1,10 @@
-# 命名非几何中间量的原生性能实验（2026-10-29）
+# 命名中间量原生性能记录（2026-10-29）
+
+本文件合并首轮、第二阶段和 High 阶段的筛选记录。表中单次浏览器样本与下文首轮交错运行中位数**方法不同，不宜直接横向比较**；均未覆盖完整页面的绘图帧、自动保存、内存和文件体积。
 
 ## 目的与方法
 
-评估是否值得给自定义工具增加“允许把非几何中间量写入工作区”的选项。本实验只增加可重复运行的基准页，不改正式命令执行路径。
+首轮评估是否值得给自定义工具增加命名非几何中间量选项；当时只增加可重复运行的基准页，尚未改正式执行路径。后续阶段已实施 Low／Medium／High，当前白名单见 [主文档](../named-intermediates-implementation.md)。
 
 在嵌入式 GeoGebra Classic 中比较三种表达式：
 
@@ -34,3 +36,32 @@
 正式方案至少需要处理辅助标签命名、隐藏、删除／重定义联动、撤销和 `.ggb` 保存恢复；还应确认发现算法确实忽略数值、列表和函数对象。`Pretangential` 的结果依赖允许多变量函数辅助对象；若开关只允许数值／列表，它的这组结果不能直接套用。实验没有测试 CAS 中间变量，也没有测渲染帧耗时或多工具叠加后的构造规模。
 
 复现入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=materialization&tool=conic`、`tool=pretangential`、`tool=inverse`。基准实现见 `scripts/geogebra/browser/geogebra-materialization-performance.ts`。执行两次构造、三次输入更新后会自动检查结果等价性和辅助对象类型。
+
+## 第二阶段：Medium 筛选
+
+以下使用 `geogebra-named-execution-smoke.ts` 在同一输入上分别运行匿名与命名路径；表中是单次浏览器样本，创建时间含辅助对象与输出，更新时间含设置输入与读取结果。输出原生类型、定义状态、显示方程及动态更新均做了对照。
+
+| 候选重载 | 匿名／命名创建 | 匿名／命名更新 | 结论 |
+|---|---:|---:|---|
+| 三次曲线 `OrthicAxis(F)` | 89／41 ms | 12／8 ms | 已启用；退化样本一致 |
+| `Poloconic(l,F)` | 423／279 ms | 36／10 ms | 已启用；退化与线段输入一致 |
+| 方向约束 `CircularCubic(A,B,C,D,E,F,l)` | 418／257 ms | 40／7 ms | 已启用；线段输入一致 |
+| 七点 `NodalCubic` | 774／656 ms | 337／33 ms | 已启用 |
+| 五点 `NodalCubic` | 496／419 ms；另一次 741／747 ms | 341／56 ms | 已启用；创建收益有波动 |
+
+`ThirdIntersection`、`CircularPolarPoint`、`CayleyBacharachPoint` 的候选曾把点输出变为向量；`CircularPolarPoint` 还改变一个样本的定义状态。三次曲线 `Polar(P,F)` 在退化输入上与匿名执行语义不同。`CubicPencil` 创建约 125→171 ms，`PivotalCubic` 约 466→3019 ms，`NonpivotalCubic` 约 575→4700 ms。这些候选均未启用。数值或函数型 `bind()` 不能单独保证结果类型、执行语义或性能。
+
+## High 阶段：多输出共享与回退
+
+复现入口为 `?suite=named-execution&tool=commonTangents`（编号）、`commonTangentsMulti`（无编号）及 `commonTangentsCrossed`（交叉）；仍是单次浏览器筛选样本。
+
+| 工具与样本 | Low 创建 | High／候选创建 | Low 更新 | High／候选更新 | 结论 |
+|---|---:|---:|---:|---:|---|
+| `CommonTangents(c1,c2,1,1)`，共享前 | 100.8 ms | 47.3 ms，28 个辅助对象 | 19.9 ms | 0.9 ms | 结果一致，但前置量重复 |
+| `CommonTangents(c1,c2,1,1)`，共享后 | 44.7 ms | 22.9 ms，19 个辅助对象 | 8.9 ms | 0.8 ms | 已启用 High |
+| `CommonTangents(c1,c2,1)`，双输出 | 38.2 ms | 19.1 ms，19 个辅助对象 | 11.1 ms | 1.2 ms | 已启用 High |
+| `CommonTangents(c1,c2,-1)`，交叉双输出 | 42.2 ms | 20.2 ms，19 个辅助对象 | 10.2 ms | 1.0 ms | 已启用 High |
+| `QACu1(A,B,C,D)`，逐层数值命名 | 332.1 ms | 3132.4 ms，11 个辅助对象 | 154.0 ms | 148.0 ms | 回退匿名 |
+| `OrthopivotalCubic(A,B,C,P)`，逐层数值命名 | 255.4 ms | 2076.4 ms，8 个辅助对象 | 131.5 ms | 135.5 ms | 回退匿名 |
+
+`CommonTangents` 的两个圆心为点，因此它的整体命名方案属于 High；无编号两条线共用前置辅助对象。实机核对两个结果标签、原生 `line` 类型、创建及拖动后的显示方程、辅助对象隐藏与 XML auxiliary 标记、关系图收缩、`.ggb` 导出重开和删除输出后的孤儿清理。`QACu1` 与 `OrthopivotalCubic` 候选全部为非几何值，理论上属于 Medium，但创建显著退步，正式白名单未启用。`QLQu3` 的匿名基线再次使浏览器求值超时，没有可信的相对加速数字，也未启用候选。
