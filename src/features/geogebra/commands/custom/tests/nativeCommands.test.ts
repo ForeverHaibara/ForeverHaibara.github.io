@@ -7,7 +7,7 @@ import type { CommandEnvironment, GeometryType, ParameterType } from '../types';
 
 // The manual's command index excludes scalar parser functions and coordinates.
 // This checks names only; overload availability still needs native-engine checks.
-const nativeNames = new Set([...GEOGEBRA_COMMAND_NAMES, 'x', 'y', 'z', 'abs', 'sqrt', 'sin', 'cos', 'floor', 'conjugate']);
+const nativeNames = new Set([...GEOGEBRA_COMMAND_NAMES, 'x', 'y', 'z', 'abs', 'sqrt', 'sin', 'cos', 'acos', 'floor', 'conjugate']);
 const unsupportedCalls = (source: string): string[] => outerCalls(source).flatMap((call) => [
   ...(!nativeNames.has(call.name) && !/^v\d+$/u.test(call.name) ? [call.name] : []),
   ...call.args.flatMap(unsupportedCalls),

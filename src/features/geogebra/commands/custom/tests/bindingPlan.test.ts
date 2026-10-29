@@ -101,4 +101,31 @@ describe('one formula source with two binding lowerings', () => {
     expect(high.helpers.filter((helper) => helper.kind === 'vector')).toHaveLength(5);
     expect(high.output).not.toContain('Element(Zip(');
   });
+
+  it('shares one numeric Prehessian pencil across three High outputs', () => {
+    const source = 'out=PrehessianCubic(F)';
+    expect(compileStudioPlan(source, environment(), id).materialized).toBe(false);
+    const high = compileStudioPlan(source, environment(), id, 'high');
+    expect(high.materialized).toBe(true);
+    expect(high.helpers).toHaveLength(46);
+    expect(high.helpers.every((helper) => ['number', 'numberList', 'function'].includes(helper.kind))).toBe(true);
+    expect(high.output.split('\n')).toHaveLength(3);
+    expect(high.output).not.toContain('Element(Zip(');
+  });
+
+  it('shares cusp pencil data in Medium for each supported geometry', () => {
+    const general = environment(); general.objects.set('F', 'point');
+    for (const [source, scope, count] of [
+      ['CuspidalCubic(A,B,C,D,E,F)', general, 18],
+      ['CuspidalCubic(A,B,C,D)', environment(), 14],
+      ['CuspidalCubic(A,B,C,l)', environment(), 14],
+    ] as const) {
+      const plan = compileStudioPlan(`out=${source}`, scope, id);
+      expect(plan.materialized).toBe(true);
+      expect(plan.helpers).toHaveLength(count);
+      expect(plan.helpers.every((helper) => helper.kind === 'number')).toBe(true);
+      expect(plan.output.split('\n')).toHaveLength(2);
+      expect(plan.output).not.toContain('Element(Zip(');
+    }
+  });
 });

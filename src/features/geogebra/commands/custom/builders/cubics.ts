@@ -1,4 +1,4 @@
-import type { ExpressionBuilder, TypedExpression } from '../types';
+import type { BuiltExpression, ExpressionBuilder, TypedExpression } from '../types';
 import { add, adjugate, barycentricPoint, bind, coefficientLine, coefficientList, cross, homogeneous, matrix, mul, sub, independentOutputs, supportingLine } from '../algebra/homogeneous';
 import type { Matrix } from '../algebra/homogeneous';
 import { monomial, polynomialDeterminant, polynomialProduct, polynomialSum, encodedPolynomialCoefficients } from '../algebra/polynomial';
@@ -16,14 +16,21 @@ const term = (coefficient: string, x: string, y: string, i: number, j: number) =
 export const CUBIC_COEFFICIENT_INDICES: readonly number[] = CUBIC_MONOMIALS.map(([i, j]) => i + 4 * j + 1);
 
 /** Native cubic coefficient extraction, assuming the input is a cubic. */
-export const withCubic = (curve: string, allocate: () => string, body: (coefficients: string[]) => string) =>
-  bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
+export function withCubic(curve: string, allocate: () => string, body: (coefficients: string[]) => string): string;
+export function withCubic(curve: string, allocate: () => string, body: (coefficients: string[]) => BuiltExpression): BuiltExpression;
+export function withCubic(curve: string, allocate: () => string, body: (coefficients: string[]) => string | BuiltExpression): string | BuiltExpression;
+export function withCubic(curve: string, allocate: () => string, body: (coefficients: string[]) => string | BuiltExpression): string | BuiltExpression {
+  return bind([`LeftSide(${curve})-RightSide(${curve})`], allocate, ([f]) =>
     // Coefficients accepts a one-variable function, not an implicit curve or
     // a two-variable function. Keep a formal x even for constant restrictions;
     // reverse and pad so missing high-degree terms read as zero dynamically.
     bind([encodedPolynomialCoefficients(f, 4, 13)], allocate, ([encoded]) =>
       bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate,
-        (coefficients) => `(${body(coefficients)})`, 'number'), 'numberList'), 'function');
+        (coefficients) => {
+          const result = body(coefficients);
+          return typeof result === 'string' ? `(${result})` : result;
+        }, 'number'), 'numberList'), 'function');
+}
 
 /** Homogeneous gradient at (p,q,1): the second polar line. */
 export const cubicPolarLine = (coefficients: string[], p: string, q: string): string[] => [0, 1, 2].map((axis) =>
@@ -117,6 +124,63 @@ const cubicFromPolynomialCoefficients = (p: Polynomial, allocate: () => string) 
 };
 const hessianCubic: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) =>
   cubicFromPolynomialCoefficients(polynomialDeterminant(cubicHessian(c).map((row) => row.map(linearPolynomial))), allocate));
+
+const hessianCoefficientExpressions = (c: string[]) => {
+  const p = polynomialDeterminant(cubicHessian(c).map((row) => row.map(linearPolynomial)));
+  return CUBIC_MONOMIALS.map(([x, y]) => p.get(`${x},${y}`) ?? '0');
+};
+
+/** The Hessian of a syzygetic pencil member lies in span(F,H).
+ * Project it onto the component orthogonal to F to find members whose
+ * Hessian has no H component. The projection is a cubic in the pencil value. */
+const prehessianCubic: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) =>
+  bind(hessianCoefficientExpressions(c), allocate, (h) => {
+    const norm = sum(c.map((v) => `(${v})^2`));
+    const dot = sum(c.map((v, i) => mul(v, h[i])));
+    return bind(c.map((v, i) => `${norm}*(${h[i]})-(${dot})*(${v})`), allocate, (w) => {
+      const projected = (t: string) => {
+        const p = hessianCoefficientExpressions(c.map((v, i) => `(${v})+(${t})*(${h[i]})`));
+        return sum(p.map((v, i) => mul(w[i], v)));
+      };
+      return bind(['0','1','-1','2'].map(projected), allocate, ([f0, f1, fm, f2]) => {
+        const second = `((${f1}+${fm})/2-${f0})`;
+        const odd = `((${f1}-${fm})/2)`;
+        const third = `(((${f2}-${f0}-4*${second})/2-${odd})/3)`;
+        const first = `(${odd}-${third})`;
+        return bind([f0, first, second, third], allocate, ([a0, a1, a2, a3]) => {
+          const p = `(3*${a3}*${a1}-${a2}^2)/(3*${a3}^2)`;
+          const q = `(2*${a2}^3-9*${a3}*${a2}*${a1}+27*${a3}^2*${a0})/(27*${a3}^3)`;
+          return bind([p, q, `(${q}/2)^2+(${p}/3)^3`], allocate, ([pp, qq, disc]) => {
+            const cubeRoot = (v: string) => `If((${v})>=0,abs(${v})^(1/3),-abs(${v})^(1/3))`;
+            const base = `-${a2}/(3*${a3})`;
+            const u = cubeRoot(`-${qq}/2+sqrt(${disc})`);
+            const v = cubeRoot(`-${qq}/2-sqrt(${disc})`);
+            const angle = `acos((3*${qq}/(2*${pp}))*sqrt(-3/${pp}))/3`;
+            const trigonometric = (k: number) => `${base}+2*sqrt(-${pp}/3)*cos(${angle}-${k}*2*pi/3)`;
+            const roots = [
+              `If(${disc}<0,${trigonometric(0)},${base}+(${u})+(${v}))`,
+              `If(${disc}<0,${trigonometric(1)},If(${disc}==0&&${qq}!=0,${base}-(${cubeRoot(`-${qq}/2`)})))`,
+              `If(${disc}<0,${trigonometric(2)})`,
+            ];
+            return bind(roots, allocate, (ts) => {
+              const curve = (alpha: string, beta: string) =>
+                `ImplicitCurve(${coefficientPolynomial(c.map((value, j) => `(${alpha})*(${value})+(${beta})*(${h[j]})`))})`;
+              const finite = ts.map((t) => `If(IsDefined(${t}),${curve('1', t)})`);
+              const quadraticDiscriminant = `(${a1})^2-4*(${a2})*(${a0})`;
+              // The projective pencil has a root at infinity whenever its
+              // cubic coefficient vanishes. Retain fixed slots as degree drops.
+              const lower = [
+                `If(${a2}!=0&&${quadraticDiscriminant}>=0,${curve(`2*${a2}`, `-${a1}+sqrt(${quadraticDiscriminant})`)},If(${a2}==0&&${a1}!=0,${curve(a1, `-${a0}`)},If(${a2}==0&&${a1}==0&&${a0}!=0,${curve('0', '1')})))`,
+                `If(${a2}!=0&&${quadraticDiscriminant}>0,${curve(`2*${a2}`, `-${a1}-sqrt(${quadraticDiscriminant})`)},If(${a2}==0&&${a1}!=0,${curve('0', '1')}))`,
+                `If(${a2}!=0,${curve('0', '1')})`,
+              ];
+              return independentOutputs(finite.map((branch, i) => `If(${a3}!=0,${branch},${lower[i]})`), args[1]?.expression);
+            }, 'number');
+          }, 'number');
+        }, 'number');
+      }, 'number');
+    }, 'number');
+  }, 'number'));
 
 const cubicOrthicAxis: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) => {
   const h = cubicHessian(c);
@@ -269,7 +333,7 @@ const cayleyBacharach: ExpressionBuilder = (args, allocate) => {
 
 const CUBIC_PROJECTIVE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   circularCubic, cayleyBacharach, orthicAxisCubic: cubicOrthicAxis, circularPolarPoint,
-  hessianCubic, hessianCorrespondent, mixedPolar, poloconic, jacobianCubic,
+  hessianCubic, prehessianCubic, hessianCorrespondent, mixedPolar, poloconic, jacobianCubic,
   conicLineCubic, cubicPencil,
 };
 
@@ -327,6 +391,57 @@ const nodalCubic: ExpressionBuilder = (args, allocate) => {
   const rows = points.map((p) => basisValue(basis, ...localPoint(p, node)));
   if (hasDirection) rows.push(infinityRow(basis, supportingLine(last)));
   return polynomialFromKernel(rows, basis, ...localVariable(node), allocate);
+};
+
+/** Two projective generators of the kernel of an n by (n+2) constraint matrix. */
+const pencilKernel = (rows: string[][]): string[][] => {
+  const n = rows.length;
+  const pivot = rows.map((row) => row.slice(0, n));
+  const det = `Determinant(${matrix(pivot)})`;
+  const generator = (free: number) => [
+    ...Array.from({ length: n }, (_, column) => `-Determinant(${matrix(rows.map((row) =>
+      row.slice(0, n).map((entry, j) => j === column ? row[n + free] : entry)))})`),
+    free === 0 ? det : '0', free === 1 ? det : '0',
+  ];
+  return [generator(0), generator(1)];
+};
+
+/** Discriminant of the quadratic tangent cone at the local origin. */
+const cuspDiscriminant = (c: string[], basis: AffineBasis) => {
+  const at = (x: number, y: number) => sum(c.flatMap((v, i) => basis[i].filter(([a, b]) => a === x && b === y).map(() => v)));
+  const xx = at(2, 0); const xy = at(1, 1); const yy = at(0, 2);
+  return sub(mul(xy, xy), mul('4', xx, yy));
+};
+
+const cuspidalCubic: ExpressionBuilder = (args, allocate) => {
+  const index = args.at(-1)?.type === 'number' ? args.at(-1)!.expression : undefined;
+  const core = index ? args.slice(0, -1) : args;
+  const node = core[0].expression;
+  const last = core.at(-1)!;
+  const hasDirection = last.type !== 'point';
+  const points = core.slice(1, hasDirection ? -1 : undefined).map((arg) => arg.expression);
+  const basis = points.length === 5 ? nodeBasis : circularNodeBasis;
+  const rows = points.map((p) => basisValue(basis, ...localPoint(p, node)));
+  if (hasDirection) rows.push(infinityRow(basis, supportingLine(last)));
+  const [u, v] = pencilKernel(rows);
+  return bind([...u, ...v], allocate, (named) => {
+    const first = named.slice(0, basis.length); const second = named.slice(basis.length);
+    const c = cuspDiscriminant(first, basis);
+    const a = cuspDiscriminant(second, basis);
+    const b = sub(cuspDiscriminant(first.map((term, i) => add([term, second[i]])), basis), add([a, c]));
+    return bind([a, b, c, `(${b})^2-4*(${a})*(${c})`], allocate, ([aa, bb, cc, delta]) => {
+      const branch = (sign: 1 | -1) => {
+        const alpha = `If(${aa}!=0,2*${aa},${sign === 1 ? '0' : bb})`;
+        const beta = `If(${aa}!=0,-${bb}${sign === 1 ? '+' : '-'}sqrt(${delta}),${sign === 1 ? '1' : `-${cc}`})`;
+        const coefficients = first.map((term, i) => `(${alpha})*(${term})+(${beta})*(${second[i]})`);
+        const cone = ([[2, 0], [0, 2], [1, 1]] as const).map(([x, y]) =>
+          sum(coefficients.flatMap((v, j) => basis[j].filter(([a, b]) => a === x && b === y).map(() => v))));
+        const polynomial = sum(coefficients.map((term, i) => mul(term, basisValue(basis, ...localVariable(node))[i])));
+        return `If(${delta}${sign === 1 ? '>=' : '>'}0&&(${aa})^2+(${bb})^2+(${cc})^2!=0&&(${cone.map((v) => `(${v})^2`).join('+')})!=0,ImplicitCurve(${polynomial}))`;
+      };
+      return independentOutputs([branch(1), branch(-1)], index);
+    }, 'number');
+  }, 'number');
 };
 
 /** The 3/4-point overloads coincide with the corresponding nodal construction. */
@@ -419,7 +534,7 @@ const cubicInvolution: ExpressionBuilder = (args, allocate) => {
 };
 
 const CUBIC_CONTACT_AND_INTERPOLATION_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  circularCubicDirection, nodalCubic, strophoid, cubicAsymptotes, pretangential, cubicInvolution,
+  circularCubicDirection, nodalCubic, cuspidalCubic, strophoid, cubicAsymptotes, pretangential, cubicInvolution,
 };
 
 export const CUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {

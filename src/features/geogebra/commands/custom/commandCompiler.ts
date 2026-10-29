@@ -196,12 +196,18 @@ const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   poloconic: anyOverload,
   circularCubicDirection: anyOverload,
   nodalCubic: (args) => [5, 7].includes(args.length) && args.every((type) => type === 'point'),
+  cuspidalCubic: (args) => [4, 5, 6, 7].includes(args.length),
 };
 const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   qlMiquelCircle: (args) => args.length === 4 && args.every((type) => type === 'point'),
   commonTangents: (args) => [3, 4].includes(args.length) && args[0] === 'circle'
     && args[1] === 'circle' && args.slice(2).every((type) => type === 'number'),
   qlQuartic: (args) => args.length === 4 && args.every((type) => type === 'point'),
+};
+/** Numeric-only plans that need High because their object budget is substantial. */
+const HIGH_COST_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  prehessianCubic: (args) => [1, 2].includes(args.length) && args[0] === 'implicitCurve'
+    && (args.length === 1 || args[1] === 'number'),
 };
 const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 'function', 'point', 'vector', 'line', 'circle', 'conic', 'implicitCurve']);
 
@@ -211,7 +217,8 @@ export const compileStudioPlan = (source: string, environment: CommandEnvironmen
   const capture: Capture = { ...createBindingCapture(), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
-  const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder] ?? (mode === 'high' ? GEOMETRIC_OVERLOADS[selected.builder] : undefined)) : undefined;
+  const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder]
+    ?? (mode === 'high' ? GEOMETRIC_OVERLOADS[selected.builder] ?? HIGH_COST_OVERLOADS[selected.builder] : undefined)) : undefined;
   const eligible = Boolean(selected && supports?.(selected.args));
   return capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
 };

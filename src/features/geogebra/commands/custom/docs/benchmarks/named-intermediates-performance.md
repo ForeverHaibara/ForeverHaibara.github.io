@@ -71,3 +71,16 @@
 Low 匿名基线多次使浏览器求值长时间无响应；按本轮约定视为无限时基线，不再为对照而运行。`QLQu3(A,B,C,D)` 的完整绑定链含一个中心向量、四个归一化向量及数值／列表，因此当前全物化机制下只适用于 High，Medium 仍保持匿名。两组一般位置样本中，High 分别约 5.39 s 和 5.47 s 创建 55 个辅助对象及有定义的原生 `implicitpoly`，输入变化后约 48–51 ms 更新且方程变化。代表性更新后方程含 `x⁴` 与 `y⁴` 项。测试还检查全部辅助对象隐藏和 XML auxiliary 标记、关系图收缩、`.ggb` 导出重开、删除输出后的孤儿清理。静态代数测试已将九项径向系数与独立完整共轴行列式在多组数值输入上比较。
 
 这足以证明 High 在所测一般位置能代替不可用的 Low，**不表示 Low 的精确耗时或全域语义已测得**。退化输入、整页拖动与自动保存、文件体积和多条四次曲线叠加成本仍需继续测；若出现不合格重载，应缩小策略或选择性物化。
+
+### `PrehessianCubic` 与 `CuspidalCubic`：此前卡顿候选的命名实现
+
+复现入口为 `?suite=named-execution&tool=prehessianMulti`、`cuspidalGeneral`、`cuspidalCircularMulti`、`cuspidalDirection`。以下均为一次性原生引擎样本，创建时间含辅助对象与输出，更新时间含参数设置与读取；不据此估算 Low 的精确加速比。此前内联 `PrehessianCubic` 和两种 `CuspidalCubic` 原型会卡顿，故没有再运行 Low 对照。
+
+| 样本 | 档位 | 创建 | 更新 | 辅助对象 | 核验 |
+|---|---|---:|---:|---:|---|
+| `PrehessianCubic(F)` 三槽 | High | 4.44–5.77 s | 47–50 ms | 46 | 输出 Hessian 与 F 成非零比例；三槽、文件重开与清理通过 |
+| 一般六点 `CuspidalCubic` | Medium | 4.18 s | 102 ms | 18 | 六点关联、A 处切锥判别式为零，文件重开与清理通过 |
+| 圆环四点 `CuspidalCubic` 双槽 | Medium | 1.92 s | 59 ms | 14 | 两条不同实曲线，点关联与切锥条件通过 |
+| 两点加方向 `CuspidalCubic` | Medium | 2.00 s | 63 ms | 14 | 有定义三次曲线及点关联通过 |
+
+这两类工具共用现有 `bind` 捕获和隐藏辅助对象生命周期；测试还检查 XML auxiliary 标记、图形隐藏和本站依赖图收缩。`CuspidalCubic` 当前用固定枢轴行列式生成核；枢轴奇异但整体约束满秩的输入可能返回 undefined。`PrehessianCubic` 的重根、Hessian 恒零及射影无穷远退化尚未系统扫描。多条曲线叠加时的页面交互、文件体积及真实用户输入分布仍待测。

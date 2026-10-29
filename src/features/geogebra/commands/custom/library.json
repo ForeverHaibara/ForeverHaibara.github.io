@@ -1106,6 +1106,14 @@
       ]
     },
     {
+      "name": "PrehessianCubic",
+      "description": "Up to three real members of the syzygetic pencil whose Hessian is the input cubic; optional 1-based index.",
+      "overloads": [
+        {"params": [{"name":"F","type":"implicitCurve"}],"returns":"implicitCurve","builder":"prehessianCubic"},
+        {"params": [{"name":"F","type":"implicitCurve"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"prehessianCubic"}
+      ]
+    },
+    {
       "name": "MixedPolar",
       "description": "Mixed polar line of two points with respect to a cubic.",
       "overloads": [
@@ -1193,6 +1201,18 @@
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "nodalCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"}
+      ]
+    },
+    {
+      "name": "CuspidalCubic",
+      "description": "Up to two real cubics with cusp A through the supplied points; shorter overloads are circular. An optional index selects a fixed branch.",
+      "overloads": [
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"l","type":"lineLike"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"l","type":"lineLike"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"cuspidalCubic"}
       ]
     },
     {

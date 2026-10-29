@@ -31,6 +31,12 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     commonTangentsMulti: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1)', move: () => api('setValue', 'shift', 1) },
     commonTangentsCrossed: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,-1)', move: () => api('setValue', 'shift', 1) },
     qlQuartic: { setup: 'shift=0\nA=(0,0)\nB=(4,0)\nC=(3,3)\nD=(-1,2+shift)', command: 'out=QLQu3(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
+    cuspidalGeneral: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1)\nD=(2,1)\nE=(-1,2)\nF=(3,1+shift)', command: 'out=CuspidalCubic(A,B,C,D,E,F,1)', move: () => api('setValue', 'shift', 0.1) },
+    cuspidalCircular: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1)\nD=(-1,2+shift)', command: 'out=CuspidalCubic(A,B,C,D,1)', move: () => api('setValue', 'shift', 0.1) },
+    cuspidalCircularMulti: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1)\nD=(-1,2+shift)', command: 'out=CuspidalCubic(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
+    cuspidalDirection: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1+shift)\nl:x=2', command: 'out=CuspidalCubic(A,B,C,l,1)', move: () => api('setValue', 'shift', 0.1) },
+    prehessian: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=PrehessianCubic(F,1)', move: () => api('setValue', 'shift', 0.1) },
+    prehessianMulti: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=PrehessianCubic(F)', move: () => api('setValue', 'shift', 0.1) },
     hessian: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=HessianCubic(F)', move: () => api('setValue', 'shift', 0.1) },
     jacobian: { setup: 'shift=0\nq1=Conic({1,2,-1,0,shift,0})\nq2=Conic({2,1,-1,1,0,0})\nq3=Conic({1,-1,-1,0,1,0})', command: 'out=JacobianCubic(q1,q2,q3)', move: () => api('setValue', 'shift', 0.1) },
   };
@@ -47,7 +53,7 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const setup = await engine.executeCommand(selected.setup);
     if (!setup.success) throw new Error(`Setup failed: ${setup.error}`);
     const started = performance.now();
-    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed', 'qlQuartic'].includes(tool) ? 'high' : 'medium' : 'low' });
+    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed', 'qlQuartic', 'prehessian', 'prehessianMulti'].includes(tool) ? 'high' : 'medium' : 'low' });
     const create = performance.now() - started;
     if (!result.success) throw new Error(`${named ? 'named' : 'anonymous'} failed: ${result.error}`);
     if (tool === 'commonTangentsMulti' && (result.labels.length !== 2 || !result.labels.includes('out')))
@@ -82,6 +88,28 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     report(`${named ? 'NAMED' : 'BASE'} update ${(performance.now() - updateStarted).toFixed(1)} ms; type ${after.type}; defined ${after.defined}; changed ${before.value !== after.value}`);
     return { before, after, outputBefore, outputAfter, helpers: helpers.length, labels: result.labels };
   };
+  const verifyHelpersAndReopen = async (result: { helpers: number; labels: string[] }) => {
+    const names = await api('getAllObjectNames') as string[];
+    for (const helper of names.filter(isInternalHelperName)) {
+      if (await api('getVisible', helper)) throw new Error(`${helper} is visible`);
+      if (!/<auxiliary\s+val="true"\s*\/>/u.test(String(await api('getXML', helper))))
+        throw new Error(`${helper} is not auxiliary`);
+    }
+    const graph = collapseInternalHelpers(buildDependencyGraph((await new GeoGebraConstructionSource(engine).read()).objects));
+    if (graph.nodes.some((node) => isInternalHelperName(node.name)) || !graph.nodes.some((node) => node.name === 'out'))
+      throw new Error('Internal helper leaked into relation graph');
+    const exported = await engine.exportGgb();
+    await engine.importGgb(new File([exported], 'cubic-named-helpers.ggb'));
+    const reopened = await api('getAllObjectNames') as string[];
+    if (reopened.filter(isInternalHelperName).length !== result.helpers || result.labels.some((label) => !reopened.includes(label)))
+      throw new Error('Named cubic failed to reopen');
+    const lifecycle = new InternalHelperLifecycle(engine);
+    for (const label of result.labels) await api('deleteObject', label);
+    await lifecycle.reconcile();
+    lifecycle.dispose();
+    if ((await api('getAllObjectNames') as string[]).some(isInternalHelperName))
+      throw new Error('Named cubic helpers were not collected');
+  };
   if (tool === 'qlQuartic') {
     const named = await run(true);
     if (named.before.type !== 'implicitpoly' || !named.before.defined || !named.after.defined
@@ -108,6 +136,58 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     if ((await api('getAllObjectNames') as string[]).some(isInternalHelperName)) throw new Error('High quartic helpers were not collected');
     report(`High quartic equation: ${named.after.value.slice(0, 180)}`);
     report('PASS qlQuartic High-only candidate');
+    return;
+  }
+  if (tool.startsWith('cuspidal')) {
+    const named = await run(true);
+    if (named.before.type !== 'implicitpoly' || !named.before.defined || named.before.value.includes('?'))
+      throw new Error('Cuspidal cubic did not produce a dynamic implicit curve');
+    const cuspFunction = await engine.executeCommand('cuspFunction=LeftSide(out)-RightSide(out)');
+    if (!cuspFunction.success) throw new Error(`Could not read cusp polynomial: ${cuspFunction.error}`);
+    const points = tool === 'cuspidalGeneral' ? ['A','B','C','D','E','F'] : tool === 'cuspidalDirection' ? ['A','B','C'] : ['A','B','C','D'];
+    for (const point of points) {
+      const residual = Number(await api('getValue', `cuspFunction(x(${point}),y(${point}))`));
+      if (!Number.isFinite(residual) || Math.abs(residual) > 1e-5) throw new Error(`${point} misses cusp curve: ${residual}`);
+    }
+    const at = async (dx: number, dy: number) => Number(await api('getValue', `cuspFunction(x(A)+(${dx}),y(A)+(${dy}))`));
+    const cone = async (dx: number, dy: number) => (await at(dx, dy) + await at(-dx, -dy)) / 2;
+    const xx = await cone(1, 0); const yy = await cone(0, 1); const xy = await cone(1, 1) - xx - yy;
+    const discriminant = xy * xy - 4 * xx * yy;
+    const scale = Math.max(1, Math.abs(xy * xy), Math.abs(4 * xx * yy));
+    if (Math.abs(discriminant) > 1e-6 * scale) throw new Error(`Tangent cone is not cuspidal: ${discriminant}`);
+    if (tool === 'cuspidalCircularMulti' && named.labels.length !== 2) throw new Error('Expected two cusp branches');
+    if (tool === 'cuspidalCircularMulti' && (String(await api('getValueString', named.labels[1])).includes('?')
+      || String(await api('getValueString', named.labels[1])) === named.after.value))
+      throw new Error('Second cusp branch is missing or duplicate');
+    await api('deleteObject', 'cuspFunction');
+    await verifyHelpersAndReopen(named);
+    report(`Cusp before: ${named.before.value.slice(0, 180)}`);
+    report(`Cusp after: ${named.after.value.slice(0, 180)}`);
+    report(`PASS ${tool} named candidate`);
+    return;
+  }
+  if (tool === 'prehessian' || tool === 'prehessianMulti') {
+    const named = await run(true);
+    if (named.before.type !== 'implicitpoly' || named.before.value.includes('?'))
+      throw new Error('Prehessian candidate did not create a real cubic');
+    const check = await executeCommandPipeline(engine, 'check=HessianCubic(out)', { helperMode: 'medium' });
+    if (!check.success || !await api('isDefined', 'check')) throw new Error('Could not construct the prehessian Hessian');
+    const functions = await engine.executeCommand('inputFunction=LeftSide(F)-RightSide(F)\nhessianFunction=LeftSide(check)-RightSide(check)');
+    if (!functions.success) throw new Error(`Could not read Hessian polynomial: ${functions.error}`);
+    const evaluate = async (curve: string, x: number, y: number) => Number(await api('getValue', `${curve}(${x},${y})`));
+    const samples = [[0,0],[1,0],[0,1],[2,-1]] as const;
+    const pairs = await Promise.all(samples.map(async ([x,y]) => [await evaluate('inputFunction',x,y),await evaluate('hessianFunction',x,y)]));
+    const ratio = pairs[0][1] / pairs[0][0];
+    if (!Number.isFinite(ratio) || Math.abs(ratio) < 1e-8 || pairs.some(([f,h]) =>
+      !Number.isFinite(h) || Math.abs(h-ratio*f) > 1e-5*Math.max(1,Math.abs(h),Math.abs(ratio*f))))
+      throw new Error(`Hessian is not proportional to input: ${JSON.stringify(pairs)}`);
+    if (tool === 'prehessianMulti' && named.labels.length !== 3) throw new Error('Expected three fixed prehessian slots');
+    for (const label of ['hessianFunction','inputFunction','check']) await api('deleteObject', label);
+    const cleanup = new InternalHelperLifecycle(engine);
+    await cleanup.reconcile(); cleanup.dispose();
+    await verifyHelpersAndReopen(named);
+    report(`Hessian proportionality factor ${ratio}`);
+    report(`PASS prehessian High-only candidate`);
     return;
   }
   const baseline = await run(false);

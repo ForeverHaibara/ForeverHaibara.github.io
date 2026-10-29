@@ -30,7 +30,10 @@ describe('Construction catalog, type contracts and expansion budgets', () => {
       expect(expanded).not.toMatch(/Locus\(|SetValue\(|SetCoords\(|Execute\(|Derivative\(/u);
       // CircularCubic reuses its eight required minors for the zero-polynomial
       // guard; it avoids a separate dynamic MatrixRank computation.
-      const budget = tool.name === 'Conic' ? 100_000 : tool.name === 'CircularCubic' ? 45_000 : 30_000;
+      // PrehessianCubic intentionally targets High: its anonymous fallback
+      // repeats a cubic Hessian four times and is not a usable speed path.
+      const budget = tool.name === 'PrehessianCubic' ? 210_000 : tool.name === 'Conic' ? 100_000
+        : tool.name === 'CuspidalCubic' ? 50_000 : tool.name === 'CircularCubic' ? 45_000 : 30_000;
       expect(expanded.length, `${tool.name}: ${expanded.length}`).toBeLessThan(budget);
       // Native names and finite support parameters are independently audited by nativeCommands.test.ts.
     }
