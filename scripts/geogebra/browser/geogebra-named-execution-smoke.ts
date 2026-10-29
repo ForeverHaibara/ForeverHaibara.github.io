@@ -1,6 +1,9 @@
 import type { GeoGebraEngine } from '../../../src/features/geogebra/types';
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import { isInternalHelperName } from '../../../src/features/geogebra/commands/custom/internalHelpers';
+import { GeoGebraConstructionSource } from '../../../src/features/geogebra/analysis/constructionSource';
+import { buildDependencyGraph, collapseInternalHelpers } from '../../../src/features/geogebra/analysis/constructionGraph';
+import { InternalHelperLifecycle } from '../../../src/features/geogebra/commands/custom/helperLifecycle';
 
 /** Disposable native verification: ?suite=named-execution&tool=<case key below>. */
 export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (message: string) => void) => {
@@ -23,6 +26,7 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     circularCubicDirectionSegment: { setup: 'shift=0\nA=(0,0)\nB=(1/2+shift,1/2)\nC=(1/2,-1/2)\nD=(4/5,8/5)\nE=(4/5,-8/5)\nF=(9/10,27/10)\nl=Segment((2,-1),(2,3))', command: 'out=CircularCubic(A,B,C,D,E,F,l)', move: () => api('setValue', 'shift', 0.1) },
     nodalCubic: { setup: 'shift=0\nA=(0,0)\nB=(1/2+shift,1/2)\nC=(1/2,-1/2)\nD=(4/5,8/5)\nE=(4/5,-8/5)\nF=(9/10,27/10)\nG=(-2,3)', command: 'out=NodalCubic(A,B,C,D,E,F,G)', move: () => api('setValue', 'shift', 0.1) },
     nodalCubicSmall: { setup: 'shift=0\nA=(0,0)\nB=(1/2+shift,1/2)\nC=(1/2,-1/2)\nD=(4/5,8/5)\nE=(4/5,-8/5)', command: 'out=NodalCubic(A,B,C,D,E)', move: () => api('setValue', 'shift', 0.1) },
+    miquelCircle: { setup: 'shift=0\nA=(0,0)\nB=(4+shift,0)\nC=(3,3)\nD=(0,2)', command: 'out=QLCi3(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
     hessian: { setup: 'shift=0\nF=ImplicitCurve(x^3+y^3+x*y+shift*x+1)', command: 'out=HessianCubic(F)', move: () => api('setValue', 'shift', 0.1) },
     jacobian: { setup: 'shift=0\nq1=Conic({1,2,-1,0,shift,0})\nq2=Conic({2,1,-1,1,0,0})\nq3=Conic({1,-1,-1,0,1,0})', command: 'out=JacobianCubic(q1,q2,q3)', move: () => api('setValue', 'shift', 0.1) },
   };
@@ -39,7 +43,7 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const setup = await engine.executeCommand(selected.setup);
     if (!setup.success) throw new Error(`Setup failed: ${setup.error}`);
     const started = performance.now();
-    const result = await executeCommandPipeline(engine, selected.command, { allowNonGeometricHelpers: named });
+    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? tool === 'miquelCircle' ? 'high' : 'medium' : 'low' });
     const create = performance.now() - started;
     if (!result.success) throw new Error(`${named ? 'named' : 'anonymous'} failed: ${result.error}`);
     const before = await snapshot();
@@ -47,6 +51,17 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const helpers = names.filter(isInternalHelperName);
     if (named && !helpers.length || !named && helpers.length) throw new Error(`Unexpected helper count ${helpers.length}`);
     if (result.labels.some(isInternalHelperName)) throw new Error('Internal helper leaked into result labels');
+    if (named && tool === 'miquelCircle') for (const helper of helpers) {
+      if (await api('getObjectType', helper) !== 'point') throw new Error(`${helper} is not a point`);
+      if (await api('getVisible', helper)) throw new Error(`${helper} is visible`);
+      if (!/<auxiliary\s+val="true"\s*\/>/u.test(String(await api('getXML', helper)))) throw new Error(`${helper} is not auxiliary`);
+    }
+    if (named && tool === 'miquelCircle') {
+      const snapshot = await new GeoGebraConstructionSource(engine).read();
+      const graph = collapseInternalHelpers(buildDependencyGraph(snapshot.objects));
+      if (graph.nodes.some((node) => isInternalHelperName(node.name))) throw new Error('Auxiliary point leaked into relation graph');
+      if (!graph.nodes.some((node) => node.name === 'out')) throw new Error('Output missing from relation graph');
+    }
     report(`${named ? 'NAMED' : 'BASE'} create ${create.toFixed(1)} ms; helpers ${helpers.length}; result labels ${result.labels.join(',')}`);
     const updateStarted = performance.now();
     await selected.move();
@@ -60,11 +75,23 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     || baseline.before.defined !== named.before.defined || baseline.after.defined !== named.after.defined)
     throw new Error(`Object type changed: ${baseline.after.type} vs ${named.after.type}`);
   if (['orthicAxis', 'orthicAxisDegenerate', 'poloconic', 'poloconicDegenerate', 'poloconicSegment',
-    'circularCubicDirection', 'circularCubicDirectionSegment', 'nodalCubic', 'nodalCubicSmall'].includes(tool)
+    'circularCubicDirection', 'circularCubicDirectionSegment', 'nodalCubic', 'nodalCubicSmall', 'miquelCircle'].includes(tool)
     && (baseline.before.value !== named.before.value || baseline.after.value !== named.after.value))
     throw new Error(`Equation changed for ${tool}`);
   // Other fixtures may normalize equivalent polynomials by a nonzero factor.
   report(`BASE equation: ${baseline.after.value.slice(0, 180)}`);
   report(`NAMED equation: ${named.after.value.slice(0, 180)}`);
+  if (tool === 'miquelCircle') {
+    const exported = await engine.exportGgb();
+    await engine.importGgb(new File([exported], 'geometry-auxiliary.ggb'));
+    const reopened = await api('getAllObjectNames') as string[];
+    if (reopened.filter(isInternalHelperName).length !== 6 || !reopened.includes('out')) throw new Error('Geometry helpers did not survive file reopen');
+    const lifecycle = new InternalHelperLifecycle(engine);
+    await api('deleteObject', 'out');
+    await lifecycle.reconcile();
+    lifecycle.dispose();
+    if ((await api('getAllObjectNames') as string[]).some(isInternalHelperName)) throw new Error('Orphan geometry helpers were not collected');
+    report('Geometry helpers survived .ggb reopen and were collected after output deletion');
+  }
   report(`PASS ${tool}`);
 };

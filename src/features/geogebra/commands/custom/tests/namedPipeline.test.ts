@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GeoGebraEngine } from '../../../types';
 import { executeCommandPipeline } from '../../commandPipeline';
 import { isInternalHelperName } from '../internalHelpers';
+import { verifiedHelpers } from '../helperLifecycle';
 
 const makeEngine = (createOutput: boolean) => {
   const objects = new Map<string, string>(['f', 'g', 'h', 'j', 'k'].map((name) => [name, 'line']));
@@ -26,6 +27,12 @@ const makeEngine = (createOutput: boolean) => {
 };
 
 describe('named command execution', () => {
+  it('recognizes only marked geometric helpers after a file reload', () => {
+    const marked = 'ggbaux0123456789abcdefnv1';
+    const unmarked = 'ggbaux0123456789abcdefnv2';
+    const xml = `<element type="point" label="${marked}"><auxiliary val="true" /></element><element type="point" label="${unmarked}"><auxiliary val="false" /></element>`;
+    expect(verifiedHelpers(xml, [marked, unmarked])).toEqual([marked]);
+  });
   it('hides internal labels and commits one undo step', async () => {
     const { engine, objects, callApi } = makeEngine(true);
     const result = await executeCommandPipeline(engine, 'out=Conic(f,g,h,j,k)', { allowNonGeometricHelpers: true });

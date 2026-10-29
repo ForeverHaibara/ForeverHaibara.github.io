@@ -14,7 +14,7 @@ export const normalizeCommand = (command: string): string =>
     .join('\n');
 
 export const executeCommandPipeline = async (engine: GeoGebraEngine, command: string,
-  options: { allowNonGeometricHelpers?: boolean } = {}): Promise<CommandResult> => {
+  options: { helperMode?: 'low' | 'medium' | 'high'; allowNonGeometricHelpers?: boolean } = {}): Promise<CommandResult> => {
   const normalized = normalizeCommand(command);
   if (!containsStudioCall(normalized)) return engine.executeCommand(normalized);
   const labels: string[] = [];
@@ -25,8 +25,9 @@ export const executeCommandPipeline = async (engine: GeoGebraEngine, command: st
       // participate in overload selection without numeric coordinate sampling.
       const custom = containsStudioCall(statement);
       const environment = custom ? await readCommandEnvironment(engine) : null;
-      const plan = custom && options.allowNonGeometricHelpers
-        ? compileStudioPlan(statement, environment!, newHelperGroupId()) : null;
+      const mode = options.helperMode ?? (options.allowNonGeometricHelpers ? 'medium' : 'low');
+      const plan = custom && mode !== 'low'
+        ? compileStudioPlan(statement, environment!, newHelperGroupId(), mode) : null;
       const assignmentName = /^([\p{L}_][\p{L}\p{N}_{}'′]*)\s*=/u.exec(statement)?.[1];
       const existing = plan?.materialized ? new Set(await engine.callApi('getAllObjectNames', []) as string[]) : null;
       const canMaterialize = Boolean(plan?.materialized && existing

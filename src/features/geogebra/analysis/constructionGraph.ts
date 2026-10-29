@@ -1,7 +1,6 @@
 import { objectNodeId, FREE_OBJECT_ROOT_ID } from './graphTypes';
 import type { ConstructionObjectInput, DependencyGraph, GraphEdge, GraphNode, ParseDiagnostic } from './graphTypes';
 import { parseConstruction } from './expressionParser';
-import { isInternalHelperName } from '../commands/custom/internalHelpers';
 
 const edgeId = (source: string, target: string, kind: GraphEdge['kind']): string => `${kind}:${source}->${target}`;
 
@@ -39,6 +38,7 @@ export const buildDependencyGraph = (objects: readonly ConstructionObjectInput[]
     const node: GraphNode = {
       id: objectNodeId(object.name),
       name: object.name,
+      internalHelper: object.internalHelper,
       label: object.name,
       objectType: object.objectType,
       commandString: object.commandString,
@@ -62,7 +62,7 @@ export const buildDependencyGraph = (objects: readonly ConstructionObjectInput[]
 
 /** Hide implementation nodes while preserving dependencies between user objects. */
 export const collapseInternalHelpers = (graph: DependencyGraph): DependencyGraph => {
-  const hidden = new Set(graph.nodes.filter((node) => isInternalHelperName(node.name)).map((node) => node.id));
+  const hidden = new Set(graph.nodes.filter((node) => node.internalHelper).map((node) => node.id));
   if (!hidden.size) return graph;
   const incoming = new Map<string, GraphEdge[]>();
   graph.edges.forEach((edge) => incoming.set(edge.target, [...(incoming.get(edge.target) ?? []), edge]));

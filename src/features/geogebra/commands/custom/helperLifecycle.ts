@@ -5,14 +5,14 @@ const GROUP = /^ggbaux([0-9a-f]{16})nv\d+$/u;
 const WORD = (name: string) => new RegExp(`(?<![\\p{L}\\p{N}_])${name}(?![\\p{L}\\p{N}_])`, 'u');
 
 /** Parses native metadata so similarly named user objects are never collected. */
-const verifiedHelpers = (xml: string, names: readonly string[]): string[] => {
+export const verifiedHelpers = (xml: string, names: readonly string[]): string[] => {
   const elements = new Map([...xml.matchAll(/<element\b[^>]*\blabel="([^"]+)"[^>]*>[\s\S]*?<\/element>/gu)]
     .map((match) => [match[1], match[0]]));
   return names.filter((name) => {
     if (!isInternalHelperName(name)) return false;
     const element = elements.get(name);
     return Boolean(element && /<auxiliary\s+val="true"\s*\/>/u.test(element)
-      && /<element\b[^>]*\btype="(?:numeric|list|function|functionNVar)"/iu.test(element));
+      && /<element\b[^>]*\btype="(?:numeric|list|function|functionNVar|point|vector|line|circle|conic|implicitPoly|implicitCurve)"/iu.test(element));
   });
 };
 

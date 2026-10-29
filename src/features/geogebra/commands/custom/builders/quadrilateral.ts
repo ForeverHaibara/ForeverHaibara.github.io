@@ -65,7 +65,7 @@ const qlPair = (kind: number): ExpressionBuilder => (args, allocate) => {
 const withCenters = (args: readonly TypedExpression[], allocate: Allocate, body: (centers: string[]) => string) => {
   const [a, b, c, d] = args.slice(0, 4).map((arg) => arg.expression);
   return bind([`Intersect(Line(${a},${b}),Line(${c},${d}))`, `Intersect(Line(${b},${c}),Line(${d},${a}))`], allocate, ([e, f]) =>
-    bind([[a, b, f], [b, c, e], [c, d, f], [d, a, e]].map((tri) => `TriangleCenter(${tri.join(',')},3)`), allocate, body));
+    bind([[a, b, f], [b, c, e], [c, d, f], [d, a, e]].map((tri) => `TriangleCenter(${tri.join(',')},3)`), allocate, body, 'point'), 'point');
 };
 const qlCenters = (kind: number): ExpressionBuilder => (args, allocate) => withCenters(args, allocate, (os) => {
   if (kind === 6) return `${add(os)}/4`;

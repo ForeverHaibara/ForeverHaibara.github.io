@@ -76,7 +76,7 @@ export interface StudioSettings {
   sidePanelWidth: number;
   commandBarCollapsed: boolean;
   commandBarFloating: boolean;
-  allowNonGeometricHelpers: boolean;
+  helperMode: 'low' | 'medium' | 'high';
 }
 
 export interface GeometryProjectRecord {

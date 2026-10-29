@@ -83,13 +83,21 @@ describe('GeoGebra dependency graph', () => {
     const b = 'ggbaux0123456789abcdefnv2';
     const graph = collapseInternalHelpers(buildDependencyGraph([
       { name: 'input', objectType: 'numeric', commandString: '' },
-      { name: a, objectType: 'numeric', commandString: 'input+1' },
-      { name: b, objectType: 'numeric', commandString: `${a}^2` },
+      { name: a, internalHelper: true, objectType: 'numeric', commandString: 'input+1' },
+      { name: b, internalHelper: true, objectType: 'numeric', commandString: `${a}^2` },
       { name: 'output', objectType: 'point', commandString: `(${b},0)` },
     ]));
     expect(graph.nodes.map((node) => node.name)).toEqual([FREE_OBJECT_ROOT_ID, 'input', 'output']);
     expect(graph.edges).toContainEqual(expect.objectContaining({ source: objectNodeId('input'), target: objectNodeId('output') }));
     expect(graph.edges.some((edge) => edge.source.includes('ggbaux') || edge.target.includes('ggbaux'))).toBe(false);
+  });
+
+  it('keeps a similarly named user point without verified auxiliary metadata', () => {
+    const name = 'ggbaux0123456789abcdefnv1';
+    const graph = collapseInternalHelpers(buildDependencyGraph([
+      { name, objectType: 'point', commandString: '', coordinates: { x: 1, y: 2 } },
+    ]));
+    expect(graph.nodes.some((node) => node.name === name)).toBe(true);
   });
 });
 

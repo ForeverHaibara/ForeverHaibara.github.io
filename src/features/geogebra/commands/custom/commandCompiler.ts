@@ -4,6 +4,7 @@ import { createBindingCapture, type CompiledBindingPlan } from './bindingPlan';
 import { expandTool, selectOverload, studioTools, toolSignature } from './toolLibrary';
 import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload, TypedExpression } from './types';
 import type { BindingAllocator } from './algebra/homogeneous';
+import type { BindValueKind } from './algebra/homogeneous';
 
 const nativeNames = new Set(GEOGEBRA_COMMAND_NAMES.map((name) => name.toLowerCase()));
 const nativeReturns: Record<string, GeometryType> = {
@@ -196,14 +197,18 @@ const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   circularCubicDirection: anyOverload,
   nodalCubic: (args) => [5, 7].includes(args.length) && args.every((type) => type === 'point'),
 };
+const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  qlMiquelCircle: (args) => args.length === 4 && args.every((type) => type === 'point'),
+};
+const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 'function', 'point', 'vector', 'line', 'circle', 'conic', 'implicitCurve']);
 
 /** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
 export const compileStudioPlan = (source: string, environment: CommandEnvironment,
-  groupId: string): CompiledBindingPlan => {
+  groupId: string, mode: 'medium' | 'high' = 'medium'): CompiledBindingPlan => {
   const capture: Capture = { ...createBindingCapture(), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
-  const supports = selected?.builder ? NAMED_OVERLOADS[selected.builder] : undefined;
+  const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder] ?? (mode === 'high' ? GEOMETRIC_OVERLOADS[selected.builder] : undefined)) : undefined;
   const eligible = Boolean(selected && supports?.(selected.args));
-  return capture.lower(expression, groupId, eligible);
+  return capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
 };

@@ -13,9 +13,17 @@ export const beginHelperGroup = (id: string): (() => void) => {
 
 export const isActiveHelperGroup = (id: string): boolean => activeGroups.has(id);
 
-export const isExpectedHelperType = (kind: 'number' | 'numberList' | 'function', nativeType: unknown): boolean => {
+import type { BindValueKind } from './algebra/homogeneous';
+
+export const isExpectedHelperType = (kind: BindValueKind, nativeType: unknown): boolean => {
   const type = String(nativeType ?? '').toLowerCase().replace(/^geo/u, '');
   if (kind === 'number') return ['numeric', 'number', 'integer', 'angle'].includes(type);
   if (kind === 'numberList') return type === 'list';
-  return ['function', 'functionnvar', 'multivariablefunction'].includes(type);
+  if (kind === 'function') return ['function', 'functionnvar', 'multivariablefunction'].includes(type);
+  if (kind === 'point') return ['point', 'pointonpath', 'pointinregion'].includes(type);
+  if (kind === 'vector') return type === 'vector';
+  if (kind === 'line') return type === 'line';
+  if (kind === 'circle') return type === 'circle';
+  if (kind === 'conic') return ['conic', 'ellipse', 'hyperbola', 'parabola', 'intersectinglines', 'parallellines', 'doubleline', 'emptyset'].includes(type);
+  return ['implicitpoly', 'implicitcurve'].includes(type);
 };

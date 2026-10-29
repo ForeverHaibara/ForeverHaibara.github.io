@@ -1,5 +1,7 @@
 import type { ConstructionObjectInput } from './graphTypes';
 import type { GeoGebraEngine } from '../types';
+import { isInternalHelperName } from '../commands/custom/internalHelpers';
+import { verifiedHelpers } from '../commands/custom/helperLifecycle';
 
 export interface ConstructionSnapshot {
   objects: ConstructionObjectInput[];
@@ -40,6 +42,11 @@ export class GeoGebraConstructionSource implements ConstructionSource {
       return { objects: [], diagnostics: [error instanceof Error ? error.message : 'Unable to read GeoGebra object names.'], capturedAt: Date.now() };
     }
 
+    let helpers = new Set<string>();
+    if (names.some(isInternalHelperName)) {
+      try { helpers = new Set(verifiedHelpers(String(await this.engine.callApi('getXML', [])), names)); }
+      catch { return { objects: [], diagnostics: ['Unable to verify auxiliary objects; relation discovery was skipped.'], capturedAt: Date.now() }; }
+    }
     const objects = await Promise.all(names.map(async (name): Promise<ConstructionObjectInput> => {
       const [commandResult, typeResult] = await Promise.allSettled([
         this.engine.callApi('getCommandString', [name]),
@@ -56,7 +63,7 @@ export class GeoGebraConstructionSource implements ConstructionSource {
       if (commandResult.status === 'rejected') errors.push(`getCommandString(${name}): ${commandResult.reason instanceof Error ? commandResult.reason.message : String(commandResult.reason)}`);
       if (typeResult.status === 'rejected') errors.push(`getObjectType(${name}): ${typeResult.reason instanceof Error ? typeResult.reason.message : String(typeResult.reason)}`);
       let coordinates;
-      if (isTwoDimensionalPoint(objectType)) {
+      if (!helpers.has(name) && isTwoDimensionalPoint(objectType)) {
         const [xResult, yResult] = await Promise.allSettled([
           this.engine.callApi('getXcoord', [name]),
           this.engine.callApi('getYcoord', [name]),
@@ -72,7 +79,7 @@ export class GeoGebraConstructionSource implements ConstructionSource {
         }
       }
       if (errors.length > 0 || coordinateErrors.length > 0) diagnostics.push(...errors, ...coordinateErrors);
-      return { name, objectType, commandString, ...(coordinates ? { coordinates } : {}), ...(coordinateErrors.length > 0 ? { coordinateError: coordinateErrors.join(' ') } : {}), ...(errors.length > 0 ? { readError: errors.join(' ') } : {}) };
+      return { name, internalHelper: helpers.has(name), objectType, commandString, ...(coordinates ? { coordinates } : {}), ...(coordinateErrors.length > 0 ? { coordinateError: coordinateErrors.join(' ') } : {}), ...(errors.length > 0 ? { readError: errors.join(' ') } : {}) };
     }));
 
     return { objects, diagnostics, capturedAt: Date.now() };

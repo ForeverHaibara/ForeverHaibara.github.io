@@ -37,10 +37,11 @@ export const createBindingCapture = () => {
     return output;
   };
 
-  const lower = (source: string, groupId: string, eligible: boolean): CompiledBindingPlan => {
+  const lower = (source: string, groupId: string, eligible: boolean,
+    allowedKinds: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 'function'])): CompiledBindingPlan => {
     if (!/^[0-9a-f]{16}$/u.test(groupId)) throw new Error('Invalid internal helper group.');
     if (!eligible || nodes.size === 0 || nodes.size > 128 || [...nodes.values()].some((node) =>
-      !node.kinds || node.kinds.length !== node.values.length)) {
+      !node.kinds || node.kinds.length !== node.values.length || node.kinds.some((kind) => !allowedKinds.has(kind)))) {
       return { output: anonymous(source), helpers: [], materialized: false };
     }
     // The first backend intentionally rejects constructs with their own local

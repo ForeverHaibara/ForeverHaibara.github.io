@@ -31,6 +31,7 @@ export interface PointCoordinate {
 
 export interface ConstructionObjectInput {
   name: string;
+  internalHelper?: boolean;
   objectType: string | null;
   commandString: string | null;
   coordinates?: PointCoordinate;
@@ -45,6 +46,7 @@ export const objectNodeId = (name: string): string => `object:${name}`;
 export interface GraphNode {
   id: string;
   name: string;
+  internalHelper?: boolean;
   label: string;
   objectType: string | null;
   commandString: string | null;

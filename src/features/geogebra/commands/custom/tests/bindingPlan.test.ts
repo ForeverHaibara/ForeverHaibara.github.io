@@ -64,4 +64,15 @@ describe('one formula source with two binding lowerings', () => {
       expect(plan.helpers.length).toBeGreaterThan(0);
     }
   });
+
+  it('limits point intermediates to High mode and the verified circle overload', () => {
+    const source = 'out=QLCi3(A,B,C,D)';
+    const medium = compileStudioPlan(source, environment(), id);
+    const high = compileStudioPlan(source, environment(), id, 'high');
+    expect(medium.materialized).toBe(false);
+    expect(high.materialized).toBe(true);
+    expect(high.helpers).toHaveLength(6);
+    expect(high.helpers.every((helper) => helper.kind === 'point')).toBe(true);
+    expect(high.output).not.toContain('Element(Zip(');
+  });
 });

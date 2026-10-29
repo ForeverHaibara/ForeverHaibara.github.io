@@ -24,12 +24,14 @@ const readSettings = (): StudioSettings => {
   try {
     const raw = window.localStorage.getItem('geogebra-studio-settings');
     if (!raw) return { ...DEFAULT_STUDIO_SETTINGS };
-    const parsed = JSON.parse(raw) as Partial<StudioSettings>;
+    const parsed = JSON.parse(raw) as Partial<StudioSettings> & { allowNonGeometricHelpers?: boolean };
     const sidePanelWidth = typeof parsed.sidePanelWidth === 'number' && Number.isFinite(parsed.sidePanelWidth)
       ? Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, parsed.sidePanelWidth))
       : DEFAULT_STUDIO_SETTINGS.sidePanelWidth;
-    return { ...DEFAULT_STUDIO_SETTINGS, ...parsed, sidePanelWidth,
-      allowNonGeometricHelpers: parsed.allowNonGeometricHelpers === true };
+    const helperMode = ['low', 'medium', 'high'].includes(parsed.helperMode ?? '')
+      ? parsed.helperMode! : parsed.allowNonGeometricHelpers === true ? 'medium' : 'low';
+    const { allowNonGeometricHelpers: _legacy, ...stored } = parsed;
+    return { ...DEFAULT_STUDIO_SETTINGS, ...stored, sidePanelWidth, helperMode };
   } catch {
     return { ...DEFAULT_STUDIO_SETTINGS };
   }

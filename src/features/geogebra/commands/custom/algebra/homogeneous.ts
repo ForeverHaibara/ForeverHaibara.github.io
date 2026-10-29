@@ -19,7 +19,7 @@ export const adjugate = (m: Matrix): Matrix => Array.from({ length: 3 }, (_, i) 
 export const determinant = (m: Matrix) => add(m[0].map((value, j) => mul(value, adjugate(m)[j][0])));
 export const cross = (a: string[], b: string[]): string[] => [0, 1, 2].map((i) => sub(mul(a[(i + 1) % 3], b[(i + 2) % 3]), mul(a[(i + 2) % 3], b[(i + 1) % 3])));
 
-export type BindValueKind = 'number' | 'numberList' | 'function';
+export type BindValueKind = 'number' | 'numberList' | 'function' | 'point' | 'vector' | 'line' | 'circle' | 'conic' | 'implicitCurve';
 export type BindingAllocator = (() => string) & {
   captureBinding?: (names: string[], values: string[], expression: string, kinds?: BindValueKind[]) => string;
 };

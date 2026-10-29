@@ -1,6 +1,6 @@
 # 命名辅助对象扩展到几何类型：技术调查与实施计划
 
-日期：2026-10-29。状态：**调查与设计，未修改实现**。现有非几何实现见 [实施说明](named-intermediates-implementation.md)，原规划见 [历史规划](named-intermediates-plan.md)。
+日期：2026-10-29。状态：**High 档与一个点型辅助工具试点已实现；其余类型和工具仍按本计划逐项验证**。现有实现见 [实施说明](named-intermediates-implementation.md)，原规划见 [历史规划](named-intermediates-plan.md)。
 
 ## 结论与边界
 
