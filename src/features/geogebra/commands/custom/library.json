@@ -5,7 +5,7 @@
   "tools": [
     {
       "name": "GibertCurve",
-      "description": "A triangle curve from Gibert's catalogue. Use a literal number or a quoted ID such as \"Q036A\". Supported: 2, 3, 4, 5, 10, 11, 12, 14, 16, 17, 19, 33, 39, 142, 202, and Q036A/B/C. Requires Medium or High performance and a new output label.",
+      "description": "A triangle curve from Gibert's catalogue. Use a literal number or a quoted ID such as \"Q036A\". See the related-curves database for supported IDs. Requires Medium or High performance and a new output label.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "implicitCurve", "builder": "gibertCurve", "requiresNamed": true}
       ]

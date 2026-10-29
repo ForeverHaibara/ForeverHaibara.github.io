@@ -48,3 +48,5 @@ Q005 is a cubic and uses the same interface. Q036 has three supported members:
 Q000 and Q035 are unimplemented families; a recognized suffix does not imply
 that a variant has been implemented.
 Do not register each new record as a separate public command or alias.
+
+For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT files. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses two exact triangles for the recognized simple centers and sample points. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.
