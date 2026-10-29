@@ -1,0 +1,419 @@
+{
+  "note": "Exploratory production-pipeline samples, one creation and eight updates per record; native version and viewport are per record.",
+  "records": [
+    {
+      "id": 39,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        560,
+        567
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 4501.100000143051,
+      "expandedLength": 252936,
+      "objectCount": 68,
+      "updates": [
+        38.799999952316284,
+        42.799999952316284,
+        54.5,
+        40.299999952316284,
+        48,
+        49.799999952316284,
+        40.09999990463257,
+        31.800000190734863
+      ],
+      "updateMedian": 41.549999952316284,
+      "centers": [
+        {
+          "index": 1,
+          "residual": 1.223816988874348e-17
+        },
+        {
+          "index": 13,
+          "residual": -1.223816988874348e-17
+        },
+        {
+          "index": 14,
+          "residual": 8.811482319895306e-16
+        },
+        {
+          "index": 15,
+          "residual": -1.223816988874348e-17
+        },
+        {
+          "index": 16,
+          "residual": 1.3618635452193747e-13
+        }
+      ],
+      "equilateralDefined": true,
+      "ggbBytes": 16470,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 12,
+      "mode": "medium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 1802.8000001907349,
+      "expandedLength": 98952,
+      "objectCount": 48,
+      "updates": [
+        19.59999990463257,
+        13.299999952316284,
+        15.799999952316284,
+        19.800000190734863,
+        21.699999809265137,
+        29.40000009536743,
+        25,
+        22.299999952316284
+      ],
+      "updateMedian": 20.75,
+      "centers": [
+        {
+          "index": 2,
+          "residual": 5.2772887330088145e-18
+        },
+        {
+          "index": 6,
+          "residual": 0
+        },
+        {
+          "index": 7,
+          "residual": -5.2772887330088145e-18
+        },
+        {
+          "index": 13,
+          "residual": 7.915933099513221e-18
+        },
+        {
+          "index": 14,
+          "residual": 1.2665492959221154e-16
+        }
+      ],
+      "equilateralDefined": true,
+      "ggbBytes": 9684,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 2,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 831.5999999046326,
+      "expandedLength": 23856,
+      "objectCount": 43,
+      "updates": [
+        10.700000047683716,
+        6.200000047683716,
+        8.700000047683716,
+        9.5,
+        6.8999998569488525,
+        7.1000001430511475,
+        9.200000047683716,
+        4.6000001430511475
+      ],
+      "updateMedian": 7.900000095367432,
+      "centers": [
+        {
+          "index": 1,
+          "residual": 0
+        },
+        {
+          "index": 3,
+          "residual": 0
+        },
+        {
+          "index": 6,
+          "residual": 0
+        },
+        {
+          "index": 15,
+          "residual": 1.545170866388356e-16
+        },
+        {
+          "index": 16,
+          "residual": 3.770216913987589e-14
+        }
+      ],
+      "equilateralDefined": true,
+      "ggbBytes": 6751,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 3,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 1330.7000000476837,
+      "expandedLength": 50463,
+      "objectCount": 46,
+      "updates": [
+        18.799999952316284,
+        13.400000095367432,
+        18.200000047683716,
+        17.199999809265137,
+        15.799999952316284,
+        10.899999856948853,
+        13,
+        9.299999952316284
+      ],
+      "updateMedian": 14.600000023841858,
+      "centers": [
+        {
+          "index": 1,
+          "residual": -1.2179883011815738e-16
+        },
+        {
+          "index": 2,
+          "residual": -1.6239844015754316e-16
+        },
+        {
+          "index": 4,
+          "residual": -4.059961003938579e-17
+        },
+        {
+          "index": 13,
+          "residual": 8.119922007877158e-17
+        },
+        {
+          "index": 14,
+          "residual": -3.247968803150863e-15
+        }
+      ],
+      "equilateralDefined": true,
+      "ggbBytes": 7957,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 33,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 976.3999998569489,
+      "expandedLength": 23427,
+      "objectCount": 40,
+      "history": true,
+      "updates": [
+        14.099999904632568,
+        14.299999952316284,
+        14,
+        8.600000143051147,
+        11.899999856948853,
+        9.099999904632568,
+        8.200000047683716,
+        9.599999904632568
+      ],
+      "updateMedian": 10.74999988079071,
+      "centers": [
+        {
+          "index": 2,
+          "residual": -4.342816581069036e-17
+        },
+        {
+          "index": 3,
+          "residual": 0
+        }
+      ],
+      "samplePoints": 6,
+      "conditionalCenters": [
+        {
+          "index": 370,
+          "defined": false,
+          "residual": null
+        }
+      ],
+      "equilateralDefined": true,
+      "ggbBytes": 6614,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 39,
+      "mode": "medium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 7780.799999952316,
+      "expandedLength": 252936,
+      "objectCount": 68,
+      "history": true,
+      "updates": [
+        87.89999985694885,
+        77.09999990463257,
+        65.39999985694885,
+        73.39999985694885,
+        85.79999995231628,
+        87,
+        71.09999990463257,
+        72.39999985694885
+      ],
+      "updateMedian": 75.24999988079071,
+      "centers": [
+        {
+          "index": 1,
+          "residual": 1.223816988874348e-17
+        },
+        {
+          "index": 13,
+          "residual": -1.223816988874348e-17
+        },
+        {
+          "index": 14,
+          "residual": 8.811482319895306e-16
+        },
+        {
+          "index": 15,
+          "residual": -1.223816988874348e-17
+        },
+        {
+          "index": 16,
+          "residual": 1.3618635452193747e-13
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 16470,
+      "cleanup": true,
+      "success": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "id": 33,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 712.4000000953674,
+      "expandedLength": 23427,
+      "objectCount": 40,
+      "history": true,
+      "updates": [
+        7.099999904632568,
+        11.200000047683716,
+        12.400000095367432,
+        9,
+        4.800000190734863,
+        10.5,
+        7.700000047683716,
+        7.400000095367432
+      ],
+      "updateMedian": 8.350000023841858,
+      "success": false,
+      "error": "Error: X30 unavailable"
+    },
+    {
+      "id": 33,
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 1062.0999999046326,
+      "expandedLength": 23427,
+      "objectCount": 40,
+      "history": true,
+      "updates": [
+        12.299999952316284,
+        14.399999856948853,
+        13.899999856948853,
+        14,
+        8.899999856948853,
+        14.799999952316284,
+        15.199999809265137,
+        16.299999952316284
+      ],
+      "updateMedian": 14.199999928474426,
+      "success": false,
+      "error": "Error: X370 unavailable"
+    },
+    {
+      "id": 12,
+      "mode": "low",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "success": false,
+      "error": "Error: out=GibertCurve(A,B,C,12): GibertCurve requires Medium or High custom tool performance. Use a new output label; anonymous execution is too slow.",
+      "expectedRejection": true
+    }
+  ]
+}

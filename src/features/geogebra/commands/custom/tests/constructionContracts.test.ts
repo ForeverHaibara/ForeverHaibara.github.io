@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileStudioCommand } from '../commandCompiler';
+import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
 import { studioToolLibrary, selectOverload } from '../toolLibrary';
 import { scimemiCoordinates } from '../builders/conics';
 import { qaCu1Coefficients } from '../builders/triangleCubics';
@@ -15,7 +15,7 @@ const compile = (source: string) => compileStudioCommand(source, environment());
 const scalar = (source: string, x = 0, y = 0) => Number(Function('x', 'y', `return ${source.replace(/\^/gu, '**')}`)(x, y));
 const strings = (ns: number[]) => ns.map((n) => `(${n})`);
 const close = (p: number[], q: number[]) => p.forEach((v, i) => expect(v).toBeCloseTo(q[i], 8));
-const actualType = (type: ParameterType): GeometryType => type === 'lineLike' ? 'segment' : type === 'pointOrLine' ? 'point' : type;
+const actualType = (type: ParameterType): GeometryType => type === 'catalogId' ? 'number' : type === 'lineLike' ? 'segment' : type === 'pointOrLine' ? 'point' : type;
 
 describe('Construction catalog, type contracts and expansion budgets', () => {
   it('compiles every catalog overload with native dependencies and bounded expressions', () => {
@@ -23,16 +23,19 @@ describe('Construction catalog, type contracts and expansion budgets', () => {
     for (const tool of tools) for (const overload of tool.overloads) {
       const scope: CommandEnvironment = { objects: new Map(), macros: new Set() };
       const args = overload.params.map((p, i) => {
+        if (p.type === 'catalogId') return '12';
         if (p.type === 'number') return '1';
         const label = `LongInputLabel${i}`; scope.objects.set(label, actualType(p.type)); return label;
       });
-      const expanded = compileStudioCommand(`${tool.name}(${args.join(',')})`, scope);
+      const source = `${tool.name}(${args.join(',')})`;
+      const plan = overload.requiresNamed ? compileStudioPlan(source, scope, '0123456789abcdef') : null;
+      const expanded = plan ? plan.helpers.map((h) => `${h.name}=${h.expression}`).concat(plan.output).join('\n') : compileStudioCommand(source, scope);
       expect(expanded).not.toMatch(/Locus\(|SetValue\(|SetCoords\(|Execute\(|Derivative\(/u);
       // CircularCubic reuses its eight required minors for the zero-polynomial
       // guard; it avoids a separate dynamic MatrixRank computation.
       // PrehessianCubic intentionally targets High: its anonymous fallback
       // repeats a cubic Hessian four times and is not a usable speed path.
-      const budget = tool.name === 'PrehessianCubic' ? 210_000 : tool.name === 'Conic' ? 100_000
+      const budget = tool.name === 'GibertCurve' ? 140_000 : tool.name === 'PrehessianCubic' ? 210_000 : tool.name === 'Conic' ? 100_000
         : tool.name === 'CuspidalCubic' ? 50_000 : tool.name === 'CircularCubic' ? 45_000 : 30_000;
       expect(expanded.length, `${tool.name}: ${expanded.length}`).toBeLessThan(budget);
       // Native names and finite support parameters are independently audited by nativeCommands.test.ts.

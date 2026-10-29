@@ -33,6 +33,8 @@ export const executeCommandPipeline = async (engine: GeoGebraEngine, command: st
       const canMaterialize = Boolean(plan?.materialized && existing
         && (!assignmentName || !existing.has(assignmentName))
         && plan.helpers.every((helper) => !existing.has(helper.name)));
+      if (plan?.requiresMaterialization && !canMaterialize)
+        throw new Error('This curve requires a new output label in Medium or High mode. Delete its existing output before recreating it.');
       const compiled = canMaterialize ? [...plan!.helpers.map(({ name, expression }) => `${name}=${expression}`), plan!.output].join('\n')
         : custom ? plan?.materialized ? compileStudioCommand(statement, environment!) : plan?.output ?? compileStudioCommand(statement, environment!) : statement;
       expanded.push(compiled);

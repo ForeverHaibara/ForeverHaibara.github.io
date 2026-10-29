@@ -3,7 +3,7 @@ import type { EngineEventListener, GeoGebraEngine } from '../../../types';
 import { executeCommandPipeline } from '../../commandPipeline';
 import { getCompletionContext } from '../../completion/completionContext';
 import { studioCompletionRegistry } from '../../completion/studioCompletionRegistry';
-import { compileStudioCommand, containsStudioCall } from '../commandCompiler';
+import { compileStudioCommand, compileStudioPlan, containsStudioCall } from '../commandCompiler';
 import { normalizeGeometryType, readFileTools } from '../commandEnvironment';
 import { outerCalls, splitTopLevel } from '../commandSyntax';
 import { selectOverload, studioToolLibrary, studioTools, validateToolLibrary } from '../toolLibrary';
@@ -143,7 +143,7 @@ describe('custom command syntax and dispatch', () => {
 describe('tool library and completion', () => {
   it('validates locals and rejects malformed or ambiguous libraries', () => {
     const value = structuredClone(studioToolLibrary);
-    value.tools[0].overloads[0].expression = '$missing';
+    value.tools.find((tool) => tool.name === 'Incenter')!.overloads[0].expression = '$missing';
     expect(() => validateToolLibrary(value)).toThrow('Unknown or forward local');
     // Catalog ordering is editable; this check needs a known three-point signature.
     const tool = structuredClone(studioToolLibrary.tools.find((entry) => entry.name === 'Incenter')!);
@@ -257,10 +257,11 @@ describe('reusable tool definitions and P1 outputs', () => {
     scope.objects.set('curve', 'implicitCurve');
     for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
       if (['conic', 'conicBranch'].includes(overload.builder ?? '')) continue;
-      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', line: 'l', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1' };
+      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', line: 'l', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1', catalogId: '12' };
       const arguments_ = overload.params.map((param) => fixtures[param.type]);
       expect(arguments_.every(Boolean), tool.name).toBe(true);
-      expect(() => compile(`${tool.name}(${arguments_.join(',')})`, scope), tool.name).not.toThrow();
+      const source = `${tool.name}(${arguments_.join(',')})`;
+      expect(() => overload.requiresNamed ? compileStudioPlan(source, scope, '0123456789abcdef') : compile(source, scope), tool.name).not.toThrow();
     }
     expect(studioTools.has('complementofisotomicconjugate')).toBe(false);
     expect(studioTools.has('circumsymmedianpoint')).toBe(false);

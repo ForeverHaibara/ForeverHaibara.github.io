@@ -13,7 +13,7 @@ command; its input points need not be deleted. Deleting the input points also
 removes their dependent outputs, which can make redrawing appear to fix an old
 definition.
 
-The library is still unpublished and uses version **0.1.0**. Development
+The library is still unpublished and uses version **0.2.0**. Development
 milestones in the implementation notes are not release versions.
 
 ## Directory layout
@@ -69,8 +69,24 @@ case-insensitively across canonical commands and aliases; self-aliases, duplicat
 aliases and malformed names are rejected. Flat lists avoid alias chains. File
 macros retain priority at the call site, including when they own only an alias.
 
-The catalog currently has **137 canonical commands and 139 callable names**:
-`SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases `OppositeArcMidpoint`.
+The catalog currently has **163 canonical commands and 188 callable names**.
+For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
+`OppositeArcMidpoint`.
+
+### Numbered higher-degree triangle curves
+
+`GibertCurve(A,B,C,12)` (also `GibertCurve(A,B,C,"Q012")`) constructs a single
+native implicit curve. The initial database supports Q002, Q003, Q012, Q033
+and Q039. `id` is a compile-time `catalogId` literal, not a slider or an
+arithmetic expression; it is selected in TypeScript before native execution.
+There are no per-curve public command names or large native `If` dispatches.
+
+This tool requires **Medium or High** custom tool performance and a new output
+label. Low is rejected before evaluation because the anonymous expansion timed
+out in an isolated experiment. To replace an existing result, delete it and
+recreate it. Creation can take several seconds for the sextic, although numeric
+dependencies make subsequent updates much faster. See the [implementation and
+maintenance notes](docs/related-curves-roadmap.md) and [small JSON database](data/related-curves/README.md).
 
 ### Implementations and composition
 

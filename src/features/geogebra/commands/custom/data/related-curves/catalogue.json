@@ -1,0 +1,1229 @@
+[
+  {
+    "id": "Q000",
+    "name": "Steiner deltoids",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q000.html",
+    "variants": [
+      "H3",
+      "aH3"
+    ]
+  },
+  {
+    "id": "Q001",
+    "name": "Darboux septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q001.html"
+  },
+  {
+    "id": "Q002",
+    "name": "Euler-Morley quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q002.html"
+  },
+  {
+    "id": "Q003",
+    "name": "Euler-Morley quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q003.html"
+  },
+  {
+    "id": "Q004",
+    "name": "Qo, a bicircular quartic related to stelloidal pKs",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q004.html"
+  },
+  {
+    "id": "Q005",
+    "name": "iQo, a circular cubic, the inverse of Q004 in the circle C(X2, X51)",
+    "degree": 3,
+    "source": "http://bernard-gibert.fr/curves/q005.html"
+  },
+  {
+    "id": "Q006",
+    "name": "Yiu quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q006.html"
+  },
+  {
+    "id": "Q007",
+    "name": "a circular octic",
+    "degree": 8,
+    "source": "http://bernard-gibert.fr/curves/q007.html"
+  },
+  {
+    "id": "Q008",
+    "name": "a bicircular septic, isogonal transform of Q007",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q008.html"
+  },
+  {
+    "id": "Q009",
+    "name": "a bicircular septic related to orthologic triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q009.html"
+  },
+  {
+    "id": "Q010",
+    "name": "a circular central equilateral quintic, isogonal transform of Q009",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q010.html"
+  },
+  {
+    "id": "Q011",
+    "name": "symgonal quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q011.html"
+  },
+  {
+    "id": "Q012",
+    "name": "Stothers quintic, a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q012.html"
+  },
+  {
+    "id": "Q013",
+    "name": "Musselman quartic, a bicircular quartic related to orthotransversals",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q013.html"
+  },
+  {
+    "id": "Q014",
+    "name": "a tricircular sextic related to cK60+ cubics",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q014.html"
+  },
+  {
+    "id": "Q015",
+    "name": "Lang curve, a 12th degree bicircular curve related to orthopivotal cubics",
+    "degree": 12,
+    "source": "http://bernard-gibert.fr/curves/q015.html"
+  },
+  {
+    "id": "Q016",
+    "name": "Lemoine quintic, a bicircular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q016.html"
+  },
+  {
+    "id": "Q017",
+    "name": "a quintic related to centroids of pedal and antipedal triangles",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q017.html"
+  },
+  {
+    "id": "Q018",
+    "name": "a bicircular octic related to orthocenters of pedal and antipedal triangles",
+    "degree": 8,
+    "source": "http://bernard-gibert.fr/curves/q018.html"
+  },
+  {
+    "id": "Q019",
+    "name": "a circular quartic related to centroids of circumcevian triangles",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q019.html"
+  },
+  {
+    "id": "Q020",
+    "name": "a tricircular octic related to nine point centers of pedal and antipedal triangles",
+    "degree": 8,
+    "source": "http://bernard-gibert.fr/curves/q020.html"
+  },
+  {
+    "id": "Q021",
+    "name": "a bicircular isogonal sextic related to parallel orthotransversals and orthocenters of circumcevian triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q021.html"
+  },
+  {
+    "id": "Q022",
+    "name": "a bicircular isogonal sextic related to perpendicular orthotransversals",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q022.html"
+  },
+  {
+    "id": "Q023",
+    "name": "an inversible circular quartic, the isogonal transform of Q038",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q023.html"
+  },
+  {
+    "id": "Q024",
+    "name": "a bicircular sextic related to nine-point centers of circumcevian triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q024.html"
+  },
+  {
+    "id": "Q025",
+    "name": "a bicircular septic related to orthologic triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q025.html"
+  },
+  {
+    "id": "Q026",
+    "name": "a quartic related to orthologic triangles",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q026.html"
+  },
+  {
+    "id": "Q027",
+    "name": "Thomson sextic, a sextic related to orthologic triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q027.html"
+  },
+  {
+    "id": "Q028",
+    "name": "a sextic related to perspective triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q028.html"
+  },
+  {
+    "id": "Q029",
+    "name": "a quintic related to perspective triangles",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q029.html"
+  },
+  {
+    "id": "Q030",
+    "name": "a bicircular septic related to orthologic triangles, the isogonal transform of Q037",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q030.html"
+  },
+  {
+    "id": "Q031",
+    "name": "a nonic related to osculating circles in isogonal pK",
+    "degree": 9,
+    "source": "http://bernard-gibert.fr/curves/q031.html"
+  },
+  {
+    "id": "Q032",
+    "name": "Point pedal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q032.html"
+  },
+  {
+    "id": "Q033",
+    "name": "X(370)-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q033.html"
+  },
+  {
+    "id": "Q034",
+    "name": "X(370)-Fermat quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q034.html"
+  },
+  {
+    "id": "Q035",
+    "name": "X(370)-central quartics",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q035.html"
+  },
+  {
+    "id": "Q036",
+    "name": "X(370)-central quintics",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q036.html",
+    "variants": [
+      "Q036A",
+      "Q036B",
+      "Q036C"
+    ]
+  },
+  {
+    "id": "Q037",
+    "name": "an inversible bicircular quintic, the isogonal transform of Q030",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q037.html"
+  },
+  {
+    "id": "Q038",
+    "name": "an antigonal circular quintic, the isogonal transform of Q023",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q038.html"
+  },
+  {
+    "id": "Q039",
+    "name": "a bicircular isogonal sextic related to Brocard line of pedal triangles and to circum-strophoids",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q039.html"
+  },
+  {
+    "id": "Q040",
+    "name": "a quartic related to equilateral anticevian points",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q040.html"
+  },
+  {
+    "id": "Q041",
+    "name": "Psi(K005), a tricircular sextic, the locus of foci of orthopivotal pK",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q041.html"
+  },
+  {
+    "id": "Q042",
+    "name": "a quintic, the isogonal transform of Q043",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q042.html"
+  },
+  {
+    "id": "Q043",
+    "name": "a quartic, the isogonal transform of Q042",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q043.html"
+  },
+  {
+    "id": "Q044",
+    "name": "Droz-Farny quintic, isogonal transform of Q098, a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q044.html"
+  },
+  {
+    "id": "Q045",
+    "name": "Parry quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q045.html"
+  },
+  {
+    "id": "Q046",
+    "name": "McCay butterfly",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q046.html"
+  },
+  {
+    "id": "Q047",
+    "name": "McCay quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q047.html"
+  },
+  {
+    "id": "Q048",
+    "name": "Psi(K003), McCay tricircular sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q048.html"
+  },
+  {
+    "id": "Q049",
+    "name": "Apollonius quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q049.html"
+  },
+  {
+    "id": "Q050",
+    "name": "a circular quintic through the points Ua, Ub, Uc",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q050.html"
+  },
+  {
+    "id": "Q051",
+    "name": "a circular quartic through the points Ua, Ub, Uc",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q051.html"
+  },
+  {
+    "id": "Q052",
+    "name": "a circular quartic through the points Ua, Ub, Uc",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q052.html"
+  },
+  {
+    "id": "Q053",
+    "name": "axial pK quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q053.html"
+  },
+  {
+    "id": "Q054",
+    "name": "a bicircular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q054.html"
+  },
+  {
+    "id": "Q055",
+    "name": "a sextic related to concentric bitangent conics",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q055.html"
+  },
+  {
+    "id": "Q056",
+    "name": "a circular quartic through the CPCC points and the Ix-points",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q056.html"
+  },
+  {
+    "id": "Q057",
+    "name": "a sextic related to Table 28 (cevian and anticevian points)",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q057.html"
+  },
+  {
+    "id": "Q058",
+    "name": "a sextic related to Table 28 (cevian and anticevian points)",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q058.html"
+  },
+  {
+    "id": "Q059",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q059.html"
+  },
+  {
+    "id": "Q060",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q060.html"
+  },
+  {
+    "id": "Q061",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q061.html"
+  },
+  {
+    "id": "Q062",
+    "name": "a quartic related to Table 28 (cevian and anticevian points)",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q062.html"
+  },
+  {
+    "id": "Q063",
+    "name": "a circular quintic related to CL043",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q063.html"
+  },
+  {
+    "id": "Q064",
+    "name": "Kosnita quartic, a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q064.html"
+  },
+  {
+    "id": "Q065",
+    "name": "McCay equilateral quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q065.html"
+  },
+  {
+    "id": "Q066",
+    "name": "Stammler quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q066.html"
+  },
+  {
+    "id": "Q067",
+    "name": "a bicircular quintic related to Table 6",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q067.html"
+  },
+  {
+    "id": "Q068",
+    "name": "a circular equilateral quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q068.html"
+  },
+  {
+    "id": "Q069",
+    "name": "a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q069.html"
+  },
+  {
+    "id": "Q070",
+    "name": "a bicircular septic related to isogonal pKs",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q070.html"
+  },
+  {
+    "id": "Q071",
+    "name": "Darboux quintic, a bicircular quintic, the isogonal transform of Q001, the inverse of K172 in the circumcircle",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q071.html"
+  },
+  {
+    "id": "Q072",
+    "name": "Neuberg nonic, a quadricircular curve related to Neuberg cubics",
+    "degree": 9,
+    "source": "http://bernard-gibert.fr/curves/q072.html"
+  },
+  {
+    "id": "Q073",
+    "name": "Brocard-Kiepert quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q073.html"
+  },
+  {
+    "id": "Q074",
+    "name": "X(370)-Soddy quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q074.html"
+  },
+  {
+    "id": "Q075",
+    "name": "Orthosextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q075.html"
+  },
+  {
+    "id": "Q076",
+    "name": "Napoleon sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q076.html"
+  },
+  {
+    "id": "Q077",
+    "name": "a circular quintic, locus of foci of circum-parabolas",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q077.html"
+  },
+  {
+    "id": "Q078",
+    "name": "a bicircular quartic, locus of vertices of in-parabolas",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q078.html"
+  },
+  {
+    "id": "Q079",
+    "name": "a bicircular septic, locus of vertices of circum-parabolas",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q079.html"
+  },
+  {
+    "id": "Q080",
+    "name": "a sextic, envelope of the directrices of circum-parabolas",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q080.html"
+  },
+  {
+    "id": "Q081",
+    "name": "a quartic related to pK++",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q081.html"
+  },
+  {
+    "id": "Q082",
+    "name": "a septic related to areas and pedal triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q082.html"
+  },
+  {
+    "id": "Q083",
+    "name": "a stelloidal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q083.html"
+  },
+  {
+    "id": "Q084",
+    "name": "isogonal transform of Q083",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q084.html"
+  },
+  {
+    "id": "Q085",
+    "name": "a stelloidal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q085.html"
+  },
+  {
+    "id": "Q086",
+    "name": "isogonal transform of Q085, a quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q086.html"
+  },
+  {
+    "id": "Q087",
+    "name": "a nodal quintic related to nK0 cubics having a pencil of circular polar conics",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q087.html"
+  },
+  {
+    "id": "Q088",
+    "name": "Hilton quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q088.html"
+  },
+  {
+    "id": "Q089",
+    "name": "a circular nodal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q089.html"
+  },
+  {
+    "id": "Q090",
+    "name": "isogonal transform of the Stothers quintic Q012, a nodal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q090.html"
+  },
+  {
+    "id": "Q091",
+    "name": "Thomson quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q091.html"
+  },
+  {
+    "id": "Q092",
+    "name": "a bicircular octic",
+    "degree": 8,
+    "source": "http://bernard-gibert.fr/curves/q092.html"
+  },
+  {
+    "id": "Q093",
+    "name": "a circular sextic related to property 5 of K001",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q093.html"
+  },
+  {
+    "id": "Q094",
+    "name": "isogonal transform of Q019, a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q094.html"
+  },
+  {
+    "id": "Q095",
+    "name": "Q[1,1], a quintic related to Table 28",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q095.html"
+  },
+  {
+    "id": "Q096",
+    "name": "Yiu septic, a bicircular septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q096.html"
+  },
+  {
+    "id": "Q097",
+    "name": "isogonal transform of Q096, a bicircular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q097.html"
+  },
+  {
+    "id": "Q098",
+    "name": "an inversible circular quartic, the isogonal transform of Q044",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q098.html"
+  },
+  {
+    "id": "Q099",
+    "name": "X(370)-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q099.html"
+  },
+  {
+    "id": "Q100",
+    "name": "Dergiades septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q100.html"
+  },
+  {
+    "id": "Q101",
+    "name": "Simson quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q101.html"
+  },
+  {
+    "id": "Q102",
+    "name": "Turner quartic, an inversible bicircular nodal quartic related to Turner lines",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q102.html"
+  },
+  {
+    "id": "Q103",
+    "name": "an isogonal sextic related to orthologic cevian triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q103.html"
+  },
+  {
+    "id": "Q104",
+    "name": "Soddy isogonal sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q104.html"
+  },
+  {
+    "id": "Q105",
+    "name": "Montesdeoca septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q105.html"
+  },
+  {
+    "id": "Q106",
+    "name": "a bicircular 10th degree curve related to Q023",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q106.html"
+  },
+  {
+    "id": "Q107",
+    "name": "a bicircular central and axial quartic related to orthotransversals",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q107.html"
+  },
+  {
+    "id": "Q108",
+    "name": "a tricircular sextic, locus of foci of rectangular circum-hyperbolas",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q108.html"
+  },
+  {
+    "id": "Q109",
+    "name": "a quadricircular octic, locus of vertices of rectangular circum-hyperbolas",
+    "degree": 8,
+    "source": "http://bernard-gibert.fr/curves/q109.html"
+  },
+  {
+    "id": "Q110",
+    "name": "a binodal circular quartic related to K073",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q110.html"
+  },
+  {
+    "id": "Q111",
+    "name": "a quintic related to X(370)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q111.html"
+  },
+  {
+    "id": "Q112",
+    "name": "a circular quartic similar to Q002",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q112.html"
+  },
+  {
+    "id": "Q113",
+    "name": "isogonal transform of Q063, a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q113.html"
+  },
+  {
+    "id": "Q114",
+    "name": "Napoleon (second) sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q114.html"
+  },
+  {
+    "id": "Q115",
+    "name": "a circular quartic related to Table 53",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q115.html"
+  },
+  {
+    "id": "Q116",
+    "name": "a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q116.html"
+  },
+  {
+    "id": "Q117",
+    "name": "a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q117.html"
+  },
+  {
+    "id": "Q118",
+    "name": "a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q118.html"
+  },
+  {
+    "id": "Q119",
+    "name": "Psi(K002), a bicircular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q119.html"
+  },
+  {
+    "id": "Q120",
+    "name": "NPC isogonal transform, a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q120.html"
+  },
+  {
+    "id": "Q121",
+    "name": "an acnodal unicursal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q121.html"
+  },
+  {
+    "id": "Q122",
+    "name": "Montesdeoca bicircular central quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q122.html"
+  },
+  {
+    "id": "Q123",
+    "name": "Psi(K001), a bicircular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q123.html"
+  },
+  {
+    "id": "Q124",
+    "name": "Wallace isotomic quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q124.html"
+  },
+  {
+    "id": "Q125",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q125.html"
+  },
+  {
+    "id": "Q126",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q126.html"
+  },
+  {
+    "id": "Q127",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q127.html"
+  },
+  {
+    "id": "Q128",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q128.html"
+  },
+  {
+    "id": "Q129",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q129.html"
+  },
+  {
+    "id": "Q130",
+    "name": "a stelloidal nodal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q130.html"
+  },
+  {
+    "id": "Q131",
+    "name": "a stelloidal circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q131.html"
+  },
+  {
+    "id": "Q132",
+    "name": "a stelloidal circum-pentagonal-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q132.html"
+  },
+  {
+    "id": "Q133",
+    "name": "a stelloidal circum-pentagonal-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q133.html"
+  },
+  {
+    "id": "Q134",
+    "name": "a stelloidal circum-pentagonal-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q134.html"
+  },
+  {
+    "id": "Q135",
+    "name": "a circular quintic related to Q003, Q050",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q135.html"
+  },
+  {
+    "id": "Q136",
+    "name": "isogonal transform of Q050, a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q136.html"
+  },
+  {
+    "id": "Q137",
+    "name": "isogonal transform of Q135, a circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q137.html"
+  },
+  {
+    "id": "Q138",
+    "name": "Grebe circular isogonal sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q138.html"
+  },
+  {
+    "id": "Q139",
+    "name": "a bicircular quintic analogous to Q016",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q139.html"
+  },
+  {
+    "id": "Q140",
+    "name": "a circular quartic through the X(5)-anticevian points",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q140.html"
+  },
+  {
+    "id": "Q141",
+    "name": "a circular quartic through the X(5)-circumcevian points",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q141.html"
+  },
+  {
+    "id": "Q142",
+    "name": "Salmon quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q142.html"
+  },
+  {
+    "id": "Q143",
+    "name": "Brocard quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q143.html"
+  },
+  {
+    "id": "Q144",
+    "name": "a quartic related to K1068",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q144.html"
+  },
+  {
+    "id": "Q145",
+    "name": "a quartic related to K1069",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q145.html"
+  },
+  {
+    "id": "Q146",
+    "name": "a circular quartic related to K1065",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q146.html"
+  },
+  {
+    "id": "Q147",
+    "name": "a McCay quartic related to K1065",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q147.html"
+  },
+  {
+    "id": "Q148",
+    "name": "a septic related to isogonal pKs",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q148.html"
+  },
+  {
+    "id": "Q149",
+    "name": "a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q149.html"
+  },
+  {
+    "id": "Q150",
+    "name": "a quintic related to the Euler pencil of Table 27",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q150.html"
+  },
+  {
+    "id": "Q151",
+    "name": "a quintic related to the Euler pencil of Table 27",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q151.html"
+  },
+  {
+    "id": "Q152",
+    "name": "Walsmith circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q152.html"
+  },
+  {
+    "id": "Q153",
+    "name": "a bicircular quintic related to stelloidal nK0s",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q153.html"
+  },
+  {
+    "id": "Q154",
+    "name": "a bicircular quartic related to Q078",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q154.html"
+  },
+  {
+    "id": "Q155",
+    "name": "a bicircular quartic related to K060",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q155.html"
+  },
+  {
+    "id": "Q156",
+    "name": "Lemoine sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q156.html"
+  },
+  {
+    "id": "Q157",
+    "name": "Brocard-Grebe circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q157.html"
+  },
+  {
+    "id": "Q158",
+    "name": "a circular quartic, isogonal transform of Q157",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q158.html"
+  },
+  {
+    "id": "Q159",
+    "name": "a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q159.html"
+  },
+  {
+    "id": "Q160",
+    "name": "a circular quartic, isogonal transform of Q159",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q160.html"
+  },
+  {
+    "id": "Q161",
+    "name": "K001-K060 half-way quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q161.html"
+  },
+  {
+    "id": "Q162",
+    "name": "Johnson quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q162.html"
+  },
+  {
+    "id": "Q163",
+    "name": "a quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q163.html"
+  },
+  {
+    "id": "Q164",
+    "name": "a quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q164.html"
+  },
+  {
+    "id": "Q165",
+    "name": "a quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q165.html"
+  },
+  {
+    "id": "Q166",
+    "name": "Evans unicursal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q166.html"
+  },
+  {
+    "id": "Q167",
+    "name": "Moses (1st) KHO-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q167.html"
+  },
+  {
+    "id": "Q168",
+    "name": "Moses (2nd) KHO-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q168.html"
+  },
+  {
+    "id": "Q169",
+    "name": "an isogonal circum-sextic related to K024",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q169.html"
+  },
+  {
+    "id": "Q170",
+    "name": "a Panchapakesan isogonal bicircular sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q170.html"
+  },
+  {
+    "id": "Q171",
+    "name": "a Panchapakesan isogonal bicircular sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q171.html"
+  },
+  {
+    "id": "Q172",
+    "name": "Darboux (first) sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q172.html"
+  },
+  {
+    "id": "Q173",
+    "name": "a sextic related to K318",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q173.html"
+  },
+  {
+    "id": "Q174",
+    "name": "an isogonal sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q174.html"
+  },
+  {
+    "id": "Q175",
+    "name": "a quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q175.html"
+  },
+  {
+    "id": "Q176",
+    "name": "a quartic related to Q175",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q176.html"
+  },
+  {
+    "id": "Q177",
+    "name": "a quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q177.html"
+  },
+  {
+    "id": "Q178",
+    "name": "Thomson isogonal transform of Q002",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q178.html"
+  },
+  {
+    "id": "Q179",
+    "name": "a quintic related to K018",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/q179.html"
+  },
+  {
+    "id": "Q180",
+    "name": "a self-permuting sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q180.html"
+  },
+  {
+    "id": "Q181",
+    "name": "a bicircular isogonal sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q181.html"
+  },
+  {
+    "id": "Q182",
+    "name": "Wallace isogonal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q182.html"
+  },
+  {
+    "id": "Q183",
+    "name": "Brocard-Kiepert (second) quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q183.html"
+  },
+  {
+    "id": "Q184",
+    "name": "Grebe butterfly",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q184.html"
+  },
+  {
+    "id": "Q185",
+    "name": "a Panchapakesan isogonal bicircular sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q185.html"
+  },
+  {
+    "id": "Q186",
+    "name": "a Panchapakesan isogonal bicircular sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q186.html"
+  },
+  {
+    "id": "Q187",
+    "name": "orthic circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q187.html"
+  },
+  {
+    "id": "Q188",
+    "name": "anti orthic circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q188.html"
+  },
+  {
+    "id": "Q189",
+    "name": "Darboux (second) sextic",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q189.html"
+  },
+  {
+    "id": "Q190",
+    "name": "isogonal transform of Q034 , a circum-quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q190.html"
+  },
+  {
+    "id": "Q191",
+    "name": "Darboux (third) sextic, isogonal transform of Q189",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q191.html"
+  },
+  {
+    "id": "Q192",
+    "name": "a bicircular sextic related to orthopivotal cubics",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/q192.html"
+  },
+  {
+    "id": "Q193",
+    "name": "Laplacian of Q192",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q193.html"
+  },
+  {
+    "id": "Q194",
+    "name": "a tricircular septic related to orthopivotal cubics",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q194.html"
+  },
+  {
+    "id": "Q195",
+    "name": "a quartic related to Q026 , Q115",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q195.html"
+  },
+  {
+    "id": "Q196",
+    "name": "a circular septic comparable to Q018",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/q196.html"
+  },
+  {
+    "id": "Q197",
+    "name": "pedal curve of H3 wrt H, orthoassociate of K406",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q197.html"
+  },
+  {
+    "id": "Q198",
+    "name": "Pavlov circular quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q198.html"
+  },
+  {
+    "id": "Q199",
+    "name": "Crane-Moses bicircular nodal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q199.html"
+  },
+  {
+    "id": "Q200",
+    "name": "Crane-Moses limaçon",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q200.html"
+  },
+  {
+    "id": "Q201",
+    "name": "Crane-Moses small limaçon",
+    "degree": null,
+    "source": "http://bernard-gibert.fr/curves/q201.html"
+  },
+  {
+    "id": "Q202",
+    "name": "Jerabek quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/q202.html"
+  }
+]

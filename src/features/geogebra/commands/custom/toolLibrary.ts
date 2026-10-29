@@ -2,8 +2,8 @@ import definitions from './library.json';
 import { GEOMETRY_BUILDERS } from './builders';
 import type { GeometryType, ParameterType, ResolvedToolLibrary, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
 
-const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine']);
-const resultTypes = new Set([...parameterTypes].filter((type) => !['lineLike', 'pointOrLine'].includes(type)));
+const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine', 'catalogId']);
+const resultTypes = new Set([...parameterTypes].filter((type) => !['lineLike', 'pointOrLine', 'catalogId'].includes(type)));
 const validName = (name: unknown): name is string => typeof name === 'string' && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name);
 
 export const validateToolLibrary = (value: unknown): ToolLibrary => {
@@ -18,6 +18,7 @@ export const validateToolLibrary = (value: unknown): ToolLibrary => {
       names.add(name.toLowerCase());
     }
     for (const overload of tool.overloads) {
+      if (overload.requiresNamed !== undefined && (typeof overload.requiresNamed !== 'boolean' || !overload.builder)) throw new Error(`Invalid named execution requirement: ${tool.name}`);
       if (!Array.isArray(overload.params) || overload.variadic && overload.params.length === 0) throw new Error(`Invalid parameters: ${tool.name}`);
       const parameters = new Set(overload.params.map((param) => param.name));
       if (parameters.size !== overload.params.length || overload.params.some((param) => !parameterTypes.has(param.type) || !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(param.name)) || !resultTypes.has(overload.returns)) throw new Error(`Invalid signature: ${tool.name}`);
@@ -55,6 +56,7 @@ export const studioToolLibrary = resolveToolAliases(studioToolCatalog);
 export const studioTools = new Map(studioToolLibrary.tools.map((tool) => [tool.name.toLowerCase(), tool]));
 
 const scoreType = (expected: ParameterType, actual: GeometryType): number => {
+  if (expected === 'catalogId') return ['number', 'unknown'].includes(actual) ? 1 : -1;
   if (expected === 'unknown') return 0;
   if (actual === expected) return 4;
   if (expected === 'conic' && actual === 'circle') return 3;
@@ -75,6 +77,10 @@ export const selectOverload = (tool: ToolDefinition, args: readonly TypedExpress
 
 export const expandTool = (overload: ToolOverload, args: readonly TypedExpression[], allocate: () => string,
   compose?: (expression: string, bindings: ReadonlyMap<string, TypedExpression>) => TypedExpression): TypedExpression => {
+  for (const [index, param] of overload.params.entries()) {
+    if (param.type === 'catalogId' && args[index].literal === undefined)
+      throw new Error(`${param.name} must be a positive integer literal or a quoted catalogue ID, e.g. 12 or "Q012". Sliders and expressions are not supported.`);
+  }
   if (overload.builder) {
     const built = GEOMETRY_BUILDERS[overload.builder](args, allocate);
     return { ...(typeof built === 'string' ? { expression: built } : built), type: overload.returns };

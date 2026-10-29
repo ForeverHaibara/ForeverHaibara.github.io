@@ -12,6 +12,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 
 | 工具／重载 | 所需辅助类型与档位 | 当前状态 | 证据或原因 |
 |---|---|---|---|
+| `GibertCurve(A,B,C,id)` 首批五条 | 36–64 个数值辅助对象，Medium／High | 已启用，要求命名路径 | 离线生成笛卡尔数值系数，复用本执行器及生命周期；Low 的 Q012 匿名式超时，因此用 `requiresNamed` 在执行前拒绝匿名回落及同名输出重定义。详见 [P3 原生记录](benchmarks/gibert-curves-integration.md)。 |
 | 五条直线／射线／线段 `Conic` | 数值，Medium | 已启用 | 原生创建约 921→32 ms；混合线型、平行退化已核对。 |
 | 编号 `Pretangential(F,P,i)` | 数值、数值列表、函数，Medium | 已启用 | 第一分支约 993→133 ms；四个编号均通过原生回归。无编号形式尚未启用。 |
 | `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` | 非几何，Medium | 已启用 | 原生类型、方程与动态更新已核对。 |
@@ -29,7 +30,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 | `PrehessianCubic(F[,i])` | 46 个数值／列表／函数辅助对象，High | 已启用 High | 一般三次输入下三槽共享 Hessian 投影和三次求根；样本创建约 4.4–5.8 s、动态更新约 47–50 ms。原生核对 Hessian 比例、导出重开、辅助清理。Low 内联式约 20 万字符，未作为可用性能路径。 |
 | `CuspidalCubic` 六点、四点、两点加方向重载及编号形式 | 14–18 个数值辅助对象，Medium | 已启用 | 一般六点约 4.2 s、圆环四点约 1.9 s、方向约束约 2.0 s 创建；动态更新约 59–102 ms。检查插值点、切锥判别式、双支、文件重开、辅助清理。此前匿名矩阵核和反演候选均卡顿。 |
 
-未列出的工具默认匿名；是否支持命名必须按 builder 和重载逐项验证。单行且局部值只用一次的简单构造优先级低。
+未列出的工具默认匿名；是否支持命名必须按 builder 和重载逐项验证。声明 `requiresNamed` 的重载是例外：Low、无法安全物化或已有输出标签时明确失败，不使用已知会卡顿的匿名路径。其他工具维持原有回落行为。单行且局部值只用一次的简单构造优先级低。
 
 ## 编译与安全边界
 

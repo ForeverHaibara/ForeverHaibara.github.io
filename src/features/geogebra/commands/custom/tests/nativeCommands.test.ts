@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GEOGEBRA_COMMAND_NAMES } from '../../completion/geogebraCommandNames';
-import { compileStudioCommand } from '../commandCompiler';
+import { compileStudioCommand, compileStudioPlan } from '../commandCompiler';
 import { outerCalls } from '../commandSyntax';
 import { studioToolLibrary } from '../toolLibrary';
 import type { CommandEnvironment, GeometryType, ParameterType } from '../types';
@@ -17,7 +17,7 @@ const infinitePathEndpoints = (source: string): string[] => outerCalls(source).f
   ...call.args.flatMap(infinitePathEndpoints),
 ]);
 
-const variants = (type: ParameterType): GeometryType[] => type === 'lineLike' ? ['line', 'segment', 'ray']
+const variants = (type: ParameterType): GeometryType[] => type === 'catalogId' ? ['number'] : type === 'lineLike' ? ['line', 'segment', 'ray']
   : type === 'pointOrLine' ? ['point', 'line']
     : type === 'conic' ? ['conic', 'circle'] : [type];
 
@@ -30,13 +30,15 @@ describe('native command compatibility', () => {
       for (const types of signatures) {
         const environment: CommandEnvironment = { objects: new Map(), macros: new Set() };
         const args = types.map((type, i) => {
+          if (overload.params[i].type === 'catalogId') return '12';
           if (type === 'number') return '1';
           const label = `Fixture${i}`;
           environment.objects.set(label, type);
           return label;
         });
         const source = `${tool.name}(${args.join(',')})`;
-        const expanded = compileStudioCommand(source, environment);
+        const plan = overload.requiresNamed ? compileStudioPlan(source, environment, '0123456789abcdef') : null;
+        const expanded = plan ? plan.helpers.map((h) => h.expression).concat(plan.output).join('\n') : compileStudioCommand(source, environment);
         expect([...new Set(unsupportedCalls(expanded))], `${tool.name}(${types.join(',')})`).toEqual([]);
         // Generic supporting-line extraction must avoid infinite endpoints of
         // native normalized paths (line: 0/1; ray: 1).

@@ -1,5 +1,5 @@
 export type GeometryType = 'point' | 'line' | 'segment' | 'ray' | 'circle' | 'conic' | 'implicitCurve' | 'number' | 'list' | 'vector' | 'function' | 'unknown';
-export type ParameterType = GeometryType | 'lineLike' | 'pointOrLine';
+export type ParameterType = GeometryType | 'lineLike' | 'pointOrLine' | 'catalogId';
 
 export interface ToolOverload {
   params: Array<{ name: string; type: ParameterType }>;
@@ -10,6 +10,8 @@ export interface ToolOverload {
   compose?: string | string[];
   locals?: Array<{ name: string; expression: string }>;
   builder?: string;
+  /** Reject anonymous execution when the native expression is known to stall. */
+  requiresNamed?: boolean;
   variadic?: boolean;
 }
 
@@ -38,6 +40,8 @@ export interface ResolvedToolLibrary extends Omit<ToolLibrary, 'tools'> {
 
 export interface TypedExpression extends BuiltExpression {
   type: GeometryType;
+  /** Lexical literal only; retained through hygienic composition, never read from the engine. */
+  literal?: string;
 }
 
 export interface BuiltExpression {
@@ -56,5 +60,7 @@ export interface CommandEnvironment {
   objects: Map<string, GeometryType>;
   macros: Set<string>;
   macroTypes?: Map<string, GeometryType>;
+  /** Internal composition tokens whose binding is a lexical literal. */
+  literals?: Map<string, string>;
 }
 

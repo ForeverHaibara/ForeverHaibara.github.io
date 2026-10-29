@@ -35,6 +35,7 @@ const polynomial = (xyz: string[], sides: string[]) => {
 
 const source = () => {
   if (variant === 'triangle') return `aa=Distance(B,C)^2\nbb=Distance(C,A)^2\ncc=Distance(A,B)^2\nout=TriangleCurve(A,B,C,${polynomial(['A', 'B', 'C'], ['aa', 'bb', 'cc'])}=0)`;
+  if (variant === 'matrix') return `aa=Distance(B,C)^2\nbb=Distance(C,A)^2\ncc=Distance(A,B)^2\nout=ApplyMatrix({{x(A)-x(C),x(B)-x(C),x(C)},{y(A)-y(C),y(B)-y(C),y(C)},{0,0,1}},ImplicitCurve(${polynomial(['x', 'y', '(1-x-y)'], ['aa', 'bb', 'cc'])}))`;
   const xyz = barycentricVariables(['A', 'B', 'C']);
   const sides = triangleSideSquares(['A', 'B', 'C']);
   let serial = 0;

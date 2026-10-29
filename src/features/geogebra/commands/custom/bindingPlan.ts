@@ -12,6 +12,7 @@ export interface CompiledBindingPlan {
   output: string;
   helpers: Array<{ name: string; expression: string; kind: BindValueKind }>;
   materialized: boolean;
+  requiresMaterialization?: boolean;
 }
 
 /** Captures bind() calls before either backend prints their GeoGebra syntax. */

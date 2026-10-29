@@ -4,6 +4,13 @@
   "version": "0.2.0",
   "tools": [
     {
+      "name": "GibertCurve",
+      "description": "A higher-degree triangle curve from Gibert's catalogue. Use a literal ID: 2, 3, 12, 33, 39, or \"Q012\". Requires Medium or High performance and a new output label; numeric objects and expressions are not supported.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "implicitCurve", "builder": "gibertCurve", "requiresNamed": true}
+      ]
+    },
+    {
       "name": "Intersect",
       "description": "Four points intersect the infinite lines AB and CD. All other signatures use the native Intersect command.",
       "overloads": [

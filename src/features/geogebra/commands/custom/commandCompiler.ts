@@ -62,7 +62,7 @@ export const containsStudioCall = (source: string, depth = 0): boolean => {
   return outerCalls(source).some((call) => !call.declaration && (studioTools.has(call.name.toLowerCase()) || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
 };
 
-type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }> };
+type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }>; requiresNamed?: boolean };
 
 export const compileStudioCommand = (source: string, environment: CommandEnvironment,
   tools: ReadonlyMap<string, ToolDefinition> = studioTools, capture?: Capture): string => {
@@ -119,7 +119,11 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       if (tool && !fileDefined) {
         const overload = selectOverload(tool, args);
         if (overload) {
-          if (depth === 0) capture?.selected.push({ builder: overload.builder, args: args.map((arg) => arg.type) });
+          if (overload.requiresNamed) {
+            if (!capture) throw new Error(`${tool.name} requires Medium or High custom tool performance. Use a new output label; anonymous execution is too slow.`);
+            capture.requiresNamed = true;
+          }
+          if (depth === 0 || overload.requiresNamed) capture?.selected.push({ builder: overload.builder, args: args.map((arg) => arg.type) });
           const signature = toolSignature(tool, overload);
           if (dependencies.some((dependency) => dependency.overload === overload)) throw new Error(`Cyclic tool composition: ${[...dependencies.map((dependency) => dependency.signature), signature].join(' -> ')}`);
           dependencies.push({ overload, signature });
@@ -128,11 +132,12 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
               // Compile only the definition, with typed opaque argument tokens.
               // File macros cannot change a library dependency; caller expressions
               // are substituted afterwards, so native calls are not expanded twice.
-              const definitionScope: CommandEnvironment = { objects: new Map(), macros: new Set() };
+              const definitionScope: CommandEnvironment = { objects: new Map(), macros: new Set(), literals: new Map() };
               const replacements = new Map<string, string>();
               const tokens = new Map([...bindings].map(([name, binding]) => {
                 const token = allocate();
                 definitionScope.objects.set(token, binding.type);
+                if (binding.literal !== undefined) definitionScope.literals!.set(token, binding.literal);
                 replacements.set(token, binding.expression);
                 return [name, token];
               }));
@@ -176,7 +181,10 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
     typeSource += input.slice(cursor);
     if (entireType === 'unknown') entireType = literalType(typeSource, typeScope);
     if (expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
-    return { expression, type: entireType };
+    const literalSource = stripParens(input);
+    const literal = scope.literals?.get(literalSource)
+      ?? (/^(?:[1-9]\d*|"(?:\\.|[^"\\])*")$/u.test(literalSource) ? literalSource : undefined);
+    return { expression, type: entireType, ...(literal !== undefined ? { literal } : {}) };
   };
 
   return compile(source).expression;
@@ -186,6 +194,7 @@ type NamedOverloadCheck = (args: readonly GeometryType[]) => boolean;
 const anyOverload: NamedOverloadCheck = () => true;
 /** Admit only builder overloads verified against native GeoGebra execution. */
 const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  gibertCurve: anyOverload,
   conic: (args) => args.length === 5 && args.every((type) => ['line', 'segment', 'ray'].includes(type)),
   pretangential: (args) => args.length === 3,
   cubicPolarConic: anyOverload,
@@ -220,5 +229,10 @@ export const compileStudioPlan = (source: string, environment: CommandEnvironmen
   const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder]
     ?? (mode === 'high' ? GEOMETRIC_OVERLOADS[selected.builder] ?? HIGH_COST_OVERLOADS[selected.builder] : undefined)) : undefined;
   const eligible = Boolean(selected && supports?.(selected.args));
-  return capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
+  const plan = capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
+  if (capture.requiresNamed) {
+    if (!plan.materialized) throw new Error('This curve requires named numeric intermediates. Use a standalone call or a supported native wrapper in Medium or High mode.');
+    plan.requiresMaterialization = true;
+  }
+  return plan;
 };
