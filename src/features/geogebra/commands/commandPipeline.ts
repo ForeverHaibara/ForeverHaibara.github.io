@@ -1,7 +1,9 @@
 import type { CommandResult, GeoGebraEngine } from '../types';
-import { compileStudioCommand, containsStudioCall } from './custom/commandCompiler';
+import { compileStudioCommand, compileStudioPlan, containsStudioCall } from './custom/commandCompiler';
 import { readCommandEnvironment } from './custom/commandEnvironment';
 import { splitTopLevel } from './custom/commandSyntax';
+import { newHelperGroupId } from './custom/internalHelpers';
+import { executeNamedPlan } from './custom/namedExecution';
 
 export const normalizeCommand = (command: string): string =>
   command
@@ -11,7 +13,8 @@ export const normalizeCommand = (command: string): string =>
     .filter(Boolean)
     .join('\n');
 
-export const executeCommandPipeline = async (engine: GeoGebraEngine, command: string): Promise<CommandResult> => {
+export const executeCommandPipeline = async (engine: GeoGebraEngine, command: string,
+  options: { allowNonGeometricHelpers?: boolean } = {}): Promise<CommandResult> => {
   const normalized = normalizeCommand(command);
   if (!containsStudioCall(normalized)) return engine.executeCommand(normalized);
   const labels: string[] = [];
@@ -20,9 +23,21 @@ export const executeCommandPipeline = async (engine: GeoGebraEngine, command: st
     for (const statement of splitTopLevel(normalized, '\n').filter((line) => line.trim())) {
       // Resolve after the previous statement: newly created objects and functions
       // participate in overload selection without numeric coordinate sampling.
-      const compiled = containsStudioCall(statement) ? compileStudioCommand(statement, await readCommandEnvironment(engine)) : statement;
+      const custom = containsStudioCall(statement);
+      const environment = custom ? await readCommandEnvironment(engine) : null;
+      const plan = custom && options.allowNonGeometricHelpers
+        ? compileStudioPlan(statement, environment!, newHelperGroupId()) : null;
+      const assignmentName = /^([\p{L}_][\p{L}\p{N}_{}'′]*)\s*=/u.exec(statement)?.[1];
+      const existing = plan?.materialized ? new Set(await engine.callApi('getAllObjectNames', []) as string[]) : null;
+      const canMaterialize = Boolean(plan?.materialized && existing
+        && (!assignmentName || !existing.has(assignmentName))
+        && plan.helpers.every((helper) => !existing.has(helper.name)));
+      const compiled = canMaterialize ? [...plan!.helpers.map(({ name, expression }) => `${name}=${expression}`), plan!.output].join('\n')
+        : custom ? plan?.materialized ? compileStudioCommand(statement, environment!) : plan?.output ?? compileStudioCommand(statement, environment!) : statement;
       expanded.push(compiled);
-      const result = await engine.executeCommand(compiled);
+      const result = canMaterialize
+        ? await executeNamedPlan(engine, plan!, existing!, assignmentName)
+        : await engine.executeCommand(compiled);
       labels.push(...result.labels);
       if (!result.success) return { ...result, command: normalized, labels, expandedCommand: expanded.join('\n') };
     }

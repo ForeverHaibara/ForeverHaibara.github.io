@@ -1,6 +1,7 @@
 import { objectNodeId, FREE_OBJECT_ROOT_ID } from './graphTypes';
 import type { ConstructionObjectInput, DependencyGraph, GraphEdge, GraphNode, ParseDiagnostic } from './graphTypes';
 import { parseConstruction } from './expressionParser';
+import { isInternalHelperName } from '../commands/custom/internalHelpers';
 
 const edgeId = (source: string, target: string, kind: GraphEdge['kind']): string => `${kind}:${source}->${target}`;
 
@@ -57,6 +58,32 @@ export const buildDependencyGraph = (objects: readonly ConstructionObjectInput[]
   });
 
   return { rootId: FREE_OBJECT_ROOT_ID, nodes, edges: [...edges.values()], generatedAt };
+};
+
+/** Hide implementation nodes while preserving dependencies between user objects. */
+export const collapseInternalHelpers = (graph: DependencyGraph): DependencyGraph => {
+  const hidden = new Set(graph.nodes.filter((node) => isInternalHelperName(node.name)).map((node) => node.id));
+  if (!hidden.size) return graph;
+  const incoming = new Map<string, GraphEdge[]>();
+  graph.edges.forEach((edge) => incoming.set(edge.target, [...(incoming.get(edge.target) ?? []), edge]));
+  const edges = new Map<string, GraphEdge>();
+  for (const node of graph.nodes) {
+    if (hidden.has(node.id) || node.id === graph.rootId) continue;
+    const visited = new Set<string>();
+    const queue = [...(incoming.get(node.id) ?? [])];
+    while (queue.length) {
+      const edge = queue.shift()!;
+      if (visited.has(edge.source)) continue;
+      visited.add(edge.source);
+      if (hidden.has(edge.source)) queue.push(...incoming.get(edge.source) ?? []);
+      else {
+        const kind = edge.source === graph.rootId ? 'fallback' : 'dependency';
+        const id = edgeId(edge.source, node.id, kind);
+        edges.set(id, { id, source: edge.source, target: node.id, kind });
+      }
+    }
+  }
+  return { ...graph, nodes: graph.nodes.filter((node) => !hidden.has(node.id)), edges: [...edges.values()] };
 };
 
 export interface GraphProjectionOptions {

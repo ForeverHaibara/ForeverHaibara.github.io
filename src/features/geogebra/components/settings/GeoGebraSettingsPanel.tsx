@@ -5,6 +5,8 @@ import { StudioIconButton } from '../studio/StudioIcon';
 
 interface Props {
   preferences: GgbPreferences;
+  allowNonGeometricHelpers: boolean;
+  onAllowNonGeometricHelpersChange(value: boolean): void;
   ready: boolean;
   error: string | null;
   onChange(value: GgbPreferences): void;
@@ -16,7 +18,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   return <label className="ggb-settings-row"><span>{label}</span><input type="checkbox" role="switch" checked={checked} onChange={onChange} /><span className="ggb-switch" aria-hidden="true" /></label>;
 }
 
-export default function GeoGebraSettingsPanel({ preferences: p, ready, error, onChange, onApplyToAll, onClose }: Props) {
+export default function GeoGebraSettingsPanel({ preferences: p, allowNonGeometricHelpers, onAllowNonGeometricHelpersChange, ready, error, onChange, onApplyToAll, onClose }: Props) {
   const [tab, setTab] = useState('views');
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -65,6 +67,7 @@ export default function GeoGebraSettingsPanel({ preferences: p, ready, error, on
         <section><h3>Lines & curves</h3><p>Includes segments, circles, conics and other curves.</p>{toggle('lineLabels', 'Show line & curve labels')}<label className="ggb-settings-row"><span>Line thickness</span><span className="ggb-range-control"><input type="range" min="1" max="13" value={p.lineThickness} onChange={(e) => change('lineThickness', Number(e.target.value))} /><output>{p.lineThickness}</output></span></label><label className="ggb-settings-row"><span>Line color</span><input aria-label="Line color" type="color" value={p.lineColor} onChange={(e) => onChange({ ...p, lineColor: e.target.value, palette: 'custom' })} /></label></section>
       </>}
       {tab === 'behavior' && <>
+        <section><h3>Custom tool performance</h3><p>Supported complex tools can keep numeric values, numeric lists and numeric functions as hidden auxiliary objects. This applies to new commands only.</p><Toggle label="Allow non-geometric intermediate objects" checked={allowNonGeometricHelpers} onChange={() => onAllowNonGeometricHelpersChange(!allowNonGeometricHelpers)} /></section>
         <section><h3>Object style priority</h3><p>New objects and newly opened files receive your studio defaults. Choose how later preference changes affect individual edits.</p><label className="ggb-policy-option"><input type="radio" name={`${id}-policy`} checked={p.stylePolicy === 'preserve'} onChange={() => change('stylePolicy', 'preserve')} /><span><strong>Preserve individual edits</strong><small>Keep properties you changed in GeoGebra. These overrides also survive draft reloads.</small></span></label><label className="ggb-policy-option"><input type="radio" name={`${id}-policy`} checked={p.stylePolicy === 'override'} onChange={() => change('stylePolicy', 'override')} /><span><strong>Prefer studio defaults</strong><small>Changing a preference reapplies the studio style to existing objects.</small></span></label></section>
         <section><h3>Unify this construction</h3><p>Apply all object defaults now, including to customized objects. This action can be undone in GeoGebra.</p><button type="button" className="ggb-apply-button" disabled={!ready || applying} onClick={async () => { setApplying(true); setApplied(false); try { await onApplyToAll(); setApplied(true); } finally { setApplying(false); } }}>{applying ? 'Applying…' : applied ? 'Applied to all objects' : 'Apply to all objects'}</button></section>
         <section className="ggb-settings-note"><h3>Always your workspace</h3><p>Preferences are saved in this browser, separately from .ggb files. Opening a file, resetting the construction and reloading the page keep them intact.</p></section>

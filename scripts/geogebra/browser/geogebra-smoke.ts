@@ -10,6 +10,8 @@ import { verifyCubicMisc } from './geogebra-cubic-misc-smoke';
 import { verifyIsocubics } from './geogebra-isocubics-smoke';
 import { verifyQaPerformance } from './geogebra-qa-performance';
 import { verifyMaterializationPerformance } from './geogebra-materialization-performance';
+import { verifyNamedExecution } from './geogebra-named-execution-smoke';
+import { verifyNamedLifecycle } from './geogebra-named-lifecycle-smoke';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -82,6 +84,16 @@ button.onclick = async () => {
     }
     if (new URLSearchParams(window.location.search).get('suite') === 'materialization') {
       await verifyMaterializationPerformance(engine, report);
+      report('COMPLETE');
+      return;
+    }
+    if (new URLSearchParams(window.location.search).get('suite') === 'named-execution') {
+      await verifyNamedExecution(engine, report);
+      report('COMPLETE');
+      return;
+    }
+    if (new URLSearchParams(window.location.search).get('suite') === 'named-lifecycle') {
+      await verifyNamedLifecycle(engine, report);
       report('COMPLETE');
       return;
     }

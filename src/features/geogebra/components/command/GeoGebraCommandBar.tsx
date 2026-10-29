@@ -16,11 +16,12 @@ import StudioIcon from '../studio/StudioIcon';
 interface GeoGebraCommandBarProps {
   engine: GeoGebraEngine | null;
   ready: boolean;
+  allowNonGeometricHelpers?: boolean;
   onResult(result: CommandResult): void;
   completionRegistry?: CompletionRegistry;
 }
 
-const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, onResult, completionRegistry = studioCompletionRegistry }) => {
+const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, allowNonGeometricHelpers = false, onResult, completionRegistry = studioCompletionRegistry }) => {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [apiResult, setApiResult] = useState<ApiConsoleResult | null>(null);
@@ -64,7 +65,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
     }
 
     try {
-      const result = await executeCommandPipeline(engine, input);
+      const result = await executeCommandPipeline(engine, input, { allowNonGeometricHelpers });
       onResult(result);
       if (result.success) setValue('');
       else spelling.check(input);

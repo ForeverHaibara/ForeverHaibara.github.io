@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { buildDependencyGraph } from './constructionGraph';
+import { buildDependencyGraph, collapseInternalHelpers } from './constructionGraph';
+import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { GeoGebraConstructionSource } from './constructionSource';
 import type { DependencyGraph } from './graphTypes';
 import type { GeoGebraEngine, GeometryEvent } from '../types';
@@ -39,7 +40,7 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
       const source = sourceRef.current ?? new GeoGebraConstructionSource(engine);
       sourceRef.current = source;
       const snapshot = await source.read();
-      const nextGraph = buildDependencyGraph(snapshot.objects, snapshot.capturedAt);
+      const nextGraph = collapseInternalHelpers(buildDependencyGraph(snapshot.objects, snapshot.capturedAt));
       if (startedVersion === requestVersionRef.current) {
         setGraph(nextGraph);
         setStatus('ready');
@@ -83,6 +84,7 @@ export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): Depe
   }, [runRefresh]);
 
   const handleEvent = useCallback((event: GeometryEvent) => {
+    if (event.objectName && isInternalHelperName(event.objectName)) return;
     if (event.type === 'style') return;
     if (event.type === 'dragStart') {
       draggingRef.current = true;

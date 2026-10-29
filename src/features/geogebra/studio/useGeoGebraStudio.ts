@@ -7,6 +7,8 @@ import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, 
 import { useDependencyGraph } from '../analysis/useDependencyGraph';
 import { useGeometryRelations } from '../analysis/useGeometryRelations';
 import { PreferenceController } from '../settings/PreferenceController';
+import { InternalHelperLifecycle } from '../commands/custom/helperLifecycle';
+import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { readPreferences, savePreferences } from '../settings/preferenceStore';
 import type { GgbPreferences, ObjectStyle } from '../settings/types';
 
@@ -26,7 +28,8 @@ const readSettings = (): StudioSettings => {
     const sidePanelWidth = typeof parsed.sidePanelWidth === 'number' && Number.isFinite(parsed.sidePanelWidth)
       ? Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, parsed.sidePanelWidth))
       : DEFAULT_STUDIO_SETTINGS.sidePanelWidth;
-    return { ...DEFAULT_STUDIO_SETTINGS, ...parsed, sidePanelWidth };
+    return { ...DEFAULT_STUDIO_SETTINGS, ...parsed, sidePanelWidth,
+      allowNonGeometricHelpers: parsed.allowNonGeometricHelpers === true };
   } catch {
     return { ...DEFAULT_STUDIO_SETTINGS };
   }
@@ -75,9 +78,27 @@ export function useGeoGebraStudio() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = engine.subscribe((event) => setEvents((current) => [...current, event].slice(-100)));
-    return unsubscribe;
+    let helperRemovalTimer: number | undefined;
+    const unsubscribe = engine.subscribe((event) => {
+      // Output events still trigger refresh and autosave; per-helper add/update
+      // bursts need not render React or restart the save timer dozens of times.
+      if (event.objectName && isInternalHelperName(event.objectName)) {
+        if (event.type === 'remove') {
+          window.clearTimeout(helperRemovalTimer);
+          helperRemovalTimer = window.setTimeout(() => setEvents((current) => [...current, event].slice(-100)), 100);
+        }
+        return;
+      }
+      setEvents((current) => [...current, event].slice(-100));
+    });
+    return () => { unsubscribe(); window.clearTimeout(helperRemovalTimer); };
   }, [engine]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const lifecycle = new InternalHelperLifecycle(engine);
+    return () => lifecycle.dispose();
+  }, [engine, ready]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) return undefined;

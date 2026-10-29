@@ -1,6 +1,6 @@
 # 自定义工具的命名非几何中间量：实施规划
 
-日期：2026-10-29。状态：**规划；本轮不修改功能代码**。实测依据见 [命名中间量性能实验](benchmarks/named-intermediates-performance.md)。
+日期：2026-10-29。状态：**历史规划；首版实施说明见 [named-intermediates-implementation.md](named-intermediates-implementation.md)**。实测依据见 [命名中间量性能实验](benchmarks/named-intermediates-performance.md)。
 
 ## 目标与边界
 

@@ -2,6 +2,7 @@ import type { GeoGebraEngine } from '../types';
 import type { GgbPreferences, ManagedStyles, ObjectStyle } from './types';
 import { readPointRole } from './pointRoles';
 import { describeObjectStyle, readObjectStyleValues, STYLE_KEYS, validateObjectStyle, writeObjectStyle, type ObjectStyleInfo } from './objectStyles';
+import { isInternalHelperName } from '../commands/custom/internalHelpers';
 
 const VIEW_KEYS = ['algebra', 'cas', 'spreadsheet', 'graphics2', 'graphics3d'] as const;
 const VIEW_CODES = ['A', 'C', 'S', 'D', 'T'];
@@ -55,6 +56,7 @@ export class PreferenceController {
         this.scheduleDocument();
       }
       if (event.type === 'add' && event.objectName) {
+        if (isInternalHelperName(event.objectName)) return;
         // A native File > Open emits clear/add. Wait until its burst has settled.
         if (this.timer) this.scheduleDocument();
         else {
@@ -240,12 +242,15 @@ export class PreferenceController {
 
   private async applyObjects(force: boolean, reconstructing = false) {
     const names = await this.engine.callApi('getAllObjectNames', []) as string[];
-    for (const name of Object.keys(this.managed)) if (!names.includes(name)) { delete this.managed[name]; this.objectKinds.delete(name); }
+    for (const name of Object.keys(this.managed)) if (!names.includes(name) || isInternalHelperName(name)) {
+      delete this.managed[name]; this.objectKinds.delete(name);
+    }
     if (!names.length) return;
     await this.engine.callApi('setRepaintingActive', [false]);
     try {
       for (const name of names) {
         if (this.disposed) return;
+        if (isInternalHelperName(name)) continue;
         await this.applyObject(name, force, reconstructing);
       }
     } finally {
@@ -254,6 +259,7 @@ export class PreferenceController {
   }
 
   private async applyObject(name: string, force: boolean, reconstructing = false) {
+    if (isInternalHelperName(name)) return;
     const info = await this.styleMapping(name);
     if (!info) return;
     const { point, line } = info;

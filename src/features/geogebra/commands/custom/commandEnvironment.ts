@@ -1,11 +1,12 @@
 import type { GeoGebraEngine } from '../../types';
 import type { CommandEnvironment, GeometryType } from './types';
+import { isInternalHelperName } from './internalHelpers';
 
 export const normalizeGeometryType = (type: unknown): GeometryType => {
   const value = String(type ?? '').toLowerCase().replace(/^geo/u, '');
   if (['point', 'pointonpath', 'pointinregion'].includes(value)) return 'point';
   if (['numeric', 'angle', 'number', 'integer'].includes(value)) return 'number';
-  if (value === 'functionnvar') return 'function';
+  if (value === 'functionnvar' || value === 'multivariablefunction') return 'function';
   if (['implicitpoly', 'implicitcurve'].includes(value)) return 'implicitCurve';
   // GeoConic's API type string changes with its classification, even though
   // the underlying object and all of its dependencies remain a conic.
@@ -66,7 +67,8 @@ export const readFileTools = (engine: GeoGebraEngine, refresh = false): Promise<
 /** Read-only archive inspection: macros never need to be installed or rewritten. */
 export const readCommandEnvironment = async (engine: GeoGebraEngine): Promise<CommandEnvironment> => {
   const raw = await engine.callApi('getAllObjectNames', []);
-  const names: string[] = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',').filter(Boolean) : [];
+  const names: string[] = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',').filter(Boolean) : [])
+    .filter((name): name is string => typeof name === 'string' && !isInternalHelperName(name));
   const [pairs, tools] = await Promise.all([
     Promise.all(names.map(async (name): Promise<[string, GeometryType]> => {
       const type = normalizeGeometryType(await engine.callApi('getObjectType', [name]));

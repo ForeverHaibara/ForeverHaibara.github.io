@@ -91,8 +91,8 @@ const conic: ExpressionBuilder = (args, allocate) => {
           return bind(product(left, q).flat(), allocate, (entries) => {
             const m = product([entries.slice(0, 3), entries.slice(3, 6), entries.slice(6, 9)], right);
             return coefficientList([m[0][0], m[1][1], m[2][2], mul('2', m[0][1]), mul('2', m[0][2]), mul('2', m[1][2])]);
-          });
-        });
+          }, 'number');
+        }, 'number');
         if (extraRows.length === 2) return `If(${determinant(frame)}!=0,${output(cross(extraRows[0], extraRows[1]))})`;
         const charts = [0, 1, 2].map((fixed) => {
           const free = [0, 1, 2].filter((i) => i !== fixed);
@@ -113,9 +113,9 @@ const conic: ExpressionBuilder = (args, allocate) => {
           return `Zip(${output(parameters)},${candidate},${roots})`;
         });
         return `If(${determinant(frame)}!=0,RemoveUndefined(Join(${charts.join(',')})),{})`;
-      });
-    });
-  });
+      }, 'number');
+    }, 'number');
+  }, 'number');
   if (points.length === 0) return `Conic(${expression})`;
   const coefficients = allocate();
   const curves = `Zip(Conic(${coefficients}),${coefficients},${expression})`;

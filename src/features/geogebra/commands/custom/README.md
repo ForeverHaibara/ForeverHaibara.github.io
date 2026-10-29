@@ -100,6 +100,13 @@ integer `i` select one output dynamically; invalid indices are undefined.
 Internal anonymous `Zip` bindings remain available for reuse without public
 list objects. New triangle outputs follow BC, CA, AB order.
 
+Workspace settings has an opt-in performance switch for selected complex
+builders. The same `bind()` formulas are lowered either to the anonymous form
+above or to typed, hidden numeric/list/function auxiliaries. The switch is off
+by default, affects new commands only, and unsupported overloads retain the
+anonymous form. See [the implementation notes](docs/named-intermediates-implementation.md)
+for the supported overloads and safety rules.
+
 Composition parameters and locals are compiled in an isolated typed scope with
 hygienic opaque argument tokens. Dependencies resolve against this library,
 so a file macro or construction label cannot silently change an internal

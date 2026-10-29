@@ -156,12 +156,12 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
           <GeoGebraSidePanel engine={engine} objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
         </div>
         <div id="geogebra-command-dock" hidden={commandsHidden} className="geogebra-command-dock">
-          <GeoGebraCommandBar engine={engine} ready={ready} onResult={onCommandResult} />
+          <GeoGebraCommandBar engine={engine} ready={ready} allowNonGeometricHelpers={settings.allowNonGeometricHelpers} onResult={onCommandResult} />
           {lastResult && <div className={`ggb-command-status ${lastResult.success ? '' : 'error'}`} role="status" title={lastResult.command}><span className={`ggb-status-dot ${lastResult.success ? '' : 'error'}`} />{lastResult.success ? `${lastResult.command} → ${lastResult.labels.join(', ') || 'done'}` : lastResult.error}</div>}
         </div>
       </div>
       {proofSettingsOpen && <ProofSettingsPanel preferences={reasoningPreferences} discovery={geometryRelations} storageUnavailable={reasoningStorageUnavailable} onApply={(value) => { const next = normalizeReasoningPreferences(value); setReasoningPreferences(next); setReasoningStorageUnavailable(!saveReasoningPreferences(next)); }} onClose={closeProofSettings} />}
-      {settingsOpen && <><button className="ggb-settings-backdrop" type="button" aria-label="Dismiss settings" tabIndex={-1} onClick={closeSettings} /><GeoGebraSettingsPanel preferences={preferences} ready={ready} error={preferenceError} onChange={onPreferencesChange} onApplyToAll={onApplyPreferences} onClose={closeSettings} /></>}
+      {settingsOpen && <><button className="ggb-settings-backdrop" type="button" aria-label="Dismiss settings" tabIndex={-1} onClick={closeSettings} /><GeoGebraSettingsPanel preferences={preferences} allowNonGeometricHelpers={settings.allowNonGeometricHelpers} onAllowNonGeometricHelpersChange={(value) => onSettingsChange({ ...settings, allowNonGeometricHelpers: value })} ready={ready} error={preferenceError} onChange={onPreferencesChange} onApplyToAll={onApplyPreferences} onClose={closeSettings} /></>}
     </div></ReasoningPreferencesContext.Provider>
     {fullscreen && focusMode && <div className="geogebra-focus-controls" role="group" aria-label="Canvas focus controls"><StudioIconButton autoFocus icon="focus" label="Show workspace tools" onClick={() => { setFocusMode(false); window.requestAnimationFrame(() => fullscreenButtonRef.current?.focus()); }} /><StudioIconButton icon="collapse" label="Exit fullscreen" onClick={toggleFullscreen} /></div>}
   </div>;

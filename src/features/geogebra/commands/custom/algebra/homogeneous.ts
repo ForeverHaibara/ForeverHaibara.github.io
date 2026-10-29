@@ -19,10 +19,19 @@ export const adjugate = (m: Matrix): Matrix => Array.from({ length: 3 }, (_, i) 
 export const determinant = (m: Matrix) => add(m[0].map((value, j) => mul(value, adjugate(m)[j][0])));
 export const cross = (a: string[], b: string[]): string[] => [0, 1, 2].map((i) => sub(mul(a[(i + 1) % 3], b[(i + 2) % 3]), mul(a[(i + 2) % 3], b[(i + 1) % 3])));
 
-/** Local bindings in a native dynamic expression. No labeled construction objects. */
-export const bind = (values: string[], allocate: () => string, body: (names: string[]) => string): string => {
+export type BindValueKind = 'number' | 'numberList' | 'function';
+export type BindingAllocator = (() => string) & {
+  captureBinding?: (names: string[], values: string[], expression: string, kinds?: BindValueKind[]) => string;
+};
+
+/** One formula source; the compiler may lower typed bindings to construction objects. */
+export const bind = (values: string[], allocate: BindingAllocator, body: (names: string[]) => string,
+  kinds?: BindValueKind | BindValueKind[]): string => {
   const names = values.map(() => allocate());
-  return `Element(Zip(${body(names)},${names.map((name, i) => `${name},{${values[i]}}`).join(',')}),1)`;
+  const expression = body(names);
+  const declared = kinds === undefined ? undefined : Array.isArray(kinds) ? kinds : values.map(() => kinds);
+  return allocate.captureBinding?.(names, values, expression, declared)
+    ?? `Element(Zip(${expression},${names.map((name, i) => `${name},{${values[i]}}`).join(',')}),1)`;
 };
 
 export const supportingLine = (arg: TypedExpression) => arg.type === 'line' ? arg.expression
@@ -48,7 +57,7 @@ export const independentOutputs = (outputs: string[], index?: string) => index
 
 /** Native line through its closest point to the origin, with no slope chart. */
 export const coefficientLine = (coefficients: string[], allocate: () => string) => bind(coefficients, allocate, ([a, b, c]) =>
-  `Line((-${a}*${c}/(${a}^2+${b}^2),-${b}*${c}/(${a}^2+${b}^2)),Vector((${b},-${a})))`);
+  `Line((-${a}*${c}/(${a}^2+${b}^2),-${b}*${c}/(${a}^2+${b}^2)),Vector((${b},-${a})))`, 'number');
 
 /** Homogeneous barycentrics -> a native conic in the world plane. */
 export const barycentricConic = (vertices: string[], coefficients: string[] | string) =>

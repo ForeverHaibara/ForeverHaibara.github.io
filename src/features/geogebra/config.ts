@@ -12,4 +12,5 @@ export const DEFAULT_STUDIO_SETTINGS = {
   sidePanelWidth: 350,
   commandBarCollapsed: false,
   commandBarFloating: true,
+  allowNonGeometricHelpers: false,
 };

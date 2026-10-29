@@ -1,7 +1,9 @@
 import { GEOGEBRA_COMMAND_NAMES } from '../completion/geogebraCommandNames';
 import { outerCalls, splitTopLevel } from './commandSyntax';
+import { createBindingCapture, type CompiledBindingPlan } from './bindingPlan';
 import { expandTool, selectOverload, studioTools, toolSignature } from './toolLibrary';
 import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload, TypedExpression } from './types';
+import type { BindingAllocator } from './algebra/homogeneous';
 
 const nativeNames = new Set(GEOGEBRA_COMMAND_NAMES.map((name) => name.toLowerCase()));
 const nativeReturns: Record<string, GeometryType> = {
@@ -59,7 +61,10 @@ export const containsStudioCall = (source: string, depth = 0): boolean => {
   return outerCalls(source).some((call) => !call.declaration && (studioTools.has(call.name.toLowerCase()) || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
 };
 
-export const compileStudioCommand = (source: string, environment: CommandEnvironment, tools: ReadonlyMap<string, ToolDefinition> = studioTools): string => {
+type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }> };
+
+export const compileStudioCommand = (source: string, environment: CommandEnvironment,
+  tools: ReadonlyMap<string, ToolDefinition> = studioTools, capture?: Capture): string => {
   const occupied = new Set([...source.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)].map((match) => match[0]));
   for (const name of environment.objects.keys()) occupied.add(name);
   for (const tool of tools.values()) for (const overload of tool.overloads) {
@@ -71,7 +76,8 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
   let serial = 0;
   // Zip/KeepIf require identifiers: bare _ and # are not accepted by GeoGebra.
   // Short ASCII names stay readable while avoiding every source/global label.
-  const allocate = () => { let name: string; do { name = `v${++serial}`; } while (occupied.has(name)); occupied.add(name); return name; };
+  const allocate: BindingAllocator = () => { let name: string; do { name = `v${++serial}`; } while (occupied.has(name)); occupied.add(name); return name; };
+  if (capture) allocate.captureBinding = capture.captureBinding;
 
   const compile = (input: string, scope = environment, depth = 0): TypedExpression => {
     if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
@@ -112,6 +118,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       if (tool && !fileDefined) {
         const overload = selectOverload(tool, args);
         if (overload) {
+          if (depth === 0) capture?.selected.push({ builder: overload.builder, args: args.map((arg) => arg.type) });
           const signature = toolSignature(tool, overload);
           if (dependencies.some((dependency) => dependency.overload === overload)) throw new Error(`Cyclic tool composition: ${[...dependencies.map((dependency) => dependency.signature), signature].join(' -> ')}`);
           dependencies.push({ overload, signature });
@@ -172,4 +179,21 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
   };
 
   return compile(source).expression;
+};
+
+const NAMED_BUILDERS = new Set([
+  'conic', 'pretangential', 'cubicPolarConic', 'hessianCubic',
+  'mixedPolar', 'jacobianCubic',
+]);
+
+/** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
+export const compileStudioPlan = (source: string, environment: CommandEnvironment,
+  groupId: string): CompiledBindingPlan => {
+  const capture: Capture = { ...createBindingCapture(), selected: [] };
+  const expression = compileStudioCommand(source, environment, studioTools, capture);
+  const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
+  const eligible = Boolean(selected?.builder && NAMED_BUILDERS.has(selected.builder)
+    && (selected.builder !== 'conic' || selected.args.length === 5 && selected.args.every((type) => ['line', 'segment', 'ray'].includes(type)))
+    && (selected.builder !== 'pretangential' || selected.args.length === 3));
+  return capture.lower(expression, groupId, eligible);
 };

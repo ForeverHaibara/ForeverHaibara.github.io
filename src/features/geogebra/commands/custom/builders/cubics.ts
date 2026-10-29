@@ -23,7 +23,7 @@ export const withCubic = (curve: string, allocate: () => string, body: (coeffici
     // reverse and pad so missing high-degree terms read as zero dynamically.
     bind([encodedPolynomialCoefficients(f, 4, 13)], allocate, ([encoded]) =>
       bind(CUBIC_COEFFICIENT_INDICES.map((index) => `Element(${encoded},${index})`), allocate,
-        (coefficients) => `(${body(coefficients)})`)));
+        (coefficients) => `(${body(coefficients)})`, 'number'), 'numberList'), 'function');
 
 /** Homogeneous gradient at (p,q,1): the second polar line. */
 export const cubicPolarLine = (coefficients: string[], p: string, q: string): string[] => [0, 1, 2].map((axis) =>
@@ -113,7 +113,7 @@ const cubicFromPolynomialCoefficients = (p: Polynomial, allocate: () => string) 
   return bind(coefficients, allocate, (numbers) => {
     const polynomial = coefficientPolynomial(numbers);
     return `ImplicitCurve(${polynomial})`;
-  });
+  }, 'number');
 };
 const hessianCubic: ExpressionBuilder = (args, allocate) => withCubic(args[0].expression, allocate, (c) =>
   cubicFromPolynomialCoefficients(polynomialDeterminant(cubicHessian(c).map((row) => row.map(linearPolynomial))), allocate));
@@ -181,7 +181,7 @@ const jacobianCubic: ExpressionBuilder = (args, allocate) => {
     const gradients = lists.map((list) => conicGradient([1, 2, 3, 4, 5, 6].map((i) => `Element(${list},${i})`)));
     const rows = gradients.map((row) => row.map(linearPolynomial));
     return cubicFromPolynomialCoefficients(polynomialDeterminant(rows), allocate);
-  });
+  }, 'numberList');
 };
 
 const conicLineCubic: ExpressionBuilder = (args) => {
@@ -390,8 +390,8 @@ const withContactConics = (curve: string, target: string, allocate: () => string
         const lineY = `-${b}*${nx}+${cc}*${ny}`;
         const flexLine = coefficientLine([lineX, lineY, `2*(${g})^2-(${lineX})*${px}-(${lineY})*${py}`], allocate);
         return body(q, r, aa, flexLine);
-      });
-    });
+      }, 'number');
+    }, 'number');
   });
 
 const contactPointAt = (curve: string, target: string, index: number, allocate: () => string) =>

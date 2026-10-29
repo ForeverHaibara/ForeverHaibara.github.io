@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseConstruction } from './expressionParser';
-import { buildDependencyGraph, projectGraph } from './constructionGraph';
+import { buildDependencyGraph, collapseInternalHelpers, projectGraph } from './constructionGraph';
 import { FREE_OBJECT_ROOT_ID, objectNodeId } from './graphTypes';
 import { detectGeometryRelations } from './geometryRelations';
 
@@ -76,6 +76,20 @@ describe('GeoGebra dependency graph', () => {
     const graph = buildDependencyGraph([{ name: 'n', objectType: 'numeric', commandString: '' }]);
     const projected = projectGraph(graph, { visibleTypes: new Set(['point']), visibleObjectNames: new Set(['n']) });
     expect(projected.nodes.some((node) => node.name === 'n')).toBe(true);
+  });
+
+  it('contracts named helper chains into direct user-object dependencies', () => {
+    const a = 'ggbaux0123456789abcdefnv1';
+    const b = 'ggbaux0123456789abcdefnv2';
+    const graph = collapseInternalHelpers(buildDependencyGraph([
+      { name: 'input', objectType: 'numeric', commandString: '' },
+      { name: a, objectType: 'numeric', commandString: 'input+1' },
+      { name: b, objectType: 'numeric', commandString: `${a}^2` },
+      { name: 'output', objectType: 'point', commandString: `(${b},0)` },
+    ]));
+    expect(graph.nodes.map((node) => node.name)).toEqual([FREE_OBJECT_ROOT_ID, 'input', 'output']);
+    expect(graph.edges).toContainEqual(expect.objectContaining({ source: objectNodeId('input'), target: objectNodeId('output') }));
+    expect(graph.edges.some((edge) => edge.source.includes('ggbaux') || edge.target.includes('ggbaux'))).toBe(false);
   });
 });
 

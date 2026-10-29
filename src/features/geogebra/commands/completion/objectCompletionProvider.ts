@@ -1,5 +1,6 @@
 import type { GeoGebraEngine } from '../../types';
 import type { CompletionProvider } from './types';
+import { isInternalHelperName } from '../custom/internalHelpers';
 
 /** Engine-scoped: never register construction data in the shared command catalog. */
 export const createObjectCompletionProvider = (engine: GeoGebraEngine): CompletionProvider => ({
@@ -9,7 +10,7 @@ export const createObjectCompletionProvider = (engine: GeoGebraEngine): Completi
     const raw = await engine.callApi('getAllObjectNames', []);
     if (signal.aborted) return [];
     const names = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',').map((name) => name.trim()) : [];
-    const matching = names.filter((name): name is string => typeof name === 'string' && name.length > 0 && name.toLowerCase().startsWith(context.prefix.toLowerCase()));
+    const matching = names.filter((name): name is string => typeof name === 'string' && name.length > 0 && !isInternalHelperName(name) && name.toLowerCase().startsWith(context.prefix.toLowerCase()));
     const items = [];
     // Bounded batches keep a large construction from issuing thousands of API
     // calls after a keystroke; cancellation is checked before each batch.
