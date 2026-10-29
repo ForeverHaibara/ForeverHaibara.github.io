@@ -2,6 +2,8 @@
 
 日期：2026-10-29。状态：**High 档与一个点型辅助工具试点已实现；其余类型和工具仍按本计划逐项验证**。现有实现见 [实施说明](named-intermediates-implementation.md)，原规划见 [历史规划](named-intermediates-plan.md)。
 
+高优先级工具盘点、共享前置量方案与下一轮实施顺序见 [High 档性能候选](high-performance-candidates.md)。
+
 ## 结论与边界
 
 GeoGebra 的 auxiliary 是对象属性，并不限定数值类型。官方 [Algebra View 手册](https://geogebra.github.io/docs/manual/en/Algebra_View/)说明辅助对象默认不在代数视图展示，并可由用户打开“显示辅助对象”；[Apps API](https://geogebra.github.io/docs/reference/en/GeoGebra_Apps_API/)提供 `setAuxiliary`、`setVisible`、`setLabelVisible`。因此隐藏几何中间点、线、圆锥曲线等在界面机制上可行。它们仍是可由名称、API、原生输入及文件数据访问的构造对象；隐藏不是私有名字空间，也不能保证 GeoGebra 原生的所有工具忽略它们。CAS 侧栏不自动生成 CAS 输入行，仍须实机核对在 CAS 中显式引用的行为。
@@ -41,7 +43,7 @@ GeoGebra 的 auxiliary 是对象属性，并不限定数值类型。官方 [Alge
 
 ## 设置与兼容
 
-把当前布尔偏好迁移为三级执行模式：`off`、`nonGeometric`、`verifiedGeometry`。旧 `false` 映射 `off`，旧 `true` 映射 `nonGeometric`；默认仍为 `off`。前端 Workspace settings 的 Custom tool performance 改为单选三档，并说明“包括几何辅助对象”仅针对已验证工具、可在 GeoGebra 显示辅助对象时查看、只影响新命令。关闭或降低模式不删除已有辅助对象。文件保存对象依赖，不保存或强制改变本机偏好。
+现已迁移为 `low`、`medium`、`high` 三级执行模式：旧 `false` 映射 Low，旧 `true` 映射 Medium；用户已将新安装的默认档位调整为 High。前端 Workspace settings 的 Custom tool performance 是三档单选；“包括几何辅助对象”仅针对已验证工具，可在 GeoGebra 显示辅助对象时查看，只影响新命令。关闭或降低模式不删除已有辅助对象。文件保存对象依赖，不保存或强制改变本机偏好。
 
 ## 分阶段验收
 
