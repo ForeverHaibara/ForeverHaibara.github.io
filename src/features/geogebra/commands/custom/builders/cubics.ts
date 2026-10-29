@@ -285,7 +285,7 @@ const polynomialFromKernel = (rows: string[][], basis: AffineBasis, x: string, y
     const terms = basisValue(basis, x, y);
     const equation = sum(coefficients.map((c, i) => mul(c, terms[i])));
     return `If(${sum(coefficients.map((c) => `(${c})^2`))}!=0,ImplicitCurve(${equation}))`;
-  });
+  }, 'number');
 
 const circularBasis: AffineBasis = [
   [[3, 0], [1, 2]], [[2, 1], [0, 3]], [[2, 0]], [[1, 1]],

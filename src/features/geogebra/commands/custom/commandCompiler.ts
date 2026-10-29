@@ -181,10 +181,21 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
   return compile(source).expression;
 };
 
-const NAMED_BUILDERS = new Set([
-  'conic', 'pretangential', 'cubicPolarConic', 'hessianCubic',
-  'mixedPolar', 'jacobianCubic',
-]);
+type NamedOverloadCheck = (args: readonly GeometryType[]) => boolean;
+const anyOverload: NamedOverloadCheck = () => true;
+/** Admit only builder overloads verified against native GeoGebra execution. */
+const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  conic: (args) => args.length === 5 && args.every((type) => ['line', 'segment', 'ray'].includes(type)),
+  pretangential: (args) => args.length === 3,
+  cubicPolarConic: anyOverload,
+  hessianCubic: anyOverload,
+  mixedPolar: anyOverload,
+  jacobianCubic: anyOverload,
+  orthicAxisCubic: anyOverload,
+  poloconic: anyOverload,
+  circularCubicDirection: anyOverload,
+  nodalCubic: (args) => [5, 7].includes(args.length) && args.every((type) => type === 'point'),
+};
 
 /** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
 export const compileStudioPlan = (source: string, environment: CommandEnvironment,
@@ -192,8 +203,7 @@ export const compileStudioPlan = (source: string, environment: CommandEnvironmen
   const capture: Capture = { ...createBindingCapture(), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
-  const eligible = Boolean(selected?.builder && NAMED_BUILDERS.has(selected.builder)
-    && (selected.builder !== 'conic' || selected.args.length === 5 && selected.args.every((type) => ['line', 'segment', 'ray'].includes(type)))
-    && (selected.builder !== 'pretangential' || selected.args.length === 3));
+  const supports = selected?.builder ? NAMED_OVERLOADS[selected.builder] : undefined;
+  const eligible = Boolean(selected && supports?.(selected.args));
   return capture.lower(expression, groupId, eligible);
 };

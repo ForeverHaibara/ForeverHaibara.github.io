@@ -6,7 +6,7 @@
 
 Workspace settings → Behavior → **Allow non-geometric intermediate objects** 默认关闭，保存在浏览器本地。开启后只影响以后从本站命令栏执行的合格自定义工具；已有构造、原生 GeoGebra 输入栏、文件工具和 `.ggb` 文件本身的语义不变。输出依然是原生 GeoGebra 对象，保存后不依赖本站脚本更新。
 
-当前启用命名路径的 builder 重载：五条直线／射线／线段输入的 `Conic`，带编号 `i` 的 `Pretangential(F,P,i)`，以及 `PolarConic(P,F)`、`HessianCubic(F)`、`MixedPolar(P,Q,F)`、`JacobianCubic(q1,q2,q3)`。这是按 builder／重载选择的白名单，不按输入文本中的命令名称替换。`QACu1Inv` 的实验收益不稳定，`QLQu3` 含点值绑定，继续用匿名路径；其它较快或尚未验证的工具也保持原状。
+当前启用命名路径的 builder 重载：五条直线／射线／线段输入的 `Conic`，带编号 `i` 的 `Pretangential(F,P,i)`，以及 `PolarConic(P,F)`、`HessianCubic(F)`、`MixedPolar(P,Q,F)`、`JacobianCubic(q1,q2,q3)`、三次曲线输入的 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束重载 `CircularCubic(A,B,C,D,E,F,l)`、五点及七点重载 `NodalCubic(...)`。这是按 builder／重载选择的白名单，不按输入文本中的命令名称替换。`QACu1Inv` 的实验收益不稳定，`QLQu3` 含点值绑定，继续用匿名路径；其它较快或尚未验证的工具也保持原状。
 
 ## 编译与安全边界
 
@@ -18,6 +18,6 @@ Workspace settings → Behavior → **Allow non-geometric intermediate objects**
 
 ## 验证与后续扩展
 
-真实引擎对普通、混合线型与平行线退化的五线 `Conic`，`Pretangential` 的四个编号，以及 `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` 比较了开关前后的类型、显示结果和输入变化后的更新。还验证了部分执行失败的回滚、撤销／重做、`.ggb` 导出重开、用户引用保护与孤儿清理。单元测试覆盖默认匿名文本、白名单、作用域回退、输出校验和语义图收缩。
+真实引擎对普通、混合线型与平行线退化的五线 `Conic`，`Pretangential` 的四个编号，以及 `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` 比较了开关前后的类型、显示结果和输入变化后的更新。第二阶段还比较了 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束 `CircularCubic`、五点及七点 `NodalCubic`；测试脚本对这些新增路径逐字核对创建前后及输入变化后的显示方程。还验证了部分执行失败的回滚、撤销／重做、`.ggb` 导出重开、用户引用保护与孤儿清理。单元测试覆盖默认匿名文本、白名单、重载限制、作用域回退、输出校验和语义图收缩。第二阶段的筛选数据见 [扩展实验](benchmarks/named-intermediates-expansion.md)。
 
-以后增加工具时，在 builder 的 `bind()` 声明值类型，先补普通／退化／动态／文件重开等价测试和创建、更新性能数据，再把 builder 加入 `NAMED_BUILDERS`。不要仅因表达式长就启用命名路径。首版不自动物化某些绑定而保留其它绑定，也不写 CAS；这两项需要独立的作用域与依赖语义验证。
+以后增加工具时，在 builder 的 `bind()` 声明值类型，先补普通／退化／动态／文件重开等价测试和创建、更新性能数据，再把已验证的重载加入 `NAMED_OVERLOADS`。不要仅因表达式长就启用命名路径。首版不自动物化某些绑定而保留其它绑定，也不写 CAS；这两项需要独立的作用域与依赖语义验证。

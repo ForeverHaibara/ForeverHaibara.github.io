@@ -4,8 +4,8 @@ import type { CommandEnvironment, GeometryType } from '../types';
 
 const environment = (): CommandEnvironment => ({
   objects: new Map<string, GeometryType>([
-    ...['A', 'B', 'C', 'D', 'P'].map((name) => [name, 'point'] as [string, GeometryType]),
-    ...['f', 'g', 'h', 'j', 'k'].map((name) => [name, 'line'] as [string, GeometryType]),
+    ...['A', 'B', 'C', 'D', 'E', 'G', 'H', 'P'].map((name) => [name, 'point'] as [string, GeometryType]),
+    ...['f', 'g', 'h', 'j', 'k', 'l'].map((name) => [name, 'line'] as [string, GeometryType]),
     ['F', 'implicitCurve'], ['q1', 'conic'], ['q2', 'conic'], ['q3', 'conic'],
   ]), macros: new Set(),
 });
@@ -19,6 +19,11 @@ describe('one formula source with two binding lowerings', () => {
     ['HessianCubic(F)', 22],
     ['MixedPolar(P,A,F)', 15],
     ['JacobianCubic(q1,q2,q3)', 13],
+    ['OrthicAxis(F)', 15],
+    ['Poloconic(l,F)', 12],
+    ['CircularCubic(A,B,C,D,E,G,l)', 8],
+    ['NodalCubic(A,B,C,D,E,G,H)', 7],
+    ['NodalCubic(A,B,C,D,E)', 5],
   ])('materializes typed bindings for %s', (source, minimum) => {
     const plan = compileStudioPlan(`out=${source}`, environment(), id);
     expect(plan.materialized).toBe(true);
@@ -30,7 +35,10 @@ describe('one formula source with two binding lowerings', () => {
   });
 
   it('keeps unsupported and scope-sensitive tools anonymous', () => {
-    for (const source of ['QACu1Inv(A,B,C,P)', 'QLQu3(A,B,C,D)', 'Conic(A,f,g,h,j)', 'Polar(P,F)', 'Zip(Pretangential(F,P,1),P,{A,B})']) {
+    for (const source of ['QACu1Inv(A,B,C,P)', 'QLQu3(A,B,C,D)', 'Conic(A,f,g,h,j)', 'Polar(P,F)',
+      'ThirdIntersection(F,A,B)', 'CayleyBacharachPoint(A,B,C,D,E,G,H,P)', 'CubicPencil(F,F,P)',
+      'OrthicAxis(A,B,C)', 'CircularCubic(A,B,C,D,E,G,H)',
+      'NodalCubic(A,B,C,D)', 'NodalCubic(A,B,C,D,l)', 'Zip(Pretangential(F,P,1),P,{A,B})']) {
       const command = `out=${source}`;
       const plan = compileStudioPlan(command, environment(), id);
       expect(plan.materialized).toBe(false);
@@ -45,5 +53,15 @@ describe('one formula source with two binding lowerings', () => {
     const plan = compileStudioPlan('out=Conic(v1,g,h,j,k)', scope, id);
     expect(plan.materialized).toBe(true);
     expect(plan.helpers.some((helper) => /\bv1\b/u.test(helper.expression))).toBe(true);
+  });
+
+  it('materializes segment input for verified line-like overloads', () => {
+    const scope = environment();
+    scope.objects.set('l', 'segment');
+    for (const source of ['Poloconic(l,F)', 'CircularCubic(A,B,C,D,E,G,l)']) {
+      const plan = compileStudioPlan(`out=${source}`, scope, id);
+      expect(plan.materialized).toBe(true);
+      expect(plan.helpers.length).toBeGreaterThan(0);
+    }
   });
 });
