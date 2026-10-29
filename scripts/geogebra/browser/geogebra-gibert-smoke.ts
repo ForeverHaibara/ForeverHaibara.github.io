@@ -4,9 +4,10 @@ import { gibertCurveRecords } from '../../../src/features/geogebra/commands/cust
 import { InternalHelperLifecycle } from '../../../src/features/geogebra/commands/custom/helperLifecycle';
 
 const params = new URLSearchParams(location.search);
-const id = Number(params.get('id') ?? '12');
+const idText = params.get('id') ?? '12';
+const id = Number.parseInt(idText, 10);
 const mode = (params.get('mode') ?? 'high') as 'low' | 'medium' | 'high';
-const selector = params.has('quoted') ? `"Q${String(id).padStart(3,'0')}"` : String(id);
+const selector = params.has('quoted') || /[A-Za-z]/u.test(idText) ? `"Q${idText.padStart(3,'0')}"` : String(id);
 const engine = new GeoGebraEmbeddingAdapter();
 const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
 const button = document.querySelector<HTMLButtonElement>('#run')!;
@@ -23,7 +24,7 @@ const median = (xs: number[]) => { const values = [...xs].sort((a,b) => a-b); re
 let initialized = false;
 button.onclick = async () => {
   button.disabled = true; log.textContent = '';
-  const data: Record<string,unknown> = { id, mode, userAgent: navigator.userAgent, viewport: [innerWidth,innerHeight] };
+  const data: Record<string,unknown> = { id, selector, mode, userAgent: navigator.userAgent, viewport: [innerWidth,innerHeight] };
   try {
     if (!initialized) { report('Initializing'); await engine.initialize(document.querySelector<HTMLDivElement>('#canvas')!); initialized = true; }
     data.engine = engine.getCapabilities();
@@ -53,7 +54,7 @@ button.onclick = async () => {
     await run('diagnostic(x,y)=LeftSide(out)-RightSide(out)');
     const gridValues = await Promise.all([[-1,1],[2,1],[4,3],[7,5],[0,-1]].map(async ([x,y]) => Number(await api('getValue',`diagnostic(${x},${y})`))));
     const scale = Math.max(...gridValues.map(Math.abs)); check(Number.isFinite(scale) && scale>1e-12, 'zero polynomial');
-    const record = gibertCurveRecords.find((r) => Number(r.id.slice(1)) === id)!;
+    const record = gibertCurveRecords.find((r) => r.id === `Q${idText.padStart(3,'0')}`)!;
     const centers: unknown[] = [];
     for (const index of record.centers) {
       await run(`T=TriangleCenter(A,B,C,${index})`);

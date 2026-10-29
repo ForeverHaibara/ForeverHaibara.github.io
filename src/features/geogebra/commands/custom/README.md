@@ -78,8 +78,9 @@ For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
 ### Numbered higher-degree triangle curves
 
 `GibertCurve(A,B,C,12)` (also `GibertCurve(A,B,C,"Q012")`) constructs a single
-native implicit curve. The initial database supports Q002, Q003, Q012, Q033
-and Q039. `id` is a compile-time `catalogId` literal, not a slider or an
+native implicit curve. The database supports Q002–Q005, Q010–Q012, Q014,
+Q016–Q017, Q019, Q033, Q036A/B/C, Q039, Q142 and Q202. Use a quoted ID such
+as `"Q036A"` for a family member. `id` is a compile-time `catalogId` literal, not a slider or an
 arithmetic expression; it is selected in TypeScript before native execution.
 There are no per-curve public command names or large native `If` dispatches.
 

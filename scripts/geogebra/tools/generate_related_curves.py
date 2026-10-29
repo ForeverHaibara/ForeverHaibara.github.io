@@ -29,9 +29,17 @@ def parse_equation(text):
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             return visit(node.operand) * (-1 if isinstance(node.op, ast.USub) else 1)
         if isinstance(node, ast.BinOp):
+            if isinstance(node.op, (ast.Add, ast.Sub)):
+                pending, terms = [(node, 1)], []
+                while pending:
+                    item, sign = pending.pop()
+                    if isinstance(item, ast.BinOp) and isinstance(item.op, (ast.Add, ast.Sub)):
+                        pending.append((item.left, sign))
+                        pending.append((item.right, -sign if isinstance(item.op, ast.Sub) else sign))
+                    else:
+                        terms.append(sign * visit(item))
+                return s.Add(*terms)
             left, right = visit(node.left), visit(node.right)
-            if isinstance(node.op, ast.Add): return left + right
-            if isinstance(node.op, ast.Sub): return left - right
             if isinstance(node.op, ast.Mult): return left * right
             if isinstance(node.op, ast.Pow) and right.is_Integer and 0 <= right <= 12: return left ** right
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and len(node.args) == 1 and not node.keywords:
@@ -57,6 +65,8 @@ def generate(records):
             if not other or s.cancel(f / other).free_symbols & {u, v, w}:
                 raise ValueError(f'{key}: alternate equation is not proportional')
         replacements, coefficients = s.cse([s.factor(c) for c in poly.coeffs()], symbols=s.numbered_symbols('h'))
+        if len(replacements) > 100:
+            replacements, coefficients = [], [s.factor(c) for c in poly.coeffs()]
         # Compile the homogeneous linear substitution offline. p0..p8 are
         # signed area-form coefficients, k0..kn the numeric barycentric
         # coefficients. The engine only evaluates scalar coefficients and

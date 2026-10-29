@@ -19,7 +19,7 @@ export const normalizeGibertId = (literal: string): string => {
     return `Q${literal.padStart(3, '0')}`;
   if (/^"(?:\\.|[^"\\])*"$/u.test(literal)) {
     const value: unknown = JSON.parse(literal);
-    if (typeof value === 'string' && /^Q\d{3,}(?:-?[A-Z][A-Z0-9-]*)?$/iu.test(value)) return value.toUpperCase();
+    if (typeof value === 'string' && /^Q\d{3,}(?:-?[A-Z][A-Z0-9-]*)?$/iu.test(value)) return value.toUpperCase().replace(/^(Q\d{3,})-([A-Z])$/u, '$1$2');
   }
   throw new Error('Invalid Gibert curve ID. Use a positive integer literal or a quoted ID such as "Q012".');
 };
@@ -33,9 +33,9 @@ const substitute = (source: string, bindings: ReadonlyMap<string, string>) => so
 
 export const gibertCurve: ExpressionBuilder = (args, allocate) => {
   const id = normalizeGibertId(args[3].literal!);
-  if (['Q000', 'Q035', 'Q036'].includes(id))
+  if (id === 'Q036') throw new Error('Q036 is a family; use "Q036A", "Q036B" or "Q036C".');
+  if (['Q000', 'Q035'].includes(id))
     throw new Error(`${id} represents a family of curves; its variants have not been implemented. Supported: ${supported}.`);
-  if (id === 'Q005') throw new Error('Q005 is a cubic, outside this higher-degree catalogue.');
   const recipe = recipes[id];
   if (!recipe) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
   const vertices = args.slice(0, 3).map((arg) => arg.expression);

@@ -7,7 +7,7 @@ snapshot hashes, HTTP metadata, automatic updates or separate version history.
 - `catalogue.json`: 203 directory positions Q000–Q202. `degree: null` means the
   title alone does not specify a degree. Directory positions may be families;
   they are not a count of individual curves. This file is not imported at runtime.
-- `curves.json`: the five supported definitions. Required fields are `id`,
+- `curves.json`: the supported definitions. Required fields are `id`,
   `name`, `degree`, `source`, `equation`, `centers`, and brief `notes`.
 - Optional `alternateEquation` / `alternateSource` provide a second published
   representation for algebraic checking. Point metadata may include
@@ -28,6 +28,7 @@ test points, then run from the repository root:
 python scripts/geogebra/tools/generate_related_curves.py
 python scripts/geogebra/tools/generate_related_curves.py --check
 npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurves.test.ts
+python scripts/geogebra/tools/check_related_curve_points.py
 ```
 
 Python with SymPy is an offline authoring dependency, not a website dependency.
@@ -42,6 +43,8 @@ for history, quoted-ID, and post-cleanup visual checks. Low is intentionally
 rejected before evaluation; do not remove the `requiresNamed` guard to benchmark
 inside a user's construction. It timed out in the isolated exploration.
 
-Q005 is cubic and excluded. Q000/Q035/Q036 are unimplemented families; strings
-with a suffix are parsed but do not imply that a variant has been implemented.
+Q005 is a cubic and uses the same interface. Q036 has three supported members:
+`"Q036A"`, `"Q036B"`, `"Q036C"` (hyphens before the final letter are accepted).
+Q000 and Q035 are unimplemented families; a recognized suffix does not imply
+that a variant has been implemented.
 Do not register each new record as a separate public command or alias.
