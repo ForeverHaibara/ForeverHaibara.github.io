@@ -39,6 +39,42 @@ The generator validates degree/homogeneity and alternative equations, and writes
 The runtime evaluates only generated scalar arithmetic with native dependencies;
 it never evaluates the source equation text or fetches the source website.
 
+## Opt-in construction backends
+
+An optional `backend` selects an implementation in
+`builders/relatedCurveBackends.ts`. Omit it for the existing world-coefficient
+recipes. Selection happens once from the literal ID at compile time. There is
+no native `If` catalogue dispatcher and no additional public Qxxx commands.
+
+Q018/Q020 select `similarityPolynomial`. Their source equations stay here;
+`generated/relatedCurveCircuits.json` contains only local-frame numeric
+coefficients and shared scalar arithmetic. Generic code rotates/scales and
+translates those coefficients in separate native binding stages. Regenerate
+and verify this backend with:
+
+```text
+python scripts/geogebra/tools/generate_related_curve_circuits.py
+python scripts/geogebra/tools/generate_related_curve_circuits.py --check
+python scripts/geogebra/tools/check_related_curve_circuits.py
+python scripts/geogebra/tools/check_related_curve_circuits.py --check-native-fixtures
+npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurveBackends.test.ts
+```
+
+After changing primary equations or native test shapes, regenerate the exact
+reference fixtures with `check_related_curve_circuits.py --write-native-fixtures`.
+The specialized native harness is
+`/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=18` (or 20).
+It complements the existing lifecycle/performance harness above.
+
+A future hand-written construction can register a separate backend and opt in
+one reviewed record; it need not generate either recipe format. Explicitly
+allow the new key in the offline generator too, so unknown keys fail. Retain an
+independently checkable primary equation, prove any canceled factors, and verify
+the actual compiled budget, native type, degeneracy, dynamics and file lifecycle.
+Use the existing typed bindings and `requiresNamed` contract; do not sample
+coordinates in JavaScript or bind expressions involving curve variables as
+numbers. See [design and measurements](../../docs/benchmarks/gibert-pedal-integration.md).
+
 Run the real-engine harness `/scripts/geogebra/browser/geogebra-gibert-smoke.html`
 with `?id=12&mode=high` (or medium). Add `history=1`, `quoted=1`, or `keep=1`
 for history, quoted-ID, and post-cleanup visual checks. Low is intentionally

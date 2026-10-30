@@ -2,6 +2,7 @@ import recipesJson from '../generated/relatedCurves.json';
 import records from '../data/related-curves/curves.json';
 import { add, bind, squaredNorm, triangleSideSquares } from '../algebra/homogeneous';
 import type { ExpressionBuilder } from '../types';
+import { RELATED_CURVE_BACKENDS } from './relatedCurveBackends';
 
 interface Recipe {
   degree: number;
@@ -36,6 +37,13 @@ export const gibertCurve: ExpressionBuilder = (args, allocate) => {
   if (id === 'Q036') throw new Error('Q036 is a family; use "Q036A", "Q036B" or "Q036C".');
   if (['Q000', 'Q035'].includes(id))
     throw new Error(`${id} represents a family of curves; its variants have not been implemented. Supported: ${supported}.`);
+  const record = records.find((entry) => entry.id === id);
+  if (!record) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
+  if (record.backend) {
+    const backend = RELATED_CURVE_BACKENDS[record.backend];
+    if (!backend) throw new Error(`${id}: unknown curve backend ${record.backend}.`);
+    return backend(id, args, allocate);
+  }
   const recipe = recipes[id];
   if (!recipe) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
   const vertices = args.slice(0, 3).map((arg) => arg.expression);

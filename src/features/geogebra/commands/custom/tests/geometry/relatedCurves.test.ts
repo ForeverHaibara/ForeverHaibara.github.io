@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import recipesJson from '../../generated/relatedCurves.json';
 import records from '../../data/related-curves/curves.json';
 import catalogue from '../../data/related-curves/catalogue.json';
+import { similarityCurveCircuits } from '../../builders/relatedCurveBackends';
 import { compileStudioCommand, compileStudioPlan } from '../../commandCompiler';
 import { createBindingCapture } from '../../bindingPlan';
 import { studioTools } from '../../toolLibrary';
@@ -114,14 +115,14 @@ describe('offline curve coefficients versus independent barycentric definitions'
     expect(catalogue).toHaveLength(203);
     expect(new Set(catalogue.map((r)=>r.id)).size).toBe(catalogue.length);
     expect(catalogue.find((r)=>r.id==='Q005')?.degree).toBe(3);
-    expect(records.map((r)=>r.id)).toEqual(Object.keys(recipes));
+    expect(records.map((r)=>r.id)).toEqual([...Object.keys(recipes),...Object.keys(similarityCurveCircuits)]);
   });
 
   it('preserves directly parsed source equations, including odd powers of side lengths', () => {
     const vertices = [[0,0],[6,0],[1,4]];
     const side = vertices.map((_,i) => { const b=vertices[(i+1)%3],c=vertices[(i+2)%3]; return (b[0]-c[0])**2+(b[1]-c[1])**2; });
     const frame = vertices.flatMap((_,i) => { const b=vertices[(i+1)%3],c=vertices[(i+2)%3]; return [b[1]-c[1],c[0]-b[0],b[0]*c[1]-b[1]*c[0]]; });
-    for (const record of records.filter((r)=>!/\bcyclic/u.test(r.equation))) {
+    for (const record of records.filter((r)=>!r.backend && !/\bcyclic/u.test(r.equation))) {
       const id = record.id;
       const recipe = recipes[id];
       const values: Record<string,number> = {a2:side[0],b2:side[1],c2:side[2],a:Math.sqrt(side[0]),b:Math.sqrt(side[1]),c:Math.sqrt(side[2]),sa:(side[1]+side[2]-side[0])/2,sb:(side[2]+side[0]-side[1])/2,sc:(side[0]+side[1]-side[2])/2};

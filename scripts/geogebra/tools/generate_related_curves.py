@@ -76,9 +76,11 @@ def cartesian_terms(monomials, compact):
 
 def generate(records):
     result = {}
+    seen = set()
     for record in records:
         key = record['id']
-        if key in result: raise ValueError(f'Duplicate ID: {key}')
+        if key in seen: raise ValueError(f'Duplicate ID: {key}')
+        seen.add(key)
         f = parse_equation(record['equation'])
         poly = s.Poly(f, u, v, w)
         if poly.is_zero or {sum(m) for m in poly.monoms()} != {record['degree']}:
@@ -87,6 +89,12 @@ def generate(records):
             other = parse_equation(record['alternateEquation'])
             if not other or s.cancel(f / other).free_symbols & {u, v, w}:
                 raise ValueError(f'{key}: alternate equation is not proportional')
+        if record.get('backend'):
+            if record['backend'] != 'similarityPolynomial':
+                raise ValueError(f'{key}: unknown opt-in backend {record["backend"]}')
+            # Separately generated and verified by generate_related_curve_circuits.py.
+            # Do not expand a specialized construction back into world coefficients.
+            continue
         replacements, coefficients = s.cse([s.factor(c) for c in poly.coeffs()], symbols=s.numbered_symbols('h'))
         if len(replacements) > 100:
             replacements, coefficients = [], [s.factor(c) for c in poly.coeffs()]

@@ -100,6 +100,10 @@ button.onclick = async () => {
     data.cleanup = true; report('PASS helper cleanup');
     if (params.has('keep')) { await run(`out=GibertCurve(A,B,C,${selector})`); report('Recreated curve for visual inspection'); }
     data.success = true; report('COMPLETE');
-  } catch (error) { data.success = false; data.error = String(error); report(`FAIL ${String(error)}`); }
+  } catch (error) {
+    data.success = false; data.error = String(error);
+    try { data.outputValue=await api('getValueString','out');data.outputXml=await api('getXML','out'); } catch { /* Initialization may have failed. */ }
+    report(`FAIL ${String(error)}`);
+  }
   finally { document.querySelector<HTMLPreElement>('#json')!.textContent = JSON.stringify(data,null,2); button.disabled = false; }
 };
