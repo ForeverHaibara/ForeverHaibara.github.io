@@ -16,7 +16,7 @@ records = json.loads(SOURCE.read_text(encoding='utf8'))
 for record in records:
     equation = parse_equation(record['equation'])
     count = 0
-    for a, b, c in [(13, 14, 15), (5, 6, 7)]:
+    for a, b, c in [(13, 14, 15), (5, 6, 7), (7, 8, 9)]:
         aa, bb, cc = a*a, b*b, c*c
         points = centers(a, b, c)
         ex = (-a, b, c)
@@ -60,3 +60,15 @@ for side_a_value, side_b_value, side_c_value in [(13, 14, 15), (5, 6, 7)]:
     ratio = s.cancel(pullback / equation_for('Q201').subs(values))
     assert ratio != 0 and not ratio.free_symbols, 'Q200/Q201 homothety mismatch'
 print('Q200/Q201: homothety checked on two exact triangles')
+
+# The pages state these pairs are isogonal transforms. Homogenize the
+# isogonal substitution and compare symbolically, including the expected
+# side-length and barycentric factors removed from the transformed equation.
+for source_id, target_id, factor in [
+    ('Q042', 'Q043', -a2*b2*c2*u**2*v**2*w**2),
+    ('Q083', 'Q084', -a2*b2*c2*u*v*w),
+]:
+    transformed = equation_for(source_id).subs(
+        {u:a2*v*w, v:b2*w*u, w:c2*u*v}, simultaneous=True)
+    assert s.expand(transformed-factor*equation_for(target_id)) == 0, f'{source_id}/{target_id} isogonal relationship mismatch'
+    print(f'{source_id}/{target_id}: isogonal relationship checked symbolically')

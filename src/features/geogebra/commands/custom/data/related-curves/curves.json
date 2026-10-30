@@ -57,6 +57,20 @@
     "notes": "Circular cubic; Q005 is intentionally included."
   },
   {
+    "id": "Q006",
+    "name": "Yiu quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq006.gif",
+    "equation": "2*u*v*w*cyclic(sa*u^2)+(u+v+w)*cyclic(a2*v^2*w^2)",
+    "centers": [],
+    "notes": "Image equation checked at antimedial vertices; X(5) is a singular focus, not a claimed finite point.",
+    "samplePoints": [
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
     "id": "Q010",
     "name": "a circular central equilateral quintic, isogonal transform of Q009",
     "degree": 5,
@@ -191,6 +205,44 @@
       3
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q026",
+    "name": "a quartic related to orthologic triangles",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq026.gif",
+    "equation": "cyclic(a2*(v-w)*(c2*v+b2*w)*v*w)",
+    "centers": [
+      1,
+      2,
+      3
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q027",
+    "name": "Thomson sextic, a sextic related to orthologic triangles",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq027.gif",
+    "equation": "cyclic(a2*v^2*w^2*(v^2-w^2))",
+    "centers": [
+      1,
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
   },
   {
     "id": "Q028",
@@ -380,6 +432,35 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q042",
+    "name": "a quintic, the isogonal transform of Q043",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq042.gif",
+    "equation": "cyclic(a2*(v-w)*v^2*w^2)",
+    "centers": [
+      1,
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q043",
+    "name": "a quartic, the isogonal transform of Q042",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq043.gif",
+    "equation": "cyclic(a2^2*(c2*v^2-b2*w^2)*v*w)",
+    "centers": [
+      1,
+      6
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
+  },
+  {
     "id": "Q044",
     "name": "Droz-Farny quintic, isogonal transform of Q098, a circular quintic",
     "degree": 5,
@@ -389,6 +470,26 @@
       2
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q045",
+    "name": "Parry quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq045.gif",
+    "equation": "cyclic((b+c-a)*(v^2-w^2)*v*w)",
+    "centers": [
+      2,
+      8
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
   },
   {
     "id": "Q046",
@@ -437,6 +538,27 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q050",
+    "name": "a circular quintic through the points Ua, Ub, Uc",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq050.gif",
+    "equation": "cyclic((a2^2*(u+v)*(u+w)+b2*c2*u*(v+w))*(v-w)*v*w)",
+    "centers": [
+      2,
+      3,
+      4
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
     "id": "Q051",
     "name": "a circular quartic through the points Ua, Ub, Uc",
     "degree": 4,
@@ -446,6 +568,42 @@
       2
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q052",
+    "name": "a circular quartic through the points Ua, Ub, Uc",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq052.gif",
+    "equation": "cyclic(u*(c2*(2*a2+b2-2*c2)*v^3-b2*(2*a2-2*b2+c2)*w^3))-cyclic(a2*(b2-c2)*(u^2+v*w)*v*w)",
+    "centers": [
+      2,
+      3
+    ],
+    "notes": "Transcribed image equality as left minus right; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
+    "id": "Q053",
+    "name": "axial pK quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq053.gif",
+    "equation": "cyclic(a2^2*(a2*(v-w)-3*(b2-c2)*u)*v^2*w^2)",
+    "centers": [
+      6
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
   },
   {
     "id": "Q054",
@@ -459,6 +617,23 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q055",
+    "name": "a sextic related to concentric bitangent conics",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq055.gif",
+    "equation": "cyclic(a2*(v+w-2*u)*(v-w)*v^2*w^2)",
+    "centers": [
+      1,
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
     "id": "Q056",
     "name": "a circular quartic through the CPCC points and the Ix-points",
     "degree": 4,
@@ -468,6 +643,116 @@
       6
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q057",
+    "name": "a sextic related to Table 28 (cevian and anticevian points)",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq057.gif",
+    "equation": "cyclic(a2*(v+w-3*u)*(v-w)*v^2*w^2)",
+    "centers": [
+      1,
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q058",
+    "name": "a sextic related to Table 28 (cevian and anticevian points)",
+    "degree": 6,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq058.gif",
+    "equation": "cyclic(a2*(3*u*(u+v)*(u+w)+2*(v+w)*v*w)*(v-w)*v*w)",
+    "centers": [
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
+    "id": "Q059",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq059.gif",
+    "equation": "cyclic(a2*(2*u^2+v*w)*(v-w)*v*w)",
+    "centers": [
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q060",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq060.gif",
+    "equation": "cyclic(a2*(2*u^2-v*w)*(v-w)*v*w)",
+    "centers": [
+      2
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q061",
+    "name": "a quintic related to Table 28 (cevian and anticevian points)",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq061.gif",
+    "equation": "cyclic(a2*(3*u^2+v*w)*(v-w)*v*w)",
+    "centers": [
+      2
+    ],
+    "notes": "Image equation checked at listed points; reflections of antimedial vertices are not the antimedial vertices themselves.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q062",
+    "name": "a quartic related to Table 28 (cevian and anticevian points)",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq062.gif",
+    "equation": "cyclic((b2-c2)*(u*(c2*v^3+b2*w^3)+(sa*u^2+2*a2*v*w)*v*w))",
+    "centers": [
+      2,
+      6
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
+  },
+  {
+    "id": "Q063",
+    "name": "a circular quintic related to CL043",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq063.gif",
+    "equation": "cyclic(a2*v^2*w^2*(sc*(u+v)-sb*(u+w)))",
+    "centers": [
+      1,
+      2,
+      4,
+      20
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
   },
   {
     "id": "Q064",
@@ -494,6 +779,24 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q066",
+    "name": "Stammler quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq066.gif",
+    "equation": "cyclic(a2*(b2-c2)*v^2*w^2)",
+    "centers": [
+      1,
+      2,
+      4
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "samplePoints": [
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
     "id": "Q067",
     "name": "a bicircular quintic related to Table 6",
     "degree": 5,
@@ -504,6 +807,30 @@
       3
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q068",
+    "name": "a circular equilateral quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq068.gif",
+    "equation": "(a2*v*w+b2*w*u+c2*u*v)*cyclic(a2*sa*u*(c2*v^2-b2*w^2))-(u+v+w)*cyclic(a2^2*sa*v*w*(c2*v^2-b2*w^2))",
+    "centers": [
+      1,
+      3
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
+  },
+  {
+    "id": "Q069",
+    "name": "a circular quintic",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq069.gif",
+    "equation": "(a2*v*w+b2*w*u+c2*u*v)*cyclic(sb*sc*u*(c2*v^2-b2*w^2))-(u+v+w)*cyclic(a2^2*sa*v*w*(c2*v^2-b2*w^2))",
+    "centers": [
+      1,
+      3
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
   },
   {
     "id": "Q071",
@@ -595,6 +922,32 @@
       "(C+A)/2",
       "(A+B)/2"
     ]
+  },
+  {
+    "id": "Q083",
+    "name": "a stelloidal quartic",
+    "degree": 4,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq083.gif",
+    "equation": "cyclic(a2*sb*sc*(c2*v^2-b2*w^2)*v*w)",
+    "centers": [
+      1,
+      4
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles.",
+    "alternateEquation": "cyclic(b2*c2*sa*u^3*(sb*v-sc*w))",
+    "alternateSource": "http://bernard-gibert.fr/curves/Resources/equq083.gif"
+  },
+  {
+    "id": "Q084",
+    "name": "isogonal transform of Q083",
+    "degree": 5,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq084.gif",
+    "equation": "cyclic(a2^2*sa*(c2*sc*v-b2*sb*w)*v^2*w^2)",
+    "centers": [
+      1,
+      3
+    ],
+    "notes": "Transcribed from the page equation image; listed points checked on three exact triangles."
   },
   {
     "id": "Q085",
