@@ -11,7 +11,9 @@ snapshot hashes, HTTP metadata, automatic updates or separate version history.
   `name`, `degree`, `source`, `equation`, `centers`, and brief `notes`.
 - Optional `alternateEquation` / `alternateSource` provide a second published
   representation for algebraic checking. Point metadata may include
-  `samplePoints`, `conditionalCenters`, `infiniteCenters`, `unavailableCenters`.
+  `samplePoints`, `projectivePoints`, `conditionalCenters`, `infiniteCenters`, `unavailableCenters`.
+  `projectivePoints` contains homogeneous barycentric triples checked offline;
+  zero-sum triples are points at infinity and are not finite native test points.
   `centers` contains finite test candidates, not every center claimed by a page.
 
 All equations are homogeneous in barycentrics `u,v,w`, with `a=BC`, `b=CA`, `c=AB`, and `a2=BC²`, `b2=CA²`,
@@ -49,4 +51,4 @@ Q000 and Q035 are unimplemented families; a recognized suffix does not imply
 that a variant has been implemented.
 Do not register each new record as a separate public command or alias.
 
-For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT or supported RTF files. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses three exact triangles for the recognized simple centers (including X(4), X(5), X(7), X(8), X(20), X(59) and X(80)) and sample points (including orthic feet); it also checks the Q034, Q074 and Q099 relationships symbolically, and Q200/Q201 by exact substitution. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.
+For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT or supported RTF files. The default maximum degree is six; pass `--max-degree N` to inspect higher degrees. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses three exact triangles for the recognized simple centers (including X(4), X(5), X(7), X(8), X(20), X(59) and X(80)) and sample points (including orthic feet); it also checks the Q034, Q074 and Q099 relationships symbolically, and Q200/Q201 by exact substitution. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.

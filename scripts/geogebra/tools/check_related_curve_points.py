@@ -27,6 +27,7 @@ for record in records:
         if record['id'] in midpoints and midpoints[record['id']] not in [samples.get(point) for point in record.get('samplePoints', [])]:
             candidates.append(('opposite midpoint', midpoints[record['id']]))
         candidates.extend((point, samples[point]) for point in record.get('samplePoints', []) if point in samples)
+        candidates.extend((f'projective {point}', tuple(point)) for point in record.get('projectivePoints', []))
         for label, coordinates in candidates:
             value = equation.subs({side_a: a, side_b: b, side_c: c, a2: aa, b2: bb, c2: cc, u: coordinates[0], v: coordinates[1], w: coordinates[2]})
             if value != 0:

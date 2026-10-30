@@ -65,7 +65,11 @@ def cartesian_terms(monomials, compact):
     if compact:
         # Keep degree >= 7 within the existing named-expression budget without
         # changing the polynomial or introducing hundreds of helper objects.
-        coefficients = [s.factor_terms(s.horner(value, *frame_values, *weights)) for value in coefficients]
+        # Interleaving the three barycentric frame rows keeps the denser
+        # degree-seven patterns within the named-expression budget.
+        order = ([frame_values[i] for i in (0,3,6,1,4,7,2,5,8)]
+                 if sum(monomials[0]) == 7 and len(monomials) >= 24 else frame_values)
+        coefficients = [s.factor_terms(s.horner(value, *order, *weights)) for value in coefficients]
     return tuple((i, j, s.sstr(value).replace('**', '^'))
                  for (i, j), value in zip(world.monoms(), coefficients))
 

@@ -1,13 +1,13 @@
 """Inspect locally downloaded Gibert pages and TXT/RTF files; never downloads or edits the database.
 
-Usage: python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json
+Usage: python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json [--max-degree N]
 Candidates require a single explicitly labelled equation, an admissible degree,
-and at least one source-listed simple center, midpoint or orthic foot checked on two exact triangles.
+and at least one source-listed simple center, midpoint or orthic foot checked on three exact triangles.
 The output is an inspection queue and must be reviewed before importing.
 """
+import argparse
 import json
 import re
-import sys
 from pathlib import Path
 from html.parser import HTMLParser
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
@@ -36,7 +36,12 @@ def convert(text):
 
 
 if __name__ == '__main__':
-    cache, output = map(Path, sys.argv[1:3])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('cache', type=Path)
+    parser.add_argument('output', type=Path)
+    parser.add_argument('--max-degree', type=int, default=6, help='Maximum degree to propose; higher degrees still require separate performance review.')
+    args = parser.parse_args()
+    cache, output = args.cache, args.output
     existing = {r['id'] for r in json.loads(SOURCE.read_text(encoding='utf8'))}
     catalogue = {r['id']:r for r in json.loads((SOURCE.parent/'catalogue.json').read_text(encoding='utf8'))}
     candidates, deferred = [], []
@@ -64,7 +69,7 @@ if __name__ == '__main__':
             if poly.is_zero or len(degrees) != 1: raise ValueError('zero or nonhomogeneous')
             degree = degrees.pop()
             expected = catalogue[identifier]['degree']
-            if degree not in (3,4,5,6): raise ValueError(f'degree {degree} needs performance evaluation')
+            if degree < 3 or degree > args.max_degree: raise ValueError(f'degree {degree} needs performance evaluation')
             if expected is not None and expected != degree: raise ValueError(f'catalogue degree {expected} differs from {degree}')
             html = Page(); html.feed(page.read_text(encoding='utf8'))
             content = ' '.join(html.text).split('Related Curves',1)[-1]
@@ -74,7 +79,7 @@ if __name__ == '__main__':
             checked = []
             for index in mentioned:
                 good = True
-                for a,b,c in [(13,14,15),(5,6,7)]:
+                for a,b,c in [(13,14,15),(5,6,7),(7,8,9)]:
                     xyz = centers(a,b,c)[index]
                     value = f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:xyz[0],v:xyz[1],w:xyz[2]})
                     if value != 0: good = False; break
@@ -82,17 +87,17 @@ if __name__ == '__main__':
             sample_points = []
             if re.search(r'midpoints? of ABC', prefix, re.I):
                 for coords, sample_expression in [((0,1,1),'(B+C)/2'),((1,0,1),'(C+A)/2'),((1,1,0),'(A+B)/2')]:
-                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:coords[0],v:coords[1],w:coords[2]}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
+                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:coords[0],v:coords[1],w:coords[2]}) == 0 for a,b,c in [(13,14,15),(5,6,7),(7,8,9)]):
                         sample_points.append(sample_expression)
             if re.search(r'vertices of the orthic triangle', prefix, re.I):
                 for sample_expression in orthic_feet(13,14,15):
-                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c, **dict(zip((u,v,w), orthic_feet(a,b,c)[sample_expression]))}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
+                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c, **dict(zip((u,v,w), orthic_feet(a,b,c)[sample_expression]))}) == 0 for a,b,c in [(13,14,15),(5,6,7),(7,8,9)]):
                         sample_points.append(sample_expression)
             if not checked and not sample_points: raise ValueError('no source-listed simple center, midpoint or orthic foot verified')
             record = {'id':identifier,'name':catalogue[identifier]['name'],'degree':degree,
                 'source':'http://bernard-gibert.fr/curves/Resources/'+file.name.removeprefix('curves_Resources_'),
                 'equation':expression,'centers':checked,
-                'notes':'Barycentric equation from the linked '+file.suffix.upper().lstrip('.')+'; listed test points checked on two exact triangles.'}
+                'notes':'Barycentric equation from the linked '+file.suffix.upper().lstrip('.')+'; listed test points checked on three exact triangles.'}
             if sample_points: record['samplePoints'] = sample_points
             candidates.append(record)
         except Exception as error:

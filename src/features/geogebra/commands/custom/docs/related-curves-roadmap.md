@@ -1,6 +1,6 @@
 # 三角形高次曲线：GibertCurve 接入记录与后续计划
 
-日期：2026-10-29。**已接入 180 条**：Q001–Q006、Q010–Q012、Q014、Q016–Q017、Q019、Q021–Q024、Q026–Q029、Q032–Q034、Q036A/B/C、Q037–Q069、Q071、Q073–Q076、Q080–Q081、Q083–Q091、Q093–Q095、Q097–Q105、Q107–Q108，以及 Q110–Q202（Q148、Q194、Q196 暂缓）。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)，Q202 批次见 [抽样记录](benchmarks/gibert-curves-q202.md)。
+日期：2026-10-29。**已接入 190 条**：Q001–Q006、Q008–Q012、Q014、Q016–Q017、Q019、Q021–Q030、Q032–Q034、Q036A/B/C、Q037–Q069、Q071、Q073–Q076、Q079–Q091、Q093–Q105、Q107–Q108、Q110–Q202。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)，Q202 批次见 [抽样记录](benchmarks/gibert-curves-q202.md)。
 
 ## 本轮采用的约定
 
@@ -84,7 +84,7 @@ Low 的完整匿名展开在独立 Q012 实验中超时，因此正式接口在�
 
 ## P4 及以后
 
-1. 按目录继续补录可读方程；Q013、Q015、Q035 等仍需进一步核验或寻找定义，详见来源审计。Q007–Q009、Q018、Q020 等较高次数仍需单独评估表达式规模和性能。
+1. 按目录继续补录可读方程；Q013、Q015、Q035 等仍需进一步核验或寻找定义，详见来源审计。Q007、Q018、Q020 等较高次数仍需单独评估表达式规模和性能。
 2. 对 Q001 等七次曲线及更高次数做单条隔离实验；Q015 的十二次式和缺公式条目暂缓。
 3. 继续优化创建成本、命名数值辅助数量和文件体积；复用现有中间量 lowering，不维护数学公式副本。
 4. 数据只按需人工维护；不存在“编号上限以内全部已支持”的隐含承诺。

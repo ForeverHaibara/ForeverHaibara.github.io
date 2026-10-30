@@ -82,6 +82,29 @@
     ]
   },
   {
+    "id": "Q008",
+    "name": "a bicircular septic, isogonal transform of Q007",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q008.txt",
+    "equation": "-a2^2*b2*c2^2*u^5*v^2+b2^3*c2^2*u^5*v^2-2*b2^2*c2^3*u^5*v^2+b2*c2^4*u^5*v^2-5*a2^2*b2*c2^2*u^4*v^3+4*a2*b2^2*c2^2*u^4*v^3+b2^3*c2^2*u^4*v^3-2*a2*b2*c2^3*u^4*v^3-b2*c2^4*u^4*v^3-a2^3*c2^2*u^3*v^4-4*a2^2*b2*c2^2*u^3*v^4+5*a2*b2^2*c2^2*u^3*v^4+2*a2*b2*c2^3*u^3*v^4+a2*c2^4*u^3*v^4-a2^3*c2^2*u^2*v^5+a2*b2^2*c2^2*u^2*v^5+2*a2^2*c2^3*u^2*v^5-a2*c2^4*u^2*v^5-3*a2^2*b2*c2^2*u^4*v^2*w-2*a2*b2^2*c2^2*u^4*v^2*w+5*b2^3*c2^2*u^4*v^2*w+4*a2*b2*c2^3*u^4*v^2*w-4*b2^2*c2^3*u^4*v^2*w-b2*c2^4*u^4*v^2*w-16*a2^2*b2*c2^2*u^3*v^3*w+16*a2*b2^2*c2^2*u^3*v^3*w-5*a2^3*c2^2*u^2*v^4*w+2*a2^2*b2*c2^2*u^2*v^4*w+3*a2*b2^2*c2^2*u^2*v^4*w+4*a2^2*c2^3*u^2*v^4*w-4*a2*b2*c2^3*u^2*v^4*w+a2*c2^4*u^2*v^4*w+a2^2*b2^2*c2*u^5*w^2-b2^4*c2*u^5*w^2+2*b2^3*c2^2*u^5*w^2-b2^2*c2^3*u^5*w^2+3*a2^2*b2^2*c2*u^4*v*w^2-4*a2*b2^3*c2*u^4*v*w^2+b2^4*c2*u^4*v*w^2+2*a2*b2^2*c2^2*u^4*v*w^2+4*b2^3*c2^2*u^4*v*w^2-5*b2^2*c2^3*u^4*v*w^2-4*a2^2*b2^2*c2*u^3*v^2*w^2+4*a2*b2^3*c2*u^3*v^2*w^2+4*a2^2*b2*c2^2*u^3*v^2*w^2-4*a2*b2*c2^3*u^3*v^2*w^2-4*a2^3*b2*c2*u^2*v^3*w^2+4*a2^2*b2^2*c2*u^2*v^3*w^2-4*a2*b2^2*c2^2*u^2*v^3*w^2+4*a2*b2*c2^3*u^2*v^3*w^2-a2^4*c2*u*v^4*w^2+4*a2^3*b2*c2*u*v^4*w^2-3*a2^2*b2^2*c2*u*v^4*w^2-4*a2^3*c2^2*u*v^4*w^2-2*a2^2*b2*c2^2*u*v^4*w^2+5*a2^2*c2^3*u*v^4*w^2+a2^4*c2*v^5*w^2-a2^2*b2^2*c2*v^5*w^2-2*a2^3*c2^2*v^5*w^2+a2^2*c2^3*v^5*w^2+5*a2^2*b2^2*c2*u^4*w^3+2*a2*b2^3*c2*u^4*w^3+b2^4*c2*u^4*w^3-4*a2*b2^2*c2^2*u^4*w^3-b2^2*c2^3*u^4*w^3+16*a2^2*b2^2*c2*u^3*v*w^3-16*a2*b2^2*c2^2*u^3*v*w^3+4*a2^3*b2*c2*u^2*v^2*w^3-4*a2*b2^3*c2*u^2*v^2*w^3-4*a2^2*b2*c2^2*u^2*v^2*w^3+4*a2*b2^2*c2^2*u^2*v^2*w^3-16*a2^2*b2^2*c2*u*v^3*w^3+16*a2^2*b2*c2^2*u*v^3*w^3-a2^4*c2*v^4*w^3-2*a2^3*b2*c2*v^4*w^3-5*a2^2*b2^2*c2*v^4*w^3+4*a2^2*b2*c2^2*v^4*w^3+a2^2*c2^3*v^4*w^3+a2^3*b2^2*u^3*w^4-a2*b2^4*u^3*w^4+4*a2^2*b2^2*c2*u^3*w^4-2*a2*b2^3*c2*u^3*w^4-5*a2*b2^2*c2^2*u^3*w^4+5*a2^3*b2^2*u^2*v*w^4-4*a2^2*b2^3*u^2*v*w^4-a2*b2^4*u^2*v*w^4-2*a2^2*b2^2*c2*u^2*v*w^4+4*a2*b2^3*c2*u^2*v*w^4-3*a2*b2^2*c2^2*u^2*v*w^4+a2^4*b2*u*v^2*w^4+4*a2^3*b2^2*u*v^2*w^4-5*a2^2*b2^3*u*v^2*w^4-4*a2^3*b2*c2*u*v^2*w^4+2*a2^2*b2^2*c2*u*v^2*w^4+3*a2^2*b2*c2^2*u*v^2*w^4+a2^4*b2*v^3*w^4-a2^2*b2^3*v^3*w^4+2*a2^3*b2*c2*v^3*w^4-4*a2^2*b2^2*c2*v^3*w^4+5*a2^2*b2*c2^2*v^3*w^4+a2^3*b2^2*u^2*w^5-2*a2^2*b2^3*u^2*w^5+a2*b2^4*u^2*w^5-a2*b2^2*c2^2*u^2*w^5-a2^4*b2*v^2*w^5+2*a2^3*b2^2*v^2*w^5-a2^2*b2^3*v^2*w^5+a2^2*b2*c2^2*v^2*w^5",
+    "centers": [
+      1
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles."
+  },
+  {
+    "id": "Q009",
+    "name": "a bicircular septic related to orthologic triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q009.txt",
+    "equation": "a2^3*c2^2*u^4*v^3-3*a2^2*b2*c2^2*u^4*v^3+3*a2*b2^2*c2^2*u^4*v^3-b2^3*c2^2*u^4*v^3-a2^2*c2^3*u^4*v^3+2*a2*b2*c2^3*u^4*v^3-b2^2*c2^3*u^4*v^3-a2*c2^4*u^4*v^3+b2*c2^4*u^4*v^3+c2^5*u^4*v^3+a2^3*c2^2*u^3*v^4-3*a2^2*b2*c2^2*u^3*v^4+3*a2*b2^2*c2^2*u^3*v^4-b2^3*c2^2*u^3*v^4+a2^2*c2^3*u^3*v^4-2*a2*b2*c2^3*u^3*v^4+b2^2*c2^3*u^3*v^4-a2*c2^4*u^3*v^4+b2*c2^4*u^3*v^4-c2^5*u^3*v^4+8*a2*b2^2*c2^2*u^4*v^2*w-8*b2^3*c2^2*u^4*v^2*w-4*a2*b2*c2^3*u^4*v^2*w+4*b2^2*c2^3*u^4*v^2*w+4*b2*c2^4*u^4*v^2*w+4*a2^3*c2^2*u^3*v^3*w+4*a2^2*b2*c2^2*u^3*v^3*w-4*a2*b2^2*c2^2*u^3*v^3*w-4*b2^3*c2^2*u^3*v^3*w-8*a2^2*c2^3*u^3*v^3*w+8*b2^2*c2^3*u^3*v^3*w+4*a2*c2^4*u^3*v^3*w-4*b2*c2^4*u^3*v^3*w+8*a2^3*c2^2*u^2*v^4*w-8*a2^2*b2*c2^2*u^2*v^4*w-4*a2^2*c2^3*u^2*v^4*w+4*a2*b2*c2^3*u^2*v^4*w-4*a2*c2^4*u^2*v^4*w+4*a2*b2^3*c2*u^4*v*w^2-4*b2^4*c2*u^4*v*w^2-8*a2*b2^2*c2^2*u^4*v*w^2-4*b2^3*c2^2*u^4*v*w^2+8*b2^2*c2^3*u^4*v*w^2+12*a2^2*b2^2*c2*u^3*v^2*w^2-12*a2*b2^3*c2*u^3*v^2*w^2-12*a2^2*b2*c2^2*u^3*v^2*w^2+12*a2*b2*c2^3*u^3*v^2*w^2+12*a2^3*b2*c2*u^2*v^3*w^2-12*a2^2*b2^2*c2*u^2*v^3*w^2+12*a2*b2^2*c2^2*u^2*v^3*w^2-12*a2*b2*c2^3*u^2*v^3*w^2+4*a2^4*c2*u*v^4*w^2-4*a2^3*b2*c2*u*v^4*w^2+4*a2^3*c2^2*u*v^4*w^2+8*a2^2*b2*c2^2*u*v^4*w^2-8*a2^2*c2^3*u*v^4*w^2-a2^3*b2^2*u^4*w^3+a2^2*b2^3*u^4*w^3+a2*b2^4*u^4*w^3-b2^5*u^4*w^3+3*a2^2*b2^2*c2*u^4*w^3-2*a2*b2^3*c2*u^4*w^3-b2^4*c2*u^4*w^3-3*a2*b2^2*c2^2*u^4*w^3+b2^3*c2^2*u^4*w^3+b2^2*c2^3*u^4*w^3-4*a2^3*b2^2*u^3*v*w^3+8*a2^2*b2^3*u^3*v*w^3-4*a2*b2^4*u^3*v*w^3-4*a2^2*b2^2*c2*u^3*v*w^3+4*b2^4*c2*u^3*v*w^3+4*a2*b2^2*c2^2*u^3*v*w^3-8*b2^3*c2^2*u^3*v*w^3+4*b2^2*c2^3*u^3*v*w^3-12*a2^3*b2*c2*u^2*v^2*w^3+12*a2*b2^3*c2*u^2*v^2*w^3+12*a2^2*b2*c2^2*u^2*v^2*w^3-12*a2*b2^2*c2^2*u^2*v^2*w^3+4*a2^4*b2*u*v^3*w^3-8*a2^3*b2^2*u*v^3*w^3+4*a2^2*b2^3*u*v^3*w^3-4*a2^4*c2*u*v^3*w^3+4*a2^2*b2^2*c2*u*v^3*w^3+8*a2^3*c2^2*u*v^3*w^3-4*a2^2*b2*c2^2*u*v^3*w^3-4*a2^2*c2^3*u*v^3*w^3+a2^5*v^4*w^3-a2^4*b2*v^4*w^3-a2^3*b2^2*v^4*w^3+a2^2*b2^3*v^4*w^3+a2^4*c2*v^4*w^3+2*a2^3*b2*c2*v^4*w^3-3*a2^2*b2^2*c2*v^4*w^3-a2^3*c2^2*v^4*w^3+3*a2^2*b2*c2^2*v^4*w^3-a2^2*c2^3*v^4*w^3-a2^3*b2^2*u^3*w^4-a2^2*b2^3*u^3*w^4+a2*b2^4*u^3*w^4+b2^5*u^3*w^4+3*a2^2*b2^2*c2*u^3*w^4+2*a2*b2^3*c2*u^3*w^4-b2^4*c2*u^3*w^4-3*a2*b2^2*c2^2*u^3*w^4-b2^3*c2^2*u^3*w^4+b2^2*c2^3*u^3*w^4-8*a2^3*b2^2*u^2*v*w^4+4*a2^2*b2^3*u^2*v*w^4+4*a2*b2^4*u^2*v*w^4+8*a2^2*b2^2*c2*u^2*v*w^4-4*a2*b2^3*c2*u^2*v*w^4-4*a2^4*b2*u*v^2*w^4-4*a2^3*b2^2*u*v^2*w^4+8*a2^2*b2^3*u*v^2*w^4+4*a2^3*b2*c2*u*v^2*w^4-8*a2^2*b2^2*c2*u*v^2*w^4-a2^5*v^3*w^4-a2^4*b2*v^3*w^4+a2^3*b2^2*v^3*w^4+a2^2*b2^3*v^3*w^4+a2^4*c2*v^3*w^4-2*a2^3*b2*c2*v^3*w^4-3*a2^2*b2^2*c2*v^3*w^4+a2^3*c2^2*v^3*w^4+3*a2^2*b2*c2^2*v^3*w^4-a2^2*c2^3*v^3*w^4",
+    "centers": [
+      1,
+      4
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles."
+  },
+  {
     "id": "Q010",
     "name": "a circular central equilateral quintic, isogonal transform of Q009",
     "degree": 5,
@@ -218,6 +241,23 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q025",
+    "name": "a bicircular septic related to orthologic triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q025.txt",
+    "equation": "-b2*c2^2*u^5*v^2-a2*c2^2*u^4*v^3+c2^3*u^4*v^3+b2*c2^2*u^3*v^4-c2^3*u^3*v^4+a2*c2^2*u^2*v^5+b2*c2^2*u^4*v^2*w-a2*c2^2*u^2*v^4*w+b2^2*c2*u^5*w^2-b2^2*c2*u^4*v*w^2-2*b2^2*c2*u^3*v^2*w^2+2*b2*c2^2*u^3*v^2*w^2+2*a2^2*c2*u^2*v^3*w^2-2*a2*c2^2*u^2*v^3*w^2+a2^2*c2*u*v^4*w^2-a2^2*c2*v^5*w^2+a2*b2^2*u^4*w^3-b2^3*u^4*w^3-2*a2^2*b2*u^2*v^2*w^3+2*a2*b2^2*u^2*v^2*w^3+a2^3*v^4*w^3-a2^2*b2*v^4*w^3+b2^3*u^3*w^4-b2^2*c2*u^3*w^4+a2*b2^2*u^2*v*w^4-a2^2*b2*u*v^2*w^4-a2^3*v^3*w^4+a2^2*c2*v^3*w^4-a2*b2^2*u^2*w^5+a2^2*b2*v^2*w^5",
+    "centers": [
+      1,
+      3
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
     "id": "Q026",
     "name": "a quartic related to orthologic triangles",
     "degree": 4,
@@ -277,6 +317,19 @@
       6
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q030",
+    "name": "a bicircular septic related to orthologic triangles, the isogonal transform of Q037",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q030.txt",
+    "equation": "-a2*c2^2*u^4*v^3+b2*c2^2*u^4*v^3+c2^3*u^4*v^3-a2*c2^2*u^3*v^4+b2*c2^2*u^3*v^4-c2^3*u^3*v^4+a2^2*c2*u^4*v^2*w-b2^2*c2*u^4*v^2*w-2*a2*c2^2*u^4*v^2*w+2*b2*c2^2*u^4*v^2*w+c2^3*u^4*v^2*w+2*a2^2*c2*u^3*v^3*w-2*b2^2*c2*u^3*v^3*w-2*a2*c2^2*u^3*v^3*w+2*b2*c2^2*u^3*v^3*w+a2^2*c2*u^2*v^4*w-b2^2*c2*u^2*v^4*w-2*a2*c2^2*u^2*v^4*w+2*b2*c2^2*u^2*v^4*w-c2^3*u^2*v^4*w-a2^2*b2*u^4*v*w^2+2*a2*b2^2*u^4*v*w^2-b2^3*u^4*v*w^2-2*b2^2*c2*u^4*v*w^2+b2*c2^2*u^4*v*w^2-a2^2*b2*u^3*v^2*w^2+2*a2*b2^2*u^3*v^2*w^2-b2^3*u^3*v^2*w^2+a2^2*c2*u^3*v^2*w^2-3*b2^2*c2*u^3*v^2*w^2-2*a2*c2^2*u^3*v^2*w^2+3*b2*c2^2*u^3*v^2*w^2+c2^3*u^3*v^2*w^2+a2^3*u^2*v^3*w^2-2*a2^2*b2*u^2*v^3*w^2+a2*b2^2*u^2*v^3*w^2+3*a2^2*c2*u^2*v^3*w^2-b2^2*c2*u^2*v^3*w^2-3*a2*c2^2*u^2*v^3*w^2+2*b2*c2^2*u^2*v^3*w^2-c2^3*u^2*v^3*w^2+a2^3*u*v^4*w^2-2*a2^2*b2*u*v^4*w^2+a2*b2^2*u*v^4*w^2+2*a2^2*c2*u*v^4*w^2-a2*c2^2*u*v^4*w^2+a2*b2^2*u^4*w^3-b2^3*u^4*w^3-b2^2*c2*u^4*w^3-2*a2^2*b2*u^3*v*w^3+2*a2*b2^2*u^3*v*w^3-2*b2^2*c2*u^3*v*w^3+2*b2*c2^2*u^3*v*w^3-a2^3*u^2*v^2*w^3-3*a2^2*b2*u^2*v^2*w^3+3*a2*b2^2*u^2*v^2*w^3+b2^3*u^2*v^2*w^3+2*a2^2*c2*u^2*v^2*w^3-2*b2^2*c2*u^2*v^2*w^3-a2*c2^2*u^2*v^2*w^3+b2*c2^2*u^2*v^2*w^3-2*a2^2*b2*u*v^3*w^3+2*a2*b2^2*u*v^3*w^3+2*a2^2*c2*u*v^3*w^3-2*a2*c2^2*u*v^3*w^3+a2^3*v^4*w^3-a2^2*b2*v^4*w^3+a2^2*c2*v^4*w^3+a2*b2^2*u^3*w^4+b2^3*u^3*w^4-b2^2*c2*u^3*w^4-a2^2*b2*u^2*v*w^4+2*a2*b2^2*u^2*v*w^4+b2^3*u^2*v*w^4-2*b2^2*c2*u^2*v*w^4+b2*c2^2*u^2*v*w^4-a2^3*u*v^2*w^4-2*a2^2*b2*u*v^2*w^4+a2*b2^2*u*v^2*w^4+2*a2^2*c2*u*v^2*w^4-a2*c2^2*u*v^2*w^4-a2^3*v^3*w^4-a2^2*b2*v^3*w^4+a2^2*c2*v^3*w^4",
+    "centers": [
+      1,
+      4,
+      80
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles."
   },
   {
     "id": "Q032",
@@ -907,6 +960,32 @@
     "notes": "Barycentric equation explicitly stated in the page text."
   },
   {
+    "id": "Q079",
+    "name": "a bicircular septic, locus of vertices of circum-parabolas",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q079.rtf",
+    "equation": "4*c2^2*u^4*v^3+4*c2^2*u^3*v^4+a2^2*u^4*v^2*w-2*a2*b2*u^4*v^2*w+b2^2*u^4*v^2*w-6*a2*c2*u^4*v^2*w+6*b2*c2*u^4*v^2*w+5*c2^2*u^4*v^2*w+2*a2^2*u^3*v^3*w-4*a2*b2*u^3*v^3*w+2*b2^2*u^3*v^3*w-2*c2^2*u^3*v^3*w+a2^2*u^2*v^4*w-2*a2*b2*u^2*v^4*w+b2^2*u^2*v^4*w+6*a2*c2*u^2*v^4*w-6*b2*c2*u^2*v^4*w+5*c2^2*u^2*v^4*w+a2^2*u^4*v*w^2-6*a2*b2*u^4*v*w^2+5*b2^2*u^4*v*w^2-2*a2*c2*u^4*v*w^2+6*b2*c2*u^4*v*w^2+c2^2*u^4*v*w^2-8*a2^2*u^3*v^2*w^2+12*a2*b2*u^3*v^2*w^2-4*b2^2*u^3*v^2*w^2+12*a2*c2*u^3*v^2*w^2-4*c2^2*u^3*v^2*w^2-4*a2^2*u^2*v^3*w^2+12*a2*b2*u^2*v^3*w^2-8*b2^2*u^2*v^3*w^2+12*b2*c2*u^2*v^3*w^2-4*c2^2*u^2*v^3*w^2+5*a2^2*u*v^4*w^2-6*a2*b2*u*v^4*w^2+b2^2*u*v^4*w^2+6*a2*c2*u*v^4*w^2-2*b2*c2*u*v^4*w^2+c2^2*u*v^4*w^2+4*b2^2*u^4*w^3+2*a2^2*u^3*v*w^3-2*b2^2*u^3*v*w^3-4*a2*c2*u^3*v*w^3+2*c2^2*u^3*v*w^3-4*a2^2*u^2*v^2*w^3-4*b2^2*u^2*v^2*w^3+12*a2*c2*u^2*v^2*w^3+12*b2*c2*u^2*v^2*w^3-8*c2^2*u^2*v^2*w^3-2*a2^2*u*v^3*w^3+2*b2^2*u*v^3*w^3-4*b2*c2*u*v^3*w^3+2*c2^2*u*v^3*w^3+4*a2^2*v^4*w^3+4*b2^2*u^3*w^4+a2^2*u^2*v*w^4+6*a2*b2*u^2*v*w^4+5*b2^2*u^2*v*w^4-2*a2*c2*u^2*v*w^4-6*b2*c2*u^2*v*w^4+c2^2*u^2*v*w^4+5*a2^2*u*v^2*w^4+6*a2*b2*u*v^2*w^4+b2^2*u*v^2*w^4-6*a2*c2*u*v^2*w^4-2*b2*c2*u*v^2*w^4+c2^2*u*v^2*w^4+4*a2^2*v^3*w^4",
+    "centers": [],
+    "projectivePoints": [
+      [
+        0,
+        1,
+        -1
+      ],
+      [
+        1,
+        0,
+        -1
+      ],
+      [
+        1,
+        -1,
+        0
+      ]
+    ],
+    "notes": "The source lists the three infinite points of the sidelines; checked as homogeneous barycentrics on three exact triangles. No finite source-listed point is currently available as an engine test."
+  },
+  {
     "id": "Q080",
     "name": "a sextic, envelope of the directrices of circum-parabolas",
     "degree": 6,
@@ -928,6 +1007,24 @@
       6
     ],
     "notes": "Barycentric equation from the linked RTF; listed test points checked on two exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q082",
+    "name": "a septic related to areas and pedal triangles",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q082.rtf",
+    "equation": "-2*a2^3*b2*c2^2*u^5*v^2+2*a2^2*b2^2*c2^2*u^5*v^2+2*a2*b2^3*c2^2*u^5*v^2-2*b2^4*c2^2*u^5*v^2+2*a2^2*b2*c2^3*u^5*v^2-4*a2*b2^2*c2^3*u^5*v^2+2*b2^3*c2^3*u^5*v^2+2*a2*b2*c2^4*u^5*v^2+2*b2^2*c2^4*u^5*v^2-2*b2*c2^5*u^5*v^2-a2^4*c2^2*u^4*v^3-2*a2^3*b2*c2^2*u^4*v^3+8*a2^2*b2^2*c2^2*u^4*v^3-6*a2*b2^3*c2^2*u^4*v^3+b2^4*c2^2*u^4*v^3+2*a2^3*c2^3*u^4*v^3-4*a2^2*b2*c2^3*u^4*v^3+2*a2*b2^2*c2^3*u^4*v^3+6*a2*b2*c2^4*u^4*v^3-2*b2^2*c2^4*u^4*v^3-2*a2*c2^5*u^4*v^3+c2^6*u^4*v^3-a2^4*c2^2*u^3*v^4+6*a2^3*b2*c2^2*u^3*v^4-8*a2^2*b2^2*c2^2*u^3*v^4+2*a2*b2^3*c2^2*u^3*v^4+b2^4*c2^2*u^3*v^4-2*a2^2*b2*c2^3*u^3*v^4+4*a2*b2^2*c2^3*u^3*v^4-2*b2^3*c2^3*u^3*v^4+2*a2^2*c2^4*u^3*v^4-6*a2*b2*c2^4*u^3*v^4+2*b2*c2^5*u^3*v^4-c2^6*u^3*v^4+2*a2^4*c2^2*u^2*v^5-2*a2^3*b2*c2^2*u^2*v^5-2*a2^2*b2^2*c2^2*u^2*v^5+2*a2*b2^3*c2^2*u^2*v^5-2*a2^3*c2^3*u^2*v^5+4*a2^2*b2*c2^3*u^2*v^5-2*a2*b2^2*c2^3*u^2*v^5-2*a2^2*c2^4*u^2*v^5-2*a2*b2*c2^4*u^2*v^5+2*a2*c2^5*u^2*v^5-2*a2^4*b2*c2*u^4*v^2*w+4*a2^3*b2^2*c2*u^4*v^2*w-4*a2*b2^4*c2*u^4*v^2*w+2*b2^5*c2*u^4*v^2*w-4*a2^3*b2*c2^2*u^4*v^2*w-8*a2^2*b2^2*c2^2*u^4*v^2*w+12*a2*b2^3*c2^2*u^4*v^2*w+12*a2^2*b2*c2^3*u^4*v^2*w-4*a2*b2^2*c2^3*u^4*v^2*w-8*b2^3*c2^3*u^4*v^2*w-4*a2*b2*c2^4*u^4*v^2*w+8*b2^2*c2^4*u^4*v^2*w-2*b2*c2^5*u^4*v^2*w-a2^5*c2*u^3*v^3*w-3*a2^4*b2*c2*u^3*v^3*w+14*a2^3*b2^2*c2*u^3*v^3*w-14*a2^2*b2^3*c2*u^3*v^3*w+3*a2*b2^4*c2*u^3*v^3*w+b2^5*c2*u^3*v^3*w-16*a2^3*b2*c2^2*u^3*v^3*w+16*a2*b2^3*c2^2*u^3*v^3*w+6*a2^3*c2^3*u^3*v^3*w+22*a2^2*b2*c2^3*u^3*v^3*w-22*a2*b2^2*c2^3*u^3*v^3*w-6*b2^3*c2^3*u^3*v^3*w-8*a2^2*c2^4*u^3*v^3*w+8*b2^2*c2^4*u^3*v^3*w+3*a2*c2^5*u^3*v^3*w-3*b2*c2^5*u^3*v^3*w-2*a2^5*c2*u^2*v^4*w+4*a2^4*b2*c2*u^2*v^4*w-4*a2^2*b2^3*c2*u^2*v^4*w+2*a2*b2^4*c2*u^2*v^4*w-12*a2^3*b2*c2^2*u^2*v^4*w+8*a2^2*b2^2*c2^2*u^2*v^4*w+4*a2*b2^3*c2^2*u^2*v^4*w+8*a2^3*c2^3*u^2*v^4*w+4*a2^2*b2*c2^3*u^2*v^4*w-12*a2*b2^2*c2^3*u^2*v^4*w-8*a2^2*c2^4*u^2*v^4*w+4*a2*b2*c2^4*u^2*v^4*w+2*a2*c2^5*u^2*v^4*w+2*a2^3*b2^2*c2*u^5*w^2-2*a2^2*b2^3*c2*u^5*w^2-2*a2*b2^4*c2*u^5*w^2+2*b2^5*c2*u^5*w^2-2*a2^2*b2^2*c2^2*u^5*w^2+4*a2*b2^3*c2^2*u^5*w^2-2*b2^4*c2^2*u^5*w^2-2*a2*b2^2*c2^3*u^5*w^2-2*b2^3*c2^3*u^5*w^2+2*b2^2*c2^4*u^5*w^2+2*a2^4*b2*c2*u^4*v*w^2+4*a2^3*b2^2*c2*u^4*v*w^2-12*a2^2*b2^3*c2*u^4*v*w^2+4*a2*b2^4*c2*u^4*v*w^2+2*b2^5*c2*u^4*v*w^2-4*a2^3*b2*c2^2*u^4*v*w^2+8*a2^2*b2^2*c2^2*u^4*v*w^2+4*a2*b2^3*c2^2*u^4*v*w^2-8*b2^4*c2^2*u^4*v*w^2-12*a2*b2^2*c2^3*u^4*v*w^2+8*b2^3*c2^3*u^4*v*w^2+4*a2*b2*c2^4*u^4*v*w^2-2*b2*c2^5*u^4*v*w^2+6*a2^3*b2^2*c2*u^3*v^2*w^2-10*a2^2*b2^3*c2*u^3*v^2*w^2+2*a2*b2^4*c2*u^3*v^2*w^2+2*b2^5*c2*u^3*v^2*w^2-6*a2^3*b2*c2^2*u^3*v^2*w^2+10*a2*b2^3*c2^2*u^3*v^2*w^2-4*b2^4*c2^2*u^3*v^2*w^2+10*a2^2*b2*c2^3*u^3*v^2*w^2-10*a2*b2^2*c2^3*u^3*v^2*w^2-2*a2*b2*c2^4*u^3*v^2*w^2+4*b2^2*c2^4*u^3*v^2*w^2-2*b2*c2^5*u^3*v^2*w^2-2*a2^5*c2*u^2*v^3*w^2-2*a2^4*b2*c2*u^2*v^3*w^2+10*a2^3*b2^2*c2*u^2*v^3*w^2-6*a2^2*b2^3*c2*u^2*v^3*w^2+4*a2^4*c2^2*u^2*v^3*w^2-10*a2^3*b2*c2^2*u^2*v^3*w^2+6*a2*b2^3*c2^2*u^2*v^3*w^2+10*a2^2*b2*c2^3*u^2*v^3*w^2-10*a2*b2^2*c2^3*u^2*v^3*w^2-4*a2^2*c2^4*u^2*v^3*w^2+2*a2*b2*c2^4*u^2*v^3*w^2+2*a2*c2^5*u^2*v^3*w^2-2*a2^5*c2*u*v^4*w^2-4*a2^4*b2*c2*u*v^4*w^2+12*a2^3*b2^2*c2*u*v^4*w^2-4*a2^2*b2^3*c2*u*v^4*w^2-2*a2*b2^4*c2*u*v^4*w^2+8*a2^4*c2^2*u*v^4*w^2-4*a2^3*b2*c2^2*u*v^4*w^2-8*a2^2*b2^2*c2^2*u*v^4*w^2+4*a2*b2^3*c2^2*u*v^4*w^2-8*a2^3*c2^3*u*v^4*w^2+12*a2^2*b2*c2^3*u*v^4*w^2-4*a2*b2*c2^4*u*v^4*w^2+2*a2*c2^5*u*v^4*w^2-2*a2^5*c2*v^5*w^2+2*a2^4*b2*c2*v^5*w^2+2*a2^3*b2^2*c2*v^5*w^2-2*a2^2*b2^3*c2*v^5*w^2+2*a2^4*c2^2*v^5*w^2-4*a2^3*b2*c2^2*v^5*w^2+2*a2^2*b2^2*c2^2*v^5*w^2+2*a2^3*c2^3*v^5*w^2+2*a2^2*b2*c2^3*v^5*w^2-2*a2^2*c2^4*v^5*w^2+a2^4*b2^2*u^4*w^3-2*a2^3*b2^3*u^4*w^3+2*a2*b2^5*u^4*w^3-b2^6*u^4*w^3+2*a2^3*b2^2*c2*u^4*w^3+4*a2^2*b2^3*c2*u^4*w^3-6*a2*b2^4*c2*u^4*w^3-8*a2^2*b2^2*c2^2*u^4*w^3-2*a2*b2^3*c2^2*u^4*w^3+2*b2^4*c2^2*u^4*w^3+6*a2*b2^2*c2^3*u^4*w^3-b2^2*c2^4*u^4*w^3+a2^5*b2*u^3*v*w^3-6*a2^3*b2^3*u^3*v*w^3+8*a2^2*b2^4*u^3*v*w^3-3*a2*b2^5*u^3*v*w^3+3*a2^4*b2*c2*u^3*v*w^3+16*a2^3*b2^2*c2*u^3*v*w^3-22*a2^2*b2^3*c2*u^3*v*w^3+3*b2^5*c2*u^3*v*w^3-14*a2^3*b2*c2^2*u^3*v*w^3+22*a2*b2^3*c2^2*u^3*v*w^3-8*b2^4*c2^2*u^3*v*w^3+14*a2^2*b2*c2^3*u^3*v*w^3-16*a2*b2^2*c2^3*u^3*v*w^3+6*b2^3*c2^3*u^3*v*w^3-3*a2*b2*c2^4*u^3*v*w^3-b2*c2^5*u^3*v*w^3+2*a2^5*b2*u^2*v^2*w^3-4*a2^4*b2^2*u^2*v^2*w^3+4*a2^2*b2^4*u^2*v^2*w^3-2*a2*b2^5*u^2*v^2*w^3+2*a2^4*b2*c2*u^2*v^2*w^3+10*a2^3*b2^2*c2*u^2*v^2*w^3-10*a2^2*b2^3*c2*u^2*v^2*w^3-2*a2*b2^4*c2*u^2*v^2*w^3-10*a2^3*b2*c2^2*u^2*v^2*w^3+10*a2*b2^3*c2^2*u^2*v^2*w^3+6*a2^2*b2*c2^3*u^2*v^2*w^3-6*a2*b2^2*c2^3*u^2*v^2*w^3+3*a2^5*b2*u*v^3*w^3-8*a2^4*b2^2*u*v^3*w^3+6*a2^3*b2^3*u*v^3*w^3-a2*b2^5*u*v^3*w^3-3*a2^5*c2*u*v^3*w^3+22*a2^3*b2^2*c2*u*v^3*w^3-16*a2^2*b2^3*c2*u*v^3*w^3-3*a2*b2^4*c2*u*v^3*w^3+8*a2^4*c2^2*u*v^3*w^3-22*a2^3*b2*c2^2*u*v^3*w^3+14*a2*b2^3*c2^2*u*v^3*w^3-6*a2^3*c2^3*u*v^3*w^3+16*a2^2*b2*c2^3*u*v^3*w^3-14*a2*b2^2*c2^3*u*v^3*w^3+3*a2*b2*c2^4*u*v^3*w^3+a2*c2^5*u*v^3*w^3+a2^6*v^4*w^3-2*a2^5*b2*v^4*w^3+2*a2^3*b2^3*v^4*w^3-a2^2*b2^4*v^4*w^3+6*a2^4*b2*c2*v^4*w^3-4*a2^3*b2^2*c2*v^4*w^3-2*a2^2*b2^3*c2*v^4*w^3-2*a2^4*c2^2*v^4*w^3+2*a2^3*b2*c2^2*v^4*w^3+8*a2^2*b2^2*c2^2*v^4*w^3-6*a2^2*b2*c2^3*v^4*w^3+a2^2*c2^4*v^4*w^3+a2^4*b2^2*u^3*w^4-2*a2^2*b2^4*u^3*w^4+b2^6*u^3*w^4-6*a2^3*b2^2*c2*u^3*w^4+2*a2^2*b2^3*c2*u^3*w^4+6*a2*b2^4*c2*u^3*w^4-2*b2^5*c2*u^3*w^4+8*a2^2*b2^2*c2^2*u^3*w^4-4*a2*b2^3*c2^2*u^3*w^4-2*a2*b2^2*c2^3*u^3*w^4+2*b2^3*c2^3*u^3*w^4-b2^2*c2^4*u^3*w^4+2*a2^5*b2*u^2*v*w^4-8*a2^3*b2^3*u^2*v*w^4+8*a2^2*b2^4*u^2*v*w^4-2*a2*b2^5*u^2*v*w^4-4*a2^4*b2*c2*u^2*v*w^4+12*a2^3*b2^2*c2*u^2*v*w^4-4*a2^2*b2^3*c2*u^2*v*w^4-4*a2*b2^4*c2*u^2*v*w^4-8*a2^2*b2^2*c2^2*u^2*v*w^4+12*a2*b2^3*c2^2*u^2*v*w^4+4*a2^2*b2*c2^3*u^2*v*w^4-4*a2*b2^2*c2^3*u^2*v*w^4-2*a2*b2*c2^4*u^2*v*w^4+2*a2^5*b2*u*v^2*w^4-8*a2^4*b2^2*u*v^2*w^4+8*a2^3*b2^3*u*v^2*w^4-2*a2*b2^5*u*v^2*w^4+4*a2^4*b2*c2*u*v^2*w^4+4*a2^3*b2^2*c2*u*v^2*w^4-12*a2^2*b2^3*c2*u*v^2*w^4+4*a2*b2^4*c2*u*v^2*w^4-12*a2^3*b2*c2^2*u*v^2*w^4+8*a2^2*b2^2*c2^2*u*v^2*w^4+4*a2^2*b2*c2^3*u*v^2*w^4-4*a2*b2^2*c2^3*u*v^2*w^4+2*a2*b2*c2^4*u*v^2*w^4-a2^6*v^3*w^4+2*a2^4*b2^2*v^3*w^4-a2^2*b2^4*v^3*w^4+2*a2^5*c2*v^3*w^4-6*a2^4*b2*c2*v^3*w^4-2*a2^3*b2^2*c2*v^3*w^4+6*a2^2*b2^3*c2*v^3*w^4+4*a2^3*b2*c2^2*v^3*w^4-8*a2^2*b2^2*c2^2*v^3*w^4-2*a2^3*c2^3*v^3*w^4+2*a2^2*b2*c2^3*v^3*w^4+a2^2*c2^4*v^3*w^4-2*a2^4*b2^2*u^2*w^5+2*a2^3*b2^3*u^2*w^5+2*a2^2*b2^4*u^2*w^5-2*a2*b2^5*u^2*w^5+2*a2^3*b2^2*c2*u^2*w^5-4*a2^2*b2^3*c2*u^2*w^5+2*a2*b2^4*c2*u^2*w^5+2*a2^2*b2^2*c2^2*u^2*w^5+2*a2*b2^3*c2^2*u^2*w^5-2*a2*b2^2*c2^3*u^2*w^5+2*a2^5*b2*v^2*w^5-2*a2^4*b2^2*v^2*w^5-2*a2^3*b2^3*v^2*w^5+2*a2^2*b2^4*v^2*w^5-2*a2^4*b2*c2*v^2*w^5+4*a2^3*b2^2*c2*v^2*w^5-2*a2^2*b2^3*c2*v^2*w^5-2*a2^3*b2*c2^2*v^2*w^5-2*a2^2*b2^2*c2^2*v^2*w^5+2*a2^2*b2*c2^3*v^2*w^5",
+    "centers": [
+      1,
+      3,
+      4
+    ],
+    "notes": "Barycentric equation from the linked RTF; listed test points checked on three exact triangles.",
     "samplePoints": [
       "(B+C)/2",
       "(C+A)/2",
@@ -1098,6 +1195,24 @@
       "(B+C)/2",
       "(C+A)/2",
       "(A+B)/2"
+    ]
+  },
+  {
+    "id": "Q096",
+    "name": "Yiu septic, a bicircular septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q096.rtf",
+    "equation": "-a2*c2^2*u^4*v^3+b2*c2^2*u^4*v^3+c2^3*u^4*v^3-a2*c2^2*u^3*v^4+b2*c2^2*u^3*v^4-c2^3*u^3*v^4+a2^3*u^4*v^2*w-3*a2^2*b2*u^4*v^2*w+3*a2*b2^2*u^4*v^2*w-b2^3*u^4*v^2*w+a2*b2*c2*u^4*v^2*w-b2^2*c2*u^4*v^2*w-3*a2*c2^2*u^4*v^2*w+2*b2*c2^2*u^4*v^2*w+2*c2^3*u^4*v^2*w+2*a2^3*u^3*v^3*w-6*a2^2*b2*u^3*v^3*w+6*a2*b2^2*u^3*v^3*w-2*b2^3*u^3*v^3*w+a2^2*c2*u^3*v^3*w-b2^2*c2*u^3*v^3*w-3*a2*c2^2*u^3*v^3*w+3*b2*c2^2*u^3*v^3*w+a2^3*u^2*v^4*w-3*a2^2*b2*u^2*v^4*w+3*a2*b2^2*u^2*v^4*w-b2^3*u^2*v^4*w+a2^2*c2*u^2*v^4*w-a2*b2*c2*u^2*v^4*w-2*a2*c2^2*u^2*v^4*w+3*b2*c2^2*u^2*v^4*w-2*c2^3*u^2*v^4*w-a2^3*u^4*v*w^2+3*a2*b2^2*u^4*v*w^2-2*b2^3*u^4*v*w^2+3*a2^2*c2*u^4*v*w^2-a2*b2*c2*u^4*v*w^2-2*b2^2*c2*u^4*v*w^2-3*a2*c2^2*u^4*v*w^2+b2*c2^2*u^4*v*w^2+c2^3*u^4*v*w^2-3*a2^2*b2*u^3*v^2*w^2+6*a2*b2^2*u^3*v^2*w^2-3*b2^3*u^3*v^2*w^2+3*a2^2*c2*u^3*v^2*w^2-3*b2^2*c2*u^3*v^2*w^2-6*a2*c2^2*u^3*v^2*w^2+3*b2*c2^2*u^3*v^2*w^2+3*c2^3*u^3*v^2*w^2+3*a2^3*u^2*v^3*w^2-6*a2^2*b2*u^2*v^3*w^2+3*a2*b2^2*u^2*v^3*w^2+3*a2^2*c2*u^2*v^3*w^2-3*b2^2*c2*u^2*v^3*w^2-3*a2*c2^2*u^2*v^3*w^2+6*b2*c2^2*u^2*v^3*w^2-3*c2^3*u^2*v^3*w^2+2*a2^3*u*v^4*w^2-3*a2^2*b2*u*v^4*w^2+b2^3*u*v^4*w^2+2*a2^2*c2*u*v^4*w^2+a2*b2*c2*u*v^4*w^2-3*b2^2*c2*u*v^4*w^2-a2*c2^2*u*v^4*w^2+3*b2*c2^2*u*v^4*w^2-c2^3*u*v^4*w^2+a2*b2^2*u^4*w^3-b2^3*u^4*w^3-b2^2*c2*u^4*w^3-2*a2^3*u^3*v*w^3-a2^2*b2*u^3*v*w^3+3*a2*b2^2*u^3*v*w^3+6*a2^2*c2*u^3*v*w^3-3*b2^2*c2*u^3*v*w^3-6*a2*c2^2*u^3*v*w^3+b2*c2^2*u^3*v*w^3+2*c2^3*u^3*v*w^3-3*a2^3*u^2*v^2*w^3-3*a2^2*b2*u^2*v^2*w^3+3*a2*b2^2*u^2*v^2*w^3+3*b2^3*u^2*v^2*w^3+6*a2^2*c2*u^2*v^2*w^3-6*b2^2*c2*u^2*v^2*w^3-3*a2*c2^2*u^2*v^2*w^3+3*b2*c2^2*u^2*v^2*w^3-3*a2^2*b2*u*v^3*w^3+a2*b2^2*u*v^3*w^3+2*b2^3*u*v^3*w^3+3*a2^2*c2*u*v^3*w^3-6*b2^2*c2*u*v^3*w^3-a2*c2^2*u*v^3*w^3+6*b2*c2^2*u*v^3*w^3-2*c2^3*u*v^3*w^3+a2^3*v^4*w^3-a2^2*b2*v^4*w^3+a2^2*c2*v^4*w^3+a2*b2^2*u^3*w^4+b2^3*u^3*w^4-b2^2*c2*u^3*w^4-a2^3*u^2*v*w^4-a2^2*b2*u^2*v*w^4+2*a2*b2^2*u^2*v*w^4+2*b2^3*u^2*v*w^4+3*a2^2*c2*u^2*v*w^4+a2*b2*c2*u^2*v*w^4-3*b2^2*c2*u^2*v*w^4-3*a2*c2^2*u^2*v*w^4+c2^3*u^2*v*w^4-2*a2^3*u*v^2*w^4-2*a2^2*b2*u*v^2*w^4+a2*b2^2*u*v^2*w^4+b2^3*u*v^2*w^4+3*a2^2*c2*u*v^2*w^4-a2*b2*c2*u*v^2*w^4-3*b2^2*c2*u*v^2*w^4+3*b2*c2^2*u*v^2*w^4-c2^3*u*v^2*w^4-a2^3*v^3*w^4-a2^2*b2*v^3*w^4+a2^2*c2*v^3*w^4",
+    "centers": [
+      4,
+      7,
+      80
+    ],
+    "notes": "Barycentric equation from the linked RTF; listed test points checked on three exact triangles.",
+    "samplePoints": [
+      "ClosestPoint(Line(B,C),A)",
+      "ClosestPoint(Line(C,A),B)",
+      "ClosestPoint(Line(A,B),C)"
     ]
   },
   {
@@ -1720,6 +1835,19 @@
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
   },
   {
+    "id": "Q148",
+    "name": "a septic related to isogonal pKs",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q148.txt",
+    "equation": "a2*b2*c2^2*u^4*v^3-b2^2*c2^2*u^4*v^3+b2*c2^3*u^4*v^3+a2^2*c2^2*u^3*v^4-a2*b2*c2^2*u^3*v^4-a2*c2^3*u^3*v^4+a2*b2*c2^2*u^4*v^2*w+b2^2*c2^2*u^4*v^2*w-b2*c2^3*u^4*v^2*w-a2^2*c2^2*u^2*v^4*w-a2*b2*c2^2*u^2*v^4*w+a2*c2^3*u^2*v^4*w-a2*b2^2*c2*u^4*v*w^2+b2^3*c2*u^4*v*w^2-b2^2*c2^2*u^4*v*w^2-a2^3*c2*u*v^4*w^2+a2^2*b2*c2*u*v^4*w^2+a2^2*c2^2*u*v^4*w^2-a2*b2^2*c2*u^4*w^3-b2^3*c2*u^4*w^3+b2^2*c2^2*u^4*w^3+a2^3*c2*v^4*w^3+a2^2*b2*c2*v^4*w^3-a2^2*c2^2*v^4*w^3-a2^2*b2^2*u^3*w^4+a2*b2^3*u^3*w^4+a2*b2^2*c2*u^3*w^4+a2^2*b2^2*u^2*v*w^4-a2*b2^3*u^2*v*w^4+a2*b2^2*c2*u^2*v*w^4+a2^3*b2*u*v^2*w^4-a2^2*b2^2*u*v^2*w^4-a2^2*b2*c2*u*v^2*w^4-a2^3*b2*v^3*w^4+a2^2*b2^2*v^3*w^4-a2^2*b2*c2*v^3*w^4",
+    "centers": [
+      1,
+      2,
+      3
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles."
+  },
+  {
     "id": "Q149",
     "name": "a circular quintic",
     "degree": 5,
@@ -2280,6 +2408,20 @@
     ]
   },
   {
+    "id": "Q194",
+    "name": "a tricircular septic related to orthopivotal cubics",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q194.txt",
+    "equation": "a2^3*c2*u^5*v^2-3*a2^2*b2*c2*u^5*v^2+3*a2*b2^2*c2*u^5*v^2-b2^3*c2*u^5*v^2-3*a2^2*c2^2*u^5*v^2+5*a2*b2*c2^2*u^5*v^2-2*b2^2*c2^2*u^5*v^2+3*a2*c2^3*u^5*v^2-2*b2*c2^3*u^5*v^2-c2^4*u^5*v^2+3*a2^3*c2*u^4*v^3-9*a2^2*b2*c2*u^4*v^3+9*a2*b2^2*c2*u^4*v^3-3*b2^3*c2*u^4*v^3-a2^2*c2^2*u^4*v^3+5*a2*b2*c2^2*u^4*v^3-4*b2^2*c2^2*u^4*v^3-7*a2*c2^3*u^4*v^3+2*b2*c2^3*u^4*v^3+5*c2^4*u^4*v^3+3*a2^3*c2*u^3*v^4-9*a2^2*b2*c2*u^3*v^4+9*a2*b2^2*c2*u^3*v^4-3*b2^3*c2*u^3*v^4+4*a2^2*c2^2*u^3*v^4-5*a2*b2*c2^2*u^3*v^4+b2^2*c2^2*u^3*v^4-2*a2*c2^3*u^3*v^4+7*b2*c2^3*u^3*v^4-5*c2^4*u^3*v^4+a2^3*c2*u^2*v^5-3*a2^2*b2*c2*u^2*v^5+3*a2*b2^2*c2*u^2*v^5-b2^3*c2*u^2*v^5+2*a2^2*c2^2*u^2*v^5-5*a2*b2*c2^2*u^2*v^5+3*b2^2*c2^2*u^2*v^5+2*a2*c2^3*u^2*v^5-3*b2*c2^3*u^2*v^5+c2^4*u^2*v^5-a2^3*c2*u^4*v^2*w-3*a2^2*b2*c2*u^4*v^2*w+9*a2*b2^2*c2*u^4*v^2*w-5*b2^3*c2*u^4*v^2*w+3*a2^2*c2^2*u^4*v^2*w-5*a2*b2*c2^2*u^4*v^2*w-4*b2^2*c2^2*u^4*v^2*w-3*a2*c2^3*u^4*v^2*w+8*b2*c2^3*u^4*v^2*w+c2^4*u^4*v^2*w+4*a2^3*c2*u^3*v^3*w-12*a2^2*b2*c2*u^3*v^3*w+12*a2*b2^2*c2*u^3*v^3*w-4*b2^3*c2*u^3*v^3*w-8*a2^2*c2^2*u^3*v^3*w+8*b2^2*c2^2*u^3*v^3*w+4*a2*c2^3*u^3*v^3*w-4*b2*c2^3*u^3*v^3*w+5*a2^3*c2*u^2*v^4*w-9*a2^2*b2*c2*u^2*v^4*w+3*a2*b2^2*c2*u^2*v^4*w+b2^3*c2*u^2*v^4*w+4*a2^2*c2^2*u^2*v^4*w+5*a2*b2*c2^2*u^2*v^4*w-3*b2^2*c2^2*u^2*v^4*w-8*a2*c2^3*u^2*v^4*w+3*b2*c2^3*u^2*v^4*w-c2^4*u^2*v^4*w-a2^3*b2*u^5*w^2+3*a2^2*b2^2*u^5*w^2-3*a2*b2^3*u^5*w^2+b2^4*u^5*w^2+3*a2^2*b2*c2*u^5*w^2-5*a2*b2^2*c2*u^5*w^2+2*b2^3*c2*u^5*w^2-3*a2*b2*c2^2*u^5*w^2+2*b2^2*c2^2*u^5*w^2+b2*c2^3*u^5*w^2+a2^3*b2*u^4*v*w^2-3*a2^2*b2^2*u^4*v*w^2+3*a2*b2^3*u^4*v*w^2-b2^4*u^4*v*w^2+3*a2^2*b2*c2*u^4*v*w^2+5*a2*b2^2*c2*u^4*v*w^2-8*b2^3*c2*u^4*v*w^2-9*a2*b2*c2^2*u^4*v*w^2+4*b2^2*c2^2*u^4*v*w^2+5*b2*c2^3*u^4*v*w^2+2*a2^3*b2*u^3*v^2*w^2-6*a2^2*b2^2*u^3*v^2*w^2+6*a2*b2^3*u^3*v^2*w^2-2*b2^4*u^3*v^2*w^2-2*a2^3*c2*u^3*v^2*w^2-2*a2*b2^2*c2*u^3*v^2*w^2+4*b2^3*c2*u^3*v^2*w^2+6*a2^2*c2^2*u^3*v^2*w^2+2*a2*b2*c2^2*u^3*v^2*w^2-6*a2*c2^3*u^3*v^2*w^2-4*b2*c2^3*u^3*v^2*w^2+2*c2^4*u^3*v^2*w^2+2*a2^4*u^2*v^3*w^2-6*a2^3*b2*u^2*v^3*w^2+6*a2^2*b2^2*u^2*v^3*w^2-2*a2*b2^3*u^2*v^3*w^2-4*a2^3*c2*u^2*v^3*w^2+2*a2^2*b2*c2*u^2*v^3*w^2+2*b2^3*c2*u^2*v^3*w^2-2*a2*b2*c2^2*u^2*v^3*w^2-6*b2^2*c2^2*u^2*v^3*w^2+4*a2*c2^3*u^2*v^3*w^2+6*b2*c2^3*u^2*v^3*w^2-2*c2^4*u^2*v^3*w^2+a2^4*u*v^4*w^2-3*a2^3*b2*u*v^4*w^2+3*a2^2*b2^2*u*v^4*w^2-a2*b2^3*u*v^4*w^2+8*a2^3*c2*u*v^4*w^2-5*a2^2*b2*c2*u*v^4*w^2-3*a2*b2^2*c2*u*v^4*w^2-4*a2^2*c2^2*u*v^4*w^2+9*a2*b2*c2^2*u*v^4*w^2-5*a2*c2^3*u*v^4*w^2-a2^4*v^5*w^2+3*a2^3*b2*v^5*w^2-3*a2^2*b2^2*v^5*w^2+a2*b2^3*v^5*w^2-2*a2^3*c2*v^5*w^2+5*a2^2*b2*c2*v^5*w^2-3*a2*b2^2*c2*v^5*w^2-2*a2^2*c2^2*v^5*w^2+3*a2*b2*c2^2*v^5*w^2-a2*c2^3*v^5*w^2-3*a2^3*b2*u^4*w^3+a2^2*b2^2*u^4*w^3+7*a2*b2^3*u^4*w^3-5*b2^4*u^4*w^3+9*a2^2*b2*c2*u^4*w^3-5*a2*b2^2*c2*u^4*w^3-2*b2^3*c2*u^4*w^3-9*a2*b2*c2^2*u^4*w^3+4*b2^2*c2^2*u^4*w^3+3*b2*c2^3*u^4*w^3-4*a2^3*b2*u^3*v*w^3+8*a2^2*b2^2*u^3*v*w^3-4*a2*b2^3*u^3*v*w^3+12*a2^2*b2*c2*u^3*v*w^3+4*b2^3*c2*u^3*v*w^3-12*a2*b2*c2^2*u^3*v*w^3-8*b2^2*c2^2*u^3*v*w^3+4*b2*c2^3*u^3*v*w^3-2*a2^4*u^2*v^2*w^3+4*a2^3*b2*u^2*v^2*w^3-4*a2*b2^3*u^2*v^2*w^3+2*b2^4*u^2*v^2*w^3+6*a2^3*c2*u^2*v^2*w^3-2*a2^2*b2*c2*u^2*v^2*w^3+2*a2*b2^2*c2*u^2*v^2*w^3-6*b2^3*c2*u^2*v^2*w^3-6*a2^2*c2^2*u^2*v^2*w^3+6*b2^2*c2^2*u^2*v^2*w^3+2*a2*c2^3*u^2*v^2*w^3-2*b2*c2^3*u^2*v^2*w^3+4*a2^3*b2*u*v^3*w^3-8*a2^2*b2^2*u*v^3*w^3+4*a2*b2^3*u*v^3*w^3-4*a2^3*c2*u*v^3*w^3-12*a2*b2^2*c2*u*v^3*w^3+8*a2^2*c2^2*u*v^3*w^3+12*a2*b2*c2^2*u*v^3*w^3-4*a2*c2^3*u*v^3*w^3+5*a2^4*v^4*w^3-7*a2^3*b2*v^4*w^3-a2^2*b2^2*v^4*w^3+3*a2*b2^3*v^4*w^3+2*a2^3*c2*v^4*w^3+5*a2^2*b2*c2*v^4*w^3-9*a2*b2^2*c2*v^4*w^3-4*a2^2*c2^2*v^4*w^3+9*a2*b2*c2^2*v^4*w^3-3*a2*c2^3*v^4*w^3-3*a2^3*b2*u^3*w^4-4*a2^2*b2^2*u^3*w^4+2*a2*b2^3*u^3*w^4+5*b2^4*u^3*w^4+9*a2^2*b2*c2*u^3*w^4+5*a2*b2^2*c2*u^3*w^4-7*b2^3*c2*u^3*w^4-9*a2*b2*c2^2*u^3*w^4-b2^2*c2^2*u^3*w^4+3*b2*c2^3*u^3*w^4-5*a2^3*b2*u^2*v*w^4-4*a2^2*b2^2*u^2*v*w^4+8*a2*b2^3*u^2*v*w^4+b2^4*u^2*v*w^4+9*a2^2*b2*c2*u^2*v*w^4-5*a2*b2^2*c2*u^2*v*w^4-3*b2^3*c2*u^2*v*w^4-3*a2*b2*c2^2*u^2*v*w^4+3*b2^2*c2^2*u^2*v*w^4-b2*c2^3*u^2*v*w^4-a2^4*u*v^2*w^4-8*a2^3*b2*u*v^2*w^4+4*a2^2*b2^2*u*v^2*w^4+5*a2*b2^3*u*v^2*w^4+3*a2^3*c2*u*v^2*w^4+5*a2^2*b2*c2*u*v^2*w^4-9*a2*b2^2*c2*u*v^2*w^4-3*a2^2*c2^2*u*v^2*w^4+3*a2*b2*c2^2*u*v^2*w^4+a2*c2^3*u*v^2*w^4-5*a2^4*v^3*w^4-2*a2^3*b2*v^3*w^4+4*a2^2*b2^2*v^3*w^4+3*a2*b2^3*v^3*w^4+7*a2^3*c2*v^3*w^4-5*a2^2*b2*c2*v^3*w^4-9*a2*b2^2*c2*v^3*w^4+a2^2*c2^2*v^3*w^4+9*a2*b2*c2^2*v^3*w^4-3*a2*c2^3*v^3*w^4-a2^3*b2*u^2*w^5-2*a2^2*b2^2*u^2*w^5-2*a2*b2^3*u^2*w^5-b2^4*u^2*w^5+3*a2^2*b2*c2*u^2*w^5+5*a2*b2^2*c2*u^2*w^5+3*b2^3*c2*u^2*w^5-3*a2*b2*c2^2*u^2*w^5-3*b2^2*c2^2*u^2*w^5+b2*c2^3*u^2*w^5+a2^4*v^2*w^5+2*a2^3*b2*v^2*w^5+2*a2^2*b2^2*v^2*w^5+a2*b2^3*v^2*w^5-3*a2^3*c2*v^2*w^5-5*a2^2*b2*c2*v^2*w^5-3*a2*b2^2*c2*v^2*w^5+3*a2^2*c2^2*v^2*w^5+3*a2*b2*c2^2*v^2*w^5-a2*c2^3*v^2*w^5",
+    "centers": [],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles.",
+    "samplePoints": [
+      "ClosestPoint(Line(B,C),A)",
+      "ClosestPoint(Line(C,A),B)",
+      "ClosestPoint(Line(A,B),C)"
+    ]
+  },
+  {
     "id": "Q195",
     "name": "a quartic related to Q026 , Q115",
     "degree": 4,
@@ -2292,6 +2434,18 @@
       6
     ],
     "notes": "Barycentric equation from the linked TXT; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q196",
+    "name": "a circular septic comparable to Q018",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q196.txt",
+    "equation": "a2^2*b2*c2^3*u^5*v^2+2*a2*b2^2*c2^3*u^5*v^2+b2^3*c2^3*u^5*v^2-2*a2*b2*c2^4*u^5*v^2-2*b2^2*c2^4*u^5*v^2+b2*c2^5*u^5*v^2+a2^2*b2*c2^3*u^4*v^3+2*a2*b2^2*c2^3*u^4*v^3+b2^3*c2^3*u^4*v^3-2*a2*b2*c2^4*u^4*v^3-2*b2^2*c2^4*u^4*v^3+b2*c2^5*u^4*v^3-a2^3*c2^3*u^3*v^4-2*a2^2*b2*c2^3*u^3*v^4-a2*b2^2*c2^3*u^3*v^4+2*a2^2*c2^4*u^3*v^4+2*a2*b2*c2^4*u^3*v^4-a2*c2^5*u^3*v^4-a2^3*c2^3*u^2*v^5-2*a2^2*b2*c2^3*u^2*v^5-a2*b2^2*c2^3*u^2*v^5+2*a2^2*c2^4*u^2*v^5+2*a2*b2*c2^4*u^2*v^5-a2*c2^5*u^2*v^5+a2^3*b2*c2^2*u^4*v^2*w-3*a2*b2^3*c2^2*u^4*v^2*w+2*b2^4*c2^2*u^4*v^2*w-3*a2^2*b2*c2^3*u^4*v^2*w-5*b2^3*c2^3*u^4*v^2*w+3*a2*b2*c2^4*u^4*v^2*w+4*b2^2*c2^4*u^4*v^2*w-b2*c2^5*u^4*v^2*w-2*a2^4*c2^2*u^2*v^4*w+3*a2^3*b2*c2^2*u^2*v^4*w-a2*b2^3*c2^2*u^2*v^4*w+5*a2^3*c2^3*u^2*v^4*w+3*a2*b2^2*c2^3*u^2*v^4*w-4*a2^2*c2^4*u^2*v^4*w-3*a2*b2*c2^4*u^2*v^4*w+a2*c2^5*u^2*v^4*w-a2^2*b2^3*c2*u^5*w^2+2*a2*b2^4*c2*u^5*w^2-b2^5*c2*u^5*w^2-2*a2*b2^3*c2^2*u^5*w^2+2*b2^4*c2^2*u^5*w^2-b2^3*c2^3*u^5*w^2-a2^3*b2^2*c2*u^4*v*w^2+3*a2^2*b2^3*c2*u^4*v*w^2-3*a2*b2^4*c2*u^4*v*w^2+b2^5*c2*u^4*v*w^2-4*b2^4*c2^2*u^4*v*w^2+3*a2*b2^2*c2^3*u^4*v*w^2+5*b2^3*c2^3*u^4*v*w^2-2*b2^2*c2^4*u^4*v*w^2+a2^3*b2^2*c2*u^3*v^2*w^2-2*a2^2*b2^3*c2*u^3*v^2*w^2+a2*b2^4*c2*u^3*v^2*w^2-a2^3*b2*c2^2*u^3*v^2*w^2-3*a2*b2^3*c2^2*u^3*v^2*w^2+2*a2^2*b2*c2^3*u^3*v^2*w^2+3*a2*b2^2*c2^3*u^3*v^2*w^2-a2*b2*c2^4*u^3*v^2*w^2-a2^4*b2*c2*u^2*v^3*w^2+2*a2^3*b2^2*c2*u^2*v^3*w^2-a2^2*b2^3*c2*u^2*v^3*w^2+3*a2^3*b2*c2^2*u^2*v^3*w^2+a2*b2^3*c2^2*u^2*v^3*w^2-3*a2^2*b2*c2^3*u^2*v^3*w^2-2*a2*b2^2*c2^3*u^2*v^3*w^2+a2*b2*c2^4*u^2*v^3*w^2-a2^5*c2*u*v^4*w^2+3*a2^4*b2*c2*u*v^4*w^2-3*a2^3*b2^2*c2*u*v^4*w^2+a2^2*b2^3*c2*u*v^4*w^2+4*a2^4*c2^2*u*v^4*w^2-5*a2^3*c2^3*u*v^4*w^2-3*a2^2*b2*c2^3*u*v^4*w^2+2*a2^2*c2^4*u*v^4*w^2+a2^5*c2*v^5*w^2-2*a2^4*b2*c2*v^5*w^2+a2^3*b2^2*c2*v^5*w^2-2*a2^4*c2^2*v^5*w^2+2*a2^3*b2*c2^2*v^5*w^2+a2^3*c2^3*v^5*w^2-a2^2*b2^3*c2*u^4*w^3+2*a2*b2^4*c2*u^4*w^3-b2^5*c2*u^4*w^3-2*a2*b2^3*c2^2*u^4*w^3+2*b2^4*c2^2*u^4*w^3-b2^3*c2^3*u^4*w^3+a2^4*b2*c2*u^2*v^2*w^3-3*a2^3*b2^2*c2*u^2*v^2*w^3+3*a2^2*b2^3*c2*u^2*v^2*w^3-a2*b2^4*c2*u^2*v^2*w^3-2*a2^3*b2*c2^2*u^2*v^2*w^3+2*a2*b2^3*c2^2*u^2*v^2*w^3+a2^2*b2*c2^3*u^2*v^2*w^3-a2*b2^2*c2^3*u^2*v^2*w^3+a2^5*c2*v^4*w^3-2*a2^4*b2*c2*v^4*w^3+a2^3*b2^2*c2*v^4*w^3-2*a2^4*c2^2*v^4*w^3+2*a2^3*b2*c2^2*v^4*w^3+a2^3*c2^3*v^4*w^3+a2^3*b2^3*u^3*w^4-2*a2^2*b2^4*u^3*w^4+a2*b2^5*u^3*w^4+2*a2^2*b2^3*c2*u^3*w^4-2*a2*b2^4*c2*u^3*w^4+a2*b2^3*c2^2*u^3*w^4+2*a2^4*b2^2*u^2*v*w^4-5*a2^3*b2^3*u^2*v*w^4+4*a2^2*b2^4*u^2*v*w^4-a2*b2^5*u^2*v*w^4-3*a2^3*b2^2*c2*u^2*v*w^4+3*a2*b2^4*c2*u^2*v*w^4-3*a2*b2^3*c2^2*u^2*v*w^4+a2*b2^2*c2^3*u^2*v*w^4+a2^5*b2*u*v^2*w^4-4*a2^4*b2^2*u*v^2*w^4+5*a2^3*b2^3*u*v^2*w^4-2*a2^2*b2^4*u*v^2*w^4-3*a2^4*b2*c2*u*v^2*w^4+3*a2^2*b2^3*c2*u*v^2*w^4+3*a2^3*b2*c2^2*u*v^2*w^4-a2^2*b2*c2^3*u*v^2*w^4-a2^5*b2*v^3*w^4+2*a2^4*b2^2*v^3*w^4-a2^3*b2^3*v^3*w^4+2*a2^4*b2*c2*v^3*w^4-2*a2^3*b2^2*c2*v^3*w^4-a2^3*b2*c2^2*v^3*w^4+a2^3*b2^3*u^2*w^5-2*a2^2*b2^4*u^2*w^5+a2*b2^5*u^2*w^5+2*a2^2*b2^3*c2*u^2*w^5-2*a2*b2^4*c2*u^2*w^5+a2*b2^3*c2^2*u^2*w^5-a2^5*b2*v^2*w^5+2*a2^4*b2^2*v^2*w^5-a2^3*b2^3*v^2*w^5+2*a2^4*b2*c2*v^2*w^5-2*a2^3*b2^2*c2*v^2*w^5-a2^3*b2*c2^2*v^2*w^5",
+    "centers": [
+      1,
+      3
+    ],
+    "notes": "Barycentric equation from the linked TXT; listed test points checked on three exact triangles."
   },
   {
     "id": "Q197",
