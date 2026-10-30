@@ -78,13 +78,16 @@ For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
 ### Numbered higher-degree triangle curves
 
 `GibertCurve(A,B,C,12)` (also `GibertCurve(A,B,C,"Q012")`) constructs a single
-native implicit curve. The database supports Q002–Q006, Q010–Q012, Q014,
+native implicit curve. The database supports Q001–Q006, Q010–Q012, Q014,
 Q016–Q017, Q019, Q021–Q024, Q026–Q029, Q032–Q034, Q036A/B/C,
 Q037–Q069, Q071, Q073–Q076, Q080–Q081, Q083–Q091, Q093–Q095,
-Q097–Q099, Q101–Q104, Q107–Q108, and Q110–Q202 except Q148, Q194 and Q196. Use a quoted ID such
+Q097–Q105, Q107–Q108, and Q110–Q202 except Q148, Q194 and Q196. Use a quoted ID such
 as `"Q036A"` for a family member. `id` is a compile-time `catalogId` literal, not a slider or an
 arithmetic expression; it is selected in TypeScript before native execution.
 There are no per-curve public command names or large native `If` dispatches.
+Q001, Q100 and Q105 are experimental seventh-degree entries: offline checks
+pass, but real GeoGebra construction and interaction performance remain unverified.
+Q100 uses the algebraic closure of its published rational equation.
 
 This tool requires **Medium or High** custom tool performance and a new output
 label. Low is rejected before evaluation because the anonymous expansion timed

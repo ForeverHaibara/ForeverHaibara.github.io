@@ -104,6 +104,7 @@ const reference = (id: string, side: number[], uvw: number[]) => {
     if (id==='Q003') return sum+a*(sa[(i+1)%3]*v-sa[(i+2)%3]*w)*v*v*w*w;
     if (id==='Q012') return sum+a*v*w*(v-w)*(u*u-v*w);
     if (id==='Q033') return sum+a*sa[i]*(v*v-w*w)*v*w;
+    if (id==='Q100') return sum+a*(v-w)*v*w*(w+u)**2*(u+v)**2;
     return sum+(a*sa[i]-sa[(i+1)%3]*sa[(i+2)%3])*u*d[i]*4*uvw[0]*uvw[1]*uvw[2];
   },id==='Q039'?d[0]*d[1]*d[2]:0);
 };
@@ -144,7 +145,7 @@ describe('offline curve coefficients versus independent barycentric definitions'
     for (const vertices of [ [[0,0],[6,0],[1,4]], [[-2,1],[5,2],[1,-3]], [[2,3],[1,7],[-4,4]], [[10,-7],[13,-7],[10.5,-5]] ]) {
       const side=vertices.map((_,i)=>{const b=vertices[(i+1)%3],c=vertices[(i+2)%3];return (b[0]-c[0])**2+(b[1]-c[1])**2;});
       const frame=vertices.flatMap((_,i)=>{const b=vertices[(i+1)%3],c=vertices[(i+2)%3];return [b[1]-c[1],c[0]-b[0],b[0]*c[1]-b[1]*c[0]];});
-      for (const record of records.filter((r) => ['Q002','Q003','Q012','Q033','Q039'].includes(r.id))) {
+      for (const record of records.filter((r) => ['Q002','Q003','Q012','Q033','Q039','Q100'].includes(r.id))) {
         const recipe=recipes[record.id];
         expect(recipe.monomials.every((m)=>m.reduce((a,b)=>a+b,0)===record.degree)).toBe(true);
         const values: Record<string,number> = {a2:side[0],b2:side[1],c2:side[2]};

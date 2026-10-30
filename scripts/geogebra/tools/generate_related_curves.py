@@ -7,6 +7,7 @@ source text. Run from any directory; --check verifies the committed output.
 import argparse
 import ast
 import json
+from functools import lru_cache
 from pathlib import Path
 import sympy as s
 
@@ -52,6 +53,23 @@ def parse_equation(text):
     return s.expand(visit(ast.parse(text.replace('^', '**'), mode='eval').body))
 
 
+@lru_cache(maxsize=None)
+def cartesian_terms(monomials, compact):
+    """Compile the common frame once for each barycentric monomial pattern."""
+    frame_values = s.symbols('p0:9')
+    frame = [frame_values[3*i]*x+frame_values[3*i+1]*y+frame_values[3*i+2] for i in range(3)]
+    weights = s.symbols(f'k0:{len(monomials)}')
+    world = s.Poly(sum(k*s.prod(frame[i]**power for i, power in enumerate(monomial))
+                       for monomial, k in zip(monomials, weights)), x, y)
+    coefficients = world.coeffs()
+    if compact:
+        # Keep degree >= 7 within the existing named-expression budget without
+        # changing the polynomial or introducing hundreds of helper objects.
+        coefficients = [s.factor_terms(s.horner(value, *frame_values, *weights)) for value in coefficients]
+    return tuple((i, j, s.sstr(value).replace('**', '^'))
+                 for (i, j), value in zip(world.monoms(), coefficients))
+
+
 def generate(records):
     result = {}
     for record in records:
@@ -68,21 +86,16 @@ def generate(records):
         replacements, coefficients = s.cse([s.factor(c) for c in poly.coeffs()], symbols=s.numbered_symbols('h'))
         if len(replacements) > 100:
             replacements, coefficients = [], [s.factor(c) for c in poly.coeffs()]
-        # Compile the homogeneous linear substitution offline. p0..p8 are
-        # signed area-form coefficients, k0..kn the numeric barycentric
-        # coefficients. The engine only evaluates scalar coefficients and
-        # draws a Cartesian polynomial; no native symbolic substitution.
-        frame_values = s.symbols('p0:9')
-        frame = [frame_values[3*i]*x+frame_values[3*i+1]*y+frame_values[3*i+2] for i in range(3)]
-        weights = s.symbols(f'k0:{len(coefficients)}')
-        world = s.Poly(sum(c*s.prod(a**i for a, i in zip(frame, monomial)) for monomial, c in zip(poly.monoms(), weights)), x, y)
+        # The world frame depends only on the monomial pattern, so repeated
+        # patterns share the same offline work and need no runtime CAS.
+        terms = cartesian_terms(tuple(poly.monoms()), record['degree'] >= 7)
         render = lambda value: s.sstr(value).replace('**', '^')
         result[key] = {
             'degree': record['degree'],
             'locals': [[str(name), render(value)] for name, value in replacements],
             'coefficients': [render(value) for value in coefficients],
             'monomials': [list(m) for m in poly.monoms()],
-            'terms': [[i, j, render(value)] for (i, j), value in zip(world.monoms(), world.coeffs())],
+            'terms': [list(term) for term in terms],
         }
     return json.dumps(result, indent=2, ensure_ascii=False) + '\n'
 

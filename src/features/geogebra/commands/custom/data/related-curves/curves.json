@@ -1,5 +1,16 @@
 [
   {
+    "id": "Q001",
+    "name": "Darboux septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q001.txt",
+    "equation": "3*a2*c2^2*u^4*v^3-3*b2*c2^2*u^4*v^3-c2^3*u^4*v^3+3*a2*c2^2*u^3*v^4-3*b2*c2^2*u^3*v^4+c2^3*u^3*v^4-4*a2^2*c2*u^4*v^2*w+2*a2*b2*c2*u^4*v^2*w+2*b2^2*c2*u^4*v^2*w+5*a2*c2^2*u^4*v^2*w-5*b2*c2^2*u^4*v^2*w-c2^3*u^4*v^2*w-6*a2^2*c2*u^3*v^3*w+6*b2^2*c2*u^3*v^3*w+10*a2*c2^2*u^3*v^3*w-10*b2*c2^2*u^3*v^3*w-2*a2^2*c2*u^2*v^4*w-2*a2*b2*c2*u^2*v^4*w+4*b2^2*c2*u^2*v^4*w+5*a2*c2^2*u^2*v^4*w-5*b2*c2^2*u^2*v^4*w+c2^3*u^2*v^4*w+4*a2^2*b2*u^4*v*w^2-5*a2*b2^2*u^4*v*w^2+b2^3*u^4*v*w^2-2*a2*b2*c2*u^4*v*w^2+5*b2^2*c2*u^4*v*w^2-2*b2*c2^2*u^4*v*w^2+10*a2^2*b2*u^3*v^2*w^2-11*a2*b2^2*u^3*v^2*w^2+b2^3*u^3*v^2*w^2-10*a2^2*c2*u^3*v^2*w^2+13*b2^2*c2*u^3*v^2*w^2+11*a2*c2^2*u^3*v^2*w^2-13*b2*c2^2*u^3*v^2*w^2-c2^3*u^3*v^2*w^2-a2^3*u^2*v^3*w^2+11*a2^2*b2*u^2*v^3*w^2-10*a2*b2^2*u^2*v^3*w^2-13*a2^2*c2*u^2*v^3*w^2+10*b2^2*c2*u^2*v^3*w^2+13*a2*c2^2*u^2*v^3*w^2-11*b2*c2^2*u^2*v^3*w^2+c2^3*u^2*v^3*w^2-a2^3*u*v^4*w^2+5*a2^2*b2*u*v^4*w^2-4*a2*b2^2*u*v^4*w^2-5*a2^2*c2*u*v^4*w^2+2*a2*b2*c2*u*v^4*w^2+2*a2*c2^2*u*v^4*w^2-3*a2*b2^2*u^4*w^3+b2^3*u^4*w^3+3*b2^2*c2*u^4*w^3+6*a2^2*b2*u^3*v*w^3-10*a2*b2^2*u^3*v*w^3+10*b2^2*c2*u^3*v*w^3-6*b2*c2^2*u^3*v*w^3+a2^3*u^2*v^2*w^3+13*a2^2*b2*u^2*v^2*w^3-13*a2*b2^2*u^2*v^2*w^3-b2^3*u^2*v^2*w^3-11*a2^2*c2*u^2*v^2*w^3+11*b2^2*c2*u^2*v^2*w^3+10*a2*c2^2*u^2*v^2*w^3-10*b2*c2^2*u^2*v^2*w^3+10*a2^2*b2*u*v^3*w^3-6*a2*b2^2*u*v^3*w^3-10*a2^2*c2*u*v^3*w^3+6*a2*c2^2*u*v^3*w^3-a2^3*v^4*w^3+3*a2^2*b2*v^4*w^3-3*a2^2*c2*v^4*w^3-3*a2*b2^2*u^3*w^4-b2^3*u^3*w^4+3*b2^2*c2*u^3*w^4+2*a2^2*b2*u^2*v*w^4-5*a2*b2^2*u^2*v*w^4-b2^3*u^2*v*w^4+2*a2*b2*c2*u^2*v*w^4+5*b2^2*c2*u^2*v*w^4-4*b2*c2^2*u^2*v*w^4+a2^3*u*v^2*w^4+5*a2^2*b2*u*v^2*w^4-2*a2*b2^2*u*v^2*w^4-5*a2^2*c2*u*v^2*w^4-2*a2*b2*c2*u*v^2*w^4+4*a2*c2^2*u*v^2*w^4+a2^3*v^3*w^4+3*a2^2*b2*v^3*w^4-3*a2^2*c2*v^3*w^4",
+    "centers": [
+      4
+    ],
+    "notes": "Published barycentric equation; X(4) checked on three exact triangles."
+  },
+  {
     "id": "Q002",
     "name": "Euler-Morley quartic",
     "degree": 4,
@@ -1135,6 +1146,26 @@
     ]
   },
   {
+    "id": "Q100",
+    "name": "Dergiades septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/equq100.gif",
+    "equation": "cyclic(a2*(v-w)*v*w*(w+u)^2*(u+v)^2)",
+    "centers": [
+      2,
+      7
+    ],
+    "notes": "Homogeneous polynomial after clearing the denominators in the image equation; represents its algebraic closure. Listed points checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
+  },
+  {
     "id": "Q101",
     "name": "Simson quartic",
     "degree": 4,
@@ -1181,6 +1212,27 @@
       4
     ],
     "notes": "Barycentric equation from the linked RTF; listed test points checked on two exact triangles."
+  },
+  {
+    "id": "Q105",
+    "name": "Montesdeoca septic",
+    "degree": 7,
+    "source": "http://bernard-gibert.fr/curves/Resources/Q105.rtf",
+    "equation": "c2^2*u^4*v^3-c2^2*u^3*v^4+a2*c2*u^4*v^2*w+2*b2*c2*u^4*v^2*w-c2^2*u^4*v^2*w+2*a2*c2*u^3*v^3*w-2*b2*c2*u^3*v^3*w-2*a2*c2*u^2*v^4*w-b2*c2*u^2*v^4*w+c2^2*u^2*v^4*w-a2*b2*u^4*v*w^2+b2^2*u^4*v*w^2-2*b2*c2*u^4*v*w^2+a2*b2*u^3*v^2*w^2-b2^2*u^3*v^2*w^2-a2*c2*u^3*v^2*w^2+c2^2*u^3*v^2*w^2+a2^2*u^2*v^3*w^2-a2*b2*u^2*v^3*w^2+b2*c2*u^2*v^3*w^2-c2^2*u^2*v^3*w^2-a2^2*u*v^4*w^2+a2*b2*u*v^4*w^2+2*a2*c2*u*v^4*w^2-b2^2*u^4*w^3-2*a2*b2*u^3*v*w^3+2*b2*c2*u^3*v*w^3-a2^2*u^2*v^2*w^3+b2^2*u^2*v^2*w^3+a2*c2*u^2*v^2*w^3-b2*c2*u^2*v^2*w^3+2*a2*b2*u*v^3*w^3-2*a2*c2*u*v^3*w^3+a2^2*v^4*w^3+b2^2*u^3*w^4+2*a2*b2*u^2*v*w^4-b2^2*u^2*v*w^4+b2*c2*u^2*v*w^4+a2^2*u*v^2*w^4-2*a2*b2*u*v^2*w^4-a2*c2*u*v^2*w^4-a2^2*v^3*w^4",
+    "centers": [
+      1,
+      2,
+      3
+    ],
+    "notes": "Published barycentric equation; listed centers, midpoints and antimedial vertices checked on three exact triangles.",
+    "samplePoints": [
+      "(B+C)/2",
+      "(C+A)/2",
+      "(A+B)/2",
+      "-A+B+C",
+      "A-B+C",
+      "A+B-C"
+    ]
   },
   {
     "id": "Q107",
