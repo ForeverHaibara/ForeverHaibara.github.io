@@ -18,7 +18,7 @@ const scope = (): CommandEnvironment => ({ objects: new Map([['P', 'point'], ['q
 
 describe('canonical tool aliases', () => {
   it('keeps only canonical source definitions while exposing all existing callable names', () => {
-    expect(studioToolCatalog.version).toBe('0.2.0');
+    expect(studioToolCatalog.version).toBe('0.3.0');
     for (const [name, canonical] of [['SouthPole', 'ArcMidpoint'], ['NorthPole', 'OppositeArcMidpoint']]) {
       expect(studioToolCatalog.tools.some((tool) => tool.name === name)).toBe(false);
       const original = studioToolCatalog.tools.find((tool) => tool.name === canonical)!;
