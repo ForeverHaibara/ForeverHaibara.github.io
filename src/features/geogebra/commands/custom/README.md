@@ -80,9 +80,9 @@ For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
 `GibertCurve(A,B,C,12)` (also `GibertCurve(A,B,C,"Q012")`) constructs a single
 native implicit curve. The database supports Q002–Q005, Q010–Q012, Q014,
 Q016–Q017, Q019, Q021–Q024, Q028–Q029, Q032–Q034, Q036A/B/C,
-Q037–Q041, Q044, Q047–Q049, Q051, Q054, Q056, Q064–Q065, Q067,
-Q071, Q073–Q076, Q090–Q091, Q095, Q099, and Q111–Q202 except
-Q148, Q194 and Q196. Use a quoted ID such
+Q037–Q041, Q044, Q046–Q049, Q051, Q054, Q056, Q064–Q065, Q067,
+Q071, Q073–Q076, Q080–Q081, Q085–Q091, Q093–Q095, Q097–Q099,
+Q101–Q104, Q107–Q108, and Q110–Q202 except Q148, Q194 and Q196. Use a quoted ID such
 as `"Q036A"` for a family member. `id` is a compile-time `catalogId` literal, not a slider or an
 arithmetic expression; it is selected in TypeScript before native execution.
 There are no per-curve public command names or large native `If` dispatches.

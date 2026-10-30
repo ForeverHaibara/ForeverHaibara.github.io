@@ -1,6 +1,6 @@
 # 三角形高次曲线：GibertCurve 接入记录与后续计划
 
-日期：2026-10-29。**已接入 136 条**：Q002–Q005、Q010–Q012、Q014、Q016–Q017、Q019、Q021–Q024、Q028–Q029、Q032–Q034、Q036A/B/C、Q037–Q041、Q044、Q047–Q049、Q051、Q054、Q056、Q064–Q065、Q067、Q071、Q073–Q076、Q090–Q091、Q095、Q099，以及 Q111–Q202（Q148、Q194、Q196 暂缓）。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)，Q202 批次见 [抽样记录](benchmarks/gibert-curves-q202.md)。
+日期：2026-10-29。**已接入 155 条**：Q002–Q005、Q010–Q012、Q014、Q016–Q017、Q019、Q021–Q024、Q028–Q029、Q032–Q034、Q036A/B/C、Q037–Q041、Q044、Q046–Q049、Q051、Q054、Q056、Q064–Q065、Q067、Q071、Q073–Q076、Q080–Q081、Q085–Q091、Q093–Q095、Q097–Q099、Q101–Q104、Q107–Q108，以及 Q110–Q202（Q148、Q194、Q196 暂缓）。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)，Q202 批次见 [抽样记录](benchmarks/gibert-curves-q202.md)。
 
 ## 本轮采用的约定
 
@@ -17,7 +17,7 @@
 - Q005 是三次曲线；按用户要求，也使用统一的 GibertCurve 接口。
 - 五条首批曲线都有可核实的短重心式，Q033 的一般式需代入外心的重心系数。
 - Q001、Q036、Q039 有可访问的方程 TXT；Q036 TXT 明确分列 Q036A/B/C。
-- Q035 的公式区域空白；不能把标题或示意图当作公式。Q106、Q110 的文字提及文本下载，但这次实际 HTML 未提供对应链接。
+- Q035 的公式区域空白；不能把标题或示意图当作公式。此前漏检的 Q106、Q110 RTF 链接已复查：Q106 为十次暂缓，Q110 已接入。
 - Downloads 页面以论文介绍页为主；本次检查范围内未找到完整 GeoGebra 作图合集。这个结论不排除其他页面或外部资源存在合集。
 
 本轮只做有限、单并发、请求间隔至少五秒的资料读取，没有爬完整个曲线站。以后按需人工补录即可；若需批量下载，再沿用限速与遇到 429/503 退避的规则，无需建设自动监控。

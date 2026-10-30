@@ -2,7 +2,7 @@
 import json
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
 from generate_related_curves import a as side_a, b as side_b, c as side_c
-from related_curve_points import centers
+from related_curve_points import centers, orthic_feet
 
 midpoints = {'Q036A': (0, 1, 1), 'Q036B': (1, 0, 1), 'Q036C': (1, 1, 0)}
 sample_coordinates = {'(B+C)/2': (0,1,1), '(C+A)/2': (1,0,1), '(A+B)/2': (1,1,0),
@@ -22,7 +22,7 @@ for record in records:
         ex = (-a, b, c)
         inc = (a, b, c)
         halfway = tuple(inc[i]*sum(ex) + ex[i]*sum(inc) for i in range(3))
-        samples = sample_coordinates | {excenter_a: ex, midpoint_incenter_excenter_a: halfway}
+        samples = sample_coordinates | orthic_feet(a, b, c) | {excenter_a: ex, midpoint_incenter_excenter_a: halfway}
         candidates = [(f'X({index})', points[index]) for index in record['centers'] if index in points]
         if record['id'] in midpoints and midpoints[record['id']] not in [samples.get(point) for point in record.get('samplePoints', [])]:
             candidates.append(('opposite midpoint', midpoints[record['id']]))

@@ -1,8 +1,8 @@
-"""Inspect locally downloaded Gibert pages and TXT files; never downloads or edits the database.
+"""Inspect locally downloaded Gibert pages and TXT/RTF files; never downloads or edits the database.
 
 Usage: python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json
 Candidates require a single explicitly labelled equation, an admissible degree,
-and at least one source-listed simple center or midpoint checked on two exact triangles.
+and at least one source-listed simple center, midpoint or orthic foot checked on two exact triangles.
 The output is an inspection queue and must be reviewed before importing.
 """
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 from html.parser import HTMLParser
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
 from generate_related_curves import a as side_a, b as side_b, c as side_c
-from related_curve_points import centers
+from related_curve_points import centers, orthic_feet
 
 
 class Page(HTMLParser):
@@ -40,16 +40,24 @@ if __name__ == '__main__':
     existing = {r['id'] for r in json.loads(SOURCE.read_text(encoding='utf8'))}
     catalogue = {r['id']:r for r in json.loads((SOURCE.parent/'catalogue.json').read_text(encoding='utf8'))}
     candidates, deferred = [], []
-    for file in sorted(cache.glob('curves_Resources_Q*.txt')):
-        identifier = file.stem.removeprefix('curves_Resources_').upper()
+    files = list(cache.glob('curves_Resources_Q*.txt')) + list(cache.glob('curves_Resources_Q*.rtf'))
+    for file in sorted(files):
+        identifier = re.match(r'Q\d{3}', file.stem.removeprefix('curves_Resources_').upper())[0]
         if identifier in existing or identifier not in catalogue: continue
         page = cache / f'curves_{identifier.lower()}.html'
         if not page.exists(): continue
         try:
-            source = file.read_text(encoding='utf8')
+            source = file.read_text(encoding='cp1252' if file.suffix.lower() == '.rtf' else 'utf8')
+            if file.suffix.lower() == '.rtf':
+                source = source.replace("\\'a0", ' ').replace(r'\uc0', '').replace(r'\u8232', ' ')
             matches = re.findall(r'(?is)\b'+identifier+r'\s*:\s*(.*?)=\s*0', source)
             if len(matches) != 1: raise ValueError('ambiguous or missing labelled equation')
-            expression = convert(matches[0])
+            raw = matches[0]
+            if file.suffix.lower() == '.rtf':
+                raw = re.sub(r'\\(?:pardeftab-?\d+|qnatural|pard|tx-?\d+|ri-?\d+|cf-?\d+|f-?\d+|ql)\s?', ' ', raw)
+                raw = re.sub(r'\\\s*\n', ' ', raw)
+                if any(character in raw for character in r'\{}'): raise ValueError('unsupported RTF equation formatting')
+            expression = convert(raw)
             f = parse_equation(expression)
             poly = s.Poly(f,u,v,w)
             degrees = {sum(m) for m in poly.monoms()}
@@ -76,11 +84,15 @@ if __name__ == '__main__':
                 for coords, sample_expression in [((0,1,1),'(B+C)/2'),((1,0,1),'(C+A)/2'),((1,1,0),'(A+B)/2')]:
                     if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c,u:coords[0],v:coords[1],w:coords[2]}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
                         sample_points.append(sample_expression)
-            if not checked and not sample_points: raise ValueError('no source-listed simple center or midpoint verified')
+            if re.search(r'vertices of the orthic triangle', prefix, re.I):
+                for sample_expression in orthic_feet(13,14,15):
+                    if all(f.subs({side_a:a,side_b:b,side_c:c,a2:a*a,b2:b*b,c2:c*c, **dict(zip((u,v,w), orthic_feet(a,b,c)[sample_expression]))}) == 0 for a,b,c in [(13,14,15),(5,6,7)]):
+                        sample_points.append(sample_expression)
+            if not checked and not sample_points: raise ValueError('no source-listed simple center, midpoint or orthic foot verified')
             record = {'id':identifier,'name':catalogue[identifier]['name'],'degree':degree,
-                'source':'http://bernard-gibert.fr/curves/Resources/'+identifier+'.txt',
+                'source':'http://bernard-gibert.fr/curves/Resources/'+file.name.removeprefix('curves_Resources_'),
                 'equation':expression,'centers':checked,
-                'notes':'Barycentric equation from the linked TXT; listed test points checked on two exact triangles.'}
+                'notes':'Barycentric equation from the linked '+file.suffix.upper().lstrip('.')+'; listed test points checked on two exact triangles.'}
             if sample_points: record['samplePoints'] = sample_points
             candidates.append(record)
         except Exception as error:

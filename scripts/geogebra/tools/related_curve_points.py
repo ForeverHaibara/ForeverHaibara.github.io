@@ -24,3 +24,12 @@ def centers(a, b, c):
     x59 = tuple((aa,bb,cc)[i]*eleven[(i+1)%3]*eleven[(i+2)%3] for i in range(3))
     return {1:(a,b,c), 2:(1,1,1), 3:o, 4:h, 5:nine, 6:(aa,bb,cc),
             7:gergonne, 8:nagel, 20:longchamps, 59:x59, 80:x80}
+
+
+def orthic_feet(a, b, c):
+    sa = s.Rational(b*b+c*c-a*a, 2)
+    sb = s.Rational(c*c+a*a-b*b, 2)
+    sc = s.Rational(a*a+b*b-c*c, 2)
+    return {'ClosestPoint(Line(B,C),A)': (0,sc,sb),
+            'ClosestPoint(Line(C,A),B)': (sc,0,sa),
+            'ClosestPoint(Line(A,B),C)': (sb,sa,0)}

@@ -1,0 +1,39 @@
+[
+  {
+    "id": 107,
+    "selector": "107",
+    "mode": "high",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "viewport": [
+      511,
+      567
+    ],
+    "engine": {
+      "version": "5.4.920.0",
+      "supportsBase64": true,
+      "supportsXml": true,
+      "supportsEventListeners": true
+    },
+    "createMs": 726,
+    "expandedLength": 61154,
+    "objectCount": 66,
+    "updates": [
+      6.5,
+      4.5,
+      7.700000047683716,
+      4.6000001430511475,
+      4.3999998569488525,
+      7.5,
+      4.400000095367432,
+      4.799999952316284
+    ],
+    "updateMedian": 4.700000047683716,
+    "centers": [],
+    "samplePoints": 3,
+    "conditionalCenters": [],
+    "equilateralDefined": true,
+    "ggbBytes": 8663,
+    "cleanup": true,
+    "success": true
+  }
+]
