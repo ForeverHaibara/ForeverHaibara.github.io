@@ -8,7 +8,7 @@ import fixtures from './fixtures/gibert-pedal.json';
 const arithmetic=(text:string,values:Record<string,number>)=>Number(Function(...Object.keys(values),
   `return ${text.replace(/-\(([^()]*)\)\^(\d+)/gu,'-(($1)^$2)').replace(/\b([a-z]\w*)\^(\d+)\b/giu,'($1**$2)').replace(/\^/gu,'**')}`)(...Object.values(values)));
 describe('compiled Gibert plans versus exact source fixtures',()=>{
-  it.each([7,31,72,92,106])('checks every shape and boundary sample for Q%i',(id)=>{
+  it.each([0,7,13,31,72,77,78,92,106])('checks every shape and boundary sample for Q%i',(id)=>{
     const key=`Q${String(id).padStart(3,'0')}`;
     enableExperimentalGibertCurve(key,true);
     const scope={objects:new Map([['A','point'],['B','point'],['C','point']] as const),macros:new Set<string>()};

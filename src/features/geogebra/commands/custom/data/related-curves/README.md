@@ -46,7 +46,7 @@ An optional `backend` selects an implementation in
 recipes. Selection happens once from the literal ID at compile time. There is
 no native `If` catalogue dispatcher and no additional public Qxxx commands.
 
-Q007/Q018/Q020/Q031/Q070/Q072/Q092/Q109 select `similarityPolynomial`. Their source equations stay here;
+Q000/Q007/Q013/Q018/Q020/Q031/Q070/Q072/Q077/Q078/Q092/Q109 select `similarityPolynomial`. Their source equations stay here;
 `generated/relatedCurveCircuits.json` contains only local-frame numeric
 coefficients and shared scalar arithmetic. Generic code rotates/scales and
 translates those coefficients in separate native binding stages. Regenerate
@@ -98,15 +98,16 @@ inside a user's construction. It timed out in the isolated exploration.
 
 Q005 is a cubic and uses the same interface. Q036 has three supported members:
 `"Q036A"`, `"Q036B"`, `"Q036C"` (hyphens before the final letter are accepted).
-Q000 and Q035 are unimplemented families; a recognized suffix does not imply
-that a variant has been implemented.
+Q000 means H3 only (the Steiner deltoid / Simson-line envelope); use 0 or "Q000".
+aH3 is its anticomplement and is not a separate member of this interface. Q035
+is an unimplemented family; recognizing a suffix does not imply support.
 Do not register each new record as a separate public command or alias.
 
 For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT or supported RTF files. The default maximum degree is six; pass `--max-degree N` to inspect higher degrees. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses three exact triangles for the recognized simple centers (including X(4), X(5), X(7), X(8), X(20), X(59) and X(80)) and sample points (including orthic feet); it also checks the Q034, Q074 and Q099 relationships symbolically, and Q200/Q201 by exact substitution. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.
 
 ## Current unresolved catalogue entries (2026-10-31)
 
-The formal library now has 198 records covering 196 of the 203 catalogue IDs.
+The formal library now has 202 records covering 200 of the 203 catalogue IDs.
 Q007, Q031, Q072 and Q092 are enabled using the mixed residual policy, following
 all five exact-fixture shapes evaluated through their actual compiled numeric
 plans. Their earlier native lifecycle checks remain applicable; this round's
@@ -115,13 +116,25 @@ the browser URL. Compiled-plan evaluation is not a native-rendering check.
 
 | ID | Remaining issue |
 | --- | --- |
-| Q000 | H3/aH3 family members require independent point verification and separate integration. |
-| Q013 | Linked Q110.rtf differs from Q110a.rtf; assignment to Q013 needs confirmation. |
 | Q015 | No directly usable formula for the degree-12 curve. |
 | Q035 | Family/formula source is incomplete. |
-| Q077, Q078 | Equations available; independent verification of listed characteristic points remains. |
 | Q106 | Near-collinear far-circle compiled residual about 1.93e-6 still exceeds the mixed criterion; native confirmation and numerical improvement remain. |
 
 No other catalogue ID remains unimplemented. Numerical rendering limits, large
 translations and extreme degeneracies remain limitations rather than additional
 missing catalogue entries. Details: [technical record](../../docs/benchmarks/gibert-curves.md).
+
+## H3, Q013, Q077 and Q078 (2026-10-31)
+
+All four use the similarity-polynomial backend. Q000 is the H3 point equation,
+not the dual K010 tangency equation. Numeric ID zero is accepted; leading-zero
+integers such as 00 remain rejected. Q000H3/aH3 aliases are not registered.
+
+Independent definition checks are reproducible with
+`python scripts/geogebra/tools/check_gibert_constructions.py`: H3 envelope contacts,
+Q077 focus/directrix circumparabolas, and Q078 projections onto Simson lines.
+They avoid unavailable native high-index centers. Q013 is derived from the
+specified orthotransversal/circumcircle-polar perpendicularity condition.
+**The Q013 webpage's Q110.rtf download is treated as an incorrect attachment and
+is not used for Q013.** The inversion experiment gives degree five, not three;
+see [derivation and limitations](../../docs/benchmarks/gibert-curves.md).

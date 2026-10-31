@@ -79,7 +79,7 @@ export const expandTool = (overload: ToolOverload, args: readonly TypedExpressio
   compose?: (expression: string, bindings: ReadonlyMap<string, TypedExpression>) => TypedExpression): TypedExpression => {
   for (const [index, param] of overload.params.entries()) {
     if (param.type === 'catalogId' && args[index].literal === undefined)
-      throw new Error(`${param.name} must be a positive integer literal or a quoted catalogue ID, e.g. 12 or "Q012". Sliders and expressions are not supported.`);
+      throw new Error(`${param.name} must be a nonnegative integer literal or a quoted catalogue ID, e.g. 0, 12 or "Q012". Sliders and expressions are not supported.`);
   }
   if (overload.builder) {
     const built = GEOMETRY_BUILDERS[overload.builder](args, allocate);

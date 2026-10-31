@@ -16,13 +16,13 @@ export const gibertCurveRecords = records;
 const supported = records.map((record) => record.id).join(', ');
 
 export const normalizeGibertId = (literal: string): string => {
-  if (/^[1-9]\d*$/u.test(literal) && Number.isSafeInteger(Number(literal)))
+  if (/^(?:0|[1-9]\d*)$/u.test(literal) && Number.isSafeInteger(Number(literal)))
     return `Q${literal.padStart(3, '0')}`;
   if (/^"(?:\\.|[^"\\])*"$/u.test(literal)) {
     const value: unknown = JSON.parse(literal);
     if (typeof value === 'string' && /^Q\d{3,}(?:-?[A-Z][A-Z0-9-]*)?$/iu.test(value)) return value.toUpperCase().replace(/^(Q\d{3,})-([A-Z])$/u, '$1$2');
   }
-  throw new Error('Invalid Gibert curve ID. Use a positive integer literal or a quoted ID such as "Q012".');
+  throw new Error('Invalid Gibert curve ID. Use a nonnegative integer literal or a quoted ID such as "Q012".');
 };
 
 /** Only substitute names in generated arithmetic; never evaluate database text. */
@@ -35,7 +35,7 @@ const substitute = (source: string, bindings: ReadonlyMap<string, string>) => so
 export const gibertCurve: ExpressionBuilder = (args, allocate) => {
   const id = normalizeGibertId(args[3].literal!);
   if (id === 'Q036') throw new Error('Q036 is a family; use "Q036A", "Q036B" or "Q036C".');
-  if (['Q000', 'Q035'].includes(id))
+  if (id === 'Q035')
     throw new Error(`${id} represents a family of curves; its variants have not been implemented. Supported: ${supported}.`);
   const record = records.find((entry) => entry.id === id);
   if (!record) throw new Error(`${id} is not implemented. Supported: ${supported}.`);

@@ -183,7 +183,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
     if (expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
     const literalSource = stripParens(input);
     const literal = scope.literals?.get(literalSource)
-      ?? (/^(?:[1-9]\d*|"(?:\\.|[^"\\])*")$/u.test(literalSource) ? literalSource : undefined);
+      ?? (/^(?:0|[1-9]\d*|"(?:\\.|[^"\\])*")$/u.test(literalSource) ? literalSource : undefined);
     return { expression, type: entireType, ...(literal !== undefined ? { literal } : {}) };
   };
 

@@ -19,6 +19,7 @@ describe('Gibert catalogue IDs and execution boundary', () => {
     expect(plan('12')).toEqual(plan('"q012"'));
     expect(plan('((12))')).toEqual(plan('12'));
     expect(normalizeGibertId('2')).toBe('Q002');
+    expect(plan('0')).toEqual(plan('"Q000"'));
     expect(normalizeGibertId('"Q035-A"')).toBe('Q035A');
     const result = plan('39','high');
     expect(result.materialized).toBe(true);
@@ -41,7 +42,7 @@ describe('Gibert catalogue IDs and execution boundary', () => {
   }, 30000);
 
   it('rejects nonliteral selectors and unsupported entries without sampling their values', () => {
-    for (const id of ['n','6+6','12.0','1.2e1','floor(n)','012','0','-12','"Q012"+""'])
+    for (const id of ['n','6+6','12.0','1.2e1','floor(n)','012','00','-12','"Q012"+""'])
       expect(() => plan(id), id).toThrow(/literal/u);
     expect(() => plan('9007199254740993')).toThrow('Invalid Gibert');
     expect(() => plan('"Q035"')).toThrow('family');
