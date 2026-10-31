@@ -1,0 +1,3 @@
+# Extended targets deferred pending a reliable finite construction.
+72060 # Its three cyclic barycentric terms sum identically to zero (point at infinity).
+72904 # Current closed dependencies do not yield a consistent pair of listed lines.

@@ -47,8 +47,9 @@ INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)
 ARITY = {'M': 2, 'R': 2, 'J': 4, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'J': 6, 'G': 7, 'T': 8}
 RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3}
-LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on these lines\s*:\s*(.*)$', re.I)
-LINE_PAIR = re.compile(r'\s*[,;]?\s*\{*\s*(\d+)\s*,\s*(\d+)\s*\}*')
+LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese lines\s*:\s*(.*)$', re.I)
+LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
+BROKEN_LINE_TOKEN = re.compile(r'\s*[,;]?\s*\d{5,}(?=\s|$)')
 MAX_LIST_LINES = 10
 
 
@@ -99,7 +100,9 @@ def relation_lines(fragment: str) -> list[str]:
                                    and (following.lower() == 'and'
                                         or re.match(r'^X\s*\(\d+\)\s*X\s*\(\d+\)', following, re.I)))
             continued_pairs = ('for these' in line.lower() and re.match(r'^[({]\s*\d+\s*,\s*\d+', following))
-            if not (broken_intersection or continued_pairs):
+            broken_line_heading = (re.match(r'^X\s*\(\d+\)\s+lies on\b', line, re.I)
+                                   and re.match(r'^and (?:on )?these lines\s*:', following, re.I))
+            if not (broken_intersection or continued_pairs or broken_line_heading):
                 break
             line += ' ' + following
             index += 1
@@ -118,11 +121,18 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
         tail = ' '.join([heading.group(2), *lines[index + 1:]])
         pairs: list[tuple[int, int]] = []
         position = 0
-        while match := LINE_PAIR.match(tail, position):
-            a, b = map(int, match.groups())
-            if a > 0 and b > 0 and a != b and a not in excluded and b not in excluded:
-                pairs.append(tuple(sorted((a, b))))
-            position = match.end()
+        while position < len(tail):
+            match = LINE_PAIR.match(tail, position)
+            if match:
+                a, b = map(int, match.groups())
+                if a > 0 and b > 0 and a != b and a not in excluded and b not in excluded:
+                    pairs.append(tuple(sorted((a, b))))
+                position = match.end()
+                continue
+            broken = BROKEN_LINE_TOKEN.match(tail, position)
+            if not broken:
+                break
+            position = broken.end()
         return sorted(set(pairs), key=lambda pair: (sum(ref > NATIVE_MAX for ref in pair),
                                                       max(pair), sum(pair)))[:MAX_LIST_LINES]
     return []
@@ -208,7 +218,7 @@ def read_native_exclusions(path: Path) -> set[int]:
     return numbers
 
 
-def read_nonfinite_targets(path: Path) -> set[int]:
+def read_deferred_targets(path: Path) -> set[int]:
     numbers = {int(row.split()[0]) for row in path.read_text(encoding='utf-8').splitlines()
                if row.strip() and not row.lstrip().startswith('#')}
     if any(number <= NATIVE_MAX for number in numbers):
@@ -399,17 +409,17 @@ def read_native_atlas(path: Path) -> dict:
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
                    max_depth: int, max_length: int, max_conjugates: int = 1,
                    blocked_native: set[int] | None = None,
-                   nonfinite_targets: set[int] | None = None, atlas: dict | None = None) -> dict[int, Recipe]:
+                   deferred_targets: set[int] | None = None, atlas: dict | None = None) -> dict[int, Recipe]:
     selected = dict(seeds)
     blocked_native = blocked_native or set()
-    nonfinite_targets = nonfinite_targets or set()
-    if set(seeds) & nonfinite_targets:
-        raise ValueError('A reviewed seed is marked nonfinite')
+    deferred_targets = deferred_targets or set()
+    if set(seeds) & deferred_targets:
+        raise ValueError('A reviewed seed is marked deferred')
     if any(ref in blocked_native for recipe in seeds.values() for ref in recipe.references):
         raise ValueError('A reviewed seed references an unavailable native center')
     validate_graph(selected)
     pending = {number for number in candidates if number > NATIVE_MAX and number not in selected
-               and number not in nonfinite_targets}
+               and number not in deferred_targets}
     incidence_lines: dict[int, list[tuple[int, int]]] = {}
     for number, options in candidates.items():
         incidence_lines[number] = sorted({tuple(recipe.references[index:index+2]) for recipe in options
@@ -422,7 +432,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         coordinates = numeric_coordinates(selected, atlas) if atlas else None
         for number in pending:
             for recipe in candidates[number]:
-                if any(ref in blocked_native or ref in nonfinite_targets
+                if any(ref in blocked_native or ref in deferred_targets
                        or ref > NATIVE_MAX and ref not in selected
                        for ref in recipe.references):
                     continue
@@ -461,7 +471,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         current = selected[number]
         alternatives = [recipe for recipe in candidates.get(number, [])
                         if quality(recipe) < quality(current)
-                        and all(ref not in blocked_native and ref not in nonfinite_targets
+                        and all(ref not in blocked_native and ref not in deferred_targets
                                 and (ref <= NATIVE_MAX or ref in selected)
                                 for ref in recipe.references)]
         alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
@@ -487,20 +497,40 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     # A later substitution may move a supporting line. Recheck the finished
     # graph and replace any intersection whose final lines disagree.
     if atlas:
-        for _ in range(5):
+        for _ in range(30):
             coordinates = numeric_coordinates(selected, atlas)
+            finite = set.intersection(*(set(points) for points in coordinates.values()))
+            missing = set(selected) - finite
+            if missing:
+                number = min(missing)
+                doomed = {number}
+                while True:
+                    more = {target for target, recipe in selected.items()
+                            if target not in doomed and any(ref in doomed for ref in recipe.references)}
+                    if not more:
+                        break
+                    doomed.update(more)
+                if doomed & set(seeds):
+                    raise ValueError(f'Nonfinite result reaches a reviewed seed through X({number})')
+                for target in doomed:
+                    del selected[target]
+                print(f'Deferred nonfinite X({number}) and {len(doomed)-1} dependent recipes')
+                continue
             invalid = [number for number, recipe in selected.items() if recipe.operation == 'J'
                        and not line_candidate_supported(recipe, coordinates, incidence_lines.get(number, []))]
             if not invalid:
                 break
+            pruned = False
             for number in invalid:
+                if number not in selected:
+                    continue
                 current = selected[number]
                 options = sorted(candidates.get(number, []),
                                  key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
                 repaired = False
                 for recipe in options:
                     if (recipe.operation != 'J' or recipe == current
-                            or any(ref in blocked_native or ref in nonfinite_targets
+                            or any(ref in blocked_native or ref in deferred_targets
                                    or ref > NATIVE_MAX and ref not in selected for ref in recipe.references)
                             or not line_candidate_supported(recipe, coordinates, incidence_lines[number])):
                         continue
@@ -517,7 +547,22 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     selected[number] = current
                 if not repaired:
                     selected[number] = current
-                    raise ValueError(f'No numerically consistent line pair for X({number})')
+                    doomed = {number}
+                    while True:
+                        more = {target for target, recipe in selected.items()
+                                if target not in doomed and any(ref in doomed for ref in recipe.references)}
+                        if not more:
+                            break
+                        doomed.update(more)
+                    if doomed & set(seeds):
+                        raise ValueError(f'Invalid line pair reaches a reviewed seed through X({number})')
+                    for target in doomed:
+                        del selected[target]
+                    print(f'Deferred X({number}) and {len(doomed)-1} dependent recipes after final line screen')
+                    pruned = True
+                    break
+            if pruned:
+                continue
         else:
             raise ValueError('Line-pair consistency did not stabilize')
         coordinates = numeric_coordinates(selected, atlas)
@@ -576,7 +621,7 @@ def main() -> None:
         return
     chunk_dir = DATA / 'chunks'
     blocked_native = read_native_exclusions(DATA / 'native-unavailable.txt')
-    nonfinite_targets = read_nonfinite_targets(DATA / 'known-nonfinite.txt')
+    deferred_targets = read_deferred_targets(DATA / 'deferred-centers.txt')
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
         for path in sorted(chunk_dir.glob('*.txt')):
@@ -587,9 +632,9 @@ def main() -> None:
         depth, length = validate_graph(records)
         if any(ref in blocked_native for recipe in records.values() for ref in recipe.references):
             raise ValueError('Generated recipe references an unavailable native center')
-        if set(records) & nonfinite_targets or any(ref in nonfinite_targets for recipe in records.values()
+        if set(records) & deferred_targets or any(ref in deferred_targets for recipe in records.values()
                                                    for ref in recipe.references):
-            raise ValueError('Generated recipe includes a known nonfinite center')
+            raise ValueError('Generated recipe includes a deferred center')
         print(f'Valid: {len(records)} recipes, max depth {max(depth.values())}, max estimated length {max(length.values())}')
         return
     if set(args.auto_operations) - set(ARITY):
@@ -598,7 +643,7 @@ def main() -> None:
     all_candidates: dict[int, list[Recipe]] = {}
     entry_count = 0
     for part in args.parts:
-        entries, candidates = read_page(part, blocked_native | nonfinite_targets)
+        entries, candidates = read_page(part, blocked_native | deferred_targets)
         entry_count += len(entries)
         for number, options in candidates.items():
             if number in all_candidates:
@@ -609,7 +654,7 @@ def main() -> None:
                                          if recipe.operation in args.auto_operations]
                                for number, options in all_candidates.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, nonfinite_targets, read_native_atlas(CACHE / 'native-atlas.json'))
+                              blocked_native, deferred_targets, read_native_atlas(CACHE / 'native-atlas.json'))
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

@@ -49,6 +49,27 @@ class TriangleCenterImportTest(unittest.TestCase):
         missing_x = '<h3 id="X4105">X(4105) = CENTER</h3><p>(4105) lies on these lines: 1,2 3,4</p>'
         self.assertEqual(extract_entry(4105, missing_x, 3)[0].row(), '4105 J 1 2 3 4')
 
+    def test_composite_line_headings_and_damaged_pair(self):
+        cases = [
+            (3134, 'X(3134) lies on these lines:<br>2,3 122.136 125,526 2970,2972',
+             (2, 3, 122, 136)),
+            (3162, 'X(3162) lies on these lines: X(3162) lies on the cubics K177 and K1162 '
+             'and these lines: {2, 2138}, {6, 66}, {19, 614}', (2, 2138, 6, 66)),
+            (3234, 'X(3234) lies on the curve Q078, the Yff parabola, and these lines: '
+             '{100, 3239}, {101, 514}, {118, 516}', (100, 3239, 101, 514)),
+            (3516, 'X(3516) lies on these lines:<br>2,3 6,1204 393174<br>51,1192 55,1398',
+             (2, 3, 51, 1192)),
+            (7955, 'X(7955) lies on these lines: (220,2124), (223,3160)',
+             (220, 2124, 223, 3160)),
+            (3412, 'X(3412) lies on the Brocard-Kiepert quartic, Q073,<br>'
+             'and on these lines: 5,14 6,3411 13,382 15,20', (5, 14, 6, 3411)),
+        ]
+        for number, listing, expected in cases:
+            html = f'<h3 id="X{number}">X({number}) = CENTER</h3><p>{listing}</p>'
+            recipes = extract_entry(number, html, 3)
+            options = [recipe.references for recipe in recipes]
+            self.assertTrue(expected in options or (*expected[2:], *expected[:2]) in options, number)
+
     def test_infinite_target_does_not_exclude_conjugate_of_infinite_point(self):
         html = ('<h3 id="X4102">X(4102) = SPECIAL CENTER</h3>'
                 '<p>X(4102) lies on these lines: {1, 3}, {2, 4}<br>'
@@ -89,7 +110,7 @@ class TriangleCenterImportTest(unittest.TestCase):
                              Recipe(4000, 'M', (4001, 5))],
                       4001: [Recipe(4001, 'M', (6, 7))],
                       4002: [Recipe(4002, 'J', (1, 2, 3, 4))]}
-        selected = select_recipes(candidates, {}, 6, 6000, nonfinite_targets={4002})
+        selected = select_recipes(candidates, {}, 6, 6000, deferred_targets={4002})
         self.assertEqual(selected[4000].operation, 'M')
         self.assertNotIn(4002, selected)
 
