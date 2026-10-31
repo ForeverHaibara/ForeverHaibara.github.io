@@ -59,6 +59,20 @@ describe('Gibert catalogue IDs and execution boundary', () => {
     expect(compileStudioCommand('GibertCurve(A,B,C,n)',fileScope)).toBe('GibertCurve(A,B,C,n)');
   });
 
+  it('summarizes catalogue availability without listing hundreds of implemented IDs', () => {
+    for (const id of ['15','35','106','203','"Q000AH3"']) {
+      let message='';
+      try { plan(id); } catch(error) { message=String(error); }
+      expect(message).toContain('Catalogue Q000–Q202');
+      expect(message).toContain('unavailable entries: Q015, Q035, Q106');
+      expect(message).toContain('Q000 selects H3 only');
+      expect(message).toContain('Q036 requires "Q036A", "Q036B" or "Q036C"');
+      expect(message).not.toContain('Q001,');
+      expect(message.length).toBeLessThan(350);
+    }
+    expect(()=>plan('36')).toThrow('Q036 is a family; use "Q036A", "Q036B" or "Q036C".');
+  });
+
   it('preserves lexical ID provenance through hygienic compose bindings', () => {
     const wrapper: ToolDefinition = {name:'Example',description:'test',overloads:[{params:[{name:'A',type:'point'},{name:'B',type:'point'},{name:'C',type:'point'},{name:'id',type:'catalogId'}],returns:'implicitCurve',compose:'GibertCurve($A,$B,$C,$id)'}]};
     const tools = new Map<string,ToolDefinition>(studioTools); tools.set('example',wrapper);

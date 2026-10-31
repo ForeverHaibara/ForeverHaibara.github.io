@@ -5,7 +5,13 @@ import type { ExpressionBuilder } from '../types';
 import { RELATED_CURVE_BACKENDS } from './relatedCurveBackends';
 
 export const gibertCurveRecords = records;
-const supported = records.map((record) => record.id).join(', ');
+// Keep the directory range here rather than shipping catalogue.json metadata.
+// Family members (Q036A/B/C) cover their base catalogue entry.
+const implementedEntries = new Set(records.map(record => record.id.match(/^Q\d+/u)![0]));
+const unavailableEntries = Array.from({ length: 203 }, (_, index) => `Q${String(index).padStart(3, '0')}`)
+  .filter(id => !implementedEntries.has(id));
+const supportSummary = `Catalogue Q000–Q202; unavailable entries: ${unavailableEntries.join(', ') || 'none'}. `
+  + 'Q000 selects H3 only; Q036 requires "Q036A", "Q036B" or "Q036C".';
 
 export const normalizeGibertId = (literal: string): string => {
   if (/^(?:0|[1-9]\d*)$/u.test(literal) && Number.isSafeInteger(Number(literal)))
@@ -28,16 +34,16 @@ export const gibertCurve: ExpressionBuilder = (args, allocate) => {
   const id = normalizeGibertId(args[3].literal!);
   if (id === 'Q036') throw new Error('Q036 is a family; use "Q036A", "Q036B" or "Q036C".');
   if (id === 'Q035')
-    throw new Error(`${id} represents a family of curves; its variants have not been implemented. Supported: ${supported}.`);
+    throw new Error(`${id} represents a family of curves; its variants have not been implemented. ${supportSummary}`);
   const record = records.find((entry) => entry.id === id);
-  if (!record) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
+  if (!record) throw new Error(`${id} is not implemented. ${supportSummary}`);
   if (record.backend) {
     const backend = RELATED_CURVE_BACKENDS[record.backend];
     if (!backend) throw new Error(`${id}: unknown curve backend ${record.backend}.`);
     return backend(id, args, allocate);
   }
   const recipe = getRelatedCurveRecipe(id);
-  if (!recipe) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
+  if (!recipe) throw new Error(`${id} is registered but has no generated curve recipe.`);
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   const frame = vertices.flatMap((_, i) => {
     const b = vertices[(i + 1) % 3], c = vertices[(i + 2) % 3];
