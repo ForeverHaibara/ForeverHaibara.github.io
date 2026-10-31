@@ -35,6 +35,7 @@ Implementation files are grouped by responsibility:
 | `tests/contracts/` | Catalog overloads, native command compatibility and type boundaries. |
 | `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
+| [docs/benchmarks/gibert-curves-validation.md](docs/benchmarks/gibert-curves-validation.md) | Consolidated coverage and limits of native GibertCurve sampling. |
 
 ## Manage the library
 

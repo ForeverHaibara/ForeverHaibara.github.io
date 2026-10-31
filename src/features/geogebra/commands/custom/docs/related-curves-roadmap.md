@@ -1,6 +1,6 @@
 # 三角形高次曲线：GibertCurve 接入记录与后续计划
 
-日期：2026-10-29。**已接入 190 条**：Q001–Q006、Q008–Q012、Q014、Q016–Q017、Q019、Q021–Q030、Q032–Q034、Q036A/B/C、Q037–Q069、Q071、Q073–Q076、Q079–Q091、Q093–Q105、Q107–Q108、Q110–Q202。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，先前扩展抽样见 [记录](benchmarks/gibert-curves-expansion.md)，上批抽样见 [系统扩展记录](benchmarks/gibert-curves-systematic.md)，Q100 批次见 [抽样记录](benchmarks/gibert-curves-q100.md)，Q202 批次见 [抽样记录](benchmarks/gibert-curves-q202.md)。
+日期：2026-10-29。**已接入 190 条**：Q001–Q006、Q008–Q012、Q014、Q016–Q017、Q019、Q021–Q030、Q032–Q034、Q036A/B/C、Q037–Q069、Q071、Q073–Q076、Q079–Q091、Q093–Q105、Q107–Q108、Q110–Q202。尚未覆盖整个目录。原始可行性实验见 [P0 记录](benchmarks/related-curves-probe.md)，批量接入的验证范围见 [抽样总结](benchmarks/gibert-curves-validation.md)。
 
 ## 本轮采用的约定
 
