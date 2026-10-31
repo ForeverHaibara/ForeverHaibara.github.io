@@ -36,6 +36,7 @@ Implementation files are grouped by responsibility:
 | `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
 | [docs/related-curves.md](docs/related-curves.md) | Consolidated coverage and limits of native GibertCurve sampling. |
+| [docs/triangle-centers-plan.md](docs/triangle-centers-plan.md) | Design and staged implementation plan for extending TriangleCenter beyond GeoGebra's native range. |
 
 ## Manage the library
 
