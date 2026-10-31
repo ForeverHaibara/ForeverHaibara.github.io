@@ -1,0 +1,19 @@
+# Native GeoGebra TriangleCenter results undefined for A=(0,0), B=(6,0),
+# C=(1,4) and C=(-1,2), screened on 2026-10-31.
+# These IDs are excluded as construction dependencies until re-evaluated.
+30
+369
+512
+513
+516
+520
+523
+524
+528
+530
+531
+698
+812
+824
+888
+971

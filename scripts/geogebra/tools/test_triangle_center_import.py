@@ -22,6 +22,18 @@ class TriangleCenterImportTest(unittest.TestCase):
                 '<p>X(4002) lies on line X(3)X(4)<br>'
                 'X(4002) = midpoint of X(5) and X(6) if ABC is acute</p>')
         self.assertEqual(extract_entry(4002, html, 3), [])
+        self.assertEqual(extract_entry(4003, '<h3 id="X4003">X(4003) = IDEAL POINT</h3>'
+                                       '<p>X(4003) = isogonal conjugate of X(4)</p>', 3), [])
+
+    def test_conjugates_line_reflection_and_wrapped_intersection(self):
+        html = ('<h3 id="X4100">X(4100) = ISOGONAL CONJUGATE OF X(7)</h3>'
+                '<p>X(4100) = isotomic conjugate of X(8)<br>'
+                'X(4100) = reflection of X(9) in line X(1)X(2)<br>'
+                'X(4100) = intersection of lines X(1)X(3) and<br>X(2)X(4)<br>'
+                'X(4100) = isogonal conjugate of X(10) wrt another triangle</p>')
+        recipes = extract_entry(4100, html, 3)
+        self.assertEqual({(r.operation, r.references) for r in recipes},
+                         {('G', (7,)), ('T', (8,)), ('L', (9, 1, 2)), ('J', (1, 3, 2, 4))})
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],
@@ -33,6 +45,21 @@ class TriangleCenterImportTest(unittest.TestCase):
         selected = select_recipes(candidates, {}, 6, 6000)
         self.assertEqual(set(selected), {4000, 4001})
         self.assertEqual(validate_graph(selected)[0][4000], 2)
+
+    def test_limits_conjugate_chains(self):
+        candidates = {4000: [Recipe(4000, 'G', (1,))],
+                      4001: [Recipe(4001, 'T', (4000,))],
+                      4002: [Recipe(4002, 'M', (4000, 2))]}
+        self.assertEqual(set(select_recipes(candidates, {}, 6, 6000)), {4000, 4002})
+
+    def test_prefers_safer_relation_and_skips_unavailable_native_anchor(self):
+        seeds = {5000: Recipe(5000, 'M', (1, 2))}
+        candidates = {4000: [Recipe(4000, 'J', (1, 2, 3, 4)),
+                             Recipe(4000, 'M', (5, 5000))],
+                      4001: [Recipe(4001, 'J', (1, 2, 3, 30))]}
+        selected = select_recipes(candidates, seeds, 6, 6000, blocked_native={30})
+        self.assertEqual(selected[4000].operation, 'M')
+        self.assertNotIn(4001, selected)
 
 
 if __name__ == '__main__':

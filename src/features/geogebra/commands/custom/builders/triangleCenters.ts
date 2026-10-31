@@ -1,12 +1,13 @@
 import type { ExpressionBuilder } from '../types';
+import { conjugate } from './conjugates';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'C' | 'A' | 'P'; references: number[] };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T'; references: number[] };
 const chunkImports = import.meta.glob<string>('../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
 const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();
 const loading = new Map<number, Promise<void>>();
-const size = (operation: Recipe['operation']) => operation === 'J' ? 4 : operation === 'P' ? 3
-  : operation === 'C' || operation === 'A' ? 1 : 2;
+const size = (operation: Recipe['operation']) => operation === 'J' ? 4 : operation === 'P' || operation === 'L' ? 3
+  : ['C', 'A', 'G', 'T'].includes(operation) ? 1 : 2;
 
 const loadChunk = async (id: number): Promise<void> => {
   const chunk = Math.floor(id / 1000);
@@ -23,7 +24,7 @@ const loadChunk = async (id: number): Promise<void> => {
       const references = referenceText.map(Number);
       const operation = opcode as Recipe['operation'];
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'C', 'A', 'P'].includes(opcode)
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'C', 'A', 'P', 'L', 'G', 'T'].includes(opcode)
         || references.length !== size(operation)
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
@@ -48,7 +49,7 @@ export const prepareTriangleCenter = async (id: number, visiting = new Set<numbe
   finally { visiting.delete(id); }
 };
 
-export const triangleCenter: ExpressionBuilder = (args) => {
+export const triangleCenter: ExpressionBuilder = (args, allocate) => {
   const id = Number(args[3].literal);
   if (!Number.isSafeInteger(id) || id <= 3053) throw new Error('Extended TriangleCenter requires an integer literal above 3053.');
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
@@ -64,6 +65,9 @@ export const triangleCenter: ExpressionBuilder = (args) => {
       if (recipe.operation === 'M') return `Midpoint(${points[0]},${points[1]})`;
       if (recipe.operation === 'R') return `Reflect(${points[0]},${points[1]})`;
       if (recipe.operation === 'P') return `ClosestPoint(Line(${points[1]},${points[2]}),${points[0]})`;
+      if (recipe.operation === 'L') return `Reflect(${points[0]},Line(${points[1]},${points[2]}))`;
+      if (recipe.operation === 'G' || recipe.operation === 'T') return conjugate(recipe.operation === 'G')(
+        [...vertices, points[0]].map((expression) => ({ expression, type: 'point' })), allocate);
       if (recipe.operation === 'C' || recipe.operation === 'A') {
         const [a, b, c] = vertices;
         return recipe.operation === 'C' ? `((${a})+(${b})+(${c})-(${points[0]}))/2`

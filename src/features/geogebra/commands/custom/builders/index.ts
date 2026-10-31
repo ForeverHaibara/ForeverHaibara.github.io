@@ -10,15 +10,7 @@ import { QUADRANGLE_BUILDERS } from './quadrangle';
 import { QUADRILATERAL_BUILDERS } from './quadrilateral';
 import { gibertCurve } from './relatedCurves';
 import { triangleCenter } from './triangleCenters';
-
-const conjugate = (isogonal: boolean): ExpressionBuilder => (args, allocate) => {
-  const [a, b, c, p] = args.map((arg) => arg.expression);
-  // Signed area coordinates; products replace reciprocals and extend across triangle sidelines.
-  return bind(triangleAreas([a, b, c, p]), allocate, ([u, v, w]) => {
-    const weights = [mul(v, w), mul(w, u), mul(u, v)].map((weight, i) => isogonal ? mul(weight, `Distance(${[b, c, a][i]},${[c, a, b][i]})^2`) : weight);
-    return `If((${u}+${v}+${w})!=0,${bind(weights, allocate, ([r, s, t]) => `(${r}*(${a})+${s}*(${b})+${t}*(${c}))/(${r}+${s}+${t})`)})`;
-  });
-};
+import { conjugate } from './conjugates';
 
 const brocard: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);

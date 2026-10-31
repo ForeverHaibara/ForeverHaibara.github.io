@@ -34,9 +34,14 @@ COMPLEMENT = re.compile(rf'^complement of {POINT}', re.I)
 ANTICOMPLEMENT = re.compile(rf'^anticomplement of {POINT}', re.I)
 INTERSECTION = re.compile(rf'^intersection of lines? {POINT}\s*{POINT}\s+and\s+{POINT}\s*{POINT}', re.I)
 PROJECTION = re.compile(rf'^orthogonal projection of {POINT}\s+on\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
-CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'C': 1, 'A': 1, 'P': 3}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'J': 5}
+LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
+ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
+ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
+CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
+IDEAL_TITLE = re.compile(r'\b(?:infinity point|point at infinity|ideal point|infinite point)\b', re.I)
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'J': 6, 'G': 7, 'T': 8}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3}
 
 
 @dataclass(frozen=True)
@@ -65,21 +70,46 @@ def entry_lines(fragment: str) -> list[str]:
     return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
 
 
+def relation_lines(fragment: str) -> list[str]:
+    lines = entry_lines(fragment)
+    joined: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        while index + 1 < len(lines):
+            following = lines[index + 1]
+            broken_intersection = (re.search(r'\b(?:and|line)\s*$', line, re.I)
+                                   and re.match(r'^X\s*\(\d+\)\s*X\s*\(\d+\)', following, re.I))
+            continued_pairs = ('for these' in line.lower() and re.match(r'^[({]\s*\d+\s*,\s*\d+', following))
+            if not (broken_intersection or continued_pairs):
+                break
+            line += ' ' + following
+            index += 1
+        joined.append(line)
+        index += 1
+    return joined
+
+
 def extract_entry(number: int, fragment: str, part: int) -> list[Recipe]:
     found: dict[tuple[str, tuple[int, ...]], str] = {}
-    for line in entry_lines(fragment):
+    lines = relation_lines(fragment)
+    if lines and IDEAL_TITLE.search(lines[0]):
+        return []
+    for line in lines:
         relation = RELATION.match(line)
         if not relation or int(relation.group(1)) != number:
             continue
         body = relation.group(2)
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
-                                (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'), (PROJECTION, 'P')):
+                                (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'), (PROJECTION, 'P'),
+                                (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T')):
             match = pattern.match(body)
             if match and not CONDITIONAL.search(body[match.end():]):
                 found[(opcode, tuple(map(int, match.groups())))] = line
         # ETC also gives sets of equivalent midpoint/reflection constructions.
         for prefix, opcode in (('midpoint of X(i) and X(j) for these', 'M'),
-                               ('reflection of X(i) in X(j) for these', 'R')):
+                               ('reflection of X(i) in X(j) for these', 'R'),
+                               ('reflection of X(i) and X(j) for these', 'R')):
             if body.lower().startswith(prefix.lower()):
                 found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
     return [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
@@ -116,6 +146,14 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
     return records
 
 
+def read_native_exclusions(path: Path) -> set[int]:
+    numbers = {int(row.split()[0]) for row in path.read_text(encoding='utf-8').splitlines()
+               if row.strip() and not row.lstrip().startswith('#')}
+    if any(number < 1 or number > NATIVE_MAX for number in numbers):
+        raise ValueError(f'Invalid native exclusion in {path}')
+    return numbers
+
+
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
     depth: dict[int, int] = {}
     length: dict[int, int] = {}
@@ -134,7 +172,8 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
         try:
             children = [visit(reference) for reference in records[number].references]
             depth[number] = 1 + max((item[0] for item in children), default=0)
-            length[number] = 24 + sum(item[1] for item in children)
+            length[number] = ((900 + 15 * children[0][1]) if records[number].operation in {'G', 'T'}
+                              else 24 + sum(item[1] for item in children))
             return depth[number], length[number]
         finally:
             visiting.remove(number)
@@ -144,28 +183,57 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
     return depth, length
 
 
+def conjugate_levels(records: dict[int, Recipe]) -> dict[int, int]:
+    levels: dict[int, int] = {}
+
+    def visit(number: int) -> int:
+        if number <= NATIVE_MAX:
+            return 0
+        if number not in levels:
+            recipe = records[number]
+            levels[number] = int(recipe.operation in {'G', 'T'}) + max(
+                (visit(ref) for ref in recipe.references), default=0)
+        return levels[number]
+
+    for number in records:
+        visit(number)
+    return levels
+
+
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
-                   max_depth: int, max_length: int) -> dict[int, Recipe]:
+                   max_depth: int, max_length: int, max_conjugates: int = 1,
+                   blocked_native: set[int] | None = None) -> dict[int, Recipe]:
     selected = dict(seeds)
+    blocked_native = blocked_native or set()
+    if any(ref in blocked_native for recipe in seeds.values() for ref in recipe.references):
+        raise ValueError('A reviewed seed references an unavailable native center')
     validate_graph(selected)
     pending = {number for number in candidates if number > NATIVE_MAX and number not in selected}
     while pending:
-        possible: list[tuple[tuple[int, int, int, tuple[int, ...]], Recipe]] = []
+        possible: list[tuple[tuple[int, int, int, int, tuple[int, ...]], Recipe]] = []
         depth, length = validate_graph(selected)
+        nonlinear = conjugate_levels(selected)
         for number in pending:
             for recipe in candidates[number]:
-                if any(ref > NATIVE_MAX and ref not in selected for ref in recipe.references):
+                if any(ref in blocked_native or ref > NATIVE_MAX and ref not in selected
+                       for ref in recipe.references):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
-                candidate_length = 24 + sum(length.get(ref, 27) for ref in recipe.references)
-                if candidate_depth <= max_depth and candidate_length <= max_length:
-                    key = (candidate_depth, candidate_length, PRIORITY[recipe.operation], recipe.references)
+                candidate_length = ((900 + 15 * length.get(recipe.references[0], 27))
+                                    if recipe.operation in {'G', 'T'}
+                                    else 24 + sum(length.get(ref, 27) for ref in recipe.references))
+                candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
+                    (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
+                if (candidate_depth <= max_depth and candidate_length <= max_length
+                        and candidate_nonlinear <= max_conjugates):
+                    key = (RISK[recipe.operation], candidate_depth, candidate_length,
+                           PRIORITY[recipe.operation], recipe.references)
                     possible.append((key, recipe))
         if not possible:
             break
-        # Add every currently reachable point; alternatives for each point are
-        # ranked by construction depth, expanded length, then operation type.
-        best: dict[int, tuple[tuple[int, int, int, tuple[int, ...]], Recipe]] = {}
+        # Add every currently reachable point; prefer safer operations before
+        # construction depth and estimated expression length.
+        best: dict[int, tuple[tuple[int, int, int, int, tuple[int, ...]], Recipe]] = {}
         for item in possible:
             number = item[1].number
             if number not in best or item[0] < best[number][0]:
@@ -212,15 +280,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'build', 'check', 'verify'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCA',
+    parser.add_argument('--auto-operations', default='MRCAPLJGT',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-depth', type=int, default=6)
     parser.add_argument('--max-length', type=int, default=6000)
+    parser.add_argument('--max-conjugates', type=int, default=1)
     args = parser.parse_args()
     if args.action == 'fetch':
         fetch(args.parts)
         return
     chunk_dir = DATA / 'chunks'
+    blocked_native = read_native_exclusions(DATA / 'native-unavailable.txt')
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
         for path in sorted(chunk_dir.glob('*.txt')):
@@ -229,6 +299,8 @@ def main() -> None:
                     raise ValueError(f'Duplicate or misplaced X({number}) in {path}')
                 records[number] = recipe
         depth, length = validate_graph(records)
+        if any(ref in blocked_native for recipe in records.values() for ref in recipe.references):
+            raise ValueError('Generated recipe references an unavailable native center')
         print(f'Valid: {len(records)} recipes, max depth {max(depth.values())}, max estimated length {max(length.values())}')
         return
     if set(args.auto_operations) - set(ARITY):
@@ -247,7 +319,7 @@ def main() -> None:
     selected = select_recipes({number: [recipe for recipe in options
                                          if recipe.operation in args.auto_operations]
                                for number, options in all_candidates.items()},
-                              seeds, args.max_depth, args.max_length)
+                              seeds, args.max_depth, args.max_length, args.max_conjugates, blocked_native)
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')
