@@ -79,5 +79,7 @@ button.onclick = async () => {
     data.cases = cases;
     document.querySelector('#json')!.textContent = JSON.stringify(data, null, 2);
     button.disabled = false;
+    if (window.parent !== window) window.parent.postMessage({type:'gibert-structured-result',data},location.origin);
   }
 };
+if(params.has('autorun')) button.click();

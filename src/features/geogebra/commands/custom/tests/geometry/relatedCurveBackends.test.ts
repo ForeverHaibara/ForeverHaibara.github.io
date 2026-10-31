@@ -14,7 +14,7 @@ describe('opt-in Gibert curve backends',()=>{
       const result=compileStudioPlan(`g=GibertCurve(A,B,C,${id})`,scope(),'0123456789abcdef');
       expect(result.materialized).toBe(true);expect(result.requiresMaterialization).toBe(true);
       expect(result.helpers.every(h=>h.kind==='number')).toBe(true);
-      expect(result.helpers.length).toBeLessThan(240);
+      expect(result.helpers.length).toBeLessThan(260);
       const length=result.output.length+result.helpers.reduce((n,h)=>n+h.name.length+h.expression.length,0);
       expect(length,identifier).toBeLessThan(150_000);
       expect(result.output).toContain('ImplicitCurve');

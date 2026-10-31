@@ -1,5 +1,7 @@
 # GibertCurve：接口、数据维护与验收
 
+当前状态（2026-10-31）：新增正式接入 Q007、Q031、Q072、Q092；共 198 个记录覆盖 196 个目录编号。尚未解决 **Q000、Q013、Q015、Q035、Q077、Q078、Q106**，具体原因见 [数据维护说明的当前清单](../data/related-curves/README.md#current-unresolved-catalogue-entries-2026-10-31)。本轮使用实际编译计划完成五组精确夹具数值复核，未把它表述为重新完成原生绘图验收。
+
 正式支持与暂缓编号以 [数据维护说明](../data/related-curves/README.md) 和数据文件为准；不要根据历史批次数量推断当前支持范围。数学推导、生成方案与数值限制见 [技术说明](benchmarks/gibert-curves.md)。
 
 ## 数学和维护约定

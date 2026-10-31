@@ -46,7 +46,7 @@ An optional `backend` selects an implementation in
 recipes. Selection happens once from the literal ID at compile time. There is
 no native `If` catalogue dispatcher and no additional public Qxxx commands.
 
-Q018/Q020/Q070/Q109 select `similarityPolynomial`. Their source equations stay here;
+Q007/Q018/Q020/Q031/Q070/Q072/Q092/Q109 select `similarityPolynomial`. Their source equations stay here;
 `generated/relatedCurveCircuits.json` contains only local-frame numeric
 coefficients and shared scalar arithmetic. Generic code rotates/scales and
 translates those coefficients in separate native binding stages. Regenerate
@@ -66,8 +66,8 @@ The specialized native harness is
 `/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=18` (or 20).
 It complements the existing lifecycle/performance harness above.
 
-`deferred.json` separately retains five mathematically checked definitions that
-failed the transformed native precision checks. They are not supported commands.
+`deferred.json` retains Q106, whose near-collinear far-circle sample still fails
+the mixed precision criterion in compiled-plan evaluation. It is not a supported command.
 Their circuits live in `generated/relatedCurveCandidates.json`, imported only by
 authoring pages. To regenerate/check this experimental set, supply
 `--source src/features/geogebra/commands/custom/data/related-curves/deferred.json`
@@ -103,3 +103,25 @@ that a variant has been implemented.
 Do not register each new record as a separate public command or alias.
 
 For a batch, `python scripts/geogebra/tools/inspect_related_curve_candidates.py CACHE_DIR OUTPUT.json` can inspect locally downloaded pages and their explicitly linked TXT or supported RTF files. The default maximum degree is six; pass `--max-degree N` to inspect higher degrees. It makes no requests and does not edit the database. Its output is only a review queue: inspect each source and point attribution before adding a record. The incidence checker uses three exact triangles for the recognized simple centers (including X(4), X(5), X(7), X(8), X(20), X(59) and X(80)) and sample points (including orthic feet); it also checks the Q034, Q074 and Q099 relationships symbolically, and Q200/Q201 by exact substitution. Downloads are manual, single-concurrency and rate-limited; no automatic database update is installed.
+
+## Current unresolved catalogue entries (2026-10-31)
+
+The formal library now has 198 records covering 196 of the 203 catalogue IDs.
+Q007, Q031, Q072 and Q092 are enabled using the mixed residual policy, following
+all five exact-fixture shapes evaluated through their actual compiled numeric
+plans. Their earlier native lifecycle checks remain applicable; this round's
+native browser rerun was stopped by the UI tool because it could not establish
+the browser URL. Compiled-plan evaluation is not a native-rendering check.
+
+| ID | Remaining issue |
+| --- | --- |
+| Q000 | H3/aH3 family members require independent point verification and separate integration. |
+| Q013 | Linked Q110.rtf differs from Q110a.rtf; assignment to Q013 needs confirmation. |
+| Q015 | No directly usable formula for the degree-12 curve. |
+| Q035 | Family/formula source is incomplete. |
+| Q077, Q078 | Equations available; independent verification of listed characteristic points remains. |
+| Q106 | Near-collinear far-circle compiled residual about 1.93e-6 still exceeds the mixed criterion; native confirmation and numerical improvement remain. |
+
+No other catalogue ID remains unimplemented. Numerical rendering limits, large
+translations and extreme degeneracies remain limitations rather than additional
+missing catalogue entries. Details: [technical record](../../docs/benchmarks/gibert-curves.md).
