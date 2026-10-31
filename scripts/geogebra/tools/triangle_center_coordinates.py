@@ -36,8 +36,11 @@ def coordinate_text(fragment: str) -> list[str]:
 
 def normalize_formula(raw: str) -> str | None:
     raw = unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*').replace('π', 'pi')
+
     # ETC X(3371) prints pi8 alongside the equivalent cos(A-3*pi/8).
-    raw = re.sub(r'\bpi8\b', 'pi/8', raw)
+    # raw = re.sub(r'\bpi8\b', 'pi/8', raw) # unsafe, do not use
+
+
     for _ in range(3):
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'\b([Ss])_([ABCabc])\b', lambda m: m.group(1) + m.group(2).upper()
