@@ -40,7 +40,7 @@ Implementation files are grouped by responsibility:
 
 ## Manage the library
 
-`TriangleCenter(A,B,C,id)` now has a small reviewed extension sample of 17 centers, including X(73001) with a dependency across data chunks. Native IDs through 3053 and computed number selectors retain GeoGebra's original behavior. Higher integer-valued numeric literals require a reviewed record; current records and operation meanings are in [data/triangle-centers/README.md](data/triangle-centers/README.md). The larger catalogue and data layout are staged in the [plan](docs/triangle-centers-plan.md).
+`TriangleCenter(A,B,C,id)` currently supports 986 higher centers from compact, lazily loaded ETC construction recipes. Native IDs through 3053 and computed number selectors retain GeoGebra's original behavior. The current automatic batch covers explicit midpoint, reflection, complement, and anticomplement relations; extraction and manual update commands are in [data/triangle-centers/README.md](data/triangle-centers/README.md). Further operations and pages are staged in the [plan](docs/triangle-centers-plan.md).
 
 `library.json` is the versioned, declarative source for names, descriptions,
 typed overloads and implementations. It also feeds command completion and

@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3357, 73001]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3357, 5305, 72478, 73001]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -40,7 +40,7 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,3054)', scope)).toBe('TriangleCenter(A,B,C,3054)');
     expect(extendedTriangleCenterIds('P=TriangleCenter(A,B,C,3070)+TriangleCenter(A,B,C,3054)', environment()))
       .toEqual([3070, 3054]);
-    expect(() => compileStudioCommand('TriangleCenter(A,B,C,3062)', environment())).toThrow('X(3062) is not implemented');
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,100000)', environment())).toThrow('X(100000) is not implemented');
   });
 
   it('uses compact affine recipes without loading symbolic coordinates', () => {
@@ -60,5 +60,15 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,3109)', environment())).toBe(projection);
     expect(compileStudioCommand('TriangleCenter(A,B,C,73001)', environment()))
       .toBe(`Reflect(TriangleCenter(A,B,C,476),${projection})`);
+  });
+
+  it('expands automatically extracted recipes with forward and cross-chunk references', () => {
+    const forward = compileStudioCommand('TriangleCenter(A,B,C,5305)', environment());
+    expect(forward).toContain('Midpoint(');
+    expect(forward).not.toContain('TriangleCenter(A,B,C,7583)');
+    expect(forward).not.toContain('TriangleCenter(A,B,C,7584)');
+    const later = compileStudioCommand('TriangleCenter(A,B,C,72478)', environment());
+    expect(later).toContain('Reflect(');
+    expect(later).not.toContain('TriangleCenter(A,B,C,3057)');
   });
 });

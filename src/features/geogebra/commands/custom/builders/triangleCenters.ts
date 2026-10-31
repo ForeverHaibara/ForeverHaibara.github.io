@@ -25,7 +25,7 @@ const loadChunk = async (id: number): Promise<void> => {
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
         || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'C', 'A', 'P'].includes(opcode)
         || references.length !== size(operation)
-        || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference >= number))
+        || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
       parsed.set(number, { operation, references });
     }

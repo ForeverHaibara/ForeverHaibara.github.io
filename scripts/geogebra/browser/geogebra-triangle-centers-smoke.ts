@@ -32,7 +32,8 @@ button.onclick = async () => {
     await run('n=2');
     const dynamic = await run('Dynamic=TriangleCenter(A,B,C,n)');
     check(!dynamic.expandedCommand || dynamic.expandedCommand === 'Dynamic=TriangleCenter(A,B,C,n)', 'dynamic selector was changed');
-    const ids = [3054, 3056, 3057, 3059, 3060, 3061, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3357, 73001];
+    // Stratified sample across ETC parts, operation types, and dependency depth.
+    const ids = [3054, 3057, 3070, 3109, 3357, 5305, 5615, 6279, 7761, 9162, 72185, 72478, 72983, 73001, 73212];
     const initial = new Map<number, [number, number]>();
     for (const id of ids) {
       const result = await run(`X${id}=TriangleCenter(A,B,C,${id})`);
@@ -43,6 +44,11 @@ button.onclick = async () => {
       check(coords.every(Number.isFinite), `X(${id}) has nonfinite coordinates`);
       initial.set(id, coords);
       report(`PASS X(${id}) = (${coords.map((n) => n.toFixed(5)).join(', ')})`);
+    }
+    await api('setCoords', 'C', -1, 2);
+    for (const id of ids) {
+      check(await api('isDefined', `X${id}`), `X(${id}) is undefined for an obtuse triangle`);
+      check((await position(`X${id}`)).every(Number.isFinite), `X(${id}) is nonfinite for an obtuse triangle`);
     }
     await api('setCoords', 'C', 1.3, 3.9);
     const moved = new Map<number, [number, number]>();
@@ -60,7 +66,7 @@ button.onclick = async () => {
       `X(${id}) lost its dependency after reopen`);
     data.ids = ids;
     data.success = true;
-    report(`COMPLETE: native passthrough, ${ids.length} points, drag and reopen`);
+    report(`COMPLETE: native passthrough, ${ids.length} sampled points, obtuse triangle, drag and reopen`);
   } catch (error) { data.success = false; data.error = String(error); report(`FAIL ${String(error)}`); }
   finally { document.querySelector<HTMLPreElement>('#json')!.textContent = JSON.stringify(data, null, 2); button.disabled = false; }
 };
