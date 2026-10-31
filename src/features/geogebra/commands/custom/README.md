@@ -13,7 +13,7 @@ command; its input points need not be deleted. Deleting the input points also
 removes their dependent outputs, which can make redrawing appear to fix an old
 definition.
 
-The library is still unpublished and uses version **0.2.0**. Development
+The library is still unpublished and uses version **0.3.0**. Development
 milestones in the implementation notes are not release versions.
 
 ## Directory layout
@@ -39,6 +39,8 @@ Implementation files are grouped by responsibility:
 | [docs/triangle-centers-plan.md](docs/triangle-centers-plan.md) | Design and staged implementation plan for extending TriangleCenter beyond GeoGebra's native range. |
 
 ## Manage the library
+
+`TriangleCenter(A,B,C,id)` now has a small reviewed extension sample: X(3054), X(3056), X(3057), X(3059), X(3060), and X(3061). Native IDs through 3053 and computed number selectors retain GeoGebra's original behavior. Higher integer literals require a reviewed record; current records and operation meanings are in [data/triangle-centers/README.md](data/triangle-centers/README.md). The larger catalogue and lazy data layout are staged in the [plan](docs/triangle-centers-plan.md).
 
 `library.json` is the versioned, declarative source for names, descriptions,
 typed overloads and implementations. It also feeds command completion and
@@ -73,7 +75,7 @@ case-insensitively across canonical commands and aliases; self-aliases, duplicat
 aliases and malformed names are rejected. Flat lists avoid alias chains. File
 macros retain priority at the call site, including when they own only an alias.
 
-The catalog currently has **163 canonical commands and 188 callable names**.
+The catalog currently has **164 canonical commands and 189 callable names**.
 For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
 `OppositeArcMidpoint`.
 

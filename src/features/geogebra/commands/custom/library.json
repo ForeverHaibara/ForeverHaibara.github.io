@@ -4,6 +4,13 @@
   "version": "0.3.0",
   "tools": [
     {
+      "name": "TriangleCenter",
+      "description": "A numbered ETC triangle center. Native GeoGebra handles its supported IDs and nonliteral number inputs; reviewed higher literal IDs use site recipes.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "point", "builder": "triangleCenter"}
+      ]
+    },
+    {
       "name": "GibertCurve",
       "description": "A triangle curve from Gibert's catalogue. Use a literal number or a quoted ID such as \"Q036A\". See the related-curves database for supported IDs. Requires Medium or High performance and a new output label.",
       "overloads": [

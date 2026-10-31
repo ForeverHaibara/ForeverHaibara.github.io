@@ -7,6 +7,7 @@ const modes: Record<string, { title: string; description?: string; load: () => P
   smoke: { title: 'GeoGebra custom command verification', description: 'Disposable real-engine construction. Site macros are never installed; the final check imports a user-tool fixture.', load: () => import('./geogebra-smoke') },
   curve: { title: 'Curve optimization verification', load: () => import('./geogebra-curve-optimization-smoke') },
   gibert: { title: 'GibertCurve native verification', description: 'Disposable production-pipeline checks. ID and mode are selected by URL.', load: () => import('./geogebra-gibert-smoke') },
+  centers: { title: 'TriangleCenter extension verification', description: 'Disposable real-engine check of the initial ETC recipes and native passthrough.', load: () => import('./geogebra-triangle-centers-smoke') },
   structured: { title: 'Structured Gibert curve verification', load: () => import('./geogebra-gibert-structured-smoke') },
   batch: { title: 'Gibert precision batch', load: () => import('./geogebra-gibert-batch') },
   qlcu1: { title: 'QLCu1 timing comparison', description: 'Disposable native construction; production QLCu1 stays unchanged. Fixed 800×480 view, algebra panel closed. Timings exclude site compilation and applet/module loading.', load: () => import('./geogebra-qlcu1-benchmark') },
@@ -19,7 +20,7 @@ document.title = title.textContent = mode.title;
 description.textContent = mode.description ?? '';
 if (page === 'curve') show('#command-controls');
 if (page === 'qlcu1') { show('#timing'); show('#raw-details'); document.querySelector('#run')!.textContent = 'Run comparison'; }
-if (['gibert', 'structured', 'probe', 'batch'].includes(page)) show('#json-details');
+if (['gibert', 'structured', 'probe', 'batch', 'centers'].includes(page)) show('#json-details');
 if (page === 'probe') document.querySelector('#run')!.textContent = 'Run probe';
 if (page === 'batch') { hide('#viewport'); hide('#results'); show('#test'); document.querySelector('#run')!.textContent = 'Run five candidates'; }
 void mode.load();

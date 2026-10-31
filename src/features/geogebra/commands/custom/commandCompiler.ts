@@ -30,6 +30,14 @@ const stripParens = (value: string): string => {
   return result;
 };
 
+/** The native command retains every selector except higher numeric literals representing integer IDs. */
+const extendedTriangleCenterId = (source: string): number | undefined => {
+  const literal = stripParens(source);
+  if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu.test(literal)) return undefined;
+  const id = Number(literal);
+  return Number.isSafeInteger(id) && id > 3053 ? id : undefined;
+};
+
 /** Recognize only unambiguous types; never create probe objects or sample numeric values. */
 const literalType = (expression: string, environment: CommandEnvironment): GeometryType => {
   const source = expression.trim();
@@ -59,7 +67,11 @@ const literalType = (expression: string, environment: CommandEnvironment): Geome
 
 export const containsStudioCall = (source: string, depth = 0): boolean => {
   if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
-  return outerCalls(source).some((call) => !call.declaration && (studioTools.has(call.name.toLowerCase()) || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
+  return outerCalls(source).some((call) => !call.declaration && (
+    (call.name.toLowerCase() === 'trianglecenter'
+      ? call.args.length === 4 && extendedTriangleCenterId(call.args[3]) !== undefined
+      : studioTools.has(call.name.toLowerCase()))
+    || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
 };
 
 type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }>; requiresNamed?: boolean };
@@ -115,8 +127,10 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       let result: TypedExpression = { expression: native, type: nativeReturns[key] ?? 'unknown' };
       const fileDefined = scope.macros.has(key) || scope.objects.has(call.name);
       if (fileDefined) result.type = scope.macroTypes?.get(key) ?? (scope.objects.get(call.name) === 'function' ? 'number' : 'unknown');
-      const tool = tools.get(key);
+      const tool = key === 'trianglecenter' && (call.args.length !== 4 || extendedTriangleCenterId(call.args[3]) === undefined)
+        ? undefined : tools.get(key);
       if (tool && !fileDefined) {
+        if (key === 'trianglecenter') args[3].literal = String(extendedTriangleCenterId(call.args[3]));
         const overload = selectOverload(tool, args);
         if (overload) {
           if (overload.requiresNamed) {
