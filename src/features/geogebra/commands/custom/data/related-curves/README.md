@@ -46,7 +46,7 @@ An optional `backend` selects an implementation in
 recipes. Selection happens once from the literal ID at compile time. There is
 no native `If` catalogue dispatcher and no additional public Qxxx commands.
 
-Q018/Q020 select `similarityPolynomial`. Their source equations stay here;
+Q018/Q020/Q070/Q109 select `similarityPolynomial`. Their source equations stay here;
 `generated/relatedCurveCircuits.json` contains only local-frame numeric
 coefficients and shared scalar arithmetic. Generic code rotates/scales and
 translates those coefficients in separate native binding stages. Regenerate
@@ -65,6 +65,21 @@ reference fixtures with `check_related_curve_circuits.py --write-native-fixtures
 The specialized native harness is
 `/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=18` (or 20).
 It complements the existing lifecycle/performance harness above.
+
+`deferred.json` separately retains five mathematically checked definitions that
+failed the transformed native precision checks. They are not supported commands.
+Their circuits live in `generated/relatedCurveCandidates.json`, imported only by
+authoring pages. To regenerate/check this experimental set, supply
+`--source src/features/geogebra/commands/custom/data/related-curves/deferred.json`
+and `--output src/features/geogebra/commands/custom/generated/relatedCurveCandidates.json`
+to the circuit generator; add `--check` for a consistency check. The exact checker
+accepts the same `--source` plus `--circuits` pointing to that output. Add
+`--include-deferred` to the source-point checker to validate both maintained sets.
+
+On the two isolated native harness pages only, `?id=106&experimental=1` explicitly
+enables that one candidate in that page's in-memory tables. Ordinary workspace
+commands continue to reject it. The reference fixtures cover both sets. See
+[measurements and limitations](../../docs/benchmarks/gibert-similarity-expansion.md).
 
 A future hand-written construction can register a separate backend and opt in
 one reviewed record; it need not generate either recipe format. Explicitly

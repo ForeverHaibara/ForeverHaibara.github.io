@@ -1,0 +1,1106 @@
+{
+  "runs": [
+    {
+      "id": 70,
+      "selector": "70",
+      "mode": "medium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 7538.399999856949,
+      "expandedLength": 73556,
+      "objectCount": 202,
+      "history": true,
+      "updates": [
+        28.600000143051147,
+        30.800000190734863,
+        29.399999856948853,
+        28.5,
+        27.5,
+        31.299999952316284,
+        30.700000047683716,
+        28.5
+      ],
+      "updateMedian": 29,
+      "centers": [
+        {
+          "index": 1,
+          "residual": 4.48188956240916e-16
+        },
+        {
+          "index": 20,
+          "residual": 2.016850303084122e-15
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 14710,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 109,
+      "selector": "\"Q109\"",
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 9302.099999904633,
+      "expandedLength": 81154,
+      "objectCount": 166,
+      "history": true,
+      "updates": [
+        39,
+        29.200000047683716,
+        35,
+        33.700000047683716,
+        34.59999990463257,
+        29.899999856948853,
+        36.60000014305115,
+        38.10000014305115
+      ],
+      "updateMedian": 34.799999952316284,
+      "centers": [
+        {
+          "index": 4,
+          "residual": -5.682857502653428e-19
+        }
+      ],
+      "samplePoints": 3,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 13695,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 7,
+      "selector": "7",
+      "mode": "medium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 12286.299999952316,
+      "expandedLength": 101217,
+      "objectCount": 217,
+      "history": true,
+      "updates": [
+        40.700000047683716,
+        37.700000047683716,
+        39.09999990463257,
+        36.90000009536743,
+        32.89999985694885,
+        35.60000014305115,
+        39.5,
+        40.5
+      ],
+      "updateMedian": 38.39999997615814,
+      "centers": [
+        {
+          "index": 1,
+          "residual": -1.7909858634519498e-16
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 16957,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 31,
+      "selector": "\"Q031\"",
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 14062.600000143051,
+      "expandedLength": 149868,
+      "objectCount": 248,
+      "history": true,
+      "updates": [
+        37.299999952316284,
+        38.799999952316284,
+        37.90000009536743,
+        36.90000009536743,
+        36.799999952316284,
+        41.200000047683716,
+        41.19999980926514,
+        37.700000047683716
+      ],
+      "updateMedian": 37.800000071525574,
+      "centers": [
+        {
+          "index": 1,
+          "residual": -1.897464197459547e-17
+        },
+        {
+          "index": 4,
+          "residual": -9.859372790721176e-18
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 21470,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 106,
+      "selector": "106",
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 26350.400000095367,
+      "expandedLength": 269957,
+      "objectCount": 273,
+      "history": true,
+      "updates": [
+        60,
+        54,
+        47.200000047683716,
+        45.89999985694885,
+        53.700000047683716,
+        62.59999990463257,
+        63.10000014305115,
+        56.40000009536743
+      ],
+      "updateMedian": 55.200000047683716,
+      "centers": [
+        {
+          "index": 3,
+          "residual": -1.4563860167557367e-17
+        },
+        {
+          "index": 4,
+          "residual": 9.553892269917631e-19
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 31854,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 92,
+      "selector": "92",
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 8951.200000047684,
+      "expandedLength": 109124,
+      "objectCount": 224,
+      "history": true,
+      "updates": [
+        27.299999952316284,
+        24.5,
+        29.09999990463257,
+        26.5,
+        28,
+        25.90000009536743,
+        27.5,
+        24.59999990463257
+      ],
+      "updateMedian": 26.899999976158142,
+      "centers": [
+        {
+          "index": 4,
+          "residual": -1.4724593526706583e-17
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 18027,
+      "cleanup": true,
+      "success": true
+    },
+    {
+      "id": 72,
+      "selector": "72",
+      "mode": "medium",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 19424.599999904633,
+      "expandedLength": 143435,
+      "objectCount": 258,
+      "history": true,
+      "updates": [
+        51.59999990463257,
+        47.200000047683716,
+        52.200000047683716,
+        46.5,
+        52.299999952316284,
+        50.700000047683716,
+        51.40000009536743,
+        53.09999990463257
+      ],
+      "updateMedian": 51.5,
+      "centers": [
+        {
+          "index": 4,
+          "residual": -1.223274894893534e-15
+        }
+      ],
+      "samplePoints": 0,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 20339,
+      "cleanup": true,
+      "success": true
+    }
+  ],
+  "structuredRuns": [
+    {
+      "id": "Q106",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 1.6818153250516234e-12,
+          "vertexResiduals": [
+            -1.1800104667052687e-14,
+            -1.5517978785164807e-13,
+            -4.83059274557554e-15
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 5.023841125624266e-15,
+          "vertexResiduals": [
+            0,
+            8.34250989839066e-16,
+            -8.564060069684917e-16
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 4.3159832113701226e-7,
+        "vertexResiduals": [
+          8.803217732148022e-8,
+          -4.4679928236137326e-7,
+          -5.437022363098428e-8
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex lost"
+    },
+    {
+      "id": "Q031",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 1.1676552146826184e-12,
+          "vertexResiduals": [
+            1.873160532107509e-14,
+            6.084274126696091e-13,
+            2.425004506296858e-14
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 5.283414850313874e-15,
+          "vertexResiduals": [
+            0,
+            1.498841092287624e-17,
+            -4.683878413398824e-17
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 8.249396132212221e-7,
+        "vertexResiduals": [
+          2.9748320231593144e-7,
+          7.515557221699421e-7,
+          2.294696603549475e-7
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex lost"
+    },
+    {
+      "id": "Q072",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 8.83487235559612e-15,
+          "vertexResiduals": [
+            -1.2020234497409685e-16,
+            4.687891453989778e-15,
+            2.764653934404228e-15
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 1.7427335197588668e-14,
+          "vertexResiduals": [
+            0,
+            9.092522711785392e-15,
+            -2.7277568135356175e-15
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 1.4211949708114793e-7,
+        "vertexResiduals": [
+          -5.501410792740492e-8,
+          -1.2583378998026505e-7,
+          -3.513372459120506e-8
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex lost"
+    },
+    {
+      "id": "Q007",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 6.151325300715846e-14,
+          "vertexResiduals": [
+            -2.32125483045881e-15,
+            3.310551532011494e-14,
+            -3.2608103570730903e-15
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 8.045624852981806e-15,
+          "vertexResiduals": [
+            0,
+            -6.2918480698471584e-15,
+            1.4009983242344556e-15
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 3.6162091198000273e-8,
+        "vertexResiduals": [
+          1.3331339456833121e-8,
+          2.7907418321679076e-8,
+          7.630793762165643e-9
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex lost"
+    },
+    {
+      "id": "Q109",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 9.360338958464696e-14,
+          "vertexResiduals": [
+            -3.3975821990797444e-16,
+            7.827179991129962e-14,
+            -3.571708286782581e-14
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 5.961594684116803e-16,
+          "vertexResiduals": [
+            0,
+            -1.1272833584511774e-15,
+            2.4659323466119503e-16
+          ],
+          "samples": 8
+        },
+        {
+          "name": "translated-scaled",
+          "vertices": [
+            [
+              10,
+              -7
+            ],
+            [
+              13,
+              -7
+            ],
+            [
+              10.5,
+              -5
+            ]
+          ],
+          "error": 3.876197182320685e-9,
+          "vertexResiduals": [
+            -3.838685582219038e-10,
+            -2.6870799075533267e-9,
+            -2.447162058664637e-9
+          ],
+          "samples": 8
+        },
+        {
+          "name": "near-isosceles",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              3.000001,
+              4
+            ]
+          ],
+          "error": 4.817483120409075e-14,
+          "vertexResiduals": [
+            0,
+            1.7838183539638962e-14,
+            8.156274710558604e-15
+          ],
+          "samples": 8
+        },
+        {
+          "name": "near-collinear",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              2,
+              0.05
+            ]
+          ],
+          "error": 2.824424225482641e-15,
+          "vertexResiduals": [
+            0,
+            7.495665269947049e-18,
+            2.7180134376059494e-20
+          ],
+          "samples": 8
+        }
+      ],
+      "success": true
+    },
+    {
+      "id": "Q092",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 1.6743683382043263e-13,
+          "vertexResiduals": [
+            3.3487366764086526e-15,
+            -2.7179281396898137e-14,
+            -5.708427869319867e-14
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 7.695988066236109e-16,
+          "vertexResiduals": [
+            0,
+            1.0119868446546032e-15,
+            -1.4502996181355778e-17
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 9.33282896118613e-8,
+        "vertexResiduals": [
+          6.652531490697294e-8,
+          7.417504310982814e-8,
+          3.100871967943092e-8
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex lost"
+    },
+    {
+      "id": "Q070",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 6.7052259429702785e-15,
+          "vertexResiduals": [
+            -1.6222320829766804e-15,
+            9.733392497860082e-16,
+            -1.6222320829766803e-16
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 1.5702391665902996e-14,
+          "vertexResiduals": [
+            -7.52301079813359e-15,
+            -1.5348961628406786e-14,
+            1.3985731483778551e-14
+          ],
+          "samples": 8
+        },
+        {
+          "name": "translated-scaled",
+          "vertices": [
+            [
+              10,
+              -7
+            ],
+            [
+              13,
+              -7
+            ],
+            [
+              10.5,
+              -5
+            ]
+          ],
+          "error": 1.5620597051185285e-9,
+          "vertexResiduals": [
+            2.0000320782694076e-10,
+            4.485204641911186e-10,
+            8.143157084833922e-10
+          ],
+          "samples": 8
+        },
+        {
+          "name": "near-isosceles",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              3.000001,
+              4
+            ]
+          ],
+          "error": 6.06087229686533e-14,
+          "vertexResiduals": [
+            6.714872942862915e-15,
+            -8.393591178578643e-16,
+            -1.8045663969888227e-14
+          ],
+          "samples": 8
+        },
+        {
+          "name": "near-collinear",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              2,
+              0.05
+            ]
+          ],
+          "error": 8.787284675702908e-14,
+          "vertexResiduals": [
+            1.194740246189212e-19,
+            -4.514525143600303e-16,
+            2.276292228009976e-17
+          ],
+          "samples": 8
+        }
+      ],
+      "success": true
+    }
+  ],
+  "rejectedExperiments": [
+    {
+      "id": "Q106",
+      "variant": "native translation of rotated coefficient polynomial",
+      "outcome": "long unresponsive browser computation; not accepted"
+    }
+  ],
+  "compileMetrics": [
+    {
+      "id": "Q007",
+      "degree": 8,
+      "helpers": 213,
+      "length": 100789,
+      "success": true
+    },
+    {
+      "id": "Q031",
+      "degree": 9,
+      "helpers": 244,
+      "length": 149378,
+      "success": true
+    },
+    {
+      "id": "Q070",
+      "degree": 7,
+      "helpers": 198,
+      "length": 73158,
+      "success": true
+    },
+    {
+      "id": "Q072",
+      "degree": 9,
+      "helpers": 254,
+      "length": 142925,
+      "success": true
+    },
+    {
+      "id": "Q092",
+      "degree": 8,
+      "helpers": 220,
+      "length": 108682,
+      "success": true
+    },
+    {
+      "id": "Q106",
+      "degree": 10,
+      "helpers": 269,
+      "length": 269417,
+      "success": true
+    },
+    {
+      "id": "Q109",
+      "degree": 8,
+      "helpers": 162,
+      "length": 80828,
+      "success": true
+    }
+  ],
+  "finalHarnessChecks": {
+    "supported": {
+      "id": 109,
+      "selector": "109",
+      "mode": "high",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": [
+        1280,
+        720
+      ],
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "createMs": 6323,
+      "expandedLength": 81154,
+      "objectCount": 166,
+      "history": true,
+      "updates": [
+        28.299999952316284,
+        26.700000047683716,
+        21.90000009536743,
+        21.90000009536743,
+        22.5,
+        21.699999809265137,
+        20.299999952316284,
+        21.700000047683716
+      ],
+      "updateMedian": 21.90000009536743,
+      "centers": [
+        {
+          "index": 4,
+          "residual": -5.682857502653428e-19
+        }
+      ],
+      "samplePoints": 3,
+      "conditionalCenters": [],
+      "equilateralDefined": true,
+      "ggbBytes": 13694,
+      "cleanup": true,
+      "success": true
+    },
+    "experimental": {
+      "id": "Q007",
+      "engine": {
+        "version": "5.4.920.0",
+        "supportsBase64": true,
+        "supportsXml": true,
+        "supportsEventListeners": true
+      },
+      "cases": [
+        {
+          "name": "rotated",
+          "vertices": [
+            [
+              2,
+              -1
+            ],
+            [
+              5,
+              3
+            ],
+            [
+              -1,
+              5
+            ]
+          ],
+          "error": 6.151325300715846e-14,
+          "vertexResiduals": [
+            -2.32125483045881e-15,
+            3.310551532011494e-14,
+            -3.2608103570730903e-15
+          ],
+          "samples": 8
+        },
+        {
+          "name": "reflected",
+          "vertices": [
+            [
+              0,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              1,
+              -4
+            ]
+          ],
+          "error": 8.045624852981806e-15,
+          "vertexResiduals": [
+            0,
+            -6.2918480698471584e-15,
+            1.4009983242344556e-15
+          ],
+          "samples": 8
+        }
+      ],
+      "failedVertices": {
+        "name": "translated-scaled",
+        "error": 3.6162091198000273e-8,
+        "vertexResiduals": [
+          1.3331339456833121e-8,
+          2.7907418321679076e-8,
+          7.630793762165643e-9
+        ]
+      },
+      "success": false,
+      "error": "Error: translated-scaled: vertex residual exceeds tolerance"
+    }
+  }
+}

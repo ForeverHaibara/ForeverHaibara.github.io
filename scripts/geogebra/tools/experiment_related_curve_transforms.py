@@ -28,7 +28,8 @@ def main():
     parser.add_argument('candidates', type=Path)
     args = parser.parse_args()
     records = json.loads(SOURCE.read_text(encoding='utf8'))
-    records += json.loads(args.candidates.read_text(encoding='utf8'))['candidates']
+    candidates = json.loads(args.candidates.read_text(encoding='utf8'))
+    records += candidates['candidates'] if isinstance(candidates,dict) else candidates
     by_id = {r['id']: r for r in records}
     for source, target in [('Q008','Q007'), ('Q071','Q001'), ('Q010','Q009'),
                            ('Q037','Q030'), ('Q097','Q096'), ('Q023','Q038')]:

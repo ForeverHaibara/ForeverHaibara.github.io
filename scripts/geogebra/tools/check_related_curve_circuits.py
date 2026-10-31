@@ -25,9 +25,11 @@ def arithmetic(text,values):
     return visit(ast.parse(text.replace('^','**'),mode='eval').body)
 
 
-def check():
-    circuits=json.loads((CUSTOM/'generated/relatedCurveCircuits.json').read_text())
-    records={r['id']:r for r in json.loads(SOURCE.read_text(encoding='utf8'))}
+def check(source_file=SOURCE,circuit_file=CUSTOM/'generated/relatedCurveCircuits.json'):
+    circuits=json.loads(circuit_file.read_text(encoding='utf8'))
+    records=json.loads(source_file.read_text(encoding='utf8'))
+    if isinstance(records,dict): records=records['candidates']
+    records={r['id']:r for r in records}
     for identifier,circuit in circuits.items():
         values={'t':t,'h':h,'x':x,'y':y}
         for name,expression in circuit['scalars']:
@@ -36,15 +38,28 @@ def check():
             values[name]=value
         basis=[(i,n-i) for n in range(circuit['degree']+1) for i in range(n+1)]
         coefficients=[arithmetic(z,values) for z in circuit['coefficients']]
+        assert len(coefficients)==len(basis),f'{identifier}: incorrect coefficient count'
         actual=s.Poly(sum(z*x**i*y**j for z,(i,j) in zip(coefficients,basis)),x,y)
         source=parse_equation(records[identifier]['equation'])
-        expected=s.Poly(source.subs({a2:(t-1)**2+h*h,b2:t*t+h*h,c2:1}).subs(
-            {u:h*(1-x)+(t-1)*y,v:h*x-t*y,w:y}),x,y)
-        assert s.Poly(actual.as_expr()*h**circuit['removedHeightPower']-expected.as_expr(),x,y).is_zero
-        norm=s.Add(*(c*c for c in coefficients))
+        # Independently invert the chart instead of repeating the generator's
+        # forward composition. Homogenize L((v+t*w)/S,h*w/S), S=u+v+w.
+        # Equality h^height*L_hom = h^degree*F(normalized sides;u,v,w)
+        # proves the entire polynomial, including its boundary points.
+        degree=circuit['degree'];domain=s.QQ.poly_ring(t,h)
+        inverse=[s.Poly(v+t*w,u,v,w,domain=domain),s.Poly(h*w,u,v,w,domain=domain),
+                 s.Poly(u+v+w,u,v,w,domain=domain)]
+        powers=[[p**n for n in range(degree+1)] for p in inverse]
+        restored=s.Poly(0,u,v,w,domain=domain)
+        for (i,j),coefficient in actual.terms():
+            restored+=(powers[0][i]*powers[1][j]*powers[2][degree-i-j]).mul_ground(coefficient)
+        expected=s.Poly(source.subs({a2:(t-1)**2+h*h,b2:t*t+h*h,c2:1}),u,v,w,domain=domain)
+        assert restored.mul_ground(h**circuit['removedHeightPower'])==expected.mul_ground(h**degree)
         assert actual.total_degree()==records[identifier]['degree']
-        for shape in [(s.Rational(1,3),s.Rational(2,3)),(s.Rational(1,2),s.Rational(4,5)),(s.Rational(1,3),-s.Rational(2,3)),(s.Rational(1,2),s.sqrt(3)/2)]:
-            assert s.simplify(norm.subs({t:shape[0],h:shape[1]}))>0, f'{identifier}: zero specialization'
+        for index,shape in enumerate([(s.Rational(1,3),s.Rational(2,3)),(s.Rational(1,2),s.Rational(4,5)),(s.Rational(1,3),-s.Rational(2,3)),(s.Rational(1,2),s.sqrt(3)/2)]):
+            zero=all(s.simplify(z.subs({t:shape[0],h:shape[1]}))==0 for z in actual.coeffs())
+            source_zero=s.Poly(expected.as_expr().subs({t:shape[0],h:shape[1]}),u,v,w).is_zero
+            assert zero==source_zero, f'{identifier}: coefficient guard disagrees with specialized source'
+            if index==0: assert not zero, f'{identifier}: zero generic polynomial'
         # Direct primary equations on non-axis-aligned and transformed triangles.
         for triangle in [[(0,0),(6,0),(1,4)],[(2,-1),(5,3),(-1,5)],[(10,9),(4,1),(16,-3)]]:
             A,B,C=[tuple(map(s.Integer,p)) for p in triangle]
@@ -57,7 +72,7 @@ def check():
                 bary=[(triangle[(i+1)%3][1]-triangle[(i+2)%3][1])*X+(triangle[(i+2)%3][0]-triangle[(i+1)%3][0])*Y+triangle[(i+1)%3][0]*triangle[(i+2)%3][1]-triangle[(i+1)%3][1]*triangle[(i+2)%3][0] for i in range(3)]
                 original=source.subs(dict(zip((a2,b2,c2),sides))).subs(dict(zip((u,v,w),bary)))
                 normalized=actual.as_expr().subs({t:T,h:H,x:U,y:V})
-                assert s.cancel(original-normalized*sq**(8+circuit['sideDegree'])*H**circuit['removedHeightPower'])==0
+                assert s.cancel(original-normalized*sq**(circuit['degree']+circuit['sideDegree'])*H**circuit['removedHeightPower'])==0
         print(f'{identifier}: full polynomial identity, numeric-node independence, guard, specializations and world frame passed',flush=True)
 
 
@@ -75,8 +90,11 @@ def native_fixtures():
         ('near-collinear', [(0,0),(6,0),(2,'0.05')]),
     ]
     result = {}
-    for record in json.loads(SOURCE.read_text(encoding='utf8')):
-        if record['id'] not in ('Q018','Q020'):
+    records=json.loads(SOURCE.read_text(encoding='utf8'))
+    deferred=SOURCE.with_name('deferred.json')
+    if deferred.exists(): records+=json.loads(deferred.read_text(encoding='utf8'))
+    for record in records:
+        if record.get('backend')!='similarityPolynomial':
             continue
         source = parse_equation(record['equation'])
         cases = []
@@ -95,7 +113,7 @@ def native_fixtures():
             sides = [sum((vertices[(i+1)%3][j]-vertices[(i+2)%3][j])**2 for j in range(2)) for i in range(3)]
             polynomial = s.Poly(source.subs(dict(zip((a2,b2,c2),sides))),u,v,w)
             expected = []
-            for X,Y in points:
+            for X,Y in points+vertices:
                 bary = [(vertices[(i+1)%3][1]-vertices[(i+2)%3][1])*X
                         +(vertices[(i+2)%3][0]-vertices[(i+1)%3][0])*Y
                         +vertices[(i+1)%3][0]*vertices[(i+2)%3][1]
@@ -104,7 +122,8 @@ def native_fixtures():
             scale = max(map(abs,expected[:4]))
             cases.append({'name':name,'vertices':[[float(z) for z in p] for p in vertices],
                           'points':[[float(z) for z in p] for p in points],
-                          'expected':[float(z/scale) for z in expected]})
+                          'expected':[float(z/scale) for z in expected[:len(points)]],
+                          'vertexExpected':[float(z/scale) for z in expected[len(points):]]})
         result[record['id']] = cases
     return json.dumps(result,indent=2)+'\n'
 
@@ -113,6 +132,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--write-native-fixtures',action='store_true')
     parser.add_argument('--check-native-fixtures',action='store_true')
+    parser.add_argument('--source',type=Path,default=SOURCE,help='Reviewed records or offline candidate queue for circuit checks')
+    parser.add_argument('--circuits',type=Path,default=CUSTOM/'generated/relatedCurveCircuits.json')
     args = parser.parse_args()
     if args.write_native_fixtures or args.check_native_fixtures:
         output = Path(__file__).resolve().parents[1]/'browser/fixtures/gibert-pedal.json'
@@ -125,4 +146,4 @@ if __name__=='__main__':
             output.write_text(text,encoding='utf8')
             print(f'Wrote exact native reference fixtures to {output}')
     else:
-        check()
+        check(args.source,args.circuits)

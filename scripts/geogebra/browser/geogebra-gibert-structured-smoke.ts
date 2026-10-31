@@ -2,9 +2,12 @@ import { GeoGebraEmbeddingAdapter } from '../../../src/features/geogebra/adapter
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import records from '../../../src/features/geogebra/commands/custom/data/related-curves/curves.json';
 import fixtures from './fixtures/gibert-pedal.json';
+import { enableExperimentalGibertCurve } from './gibert-experimental';
 
 // Independent exact-primary-equation reference values, rounded once offline.
-const id = new URLSearchParams(location.search).get('id') ?? '18';
+const params = new URLSearchParams(location.search);
+const id = params.get('id') ?? '18';
+enableExperimentalGibertCurve(`Q${id.padStart(3,'0')}`,params.has('experimental'));
 const record = records.find(r => r.id === `Q${id.padStart(3, '0')}`)!;
 const engine = new GeoGebraEmbeddingAdapter();
 const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
@@ -16,14 +19,15 @@ const run = async (command: string) => {
   const result = await executeCommandPipeline(engine, command, { helperMode: 'medium' });
   check(result.success, `${command}: ${result.error}`);
 };
-const shapes = fixtures[record.id as keyof typeof fixtures];
+const shapes = record ? fixtures[record.id as keyof typeof fixtures] : undefined;
 
 button.onclick = async () => {
   button.disabled = true; log.textContent = '';
-  const data: Record<string, unknown> = { id: record.id, engine: undefined, cases: [] };
+  const data: Record<string, unknown> = { id: `Q${id.padStart(3,'0')}`, engine: undefined, cases: [] };
   const cases: unknown[] = [];
   const report = (message: string) => { log.textContent += `${message}\n`; status.textContent = message; };
   try {
+    if (!record || !shapes) throw new Error('Curve not enabled; deferred candidates require experimental=1.');
     report('Initializing');
     await engine.initialize(document.querySelector<HTMLDivElement>('#canvas')!);
     data.engine = engine.getCapabilities();
@@ -32,7 +36,7 @@ button.onclick = async () => {
     await run('A=(0,0)\nB=(6,0)\nC=(1,4)');
     await run(`out=GibertCurve(A,B,C,${id})`);
     await run('diagnostic(x,y)=LeftSide(out)-RightSide(out)');
-    for (const { name, vertices, points, expected } of shapes) {
+    for (const { name, vertices, points, expected, vertexExpected } of shapes) {
       for (let i = 0; i < 3; i++) await api('setCoords', 'ABC'[i], ...vertices[i]);
       check(await api('isDefined', 'out'), `${name}: undefined curve`);
       const actual = await Promise.all(points.map(async ([x, y]) => Number(await api('getValue', `diagnostic(${x},${y})`))));
@@ -44,8 +48,12 @@ button.onclick = async () => {
         / Math.max(scale, Math.abs(value), Math.abs(expected[i] * ratio))));
       if (error >= 1e-6) data.failedSamples = { name, actual, expected, ratio };
       check(error < 1e-6, `${name}: source residual ${error}`);
-      const vertexResiduals = await Promise.all(vertices.map(async ([x, y]) => Number(await api('getValue', `diagnostic(${x},${y})`)) / scale));
-      check(vertexResiduals.every(value => Number.isFinite(value) && Math.abs(value) < 1e-8), `${name}: vertex lost`);
+      const vertexResiduals = await Promise.all(vertices.map(async ([x, y], i) =>
+        (Number(await api('getValue', `diagnostic(${x},${y})`)) - vertexExpected[i] * ratio)
+          / Math.max(scale, Math.abs(vertexExpected[i] * ratio))));
+      if (vertexResiduals.some(value => !Number.isFinite(value) || Math.abs(value) >= 1e-8))
+        data.failedVertices = { name, error, vertexResiduals };
+      check(vertexResiduals.every(value => Number.isFinite(value) && Math.abs(value) < 1e-8), `${name}: vertex residual exceeds tolerance`);
       cases.push({ name, vertices, error, vertexResiduals, samples: points.length });
       report(`PASS ${name}: source ${error.toExponential(2)}, vertices and side/circle neighbourhoods`);
     }

@@ -1,5 +1,6 @@
 """Check available simple catalogue points using exact barycentric arithmetic."""
 import json
+import argparse
 from generate_related_curves import SOURCE, parse_equation, a2, b2, c2, u, v, w, s
 from generate_related_curves import a as side_a, b as side_b, c as side_c
 from related_curve_points import centers, orthic_feet
@@ -11,7 +12,12 @@ sample_coordinates = {'(B+C)/2': (0,1,1), '(C+A)/2': (1,0,1), '(A+B)/2': (1,1,0)
 excenter_a = '((-Distance(B,C))*A+Distance(C,A)*B+Distance(A,B)*C)/(-Distance(B,C)+Distance(C,A)+Distance(A,B))'
 midpoint_incenter_excenter_a = f'(TriangleCenter(A,B,C,1)+{excenter_a})/2'
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--include-deferred',action='store_true',help='Also check the maintained experimental definitions')
+args = parser.parse_args()
 records = json.loads(SOURCE.read_text(encoding='utf8'))
+if args.include_deferred:
+    records += json.loads(SOURCE.with_name('deferred.json').read_text(encoding='utf8'))
 
 for record in records:
     equation = parse_equation(record['equation'])

@@ -2,9 +2,11 @@ import { GeoGebraEmbeddingAdapter } from '../../../src/features/geogebra/adapter
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import { gibertCurveRecords } from '../../../src/features/geogebra/commands/custom/builders/relatedCurves';
 import { InternalHelperLifecycle } from '../../../src/features/geogebra/commands/custom/helperLifecycle';
+import { enableExperimentalGibertCurve } from './gibert-experimental';
 
 const params = new URLSearchParams(location.search);
 const idText = params.get('id') ?? '12';
+enableExperimentalGibertCurve(`Q${idText.padStart(3,'0')}`,params.has('experimental'));
 const id = Number.parseInt(idText, 10);
 const mode = (params.get('mode') ?? 'high') as 'low' | 'medium' | 'high';
 const selector = params.has('quoted') || /[A-Za-z]/u.test(idText) ? `"Q${idText.padStart(3,'0')}"` : String(id);
