@@ -40,7 +40,7 @@ Implementation files are grouped by responsibility:
 
 ## Manage the library
 
-`TriangleCenter(A,B,C,id)` currently supports 7082 higher centers from compact, lazily loaded ETC construction recipes. Native IDs through 3053 and computed number selectors retain GeoGebra's original behavior. The current automatic parser covers affine relations, explicit intersections and screened ETC line-incidence lists, projections, line reflection, and isogonal/isotomic conjugates. Extraction, dependency exclusions, and manual update commands are in [data/triangle-centers/README.md](data/triangle-centers/README.md). Further operations and pages are staged in the [plan](docs/triangle-centers-plan.md).
+`TriangleCenter(A,B,C,id)` currently has 7511 higher-center definitions in compact, lazily loaded ETC construction recipes. Of these, 239 are points at infinity: their directions can be used inside finite constructions, while a direct request returns an undefined GeoGebra point. Native IDs through 3053 and computed number selectors retain GeoGebra's original behavior. The current automatic parser covers affine relations, explicit intersections and screened ETC line-incidence lists, ideal directions, projections, line reflection, and isogonal/isotomic conjugates. Extraction, dependency exclusions, and manual update commands are in [data/triangle-centers/README.md](data/triangle-centers/README.md). Further operations and pages are staged in the [plan](docs/triangle-centers-plan.md).
 
 `library.json` is the versioned, declarative source for names, descriptions,
 typed overloads and implementations. It also feeds command completion and

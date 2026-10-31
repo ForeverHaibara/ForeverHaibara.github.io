@@ -4,7 +4,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from triangle_center_import import CACHE, Recipe, extract_entry, line_candidate_supported, read_native_exclusions, select_recipes, split_entries, validate_graph
+from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry,
+                                    line_candidate_supported, numeric_coordinates, read_native_directions,
+                                    read_native_exclusions, select_recipes, split_entries, validate_graph,
+                                    validate_types)
 
 
 class TriangleCenterImportTest(unittest.TestCase):
@@ -70,14 +73,52 @@ class TriangleCenterImportTest(unittest.TestCase):
             options = [recipe.references for recipe in recipes]
             self.assertTrue(expected in options or (*expected[2:], *expected[:2]) in options, number)
 
-    def test_infinite_target_does_not_exclude_conjugate_of_infinite_point(self):
+    def test_infinite_target_direction_and_conjugate_text(self):
         html = ('<h3 id="X4102">X(4102) = SPECIAL CENTER</h3>'
                 '<p>X(4102) lies on these lines: {1, 3}, {2, 4}<br>'
                 'X(4102) = infinite point of a line</p>')
-        self.assertEqual(extract_entry(4102, html, 3), [])
+        self.assertEqual({recipe.row() for recipe in extract_entry(4102, html, 3)},
+                         {'4102 I 1 3', '4102 I 2 4'})
         other = ('<h3 id="X4103">X(4103) = ISOGONAL CONJUGATE OF INFINITE POINT</h3>'
                  '<p>X(4103) lies on these lines: {1, 3}, {2, 4}</p>')
         self.assertTrue(extract_entry(4103, other, 3))
+
+    def test_infinity_line_and_parallel_heading(self):
+        by_infinity_line = ('<h3 id="X4106">X(4106) = CENTER</h3><p>'
+                            'X(4106) lies on these lines: {1, 2}, {30, 511}, {3, 4}</p>')
+        parallel = ('<h3 id="X4107">X(4107) = CENTER</h3><p>'
+                    'X(4107) lies on these (parallel) lines: 1,2 3,4</p>')
+        self.assertEqual({recipe.row() for recipe in extract_entry(4106, by_infinity_line, 3)},
+                         {'4106 I 1 2', '4106 I 3 4'})
+        self.assertEqual({recipe.row() for recipe in extract_entry(4107, parallel, 3)},
+                         {'4107 I 1 2', '4107 I 3 4'})
+
+    def test_numeric_ideal_direction_intersection_and_conjugate(self):
+        triangle = [(0, 0), (6, 0), (1, 4)]
+        native = {str(i): xy for i, xy in enumerate(triangle, 1)}
+        native.update({'4': (2, -1), '5': (2, 3)})
+        atlas = {'triangles': {'acute': triangle, 'obtuse': triangle},
+                 'coordinates': {'acute': native, 'obtuse': native}}
+        records = {4000: Recipe(4000, 'I', (1, 2)),
+                   4001: Recipe(4001, 'J', (3, 4000, 4, 5)),
+                   4002: Recipe(4002, 'G', (4000,))}
+        coordinates = numeric_coordinates(records, atlas, {30: (2, 3)})
+        self.assertIsInstance(coordinates['acute'][4000], Ideal)
+        self.assertIsInstance(coordinates['acute'][30], Ideal)
+        self.assertAlmostEqual(coordinates['acute'][4001][0], 2)
+        self.assertAlmostEqual(coordinates['acute'][4001][1], 4)
+        self.assertTrue(all(isinstance(coordinates[shape][4002], tuple) for shape in coordinates))
+        self.assertTrue(direction_candidate_supported(records[4000], coordinates, [(1, 2)]))
+
+    def test_ideal_input_types(self):
+        valid = {4000: Recipe(4000, 'I', (1, 2)),
+                 4001: Recipe(4001, 'J', (1, 4000, 3, 4)),
+                 4002: Recipe(4002, 'G', (4000,))}
+        validate_types(valid, {30})
+        with self.assertRaisesRegex(ValueError, 'ideal-point input'):
+            validate_types({**valid, 4003: Recipe(4003, 'M', (4000, 2))}, {30})
+        with self.assertRaisesRegex(ValueError, 'ideal-point input'):
+            validate_types({**valid, 4003: Recipe(4003, 'J', (30, 4000, 3, 4))}, {30})
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],
@@ -126,6 +167,9 @@ class TriangleCenterImportTest(unittest.TestCase):
             path = Path(folder) / 'excluded.txt'
             path.write_text('# screened\n30\n511-513\n', encoding='utf-8')
             self.assertEqual(read_native_exclusions(path), {30, 511, 512, 513})
+            directions = Path(folder) / 'directions.txt'
+            directions.write_text('30 2 3\n511 3 6\n', encoding='utf-8')
+            self.assertEqual(read_native_directions(directions), {30: (2, 3), 511: (3, 6)})
 
     def test_line_list_requires_independent_consistent_lines(self):
         points = {1: (0, 0), 2: (2, 0), 3: (1, 0), 4: (3, 0),

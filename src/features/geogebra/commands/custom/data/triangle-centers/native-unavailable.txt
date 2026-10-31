@@ -1,6 +1,6 @@
 # Native GeoGebra TriangleCenter results undefined on at least one screened triangle.
 # A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.
-# Inclusive ranges; excluded as construction dependencies.
+# Inclusive ranges; entries in native-directions.txt are usable as ideal directions.
 30
 368-370
 511-545

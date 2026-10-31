@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3234, 3307, 3357, 3933, 5091, 5305, 73007, 72478, 73001, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3396, 3357, 3933, 5091, 5305, 6004, 6012, 72060, 73007, 72478, 73001, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -74,7 +74,7 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('uses the shared conjugate builder and the new line relations', () => {
-    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3307)', environment());
+    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3396)', environment());
     const isotomic = compileStudioCommand('TriangleCenter(A,B,C,9464)', environment());
     expect(isogonal).toContain('Distance(');
     expect(isogonal).not.toContain('IsogonalConjugate(');
@@ -83,7 +83,19 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,5091)', environment())).toContain('ClosestPoint(Line(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Reflect(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Line(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,3307)', environment()).length).toBeLessThan(50_000);
+    expect(isogonal.length).toBeLessThan(50_000);
+  });
+
+  it('uses ideal directions in intersections and isogonal conjugates', () => {
+    const intersection = compileStudioCommand('TriangleCenter(A,B,C,3058)', environment());
+    expect(intersection).toContain('Line(TriangleCenter(A,B,C,1),Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3)))');
+    expect(intersection).toContain('Intersect(');
+    const conjugate = compileStudioCommand('TriangleCenter(A,B,C,6012)', environment());
+    expect(conjugate).toContain('Vector(TriangleCenter(A,B,C,659),TriangleCenter(A,B,C,1734))');
+    expect(conjugate).toContain('Distance(');
+    for (const id of [3221, 6004, 72060]) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
+    }
   });
 
   it('expands centers recovered from nonstandard ETC line lists', () => {

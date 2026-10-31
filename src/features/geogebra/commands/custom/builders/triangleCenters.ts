@@ -1,7 +1,13 @@
 import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
+import { bind } from '../algebra/homogeneous';
+import nativeDirectionsSource from '../data/triangle-centers/native-directions.txt?raw';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T'; references: number[] };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T'; references: number[] };
+type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string };
+const nativeDirections = new Map<number, [number, number]>(nativeDirectionsSource.split(/\r?\n/u)
+  .filter((row) => row.trim() && !row.trim().startsWith('#'))
+  .map((row) => { const [id, from, to] = row.trim().split(/\s+/u).map(Number); return [id, [from, to]]; }));
 const chunkImports = import.meta.glob<string>('../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
 const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();
@@ -24,7 +30,7 @@ const loadChunk = async (id: number): Promise<void> => {
       const references = referenceText.map(Number);
       const operation = opcode as Recipe['operation'];
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'C', 'A', 'P', 'L', 'G', 'T'].includes(opcode)
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T'].includes(opcode)
         || references.length !== size(operation)
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
@@ -54,27 +60,63 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
   if (!Number.isSafeInteger(id) || id <= 3053) throw new Error('Extended TriangleCenter requires an integer literal above 3053.');
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   const visiting = new Set<number>();
-  const render = (number: number): string => {
-    if (number <= 3053) return `TriangleCenter(${vertices.join(',')},${number})`;
+  const point = (expression: string): CenterValue => ({ kind: 'point', expression });
+  const requirePoint = (value: CenterValue): string => {
+    if (value.kind === 'ideal') throw new Error('An ideal triangle center cannot be used as a finite point here.');
+    return value.expression;
+  };
+  const line = (first: CenterValue, second: CenterValue): string => {
+    if (first.kind === 'ideal' && second.kind === 'ideal') throw new Error('Two ideal centers determine the line at infinity.');
+    if (first.kind === 'ideal') return `Line(${requirePoint(second)},Line(${first.from},${first.to}))`;
+    if (second.kind === 'ideal') return `Line(${requirePoint(first)},Line(${second.from},${second.to}))`;
+    return `Line(${first.expression},${second.expression})`;
+  };
+  const idealConjugate = (source: Extract<CenterValue, { kind: 'ideal' }>, isogonal: boolean): string => {
+    const [a, b, c] = vertices;
+    return bind([`Vector(${source.from},${source.to})`], allocate, ([d]) => {
+      const [u, v, w] = [[b, c], [c, a], [a, b]].map(([p, q]) =>
+        `(x(${d})*(y(${p})-y(${q}))-y(${d})*(x(${p})-x(${q})))`);
+      return bind([u, v, w], allocate, ([x, y, z]) => {
+        const weights = [`(${y})*(${z})`, `(${z})*(${x})`, `(${x})*(${y})`]
+          .map((weight, i) => isogonal ? `(${weight})*Distance(${[b, c, a][i]},${[c, a, b][i]})^2` : weight);
+        return bind(weights, allocate, ([r, s, t]) => {
+          const sum = `((${r})+(${s})+(${t}))`;
+          return `If(${sum}!=0,((${r})*(${a})+(${s})*(${b})+(${t})*(${c}))/${sum})`;
+        }, 'number');
+      }, 'number');
+    }, 'vector');
+  };
+  const render = (number: number): CenterValue => {
+    if (number <= 3053) {
+      const direction = nativeDirections.get(number);
+      if (direction) return { kind: 'ideal', from: requirePoint(render(direction[0])), to: requirePoint(render(direction[1])) };
+      return point(`TriangleCenter(${vertices.join(',')},${number})`);
+    }
     const recipe = recipes.get(number);
     if (!recipe) throw new Error(`Triangle center X(${number}) is not implemented.`);
     if (visiting.has(number)) throw new Error(`Cyclic triangle center recipe at X(${number}).`);
     visiting.add(number);
     try {
-      const points = recipe.references.map(render);
-      if (recipe.operation === 'M') return `Midpoint(${points[0]},${points[1]})`;
-      if (recipe.operation === 'R') return `Reflect(${points[0]},${points[1]})`;
-      if (recipe.operation === 'P') return `ClosestPoint(Line(${points[1]},${points[2]}),${points[0]})`;
-      if (recipe.operation === 'L') return `Reflect(${points[0]},Line(${points[1]},${points[2]}))`;
-      if (recipe.operation === 'G' || recipe.operation === 'T') return conjugate(recipe.operation === 'G')(
-        [...vertices, points[0]].map((expression) => ({ expression, type: 'point' })), allocate);
+      const values = recipe.references.map(render);
+      if (recipe.operation === 'I') return { kind: 'ideal', from: requirePoint(values[0]), to: requirePoint(values[1]) };
+      if (recipe.operation === 'M') return point(`Midpoint(${requirePoint(values[0])},${requirePoint(values[1])})`);
+      if (recipe.operation === 'R') return point(`Reflect(${requirePoint(values[0])},${requirePoint(values[1])})`);
+      if (recipe.operation === 'P') return point(`ClosestPoint(${line(values[1], values[2])},${requirePoint(values[0])})`);
+      if (recipe.operation === 'L') return point(`Reflect(${requirePoint(values[0])},${line(values[1], values[2])})`);
+      if (recipe.operation === 'G' || recipe.operation === 'T') return point(values[0].kind === 'ideal'
+        ? idealConjugate(values[0], recipe.operation === 'G')
+        : conjugate(recipe.operation === 'G')(
+          [...vertices, values[0].expression].map((expression) => ({ expression, type: 'point' })), allocate));
       if (recipe.operation === 'C' || recipe.operation === 'A') {
         const [a, b, c] = vertices;
-        return recipe.operation === 'C' ? `((${a})+(${b})+(${c})-(${points[0]}))/2`
-          : `(${a})+(${b})+(${c})-2*(${points[0]})`;
+        return point(recipe.operation === 'C' ? `((${a})+(${b})+(${c})-(${requirePoint(values[0])}))/2`
+          : `(${a})+(${b})+(${c})-2*(${requirePoint(values[0])})`);
       }
-      return `Intersect(Line(${points[0]},${points[1]}),Line(${points[2]},${points[3]}))`;
+      return point(`Intersect(${line(values[0], values[1])},${line(values[2], values[3])})`);
     } finally { visiting.delete(number); }
   };
-  return render(id);
+  const result = render(id);
+  // GeoGebra has no drawable point at infinity. Keep its direction in the
+  // recursive value so dependent finite constructions can still use it.
+  return result.kind === 'point' ? result.expression : `If(false,${vertices[0]})`;
 };
