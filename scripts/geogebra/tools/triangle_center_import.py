@@ -709,8 +709,14 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                    max_depth: int, max_length: int, max_conjugates: int = 1,
                    blocked_native: set[int] | None = None,
                    deferred_targets: set[int] | None = None, atlas: dict | None = None,
-                   native_directions: dict[int, tuple[int, int]] | None = None) -> dict[int, Recipe]:
+                   native_directions: dict[int, tuple[int, int]] | None = None,
+                   preferred: dict[int, Recipe] | None = None) -> dict[int, Recipe]:
     selected = dict(seeds)
+    preferred = preferred or {}
+    def is_preferred(recipe: Recipe) -> bool:
+        requested = preferred.get(recipe.number)
+        return (requested is not None and (recipe.operation, recipe.references, recipe.formula)
+                == (requested.operation, requested.references, requested.formula))
     native_directions = native_directions or {}
     blocked_native = (blocked_native or set()) - set(native_directions)
     deferred_targets = deferred_targets or set()
@@ -728,7 +734,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                                           for index in (0, 2)}
                                          | {recipe.references for recipe in options if recipe.operation == 'I'})
     while pending:
-        possible: list[tuple[tuple[int, int, int, int, int, tuple[int, ...]], Recipe]] = []
+        possible: list[tuple[tuple, Recipe]] = []
         depth, length = validate_graph(selected)
         nonlinear = conjugate_levels(selected)
         coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
@@ -758,14 +764,14 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
                 if (candidate_depth <= max_depth and candidate_length <= max_length
                         and candidate_nonlinear <= max_conjugates):
-                    key = (*quality(recipe), candidate_depth, candidate_length,
+                    key = (*quality(recipe), int(not is_preferred(recipe)), candidate_depth, candidate_length,
                            PRIORITY[recipe.operation], recipe.references)
                     possible.append((key, recipe))
         if not possible:
             break
         # Add every currently reachable point; prefer safer operations before
         # construction depth and estimated expression length.
-        best: dict[int, tuple[tuple[int, int, int, int, int, tuple[int, ...]], Recipe]] = {}
+        best: dict[int, tuple[tuple, Recipe]] = {}
         for item in possible:
             number = item[1].number
             if number not in best or item[0] < best[number][0]:
@@ -778,11 +784,11 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     for number in sorted(set(selected) - set(seeds)):
         current = selected[number]
         alternatives = [recipe for recipe in candidates.get(number, [])
-                        if quality(recipe) < quality(current)
+                        if (quality(recipe) < quality(current) or is_preferred(recipe) and recipe != current)
                         and all(ref not in blocked_native and ref not in deferred_targets
                                 and (ref <= NATIVE_MAX or ref in selected)
                                 for ref in recipe.references)]
-        alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
+        alternatives.sort(key=lambda recipe: (*quality(recipe), int(not is_preferred(recipe)), PRIORITY[recipe.operation],
                                               recipe.references))
         for recipe in alternatives:
             if refine_coordinates and recipe.operation == 'J' and not line_candidate_supported(
@@ -842,7 +848,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     continue
                 current = selected[number]
                 options = sorted(candidates.get(number, []),
-                                 key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
+                                 key=lambda recipe: (*quality(recipe), int(not is_preferred(recipe)),
+                                                     PRIORITY[recipe.operation], recipe.references))
                 repaired = False
                 for recipe in options:
                     if (recipe.operation != current.operation or recipe == current
@@ -933,7 +940,7 @@ def main() -> None:
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
     parser.add_argument('--auto-operations', default='MRCAPLIJGTB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
-    parser.add_argument('--max-coordinate-anchors', type=int, default=32)
+    parser.add_argument('--max-coordinate-anchors', type=int, default=64)
     parser.add_argument('--max-depth', type=int, default=6)
     parser.add_argument('--max-length', type=int, default=6000)
     parser.add_argument('--max-conjugates', type=int, default=1)
@@ -974,6 +981,7 @@ def main() -> None:
     if set(args.auto_operations) - set(ARITY):
         raise ValueError(f'Unknown operation in {args.auto_operations}')
     seeds = read_recipes(DATA / 'seeds.txt')
+    preferred = read_recipes(DATA / 'recipe-priority.txt')
     all_candidates: dict[int, list[Recipe]] = {}
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
@@ -988,10 +996,15 @@ def main() -> None:
     atlas = read_native_atlas(CACHE / 'native-atlas.json')
     eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations]
                 for number, options in all_candidates.items()}
+    for number, recipe in preferred.items():
+        if not any((candidate.operation, candidate.references, candidate.formula)
+                   == (recipe.operation, recipe.references, recipe.formula)
+                   for candidate in eligible.get(number, [])):
+            raise ValueError(f'Preferred X({number}) recipe is absent from parsed ETC candidates')
     relation_only = {number: [recipe for recipe in options if recipe.operation != 'B']
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions)
+                              blocked_native, deferred_targets, atlas, native_directions, preferred)
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors, priority,
                                  coordinate_lines, native_directions)
@@ -1004,7 +1017,7 @@ def main() -> None:
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions)
+                              blocked_native, deferred_targets, atlas, native_directions, preferred)
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

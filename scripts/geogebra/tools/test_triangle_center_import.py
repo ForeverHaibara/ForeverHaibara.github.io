@@ -143,7 +143,31 @@ class TriangleCenterImportTest(unittest.TestCase):
         pi_variants = ('<h3 id="X3371">X(3371) = CENTER</h3>'
                        'Trilinears sin(A + &pi;8) : :<br>Trilinears cos(A - 3&pi;/8) : :')
         self.assertEqual([formula for _, formula, _ in coordinate_candidates(pi_variants)],
-                         ['a*(sin(A+pi/8))', 'a*(cos(A-3*pi/8))'])
+                         ['a*(cos(A-3*pi/8))'])
+        split_cyclic = ('<h3 id="X4174">X(4174) = CENTER</h3>'
+                        'Barycentrics f(a,b,c) : f(b,c,a) :<br>'
+                        'f(c,a,b), where f(a,b,c) = (b+c)(b<sup>6</sup>+c<sup>6</sup>-<br>a<sup>6</sup>)')
+        self.assertEqual(coordinate_candidates(split_cyclic)[0][1], '(b+c)*(b^(6)+c^(6)-a^(6))')
+        split_polynomial = ('<h3 id="X3856">X(3856) = CENTER</h3>'
+                            'Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b),<br>'
+                            'where f(a,b,c) = 6a<sup>4</sup>-11b<sup>4</sup>-11c<sup>4</sup>+<br>'
+                            '5a<sup>2</sup>b<sup>2</sup>+5a<sup>2</sup>c<sup>2</sup>+<br>22b<sup>2</sup>c<sup>2</sup>')
+        self.assertEqual(coordinate_candidates(split_polynomial)[0][1],
+                         '6*a^(4)-11*b^(4)-11*c^(4)+5*a^(2)*b^(2)+5*a^(2)*c^(2)+22*b^(2)*c^(2)')
+        self.assertEqual(normalize_formula('a[cos^(2)(B-C)][b cos(C-A)+c cos(A-B)]'),
+                         'a*((cos(B-C))^2)*(b*cos(C-A)+c*cos(A-B))')
+        auriga = ('<h3 id="X5597">X(5597) = CENTER</h3>'
+                  'Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b),<br>'
+                  'where f(a,b,c) = a<sup>4</sup>-a<sup>2</sup>(b+c)<sup>2</sup>+<br>'
+                  '4aS(rR+4R<sup>2</sup>)<sup>1/2</sup>')
+        self.assertEqual(coordinate_candidates(auriga)[0][1],
+                         'a^(4)-a^(2)*(b+c)^(2)+4*a*S*(r*R+4*R^(2))^(1/2)')
+        full_cycle = ('<h3 id="X5998">X(5998) = CENTER</h3>'
+                      'Barycentrics a+[(a-b+c)(a+b-c)]<sup>1/2</sup> : '
+                      'b+[(b-c+a)(b+c-a)]<sup>1/2</sup> : '
+                      'c+[(c-a+b)(c+a-b)]<sup>1/2</sup>')
+        self.assertEqual(coordinate_candidates(full_cycle)[0][1],
+                         'a+((a-b+c)*(a+b-c))^(1/2)')
         self.assertEqual(normalize_formula('a2b4 + S_A'), 'a^2*b^4+SA')
         self.assertIsNone(normalize_formula('sin A - u cos A'))
 
@@ -159,6 +183,14 @@ class TriangleCenterImportTest(unittest.TestCase):
             path = Path(folder) / 'formulas.txt'
             path.write_text(recipe.row() + '\n', encoding='utf-8')
             self.assertEqual(read_recipes(path)[4182].formula, recipe.formula)
+
+    def test_preferred_recipe_must_be_an_extracted_candidate(self):
+        first = Recipe(4000, 'J', (1, 2, 3, 4), evidence='X(4000) lies on these lines:')
+        preferred = Recipe(4000, 'J', (1, 3, 2, 4))
+        candidates = {4000: [first, Recipe(4000, 'J', preferred.references,
+                                           evidence='X(4000) lies on these lines:')]}
+        selected = select_recipes(candidates, {}, 6, 6000, preferred={4000: preferred})
+        self.assertEqual(selected[4000].references, preferred.references)
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],

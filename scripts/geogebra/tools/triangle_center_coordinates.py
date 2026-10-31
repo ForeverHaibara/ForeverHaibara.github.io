@@ -35,18 +35,22 @@ def coordinate_text(fragment: str) -> list[str]:
 
 
 def normalize_formula(raw: str) -> str | None:
-    raw = unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*').replace('π', 'pi')
+    raw = (unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*')
+           .replace('π', 'pi').replace('[', '(').replace(']', ')'))
+    raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
+                 lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
+    raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc)\b', lambda m: m.group().lower(), raw)
 
-    # ETC X(3371) prints pi8 alongside the equivalent cos(A-3*pi/8).
-    # raw = re.sub(r'\bpi8\b', 'pi/8', raw) # unsafe, do not use
-
-
+    # ETC X(3371) prints pi8; do not silently interpret it as 8*pi.
+    if re.search(r'\bpi\d', raw):
+        return None
     for _ in range(3):
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'\b([Ss])_([ABCabc])\b', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\b',
                  lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
+    raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
     raw = re.sub(r'\s+', '', raw)
     if not raw or len(raw) > 160:
         return None
@@ -58,7 +62,7 @@ def normalize_formula(raw: str) -> str | None:
             return None
         token = match.group()
         if token.isalpha() and token not in VARIABLES | FUNCTIONS:
-            if re.fullmatch('[abc]{2,3}', token):
+            if re.fullmatch('[abcSrR]{2,3}', token):
                 tokens.extend(token)
             else:
                 return None
@@ -86,7 +90,7 @@ def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
-    if len(nodes) > 100:
+    if len(nodes) > 160:
         raise ValueError('Coordinate expression is too large')
     for node in nodes:
         if isinstance(node, (ast.Expression, ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div,
@@ -125,19 +129,24 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
             continue
         trilinear = label.group(1).lower() == 'trilinears'
         text = label.group(2)
-        for next_line in lines[index+1:index+4]:
+        for next_line in lines[index+1:index+11]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
-            if CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
+            if (not CYCLIC.search(text) and re.search(r'[ft]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
+                    and re.match(r'^\s*(?::|[ft]\s*\()', next_line, re.I)):
+                text += ' ' + next_line
+            elif CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
                 text += ' ' + next_line
             elif 'where' in text.lower() and '=' not in text[text.lower().find('where'):]:
                 text += ' ' + next_line
             elif WHERE.search(text) and (text.rstrip().endswith(('+', '-', '*', '/', '^', '('))
                                          or text.count('(') > text.count(')')):
                 text += ' ' + next_line
-            elif WHERE.search(text) and normalize_formula(next_line):
+            elif WHERE.search(text) and re.match(r'^(?:sin|cos|tan|cot|sec|csc)\s*\(', next_line, re.I) and normalize_formula(next_line):
                 text += ' ' + next_line
-            elif not ':' in text and (text.endswith('(') or re.search(r'\b[ft]\([aA],[bB],[cC]\)\s*$', text)):
+            elif not ':' in text and text.endswith('('):
+                text += ' ' + next_line
+            elif not CYCLIC.search(text) and not re.search(r':\s*:', text) and text.rstrip().endswith(('+', '-', '*', '/', '^', '(')):
                 text += ' ' + next_line
             else:
                 break
@@ -157,6 +166,14 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
             formula = normalize_formula(direct.group(1))
             if formula:
                 barycentric = normalize_formula(f'a*({formula})') if trilinear else formula
+                if barycentric:
+                    found.append(('B', barycentric, line))
+            continue
+        parts = text.split(':')
+        if len(parts) == 3:
+            formulas = [normalize_formula(part.strip()) for part in parts]
+            if all(formulas) and rotate_formula(formulas[0], 1) == formulas[1] and rotate_formula(formulas[0], 2) == formulas[2]:
+                barycentric = normalize_formula(f'a*({formulas[0]})') if trilinear else formulas[0]
                 if barycentric:
                     found.append(('B', barycentric, line))
     return list(dict.fromkeys(found))
