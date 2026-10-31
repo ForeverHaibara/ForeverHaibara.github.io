@@ -97,7 +97,7 @@ GeoGebra 5.4.920.0 在 Windows Chrome 上抽测了 Q005、Q014、Q036A、Q202、
 
 ### 首批与高次曲线的补充范围
 
-首批正式命令抽样还覆盖 Q002、Q003、Q012、Q033、Q039。Low 匿名 Q012 曾超时，正式接口要求命名中间量；原生 `ApplyMatrix` 后端试验得到 undefined，未用于生产。可用 `/scripts/geogebra/browser/geogebra-gibert-smoke.html?id=12&mode=high` 复现正式执行路径；支持 `history=1`、`quoted=1` 和 `keep=1`。
+首批正式命令抽样还覆盖 Q002、Q003、Q012、Q033、Q039。Low 匿名 Q012 曾超时，正式接口要求命名中间量；原生 `ApplyMatrix` 后端试验得到 undefined，未用于生产。可用 `/scripts/geogebra/browser/verification.html?page=gibert&id=12&mode=high` 复现正式执行路径；支持 `history=1`、`quoted=1` 和 `keep=1`。
 
 图片公式转录的 Q006、Q026–Q027、Q042–Q043、Q045、Q050、Q052–Q053、Q055、Q057–Q063、Q066、Q068–Q069、Q083–Q084 做了三组精确三角形上的来源点、次数、齐次性与编译预算检查；Q083 的等价式和 Q042/Q043、Q083/Q084 的等角关系另做符号核验。这一批当时未进行实机抽样。Q100 清除有理式分母后以代数闭包接入，不将分母为零处视为原表达式已定义。
 

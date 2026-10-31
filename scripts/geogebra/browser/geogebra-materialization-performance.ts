@@ -71,7 +71,7 @@ const flattenBindings = (source: string) => {
   return { assignments: [...assignments].map(([name, value]) => `${name}=${value}`), result };
 };
 
-/** Disposable native comparison on geogebra-smoke.html?suite=materialization&tool=inverse|quartic|conic|pretangential. */
+/** Disposable native comparison on verification.html?page=smoke&suite=materialization&tool=inverse|quartic|conic|pretangential. */
 export const verifyMaterializationPerformance = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
   const requested = new URLSearchParams(location.search).get('tool');

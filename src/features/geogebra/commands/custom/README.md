@@ -462,13 +462,13 @@ the construction. The direct `ImplicitCurve` boundary retains undefined slots.
 
 ## Verification
 
-`/scripts/geogebra/browser/geogebra-curve-optimization-smoke.html` checks the changed families.
+`/scripts/geogebra/browser/verification.html?page=curve` checks the changed families.
 Choose `group=curves`, `mixed`, `transform`, `polynomial-transform`, `cubic`,
 `native-primitives` or `zero`. It uses a fixed 800×480 parent container and
 bounded logs; the applet must not size itself from the growing document body.
 These are mathematical/type/dependency checks, not a drag-performance benchmark.
 
-The disposable `/scripts/geogebra/browser/geogebra-qlcu1-benchmark.html` compares the original
+The disposable `/scripts/geogebra/browser/verification.html?page=qlcu1` compares the original
 four-point QLCu1 implementation with a fully substituted coordinate equation.
 See [the timing report](docs/benchmarks/qlcu1-performance.md) for
 the setup, bracket regression, equivalence checks and measured limitations.
@@ -480,7 +480,7 @@ uses `qlCubic` throughout. Recreate the curve after switching: existing objects
 retain their native definitions. The recorded benchmark explicitly keeps the
 original construction and long candidate, independently of this selection.
 
-`/scripts/geogebra/browser/geogebra-smoke.html?suite=algebraic` exercises all 42 algebraic-geometry overloads, output XML
+`/scripts/geogebra/browser/verification.html?page=smoke&suite=algebraic` exercises all 42 algebraic-geometry overloads, output XML
 classes and helper counts, conjugation identities, conic limits, supporting
 lines, dragging and export/reopen. Add `&tool=CoTf3` (or another exact tool name)
 to run just its catalog overloads. The browser suite is separate from Vitest;
@@ -489,7 +489,7 @@ current completion and any native-engine limitations are recorded in the PLAN.
 Scimemi similarities, complex quartic coefficients and independent circle-pencil
 and QA-cubic identities, including a homogeneous infinite-diagonal limit.
 
-`/scripts/geogebra/browser/geogebra-smoke.html?suite=cubic` verifies both cubic polars and both
+`/scripts/geogebra/browser/verification.html?page=smoke&suite=cubic` verifies both cubic polars and both
 third-intersection overloads, all ten polynomial terms, sparse coefficients,
 vertical secants, inflections, noncubic rejection (including encoding collisions),
 dynamic degree changes, native triangle cubics, pivotal cubics, nine-point cubics,
@@ -500,7 +500,7 @@ against the saved native command index, with explicit scalar/coordinate function
 and generated anonymous local calls. It covers builders, composed dependencies,
 independent outputs and input type families. This catches missing native names;
 it does not verify native signatures or replace real-engine geometry checks.
-The focused `/scripts/geogebra/browser/geogebra-smoke.html?suite=radical` suite checks circle powers,
+The focused `/scripts/geogebra/browser/verification.html?page=smoke&suite=radical` suite checks circle powers,
 tangencies, concentric cases, dependent tools, line/segment/ray supporting-line
 overloads, dragging, and export/reopen. Supporting-line extraction uses interior
 path parameters 1/4 and 1/2: `Point(line,0)` is at infinity and cannot be used
@@ -509,13 +509,13 @@ in generated expressions as well as unknown command names.
 
 The canonical tools and alias lists are in `library.json`; the full catalog is not duplicated here.
 For basic real-engine verification, open
-`/scripts/geogebra/browser/geogebra-smoke.html?suite=basic` and click **Run verification**. It checks
+`/scripts/geogebra/browser/verification.html?page=smoke&suite=basic` and click **Run verification**. It checks
 every new overload, scalar output types, helper counts, harmonic cross-ratios,
 similarities, conjugation/polarity identities, supporting lines, dragging and
 export/reopen dependencies. This browser suite is separate from Vitest and must
 be run against the actual embedded engine.
 
-For construction checks, open `/scripts/geogebra/browser/geogebra-smoke.html?suite=constructions`. It covers every new
+For construction checks, open `/scripts/geogebra/browser/verification.html?page=smoke&suite=constructions`. It covers every new
 overload, XML geometry classes, helper counts, conjugation identities,
 tangencies, inconic foci, six-midpoint incidence and degenerations, cubic
 polarity/residual intersections, coefficient dragging, and export/reopen.
@@ -526,7 +526,7 @@ to its original tools.
 Run `npm test -- --run` for parser/dispatch, hygiene, completion and adapter
 tests, including homogeneous algebra identities for the geometry builders. These
 tests do not simulate the native engine. With `npm run dev`, open
-`/scripts/geogebra/browser/geogebra-smoke.html` and click **Run
+`/scripts/geogebra/browser/verification.html?page=smoke` and click **Run
 verification** for a disposable real-engine construction. It checks all six
 point/line counts against known circle solutions, every returned incidence and
 tangency equation, segment/ray normalization, conjugation involutions and a

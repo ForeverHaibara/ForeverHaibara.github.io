@@ -2,7 +2,7 @@ import type { GeoGebraEngine } from '../../../src/features/geogebra/types';
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import { studioToolLibrary } from '../../../src/features/geogebra/commands/custom/toolLibrary';
 
-/** Disposable native construction: geogebra-smoke.html?suite=algebraic. */
+/** Disposable native construction: verification.html?page=smoke&suite=algebraic. */
 const verifyAlgebraicConstruction = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const check = (ok: boolean, message: string) => { if (!ok) throw new Error(message); report(`PASS ${message}`); };

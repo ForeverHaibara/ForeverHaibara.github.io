@@ -47,7 +47,7 @@ Q106 新发现的未通过位置为近共线三角形 A=(0,0)、B=(6,0)、C=(2,0
 下文的五条候选、旧严格阈值和批次测量保留为历史研究记录。
 
 本轮单元测试 60 个文件 / 536 项通过。原生补跑可使用
-`/scripts/geogebra/browser/geogebra-gibert-batch.html`，点击 Run five candidates；
+`/scripts/geogebra/browser/verification.html?page=batch`，点击 Run five candidates；
 Q106 仍应作为实验候选，不把批量页面完成等同于五条全部通过。
 
 
@@ -266,7 +266,7 @@ python scripts/geogebra/tools/check_related_curve_points.py --include-deferred
 python scripts/geogebra/tools/experiment_related_curve_transforms.py src/features/geogebra/commands/custom/data/related-curves/deferred.json
 ```
 
-启动 Vite 后，正式主流程使用 `/scripts/geogebra/browser/geogebra-gibert-smoke.html?id=70&mode=medium&history=1` 或 `id=109&mode=high&history=1`。专项使用 `/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=70` 或 109。对实验候选添加 `experimental=1`；例如 `id=106&experimental=1` 可复现其专项精度失败。
+启动 Vite 后，正式主流程使用 `/scripts/geogebra/browser/verification.html?page=gibert&id=70&mode=medium&history=1` 或 `id=109&mode=high&history=1`。专项使用 `/scripts/geogebra/browser/verification.html?page=structured&id=70` 或 109。对实验候选添加 `experimental=1`；例如 `id=106&experimental=1` 可复现其专项精度失败。
 
 ## 复现
 
@@ -284,4 +284,4 @@ npm run build
 
 本轮结果：旧配方与新电路的生成一致性检查、完整符号恒等式、精确来源点检查、原生参考夹具一致性均通过；Vitest 58 个文件 / 524 项通过，TypeScript 和生产构建通过。生产主包约 7.11 MB、gzip 1.325 MB；构建仍报告大 chunk 和既有 Gradio Node 模块浏览器兼容提示，拆分体积问题尚未解决。
 
-启动 Vite 后，主流程打开 `/scripts/geogebra/browser/geogebra-gibert-smoke.html?id=18&mode=medium&history=1&keep=1`，另一条使用 `id=20&mode=high&quoted=1`；专项打开 `/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=18` 或 `id=20`，点击 Run verification。主流程负责性能与生命周期，专项负责精确参考和变换/边界测试。
+启动 Vite 后，主流程打开 `/scripts/geogebra/browser/verification.html?page=gibert&id=18&mode=medium&history=1&keep=1`，另一条使用 `id=20&mode=high&quoted=1`；专项打开 `/scripts/geogebra/browser/verification.html?page=structured&id=18` 或 `id=20`，点击 Run verification。主流程负责性能与生命周期，专项负责精确参考和变换/边界测试。

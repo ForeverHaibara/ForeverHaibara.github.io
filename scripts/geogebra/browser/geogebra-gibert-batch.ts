@@ -9,7 +9,7 @@ const next=()=>{
     status.textContent+='\nCOMPLETE';button.disabled=false;running=false;return;
   }
   const id=ids[results.length];status.textContent+=`\nRunning Q${id}`;
-  frame.src=`./geogebra-gibert-structured-smoke.html?id=${id}&experimental=1&autorun=1`;
+  frame.src=`./verification.html?page=structured&id=${id}&experimental=1&autorun=1`;
 };
 window.addEventListener('message',(event)=>{
   if(!running || event.origin!==location.origin || event.source!==frame.contentWindow || event.data?.type!=='gibert-structured-result')return;

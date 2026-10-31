@@ -60,6 +60,6 @@ Neuberg cubic K001 成比例；另用原生 GeoGebra 的 X(15) 与
 重复构造十系数多项式映射。新式虽然仍有匿名绑定，但只计算七个
 简单数值系数。
 
-复现入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=qa-performance&tool=qa`，
+复现入口：`/scripts/geogebra/browser/verification.html?page=smoke&suite=qa-performance&tool=qa`，
 以及 `?suite=qa-performance&tool=inverse&variant=bound`。原生回归入口：
 `?suite=isocubics&tool=qa-interior`、`qa-neuberg` 和 `degenerate`。

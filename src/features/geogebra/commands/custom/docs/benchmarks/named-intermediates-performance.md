@@ -35,7 +35,7 @@
 
 正式方案至少需要处理辅助标签命名、隐藏、删除／重定义联动、撤销和 `.ggb` 保存恢复；还应确认发现算法确实忽略数值、列表和函数对象。`Pretangential` 的结果依赖允许多变量函数辅助对象；若开关只允许数值／列表，它的这组结果不能直接套用。实验没有测试 CAS 中间变量，也没有测渲染帧耗时或多工具叠加后的构造规模。
 
-复现入口：`/scripts/geogebra/browser/geogebra-smoke.html?suite=materialization&tool=conic`、`tool=pretangential`、`tool=inverse`。基准实现见 `scripts/geogebra/browser/geogebra-materialization-performance.ts`。执行两次构造、三次输入更新后会自动检查结果等价性和辅助对象类型。
+复现入口：`/scripts/geogebra/browser/verification.html?page=smoke&suite=materialization&tool=conic`、`tool=pretangential`、`tool=inverse`。基准实现见 `scripts/geogebra/browser/geogebra-materialization-performance.ts`。执行两次构造、三次输入更新后会自动检查结果等价性和辅助对象类型。
 
 ## 第二阶段：Medium 筛选
 

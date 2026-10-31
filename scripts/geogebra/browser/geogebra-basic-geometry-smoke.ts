@@ -2,7 +2,7 @@ import type { GeoGebraEngine } from '../../../src/features/geogebra/types';
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 import { studioToolLibrary } from '../../../src/features/geogebra/commands/custom/toolLibrary';
 
-/** Focused regression; geogebra-smoke.html?suite=radical. */
+/** Focused regression; verification.html?page=smoke&suite=radical. */
 export const verifyRadicalAxis = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const check = (condition: boolean, message: string) => { if (!condition) throw new Error(message); report(`PASS ${message}`); };
@@ -66,7 +66,7 @@ export const verifyRadicalAxis = async (engine: GeoGebraEngine, report: (message
   report('PASS radical-axis dependencies survive dragging and export/reopen');
 };
 
-/** Real-engine checks; open geogebra-smoke.html?suite=basic and run verification. */
+/** Real-engine checks; open verification.html?page=smoke&suite=basic and run verification. */
 export const verifyBasicGeometry = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const value = async (expression: string) => Number(await api('getValue', expression));

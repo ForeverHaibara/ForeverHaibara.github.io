@@ -63,7 +63,7 @@ npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurve
 After changing primary equations or native test shapes, regenerate the exact
 reference fixtures with `check_related_curve_circuits.py --write-native-fixtures`.
 The specialized native harness is
-`/scripts/geogebra/browser/geogebra-gibert-structured-smoke.html?id=18` (or 20).
+`/scripts/geogebra/browser/verification.html?page=structured&id=18` (or 20).
 It complements the existing lifecycle/performance harness above.
 
 `deferred.json` retains Q106, whose near-collinear far-circle sample still fails
@@ -90,7 +90,7 @@ Use the existing typed bindings and `requiresNamed` contract; do not sample
 coordinates in JavaScript or bind expressions involving curve variables as
 numbers. See [design and measurements](../../docs/benchmarks/gibert-curves.md).
 
-Run the real-engine harness `/scripts/geogebra/browser/geogebra-gibert-smoke.html`
+Run the real-engine harness `/scripts/geogebra/browser/verification.html?page=gibert`
 with `?id=12&mode=high` (or medium). Add `history=1`, `quoted=1`, or `keep=1`
 for history, quoted-ID, and post-cleanup visual checks. Low is intentionally
 rejected before evaluation; do not remove the `requiresNamed` guard to benchmark

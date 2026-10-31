@@ -10,7 +10,7 @@ const median = (values: number[]) => {
   return (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.floor(sorted.length / 2)]) / 2;
 };
 
-/** Isolated native comparison on geogebra-smoke.html?suite=qa-performance&tool=qa|inverse. */
+/** Isolated native comparison on verification.html?page=smoke&suite=qa-performance&tool=qa|inverse. */
 export const verifyQaPerformance = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
   const tool = new URLSearchParams(location.search).get('tool') === 'inverse' ? 'inverse' : 'qa';

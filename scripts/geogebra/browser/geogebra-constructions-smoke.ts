@@ -3,7 +3,7 @@ import { executeCommandPipeline } from '../../../src/features/geogebra/commands/
 import { readCommandEnvironment } from '../../../src/features/geogebra/commands/custom/commandEnvironment';
 import { studioToolLibrary } from '../../../src/features/geogebra/commands/custom/toolLibrary';
 
-/** Disposable native-engine checks: geogebra-smoke.html?suite=constructions. */
+/** Disposable native-engine checks: verification.html?page=smoke&suite=constructions. */
 export const verifyConstructions = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const value = async (expression: string) => Number(await api('getValue', expression));

@@ -1,7 +1,7 @@
 import type { GeoGebraEngine } from '../../../src/features/geogebra/types';
 import { executeCommandPipeline } from '../../../src/features/geogebra/commands/commandPipeline';
 
-/** Focused native-engine regression: geogebra-smoke.html?suite=cubic. */
+/** Focused native-engine regression: verification.html?page=smoke&suite=cubic. */
 export const verifyCubic = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const check = (condition: boolean, message: string) => { if (!condition) throw new Error(message); report(`PASS ${message}`); };
@@ -74,7 +74,7 @@ export const verifyCubic = async (engine: GeoGebraEngine, report: (message: stri
 };
 
 
-/** Focused native-engine check: geogebra-smoke.html?suite=cubic-tools[&tool=Name]. */
+/** Focused native-engine check: verification.html?page=smoke&suite=cubic-tools[&tool=Name]. */
 export const verifyCubicTools = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (method: string, ...args: unknown[]) => engine.callApi(method, args);
   const run = async (source: string) => {
@@ -251,7 +251,7 @@ export const verifyCubicMisc = async (engine: GeoGebraEngine, report: (message: 
 };
 
 
-/** Focused native check: geogebra-smoke.html?suite=isocubics[&tool=Name]. */
+/** Focused native check: verification.html?page=smoke&suite=isocubics[&tool=Name]. */
 export const verifyIsocubics = async (engine: GeoGebraEngine, report: (message: string) => void) => {
   const api = (name: string, ...args: unknown[]) => engine.callApi(name, args);
   const run = async (source: string) => {
