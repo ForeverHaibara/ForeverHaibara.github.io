@@ -57,7 +57,7 @@ python scripts/geogebra/tools/generate_related_curve_circuits.py
 python scripts/geogebra/tools/generate_related_curve_circuits.py --check
 python scripts/geogebra/tools/check_related_curve_circuits.py
 python scripts/geogebra/tools/check_related_curve_circuits.py --check-native-fixtures
-npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurveBackends.test.ts
+npx vitest run src/features/geogebra/commands/custom/tests/geometry/relatedCurves.test.ts
 ```
 
 After changing primary equations or native test shapes, regenerate the exact

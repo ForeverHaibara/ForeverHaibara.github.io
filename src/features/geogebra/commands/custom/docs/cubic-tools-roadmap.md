@@ -68,7 +68,7 @@
 
 
 
-插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra/browser/geogebra-cubic-misc-smoke.ts`。原来的反演抛物线及内联矩阵核 `CuspidalCubic` 候选都使原生绘制长时间无响应；现改为命名数值核向量，并在切锥判别式层求双支。当前固定前 n 列为枢轴；特殊输入虽仍可能有唯一两维核，若该枢轴行列式为零会返回 undefined。后续可研究低成本的动态枢轴选择。`NodalCubic` 暂不改动。
+插入阶段已实现（2026-10-28）：`CircularCubic` 六点加方向重载、`CubicAsymptotes` 三个独立直线槽及编号重载、`Tangential` 别名、五个 `NodalCubic` 重载、四个 `Strophoid` 重载。结点曲线以 A 为局部原点，在 7 项一般双点、5 项圆环双点或 4 项正交双点空间内用取值矩阵余子式求唯一方程；`l` 以方向 `(y(l),−x(l))` 加一条无穷远约束。三点角平分 `Strophoid` 直接用叉积乘点积的三次式；`Strophoid(A,B,l)` 消去圆心 C，允许 l 不经过 A。原生创建与 XML 类检查见 `scripts/geogebra/browser/geogebra-cubic-smoke.ts`。原来的反演抛物线及内联矩阵核 `CuspidalCubic` 候选都使原生绘制长时间无响应；现改为命名数值核向量，并在切锥判别式层求双支。当前固定前 n 列为枢轴；特殊输入虽仍可能有唯一两维核，若该枢轴行列式为零会返回 undefined。后续可研究低成本的动态枢轴选择。`NodalCubic` 暂不改动。
 
 此前另加入 `Pretangential` 与 `CubicInvolution` 的点值／编号重载。一般切点用两原生二次曲线求交；拐点改用原生直线与三次曲线求交。实机验证了四点／三点各自独立的 XML 点类、无命名辅助对象、点在曲线上及其切线过指定 tangential，并验证拐点输入下的 undefined 固定槽。`CubicInflexionPoints` 仍属 PENDING：单纯开启 CAS 可以消除 `Solutions` 的未定义结果，但顶层成功的六项 Hessian 方程组在嵌入点构造时被拒绝；暂不留下在常见输入上会失败的接口。
 

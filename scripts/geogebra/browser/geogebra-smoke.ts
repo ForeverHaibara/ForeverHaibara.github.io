@@ -4,10 +4,7 @@ import { readFileTools } from '../../../src/features/geogebra/commands/custom/co
 import { createFileToolCompletionProvider } from '../../../src/features/geogebra/commands/completion/fileToolCompletionProvider';
 import { verifyBasicGeometry, verifyRadicalAxis } from './geogebra-basic-geometry-smoke';
 import { verifyConstructions } from './geogebra-constructions-smoke';
-import { verifyCubic } from './geogebra-cubic-smoke';
-import { verifyCubicTools } from './geogebra-cubic-tools-smoke';
-import { verifyCubicMisc } from './geogebra-cubic-misc-smoke';
-import { verifyIsocubics } from './geogebra-isocubics-smoke';
+import { verifyCubic, verifyCubicTools, verifyCubicMisc, verifyIsocubics } from './geogebra-cubic-smoke';
 import { verifyQaPerformance } from './geogebra-qa-performance';
 import { verifyMaterializationPerformance } from './geogebra-materialization-performance';
 import { verifyNamedExecution } from './geogebra-named-execution-smoke';
