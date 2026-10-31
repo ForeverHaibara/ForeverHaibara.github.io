@@ -3,6 +3,7 @@ import { executeCommandPipeline } from '../../../src/features/geogebra/commands/
 import records from '../../../src/features/geogebra/commands/custom/data/related-curves/curves.json';
 import fixtures from './fixtures/gibert-pedal.json';
 import { enableExperimentalGibertCurve } from './gibert-experimental';
+import { compareGibertResidual } from './gibert-residual';
 
 // Independent exact-primary-equation reference values, rounded once offline.
 const params = new URLSearchParams(location.search);
@@ -44,17 +45,18 @@ button.onclick = async () => {
       const ratio = actual[anchor] / expected[anchor];
       const scale = Math.max(...actual.slice(0, 4).map(Math.abs));
       check(Number.isFinite(scale) && scale > 0 && Number.isFinite(ratio) && ratio !== 0, `${name}: zero/nonfinite polynomial`);
-      const error = Math.max(...actual.map((value, i) => Math.abs(value - expected[i] * ratio)
-        / Math.max(scale, Math.abs(value), Math.abs(expected[i] * ratio))));
-      if (error >= 1e-6) data.failedSamples = { name, actual, expected, ratio };
-      check(error < 1e-6, `${name}: source residual ${error}`);
-      const vertexResiduals = await Promise.all(vertices.map(async ([x, y], i) =>
-        (Number(await api('getValue', `diagnostic(${x},${y})`)) - vertexExpected[i] * ratio)
-          / Math.max(scale, Math.abs(vertexExpected[i] * ratio))));
-      if (vertexResiduals.some(value => !Number.isFinite(value) || Math.abs(value) >= 1e-8))
+      const comparisons = actual.map((value,i) => compareGibertResidual(value,expected[i]*ratio,scale));
+      const error = Math.max(...comparisons.map(result=>result.normalizedError));
+      if (comparisons.some(result=>!result.accepted)) data.failedSamples = { name, actual, expected, ratio };
+      check(comparisons.every(result=>result.accepted), `${name}: source residual ${error}`);
+      const vertexComparisons = await Promise.all(vertices.map(async ([x, y], i) =>
+        compareGibertResidual(Number(await api('getValue', `diagnostic(${x},${y})`)),vertexExpected[i]*ratio,scale)));
+      const vertexResiduals = vertexComparisons.map(result=>result.normalizedError);
+      if (vertexComparisons.some(result=>!result.accepted))
         data.failedVertices = { name, error, vertexResiduals };
-      check(vertexResiduals.every(value => Number.isFinite(value) && Math.abs(value) < 1e-8), `${name}: vertex residual exceeds tolerance`);
-      cases.push({ name, vertices, error, vertexResiduals, samples: points.length });
+      check(vertexComparisons.every(result=>result.accepted), `${name}: vertex residual exceeds tolerance`);
+      cases.push({ name, vertices, error, vertexResiduals, samples: points.length,
+        strictVertexDiagnosticPassed: vertexComparisons.every(result=>result.strictDiagnosticPassed) });
       report(`PASS ${name}: source ${error.toExponential(2)}, vertices and side/circle neighbourhoods`);
     }
     if (record.id === 'Q020') {
