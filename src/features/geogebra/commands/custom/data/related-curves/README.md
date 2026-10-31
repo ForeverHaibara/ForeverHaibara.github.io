@@ -39,6 +39,25 @@ The generator validates degree/homogeneity and alternative equations, and writes
 The runtime evaluates only generated scalar arithmetic with native dependencies;
 it never evaluates the source equation text or fetches the source website.
 
+### Shared world-frame templates
+
+`generated/relatedCurves.json` has two tables. `curves[id]` stores `template`,
+`locals` and `coefficients`; `templates[key]` stores `degree`, `monomials` and
+`terms`. The ordered coefficient list matches the template's ordered barycentric
+monomials. Templates are shared by complete monomial support and generation
+strategy, not degree alone. Stable keys encode the degree, support bitmask and
+Horner strategy; they do not depend on catalogue insertion order.
+
+`builders/relatedCurveRecipes.ts` resolves only the requested curve and reuses
+the template arrays. Do not rebuild a flattened table of all recipes or maintain
+a second copy of the old generated format. The generator rejects incompatible
+arithmetic under the same template key. Source equations and the specialized
+similarity-polynomial backend are unchanged.
+
+Authoring-format checks: `python scripts/geogebra/tools/test_related_curve_pool.py`.
+Normal regeneration and `--check` commands above still apply. Migration figures
+and validation are recorded in [technical notes](../../docs/benchmarks/gibert-curves.md).
+
 ## Opt-in construction backends
 
 An optional `backend` selects an implementation in

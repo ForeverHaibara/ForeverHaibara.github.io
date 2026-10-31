@@ -1,17 +1,9 @@
-import recipesJson from '../generated/relatedCurves.json';
+import { getRelatedCurveRecipe } from './relatedCurveRecipes';
 import records from '../data/related-curves/curves.json';
 import { add, bind, squaredNorm, triangleSideSquares } from '../algebra/homogeneous';
 import type { ExpressionBuilder } from '../types';
 import { RELATED_CURVE_BACKENDS } from './relatedCurveBackends';
 
-interface Recipe {
-  degree: number;
-  locals: string[][];
-  coefficients: string[];
-  monomials: number[][];
-  terms: Array<[number, number, string]>;
-}
-const recipes = recipesJson as unknown as Record<string, Recipe>;
 export const gibertCurveRecords = records;
 const supported = records.map((record) => record.id).join(', ');
 
@@ -44,7 +36,7 @@ export const gibertCurve: ExpressionBuilder = (args, allocate) => {
     if (!backend) throw new Error(`${id}: unknown curve backend ${record.backend}.`);
     return backend(id, args, allocate);
   }
-  const recipe = recipes[id];
+  const recipe = getRelatedCurveRecipe(id);
   if (!recipe) throw new Error(`${id} is not implemented. Supported: ${supported}.`);
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   const frame = vertices.flatMap((_, i) => {

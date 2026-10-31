@@ -74,6 +74,33 @@ def cartesian_terms(monomials, compact):
                  for (i, j), value in zip(world.monoms(), coefficients))
 
 
+def template_id(recipe):
+    degree=recipe['degree']
+    monomials=[tuple(m) for m in recipe['monomials']]
+    if monomials!=sorted(set(monomials),reverse=True) or any(sum(m)!=degree for m in monomials):
+        raise ValueError('Template requires canonical homogeneous monomials')
+    basis=[(i,j,degree-i-j) for i in range(degree,-1,-1) for j in range(degree-i,-1,-1)]
+    support=set(monomials)
+    mask=sum(1<<i for i,m in enumerate(basis) if m in support)
+    strategy='expanded' if degree<7 else 'hornerInterleaved' if len(monomials)>=24 and degree==7 else 'horner'
+    return f'd{degree}_m{mask:x}_{strategy}'
+
+
+def pool_recipes(recipes):
+    """Share exact frame formulas; do not rewrite arithmetic or binding order."""
+    templates,curves={},{}
+    for identifier,recipe in recipes.items():
+        key=template_id(recipe)
+        template={field:recipe[field] for field in ('degree','monomials','terms')}
+        if key in templates and templates[key]!=template:
+            raise ValueError(f'{identifier}: incompatible formulas for template {key}')
+        templates[key]=template
+        if len(recipe['coefficients'])!=len(template['monomials']):
+            raise ValueError(f'{identifier}: incorrect coefficient count')
+        curves[identifier]={'template':key,'locals':recipe['locals'],'coefficients':recipe['coefficients']}
+    return {'templates':templates,'curves':curves}
+
+
 def generate(records):
     result = {}
     seen = set()
@@ -109,7 +136,7 @@ def generate(records):
             'monomials': [list(m) for m in poly.monoms()],
             'terms': [list(term) for term in terms],
         }
-    return json.dumps(result, indent=2, ensure_ascii=False) + '\n'
+    return json.dumps(pool_recipes(result), indent=2, ensure_ascii=False) + '\n'
 
 
 if __name__ == '__main__':
