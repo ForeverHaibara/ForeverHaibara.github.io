@@ -134,7 +134,16 @@ class TriangleCenterImportTest(unittest.TestCase):
                    'Trilinears f(A,B,C)<br>: f(B,C,A) : f(C,A,B), where f(A,B,C) = '
                    '2 cos(A/3) + cos A - 2 cos(B/3)<br>cos(C/3)')
         self.assertEqual(coordinate_candidates(wrapped)[0][1],
-                         '2*cos(A/3)+cos(A)-2*cos(B/3)*cos(C/3)')
+                         'a*(2*cos(A/3)+cos(A)-2*cos(B/3)*cos(C/3))')
+        wrapped_sides = ('<h3 id="X4180">X(4180) = CENTER</h3>'
+                         'Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b),<br>'
+                         'where f(a,b,c) = a<sup>1/2</sup>(b<sup>1/2</sup> + c<sup>1/2</sup>)(b +<br>c - a)')
+        self.assertEqual(coordinate_candidates(wrapped_sides)[0][1],
+                         'a^(1/2)*(b^(1/2)+c^(1/2))*(b+c-a)')
+        pi_variants = ('<h3 id="X3371">X(3371) = CENTER</h3>'
+                       'Trilinears sin(A + &pi;8) : :<br>Trilinears cos(A - 3&pi;/8) : :')
+        self.assertEqual([formula for _, formula, _ in coordinate_candidates(pi_variants)],
+                         ['a*(sin(A+pi/8))', 'a*(cos(A-3*pi/8))'])
         self.assertEqual(normalize_formula('a2b4 + S_A'), 'a^2*b^4+SA')
         self.assertIsNone(normalize_formula('sin A - u cos A'))
 

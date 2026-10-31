@@ -46,10 +46,11 @@ ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'B': 0, 'H': 0}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'J': 7, 'G': 8, 'T': 9, 'B': 10, 'H': 11}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4, 'H': 4}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'B': 0}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'J': 7, 'G': 8, 'T': 9, 'B': 10}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese\s*(?:\(parallel\)\s*)?lines\s*:\s*(.*)$', re.I)
+SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
 BROKEN_LINE_TOKEN = re.compile(r'\s*[,;]?\s*\d{5,}(?=\s|$)')
 MAX_LIST_LINES = 10
@@ -65,7 +66,7 @@ class Recipe:
     formula: str = ''
 
     def row(self) -> str:
-        if self.operation in {'B', 'H'}:
+        if self.operation == 'B':
             return f'{self.number} {self.operation} {self.formula}'
         return f'{self.number} {self.operation} {" ".join(map(str, self.references))}'
 
@@ -172,6 +173,17 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
     return []
 
 
+def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int, int]]:
+    pairs = listed_lines(number, lines, limit=None)
+    for line in lines:
+        match = SINGLE_LINE.match(line)
+        if match and int(match.group(1)) == number:
+            a, b = int(match.group(2)), int(match.group(3))
+            if a > 0 and b > 0 and a != b:
+                pairs.append(tuple(sorted((a, b))))
+    return sorted(set(pairs))
+
+
 def is_infinite_entry(number: int, lines: list[str]) -> bool:
     for line in lines:
         heading = LINE_LIST.match(line)
@@ -231,8 +243,8 @@ def read_page(part: int, excluded: set[int] | None = None,
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
         candidates[number] = extract_entry(number, fragment, part, excluded)
-        if coordinate_lines is not None and any(r.operation in {'B', 'H'} for r in candidates[number]):
-            coordinate_lines[number] = listed_lines(number, relation_lines(fragment), limit=None)
+        if coordinate_lines is not None and any(r.operation == 'B' for r in candidates[number]):
+            coordinate_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
     return entries, candidates
@@ -245,11 +257,11 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
             continue
         fields = row.split()
         number, opcode = int(fields[0]), fields[1]
-        formula = fields[2] if opcode in {'B', 'H'} and len(fields) == 3 else ''
-        refs = () if opcode in {'B', 'H'} else tuple(map(int, fields[2:]))
+        formula = fields[2] if opcode == 'B' and len(fields) == 3 else ''
+        refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
         if (number <= NATIVE_MAX or opcode not in ARITY or len(refs) != ARITY[opcode]
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
-                or (opcode in {'B', 'H'} and (not formula or len(formula) > 160))):
+                or (opcode == 'B' and (not formula or len(formula) > 160))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             validate_formula(formula)
@@ -338,13 +350,13 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
         if target in baseline:
             continue
         for recipe in options:
-            if recipe.operation not in {'B', 'H'}:
+            if recipe.operation != 'B':
                 for ref in recipe.references:
                     dependents[ref].add(target)
     for number, options in candidates.items():
         if number <= NATIVE_MAX or number in baseline:
             continue
-        formulas = [recipe for recipe in options if recipe.operation in {'B', 'H'}
+        formulas = [recipe for recipe in options if recipe.operation == 'B'
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
@@ -353,7 +365,7 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
         if any(any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
                    for p, q in zip(samples[0], other)) for other in samples[1:]):
             continue
-        chosen = min(formulas, key=lambda recipe: (recipe.operation != 'B', len(recipe.formula), recipe.formula))
+        chosen = min(formulas, key=lambda recipe: (len(recipe.formula), recipe.formula))
         ranked.append((len(dependents[number]), len(chosen.formula), number, chosen.part, chosen))
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
     selected: dict[int, Recipe] = {}
@@ -390,7 +402,7 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
             children = [visit(reference) for reference in records[number].references]
             depth[number] = 1 + max((item[0] for item in children), default=0)
             length[number] = ((900 + 15 * children[0][1]) if records[number].operation in {'G', 'T'}
-                              else 150 + 18 * len(records[number].formula) if records[number].operation in {'B', 'H'}
+                              else 150 + 18 * len(records[number].formula) if records[number].operation == 'B'
                               else 24 + sum(item[1] for item in children))
             return depth[number], length[number]
         finally:
@@ -476,8 +488,6 @@ def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -
     weights = [evaluate_formula(rotate_formula(recipe.formula, index), values) for index in range(3)]
     if any(weight is None for weight in weights):
         return None
-    if recipe.operation == 'H':
-        weights = [weight * side for weight, side in zip(weights, (a, b, c))]
     total = sum(weights)
     if not math.isfinite(total):
         return None
@@ -523,7 +533,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             op = recipe.operation
             if op == 'J':
                 answer = numeric_intersection(values)
-            elif op in {'B', 'H'}:
+            elif op == 'B':
                 answer = numeric_formula(recipe, abc)
             elif op == 'I':
                 d = direction(*values)
@@ -737,12 +747,12 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
-                if atlas and recipe.operation in {'B', 'H'} and not formula_candidate_supported(recipe, atlas):
+                if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
                 candidate_length = ((900 + 15 * length.get(recipe.references[0], 27))
                                     if recipe.operation in {'G', 'T'}
-                                    else 150 + 18 * len(recipe.formula) if recipe.operation in {'B', 'H'}
+                                    else 150 + 18 * len(recipe.formula) if recipe.operation == 'B'
                                     else 24 + sum(length.get(ref, 27) for ref in recipe.references))
                 candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
@@ -784,7 +794,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             if refine_coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                     recipe, refine_coordinates, atlas):
                 continue
-            if atlas and recipe.operation in {'B', 'H'} and not formula_candidate_supported(recipe, atlas):
+            if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                 continue
             selected[number] = recipe
             try:
@@ -921,7 +931,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIJGTBH',
+    parser.add_argument('--auto-operations', default='MRCAPLIJGTB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors', type=int, default=32)
     parser.add_argument('--max-depth', type=int, default=6)
@@ -978,7 +988,7 @@ def main() -> None:
     atlas = read_native_atlas(CACHE / 'native-atlas.json')
     eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations]
                 for number, options in all_candidates.items()}
-    relation_only = {number: [recipe for recipe in options if recipe.operation not in {'B', 'H'}]
+    relation_only = {number: [recipe for recipe in options if recipe.operation != 'B']
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, deferred_targets, atlas, native_directions)
@@ -986,11 +996,10 @@ def main() -> None:
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors, priority,
                                  coordinate_lines, native_directions)
     ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
-                      if number > NATIVE_MAX and recipe.operation in {'B', 'H'} and all(
+                      if number > NATIVE_MAX and recipe.operation == 'B' and all(
                           isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
                           for abc in atlas['triangles'].values())]
-    print(f'Coordinate anchors: {len(anchors)} ({sum(r.operation == "B" for r in anchors.values())} barycentric, '
-          f'{sum(r.operation == "H" for r in anchors.values())} trilinear); '
+    print(f'Coordinate anchors: {len(anchors)} barycentric; '
           f'{len(ideal_formulas)} parsed formulas deferred as ideal')
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},

@@ -3,7 +3,7 @@ import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
 import nativeDirectionsSource from '../data/triangle-centers/native-directions.txt?raw';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'B' | 'H'; references: number[]; formula?: string };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'B'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string };
 const nativeDirections = new Map<number, [number, number]>(nativeDirectionsSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -12,12 +12,12 @@ const chunkImports = import.meta.glob<string>('../data/triangle-centers/chunks/*
 const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();
 const loading = new Map<number, Promise<void>>();
-const size = (operation: Recipe['operation']) => ['B', 'H'].includes(operation) ? 0
+const size = (operation: Recipe['operation']) => operation === 'B' ? 0
   : operation === 'J' ? 4 : operation === 'P' || operation === 'L' ? 3
   : ['C', 'A', 'G', 'T'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
-const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC',
+const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'pi',
   'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc']);
 const validFormula = (formula: string): boolean => formula.length <= 160 && /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
   && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name));
@@ -35,12 +35,12 @@ const loadChunk = async (id: number): Promise<void> => {
       const [idText, opcode, ...referenceText] = row.trim().split(/\s+/u);
       const number = Number(idText);
       const operation = opcode as Recipe['operation'];
-      const formula = opcode === 'B' || opcode === 'H' ? referenceText[0] : undefined;
+      const formula = opcode === 'B' ? referenceText[0] : undefined;
       const references = formula ? [] : referenceText.map(Number);
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'B', 'H'].includes(opcode)
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'B'].includes(opcode)
         || references.length !== size(operation)
-        || ((opcode === 'B' || opcode === 'H') && !formula)
+        || (opcode === 'B' && !formula)
         || (formula !== undefined && (referenceText.length !== 1 || !validFormula(formula)))
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
@@ -96,7 +96,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       }, 'number');
     }, 'vector');
   };
-  const coordinatePoint = (formula: string, trilinear: boolean): string => {
+  const coordinatePoint = (formula: string): string => {
     const [A, B, C] = vertices;
     return bind([`Distance(${B},${C})`, `Distance(${C},${A})`, `Distance(${A},${B})`], allocate, ([a, b, c]) => {
       const s = `((${a}+${b}+${c})/2)`;
@@ -108,15 +108,14 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         s, sa: `((${b}+${c}-${a})/2)`, sb: `((${c}+${a}-${b})/2)`, sc: `((${a}+${b}-${c})/2)`,
         S, SA: `((${b}^2+${c}^2-${a}^2)/2)`, SB: `((${c}^2+${a}^2-${b}^2)/2)`,
         SC: `((${a}^2+${b}^2-${c}^2)/2)`, r: `(${S}/(${a}+${b}+${c}))`,
-        R: `((${a}*${b}*${c})/(2*${S}))`,
+        R: `((${a}*${b}*${c})/(2*${S}))`, pi: 'pi',
       };
       const cyclic = (turn: number): string => formula.replace(/[A-Za-z_]+/gu, (name) => {
         let rotated = name;
         for (let i = 0; i < turn; i++) rotated = rotation[rotated] ?? rotated;
         return variables[rotated] ? `(${variables[rotated]})` : rotated;
       });
-      const weights = [cyclic(0), cyclic(1), cyclic(2)].map((weight, i) =>
-        trilinear ? `(${weight})*(${[a, b, c][i]})` : weight);
+      const weights = [cyclic(0), cyclic(1), cyclic(2)];
       return bind(weights, allocate, ([u, v, w]) => {
         const total = `((${u})+(${v})+(${w}))`;
         return `If(${total}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${total})`;
@@ -135,7 +134,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
     visiting.add(number);
     try {
       const values = recipe.references.map(render);
-      if (recipe.operation === 'B' || recipe.operation === 'H') return point(coordinatePoint(recipe.formula!, recipe.operation === 'H'));
+      if (recipe.operation === 'B') return point(coordinatePoint(recipe.formula!));
       if (recipe.operation === 'I') return { kind: 'ideal', from: requirePoint(values[0]), to: requirePoint(values[1]) };
       if (recipe.operation === 'M') return point(`Midpoint(${requirePoint(values[0])},${requirePoint(values[1])})`);
       if (recipe.operation === 'R') return point(`Reflect(${requirePoint(values[0])},${requirePoint(values[1])})`);

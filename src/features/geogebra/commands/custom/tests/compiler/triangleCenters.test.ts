@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3281, 3396, 3357, 3933, 4182, 5091, 5305, 6004, 6012, 72060, 73007, 72478, 73001, 72003, 8036, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3396, 3357, 3933, 4180, 4181, 4182, 5091, 5305, 6004, 6012, 72060, 73007, 72478, 73001, 72003, 8036, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -111,9 +111,17 @@ describe('extended TriangleCenter dispatch', () => {
     expect(barycentric).toContain('Distance(B,C)');
     expect(barycentric).toContain('^(1/2)');
     expect(barycentric).toContain('If(');
-    const trilinear = compileStudioCommand('TriangleCenter(A,B,C,3281)', environment());
+    const trilinear = compileStudioCommand('TriangleCenter(A,B,C,3283)', environment());
     expect(trilinear).toContain('acos(');
     expect(trilinear).toContain('cos(');
+    const piFormula = compileStudioCommand('TriangleCenter(A,B,C,3371)', environment());
+    expect(piFormula).toContain('sin(');
+    expect(piFormula).toContain('pi');
+    for (const id of [4180, 4181]) {
+      const radical = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(radical).toContain('^(1/2)');
+      expect(radical).toContain('If(');
+    }
     const conway = compileStudioCommand('TriangleCenter(A,B,C,8036)', environment());
     expect(conway).toContain('sqrt(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).toContain('^3');

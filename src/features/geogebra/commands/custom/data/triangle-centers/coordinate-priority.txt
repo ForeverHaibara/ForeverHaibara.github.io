@@ -1,4 +1,18 @@
-# Parser-derived coordinate anchors requested for early coverage.
+# Parser-derived anchors retained for coverage across parser changes.
 # These IDs select an automatically parsed formula; no formula is copied here.
+3281
+3371
+4180
+4181
 4182
+6727
+6728
+6733
+7036
 72003
+72655
+72656
+72658
+72660
+8036
+8124

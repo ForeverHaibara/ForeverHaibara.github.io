@@ -1,7 +1,7 @@
 """Conservative ETC cyclic-coordinate parser shared by the manual importer.
 
-Only a single cyclic barycentric/trilinear formula is stored. Unsupported
-notation is rejected rather than interpreted as an implicit new variable.
+Only a single cyclic barycentric formula is stored; trilinears are converted
+by multiplying the first coordinate by side a before storage.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
-             'S', 'SA', 'SB', 'SC', 'r', 'R'}
+             'S', 'SA', 'SB', 'SC', 'r', 'R', 'pi'}
 FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
@@ -35,7 +35,9 @@ def coordinate_text(fragment: str) -> list[str]:
 
 
 def normalize_formula(raw: str) -> str | None:
-    raw = unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*')
+    raw = unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*').replace('π', 'pi')
+    # ETC X(3371) prints pi8 alongside the equivalent cos(A-3*pi/8).
+    raw = re.sub(r'\bpi8\b', 'pi/8', raw)
     for _ in range(3):
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'\b([Ss])_([ABCabc])\b', lambda m: m.group(1) + m.group(2).upper()
@@ -118,12 +120,17 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
         label = LABEL.match(line)
         if not label:
             continue
-        kind = 'B' if label.group(1).lower() == 'barycentrics' else 'H'
+        trilinear = label.group(1).lower() == 'trilinears'
         text = label.group(2)
         for next_line in lines[index+1:index+4]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
-            if 'where' in text.lower() and '=' not in text[text.lower().find('where'):]:
+            if CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
+                text += ' ' + next_line
+            elif 'where' in text.lower() and '=' not in text[text.lower().find('where'):]:
+                text += ' ' + next_line
+            elif WHERE.search(text) and (text.rstrip().endswith(('+', '-', '*', '/', '^', '('))
+                                         or text.count('(') > text.count(')')):
                 text += ' ' + next_line
             elif WHERE.search(text) and normalize_formula(next_line):
                 text += ' ' + next_line
@@ -138,13 +145,17 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
                 raw = text[where.end():].split(' (Peter ', 1)[0].strip()
                 formula = normalize_formula(raw)
                 if formula:
-                    found.append((kind, formula, line))
+                    barycentric = normalize_formula(f'a*({formula})') if trilinear else formula
+                    if barycentric:
+                        found.append(('B', barycentric, line))
             continue
         direct = re.match(r'^(.*?)\s*:\s*:', text)
         if direct:
             formula = normalize_formula(direct.group(1))
             if formula:
-                found.append((kind, formula, line))
+                barycentric = normalize_formula(f'a*({formula})') if trilinear else formula
+                if barycentric:
+                    found.append(('B', barycentric, line))
     return list(dict.fromkeys(found))
 
 
@@ -167,7 +178,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
             'C': math.acos(max(-1, min(1, (a*a+b*b-c*c)/(2*a*b)))),
             's': s, 'sa': s-a, 'sb': s-b, 'sc': s-c, 'S': S,
             'SA': (b*b+c*c-a*a)/2, 'SB': (c*c+a*a-b*b)/2, 'SC': (a*a+b*b-c*c)/2,
-            'r': area/s, 'R': a*b*c/(4*area)}
+            'r': area/s, 'R': a*b*c/(4*area), 'pi': math.pi}
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
