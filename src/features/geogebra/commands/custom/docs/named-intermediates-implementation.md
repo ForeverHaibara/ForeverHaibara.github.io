@@ -12,7 +12,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 
 | 工具／重载 | 所需辅助类型与档位 | 当前状态 | 证据或原因 |
 |---|---|---|---|
-| `GibertCurve(A,B,C,id)` | 数值辅助对象，Medium／High | 已启用，要求命名路径 | 默认离线生成世界系数；Q018/Q020/Q070/Q109 使用相似坐标及三阶段系数，复用同一执行器及生命周期。Low 的 Q012 匿名式超时，因此用 `requiresNamed` 在执行前拒绝匿名回落及同名输出重定义。详见 [原生记录](benchmarks/gibert-curves-validation.md)、[扩展记录](benchmarks/gibert-curves-validation.md)、[八次结构化后端](benchmarks/gibert-pedal-integration.md)及[后续候选精度评估](benchmarks/gibert-similarity-expansion.md)。 |
+| `GibertCurve(A,B,C,id)` | 数值辅助对象，Medium／High | 已启用，要求命名路径 | 默认离线生成世界系数；Q018/Q020/Q070/Q109 使用相似坐标及三阶段系数，复用同一执行器及生命周期。Low 的 Q012 匿名式超时，因此用 `requiresNamed` 在执行前拒绝匿名回落及同名输出重定义。详见 [接口与验收范围](related-curves.md)及[生成后端与数值限制](benchmarks/gibert-curves.md)。 |
 | 五条直线／射线／线段 `Conic` | 数值，Medium | 已启用 | 原生创建约 921→32 ms；混合线型、平行退化已核对。 |
 | 编号 `Pretangential(F,P,i)` | 数值、数值列表、函数，Medium | 已启用 | 第一分支约 993→133 ms；四个编号均通过原生回归。无编号形式尚未启用。 |
 | `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` | 非几何，Medium | 已启用 | 原生类型、方程与动态更新已核对。 |

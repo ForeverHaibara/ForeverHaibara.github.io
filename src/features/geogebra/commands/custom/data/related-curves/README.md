@@ -79,7 +79,7 @@ accepts the same `--source` plus `--circuits` pointing to that output. Add
 On the two isolated native harness pages only, `?id=106&experimental=1` explicitly
 enables that one candidate in that page's in-memory tables. Ordinary workspace
 commands continue to reject it. The reference fixtures cover both sets. See
-[measurements and limitations](../../docs/benchmarks/gibert-similarity-expansion.md).
+[measurements and limitations](../../docs/benchmarks/gibert-curves.md).
 
 A future hand-written construction can register a separate backend and opt in
 one reviewed record; it need not generate either recipe format. Explicitly
@@ -88,7 +88,7 @@ independently checkable primary equation, prove any canceled factors, and verify
 the actual compiled budget, native type, degeneracy, dynamics and file lifecycle.
 Use the existing typed bindings and `requiresNamed` contract; do not sample
 coordinates in JavaScript or bind expressions involving curve variables as
-numbers. See [design and measurements](../../docs/benchmarks/gibert-pedal-integration.md).
+numbers. See [design and measurements](../../docs/benchmarks/gibert-curves.md).
 
 Run the real-engine harness `/scripts/geogebra/browser/geogebra-gibert-smoke.html`
 with `?id=12&mode=high` (or medium). Add `history=1`, `quoted=1`, or `keep=1`

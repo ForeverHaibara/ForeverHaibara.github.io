@@ -35,7 +35,7 @@ Implementation files are grouped by responsibility:
 | `tests/contracts/` | Catalog overloads, native command compatibility and type boundaries. |
 | `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
-| [docs/benchmarks/gibert-curves-validation.md](docs/benchmarks/gibert-curves-validation.md) | Consolidated coverage and limits of native GibertCurve sampling. |
+| [docs/related-curves.md](docs/related-curves.md) | Consolidated coverage and limits of native GibertCurve sampling. |
 
 ## Manage the library
 
@@ -97,7 +97,7 @@ label. Low is rejected before evaluation because the anonymous expansion timed
 out in an isolated experiment. To replace an existing result, delete it and
 recreate it. Creation can take several seconds for the sextic, although numeric
 dependencies make subsequent updates much faster. See the [implementation and
-maintenance notes](docs/related-curves-roadmap.md) and [small JSON database](data/related-curves/README.md).
+maintenance notes](docs/related-curves.md) and [small JSON database](data/related-curves/README.md).
 
 ### Implementations and composition
 
