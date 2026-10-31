@@ -74,6 +74,19 @@ export const containsStudioCall = (source: string, depth = 0): boolean => {
     || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
 };
 
+/** Collect only calls owned by the site; file tools retain priority. */
+export const extendedTriangleCenterIds = (source: string, environment: CommandEnvironment, depth = 0): number[] => {
+  if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
+  return outerCalls(source).flatMap((call) => {
+    if (call.declaration) return [];
+    const key = call.name.toLowerCase();
+    const id = key === 'trianglecenter' && call.args.length === 4
+      && !environment.macros.has(key) && !environment.objects.has(call.name)
+      ? extendedTriangleCenterId(call.args[3]) : undefined;
+    return [...(id === undefined ? [] : [id]), ...call.args.flatMap((arg) => extendedTriangleCenterIds(arg, environment, depth + 1))];
+  });
+};
+
 type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }>; requiresNamed?: boolean };
 
 export const compileStudioCommand = (source: string, environment: CommandEnvironment,

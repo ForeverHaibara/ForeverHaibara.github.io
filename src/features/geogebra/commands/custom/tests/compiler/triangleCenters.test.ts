@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { compileStudioCommand, containsStudioCall } from '../../commandCompiler';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { compileStudioCommand, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
+import { prepareTriangleCenter } from '../../builders/triangleCenters';
 import type { CommandEnvironment } from '../../types';
 
 const environment = (): CommandEnvironment => ({
   objects: new Map([['A', 'point'], ['B', 'point'], ['C', 'point'], ['n', 'number']]),
   macros: new Set(),
 });
+
+beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3357, 73001]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -33,7 +36,29 @@ describe('extended TriangleCenter dispatch', () => {
   it('keeps file tools first and reports unsupported extended IDs', () => {
     const scope = environment();
     scope.macros.add('trianglecenter');
+    expect(extendedTriangleCenterIds('TriangleCenter(A,B,C,3054)', scope)).toEqual([]);
     expect(compileStudioCommand('TriangleCenter(A,B,C,3054)', scope)).toBe('TriangleCenter(A,B,C,3054)');
+    expect(extendedTriangleCenterIds('P=TriangleCenter(A,B,C,3070)+TriangleCenter(A,B,C,3054)', environment()))
+      .toEqual([3070, 3054]);
     expect(() => compileStudioCommand('TriangleCenter(A,B,C,3062)', environment())).toThrow('X(3062) is not implemented');
+  });
+
+  it('uses compact affine recipes without loading symbolic coordinates', () => {
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3070)', environment()))
+      .toBe('((A)+(B)+(C)-(TriangleCenter(A,B,C,490)))/2');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3100)', environment()))
+      .toBe('(A)+(B)+(C)-2*(TriangleCenter(A,B,C,1861))');
+    for (const id of [3071, 3081, 3094, 3095, 3097, 3098, 3357]) {
+      const expanded = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(expanded).not.toContain(`,${id})`);
+      expect(expanded.length).toBeLessThan(400);
+    }
+  });
+
+  it('resolves a later ETC block through a non-native cross-chunk dependency', () => {
+    const projection = 'ClosestPoint(Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3)),TriangleCenter(A,B,C,1))';
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3109)', environment())).toBe(projection);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73001)', environment()))
+      .toBe(`Reflect(TriangleCenter(A,B,C,476),${projection})`);
   });
 });

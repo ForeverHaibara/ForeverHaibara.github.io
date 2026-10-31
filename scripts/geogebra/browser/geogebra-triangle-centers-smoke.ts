@@ -27,10 +27,12 @@ button.onclick = async () => {
     await run('A=(0,0)\nB=(6,0)\nC=(1,4)');
     const native = await run('Native=TriangleCenter(A,B,C,2)');
     check(!native.expandedCommand || native.expandedCommand === 'Native=TriangleCenter(A,B,C,2)', 'native selector was changed');
+    const boundary = await run('NativeBoundary=TriangleCenter(A,B,C,3053)');
+    check(!boundary.expandedCommand || boundary.expandedCommand === 'NativeBoundary=TriangleCenter(A,B,C,3053)', 'native boundary selector was changed');
     await run('n=2');
     const dynamic = await run('Dynamic=TriangleCenter(A,B,C,n)');
     check(!dynamic.expandedCommand || dynamic.expandedCommand === 'Dynamic=TriangleCenter(A,B,C,n)', 'dynamic selector was changed');
-    const ids = [3054, 3056, 3057, 3059, 3060, 3061];
+    const ids = [3054, 3056, 3057, 3059, 3060, 3061, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3357, 73001];
     const initial = new Map<number, [number, number]>();
     for (const id of ids) {
       const result = await run(`X${id}=TriangleCenter(A,B,C,${id})`);
@@ -58,7 +60,7 @@ button.onclick = async () => {
       `X(${id}) lost its dependency after reopen`);
     data.ids = ids;
     data.success = true;
-    report('COMPLETE: native passthrough, six points, drag and reopen');
+    report(`COMPLETE: native passthrough, ${ids.length} points, drag and reopen`);
   } catch (error) { data.success = false; data.error = String(error); report(`FAIL ${String(error)}`); }
   finally { document.querySelector<HTMLPreElement>('#json')!.textContent = JSON.stringify(data, null, 2); button.disabled = false; }
 };
