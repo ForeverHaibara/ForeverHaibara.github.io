@@ -1,0 +1,4 @@
+# Parser-derived coordinate anchors requested for early coverage.
+# These IDs select an automatically parsed formula; no formula is copied here.
+4182
+72003

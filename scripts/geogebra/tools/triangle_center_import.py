@@ -1,8 +1,8 @@
-"""Manually fetch ETC pages, extract explicit constructions, and build compact chunks.
+"""Manually fetch ETC pages, extract short constructions, and build compact chunks.
 
 Requires Python 3 and beautifulsoup4. No network access occurs during build/check.
-The extractor only recognizes a narrow set of explicit relations within each X(n)
-entry. It never interprets barycentric expressions or unrelated incidence lists.
+The extractor recognizes explicit relations and a conservative subset of cyclic
+coordinates within each X(n) entry; it never interprets unrelated incidences.
 """
 
 from __future__ import annotations
@@ -21,6 +21,8 @@ import time
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
+from triangle_center_coordinates import (coordinate_candidates, evaluate_formula,
+                                         rotate_formula, side_environment, validate_formula)
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -44,9 +46,9 @@ ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'J': 7, 'G': 8, 'T': 9}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'B': 0, 'H': 0}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'J': 7, 'G': 8, 'T': 9, 'B': 10, 'H': 11}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4, 'H': 4}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese\s*(?:\(parallel\)\s*)?lines\s*:\s*(.*)$', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
 BROKEN_LINE_TOKEN = re.compile(r'\s*[,;]?\s*\d{5,}(?=\s|$)')
@@ -60,8 +62,11 @@ class Recipe:
     references: tuple[int, ...]
     part: int = 0
     evidence: str = ''
+    formula: str = ''
 
     def row(self) -> str:
+        if self.operation in {'B', 'H'}:
+            return f'{self.number} {self.operation} {self.formula}'
         return f'{self.number} {self.operation} {" ".join(map(str, self.references))}'
 
 
@@ -208,11 +213,15 @@ def extract_entry(number: int, fragment: str, part: int,
                                ('reflection of X(i) and X(j) for these', 'R')):
             if body.lower().startswith(prefix.lower()):
                 found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
-    return [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
-            if all(reference > 0 and reference != number for reference in refs)]
+    recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
+               if all(reference > 0 and reference != number for reference in refs)]
+    recipes.extend(Recipe(number, kind, (), part, evidence, formula)
+                   for kind, formula, evidence in coordinate_candidates(fragment))
+    return recipes
 
 
-def read_page(part: int, excluded: set[int] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
+def read_page(part: int, excluded: set[int] | None = None,
+              coordinate_lines: dict[int, list[tuple[int, int]]] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
     path = CACHE / f'ETCPart{part}.html'
     source = path.read_text(encoding='utf-8', errors='replace')
     entries: list[int] = []
@@ -222,6 +231,8 @@ def read_page(part: int, excluded: set[int] | None = None) -> tuple[list[int], d
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
         candidates[number] = extract_entry(number, fragment, part, excluded)
+        if coordinate_lines is not None and any(r.operation in {'B', 'H'} for r in candidates[number]):
+            coordinate_lines[number] = listed_lines(number, relation_lines(fragment), limit=None)
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
     return entries, candidates
@@ -234,11 +245,15 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
             continue
         fields = row.split()
         number, opcode = int(fields[0]), fields[1]
-        refs = tuple(map(int, fields[2:]))
+        formula = fields[2] if opcode in {'B', 'H'} and len(fields) == 3 else ''
+        refs = () if opcode in {'B', 'H'} else tuple(map(int, fields[2:]))
         if (number <= NATIVE_MAX or opcode not in ARITY or len(refs) != ARITY[opcode]
-                or any(reference <= 0 or reference == number for reference in refs) or number in records):
+                or any(reference <= 0 or reference == number for reference in refs) or number in records
+                or (opcode in {'B', 'H'} and (not formula or len(formula) > 160))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
-        records[number] = Recipe(number, opcode, refs)
+        if formula:
+            validate_formula(formula)
+        records[number] = Recipe(number, opcode, refs, formula=formula)
     return records
 
 
@@ -283,6 +298,79 @@ def read_deferred_targets(path: Path) -> set[int]:
     return numbers
 
 
+def read_coordinate_priority(path: Path) -> set[int]:
+    numbers = {int(row.split('#', 1)[0].strip()) for row in path.read_text(encoding='utf-8').splitlines()
+               if row.split('#', 1)[0].strip()}
+    if any(number <= NATIVE_MAX for number in numbers):
+        raise ValueError(f'Invalid coordinate priority in {path}')
+    return numbers
+
+
+def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, Recipe],
+                       atlas: dict, budget: int, priority: set[int],
+                       coordinate_lines: dict[int, list[tuple[int, int]]],
+                       native_directions: dict[int, tuple[int, int]]) -> dict[int, Recipe]:
+    """Select a small set of sound formula anchors before reopening the graph."""
+    if budget <= 0:
+        return {}
+    baseline_coordinates = numeric_coordinates(baseline, atlas, native_directions)
+
+    def agrees_with_known_line(recipe: Recipe) -> bool:
+        for shape, points in baseline_coordinates.items():
+            center = numeric_formula(recipe, [tuple(xy) for xy in atlas['triangles'][shape]])
+            if center is None:
+                return False
+            known: list[float] = []
+            for a, b in coordinate_lines.get(recipe.number, []):
+                if a not in points or b not in points:
+                    continue
+                line = line_data(points[a], points[b])
+                if line is None:
+                    continue
+                p, d = line
+                known.append(abs(d[0]*(center[1]-p[1])-d[1]*(center[0]-p[0])) / math.hypot(*d))
+            if known and min(known) > 1e-5 * max(1, math.hypot(*center)):
+                return False
+        return True
+    ranked: list[tuple[int, int, int, int, Recipe]] = []
+    dependents: dict[int, set[int]] = defaultdict(set)
+    for target, options in candidates.items():
+        if target in baseline:
+            continue
+        for recipe in options:
+            if recipe.operation not in {'B', 'H'}:
+                for ref in recipe.references:
+                    dependents[ref].add(target)
+    for number, options in candidates.items():
+        if number <= NATIVE_MAX or number in baseline:
+            continue
+        formulas = [recipe for recipe in options if recipe.operation in {'B', 'H'}
+                    and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
+        if not formulas:
+            continue
+        samples = [[numeric_formula(recipe, [tuple(xy) for xy in abc])
+                    for abc in atlas['triangles'].values()] for recipe in formulas]
+        if any(any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
+                   for p, q in zip(samples[0], other)) for other in samples[1:]):
+            continue
+        chosen = min(formulas, key=lambda recipe: (recipe.operation != 'B', len(recipe.formula), recipe.formula))
+        ranked.append((len(dependents[number]), len(chosen.formula), number, chosen.part, chosen))
+    ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
+    selected: dict[int, Recipe] = {}
+    for _, _, number, _, recipe in ranked:
+        if number in priority and len(selected) < budget:
+            selected[number] = recipe
+    for part in sorted({item[3] for item in ranked}):
+        for _, _, number, candidate_part, recipe in ranked:
+            if candidate_part == part and len([r for r in selected.values() if r.part == part]) < 4 and len(selected) < budget:
+                selected[number] = recipe
+    for _, _, number, _, recipe in ranked:
+        if len(selected) >= budget:
+            break
+        selected[number] = recipe
+    return selected
+
+
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
     depth: dict[int, int] = {}
     length: dict[int, int] = {}
@@ -302,6 +390,7 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
             children = [visit(reference) for reference in records[number].references]
             depth[number] = 1 + max((item[0] for item in children), default=0)
             length[number] = ((900 + 15 * children[0][1]) if records[number].operation in {'G', 'T'}
+                              else 150 + 18 * len(records[number].formula) if records[number].operation in {'B', 'H'}
                               else 24 + sum(item[1] for item in children))
             return depth[number], length[number]
         finally:
@@ -381,6 +470,31 @@ def numeric_conjugate(p: Coordinate, abc: list[tuple[float, float]],
     return answer if all(math.isfinite(value) for value in answer) else None
 
 
+def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -> Coordinate | None:
+    a, b, c = (math.dist(abc[1], abc[2]), math.dist(abc[2], abc[0]), math.dist(abc[0], abc[1]))
+    values = side_environment(a, b, c)
+    weights = [evaluate_formula(rotate_formula(recipe.formula, index), values) for index in range(3)]
+    if any(weight is None for weight in weights):
+        return None
+    if recipe.operation == 'H':
+        weights = [weight * side for weight, side in zip(weights, (a, b, c))]
+    total = sum(weights)
+    if not math.isfinite(total):
+        return None
+    if abs(total) <= 1e-8 * sum(abs(weight) for weight in weights):
+        vector = (sum(weight * vertex[0] for weight, vertex in zip(weights, abc)),
+                  sum(weight * vertex[1] for weight, vertex in zip(weights, abc)))
+        return Ideal(*vector) if all(math.isfinite(value) for value in vector) and math.hypot(*vector) > 1e-9 else None
+    point = (sum(weight * vertex[0] for weight, vertex in zip(weights, abc)) / total,
+             sum(weight * vertex[1] for weight, vertex in zip(weights, abc)) / total)
+    return point if all(math.isfinite(value) for value in point) else None
+
+
+def numeric_formula(recipe: Recipe, abc: list[tuple[float, float]]) -> tuple[float, float] | None:
+    coordinate = numeric_formula_projective(recipe, abc)
+    return coordinate if isinstance(coordinate, tuple) else None
+
+
 def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                         native_directions: dict[int, tuple[int, int]] | None = None) -> dict[str, dict[int, Coordinate]]:
     results: dict[str, dict[int, Coordinate]] = {}
@@ -409,6 +523,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             op = recipe.operation
             if op == 'J':
                 answer = numeric_intersection(values)
+            elif op in {'B', 'H'}:
+                answer = numeric_formula(recipe, abc)
             elif op == 'I':
                 d = direction(*values)
                 answer = Ideal(*d) if d is not None and all(not isinstance(v, Ideal) for v in values) and math.hypot(*d) > 1e-9 else None
@@ -514,6 +630,11 @@ def conjugate_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
     return True
 
 
+def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
+    return all(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
+               for abc in atlas['triangles'].values())
+
+
 def read_native_atlas(path: Path) -> dict:
     atlas = json.loads(path.read_text(encoding='utf-8'))
     if set(atlas['coordinates']) != {'acute', 'obtuse'} or set(atlas['triangles']) != {'acute', 'obtuse'}:
@@ -616,9 +737,12 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
+                if atlas and recipe.operation in {'B', 'H'} and not formula_candidate_supported(recipe, atlas):
+                    continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
                 candidate_length = ((900 + 15 * length.get(recipe.references[0], 27))
                                     if recipe.operation in {'G', 'T'}
+                                    else 150 + 18 * len(recipe.formula) if recipe.operation in {'B', 'H'}
                                     else 24 + sum(length.get(ref, 27) for ref in recipe.references))
                 candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
@@ -659,6 +783,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 continue
             if refine_coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                     recipe, refine_coordinates, atlas):
+                continue
+            if atlas and recipe.operation in {'B', 'H'} and not formula_candidate_supported(recipe, atlas):
                 continue
             selected[number] = recipe
             try:
@@ -795,8 +921,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIJGT',
+    parser.add_argument('--auto-operations', default='MRCAPLIJGTBH',
                         help='Operations allowed from text extraction; existing seeds are always kept')
+    parser.add_argument('--max-coordinate-anchors', type=int, default=32)
     parser.add_argument('--max-depth', type=int, default=6)
     parser.add_argument('--max-length', type=int, default=6000)
     parser.add_argument('--max-conjugates', type=int, default=1)
@@ -838,21 +965,37 @@ def main() -> None:
         raise ValueError(f'Unknown operation in {args.auto_operations}')
     seeds = read_recipes(DATA / 'seeds.txt')
     all_candidates: dict[int, list[Recipe]] = {}
+    coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
     for part in args.parts:
-        entries, candidates = read_page(part, blocked_native | deferred_targets)
+        entries, candidates = read_page(part, blocked_native | deferred_targets, coordinate_lines)
         entry_count += len(entries)
         for number, options in candidates.items():
             if number in all_candidates:
                 raise ValueError(f'X({number}) appears in multiple ETC parts')
             all_candidates[number] = options
         print(f'Part {part}: {len(entries)} entries, {sum(bool(v) for v in candidates.values())} with explicit parsed constructions')
-    selected = select_recipes({number: [recipe for recipe in options
-                                         if recipe.operation in args.auto_operations]
-                               for number, options in all_candidates.items()},
+    atlas = read_native_atlas(CACHE / 'native-atlas.json')
+    eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations]
+                for number, options in all_candidates.items()}
+    relation_only = {number: [recipe for recipe in options if recipe.operation not in {'B', 'H'}]
+                     for number, options in eligible.items()}
+    baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
+                              blocked_native, deferred_targets, atlas, native_directions)
+    priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors else set()
+    anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors, priority,
+                                 coordinate_lines, native_directions)
+    ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
+                      if number > NATIVE_MAX and recipe.operation in {'B', 'H'} and all(
+                          isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
+                          for abc in atlas['triangles'].values())]
+    print(f'Coordinate anchors: {len(anchors)} ({sum(r.operation == "B" for r in anchors.values())} barycentric, '
+          f'{sum(r.operation == "H" for r in anchors.values())} trilinear); '
+          f'{len(ideal_formulas)} parsed formulas deferred as ideal')
+    selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
+                               for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, read_native_atlas(CACHE / 'native-atlas.json'),
-                              native_directions)
+                              blocked_native, deferred_targets, atlas, native_directions)
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')
@@ -867,7 +1010,7 @@ def main() -> None:
                 path.unlink()
         audit = 'id\tpart\top\trefs\tevidence\n' + ''.join(
             f'{recipe.number}\t{recipe.part}\t{recipe.operation}\t'
-            f'{",".join(map(str, recipe.references))}\t{recipe.evidence[:300]}\n'
+            f'{recipe.formula or ",".join(map(str, recipe.references))}\t{recipe.evidence[:300]}\n'
             for recipe in sorted(selected.values(), key=lambda item: item.number) if recipe.part)
         CACHE.mkdir(parents=True, exist_ok=True)
         (CACHE / 'selected.tsv').write_text(audit, encoding='utf-8', newline='\n')

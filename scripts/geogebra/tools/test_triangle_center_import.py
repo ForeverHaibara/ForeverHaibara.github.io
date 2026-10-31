@@ -5,9 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry,
-                                    line_candidate_supported, numeric_coordinates, read_native_directions,
-                                    read_native_exclusions, select_recipes, split_entries, validate_graph,
-                                    validate_types)
+                                    line_candidate_supported, numeric_coordinates, numeric_formula,
+                                    numeric_formula_projective,
+                                    read_native_directions, read_native_exclusions, read_recipes,
+                                    select_recipes, split_entries, validate_graph, validate_types)
+from triangle_center_coordinates import coordinate_candidates, evaluate_formula, normalize_formula, side_environment
 
 
 class TriangleCenterImportTest(unittest.TestCase):
@@ -119,6 +121,35 @@ class TriangleCenterImportTest(unittest.TestCase):
             validate_types({**valid, 4003: Recipe(4003, 'M', (4000, 2))}, {30})
         with self.assertRaisesRegex(ValueError, 'ideal-point input'):
             validate_types({**valid, 4003: Recipe(4003, 'J', (30, 4000, 3, 4))}, {30})
+
+    def test_cyclic_coordinate_parser_and_line_continuation(self):
+        sample = ('<h3 id="X4182">X(4182) = CENTER</h3>'
+                  'Trilinears t(A,B,C) : t(B,C,A) : t(C,A,B), where t(A,B,C) = '
+                  'csc<sup>2</sup>(A/2) sin<sup>1/2</sup>A<br>'
+                  'Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b), where f(a,b,c)<br>'
+                  '= a<sup>1/2</sup>(b + c - a)')
+        self.assertEqual([(kind, formula) for kind, formula, _ in coordinate_candidates(sample)],
+                         [('B', 'a^(1/2)*(b+c-a)')])
+        wrapped = ('<h3 id="X3281">X(3281) = CENTER</h3>'
+                   'Trilinears f(A,B,C)<br>: f(B,C,A) : f(C,A,B), where f(A,B,C) = '
+                   '2 cos(A/3) + cos A - 2 cos(B/3)<br>cos(C/3)')
+        self.assertEqual(coordinate_candidates(wrapped)[0][1],
+                         '2*cos(A/3)+cos(A)-2*cos(B/3)*cos(C/3)')
+        self.assertEqual(normalize_formula('a2b4 + S_A'), 'a^2*b^4+SA')
+        self.assertIsNone(normalize_formula('sin A - u cos A'))
+
+    def test_coordinate_numeric_domain_and_compact_roundtrip(self):
+        abc = [(0, 0), (6, 0), (1, 4)]
+        recipe = Recipe(4182, 'B', (), formula='a^(1/2)*(b+c-a)')
+        self.assertIsNotNone(numeric_formula(recipe, abc))
+        self.assertIsNone(numeric_formula(Recipe(4000, 'B', (), formula='b-c'), abc))
+        self.assertIsInstance(numeric_formula_projective(Recipe(4000, 'B', (), formula='b-c'), abc), Ideal)
+        env = side_environment(5, 6, 7)
+        self.assertAlmostEqual(evaluate_formula('SA+SB+SC', env), env['SA']+env['SB']+env['SC'])
+        with TemporaryDirectory(dir=CACHE) as folder:
+            path = Path(folder) / 'formulas.txt'
+            path.write_text(recipe.row() + '\n', encoding='utf-8')
+            self.assertEqual(read_recipes(path)[4182].formula, recipe.formula)
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],
