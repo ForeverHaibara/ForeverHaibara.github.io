@@ -11,7 +11,10 @@ import argparse
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from html import unescape
+from itertools import combinations
 from pathlib import Path
+import json
+import math
 import re
 import sys
 import time
@@ -32,16 +35,21 @@ MIDPOINT = re.compile(rf'^midpoint (?:of|between) {POINT}\s+and\s+{POINT}', re.I
 REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+{POINT}', re.I)
 COMPLEMENT = re.compile(rf'^complement of {POINT}', re.I)
 ANTICOMPLEMENT = re.compile(rf'^anticomplement of {POINT}', re.I)
-INTERSECTION = re.compile(rf'^intersection of lines? {POINT}\s*{POINT}\s+and\s+{POINT}\s*{POINT}', re.I)
+INTERSECTION = re.compile(rf'^intersection of (?:lines? )?{POINT}\s*{POINT}\s+and\s+{POINT}\s*{POINT}', re.I)
+SYMBOLIC_INTERSECTION = re.compile(rf'^{POINT}\s*{POINT}\s*∩\s*{POINT}\s*{POINT}', re.I)
 PROJECTION = re.compile(rf'^orthogonal projection of {POINT}\s+on\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
 LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
 ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
 ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
-IDEAL_TITLE = re.compile(r'\b(?:infinity point|point at infinity|ideal point|infinite point)\b', re.I)
+INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
+                                 r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
 ARITY = {'M': 2, 'R': 2, 'J': 4, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'J': 6, 'G': 7, 'T': 8}
 RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3}
+LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on these lines\s*:\s*(.*)$', re.I)
+LINE_PAIR = re.compile(r'\s*[,;]?\s*\{*\s*(\d+)\s*,\s*(\d+)\s*\}*')
+MAX_LIST_LINES = 10
 
 
 @dataclass(frozen=True)
@@ -54,6 +62,13 @@ class Recipe:
 
     def row(self) -> str:
         return f'{self.number} {self.operation} {" ".join(map(str, self.references))}'
+
+
+def quality(recipe: Recipe) -> tuple[int, int]:
+    # An explicitly stated intersection is stronger evidence than choosing
+    # two arbitrary pairs from a list of lines that merely pass through X(n).
+    incidence_only = int('lies on these lines:' in recipe.evidence.lower())
+    return RISK[recipe.operation], incidence_only
 
 
 def split_entries(source: str):
@@ -78,8 +93,11 @@ def relation_lines(fragment: str) -> list[str]:
         line = lines[index]
         while index + 1 < len(lines):
             following = lines[index + 1]
-            broken_intersection = (re.search(r'\b(?:and|line)\s*$', line, re.I)
-                                   and re.match(r'^X\s*\(\d+\)\s*X\s*\(\d+\)', following, re.I))
+            broken_intersection = (re.match(r'^X\s*\(\d+\)\s*=\s*intersection of\b', line, re.I)
+                                   and (re.search(r'\b(?:and|line)\s*$', line, re.I)
+                                        or following.lower() == 'and')
+                                   and (following.lower() == 'and'
+                                        or re.match(r'^X\s*\(\d+\)\s*X\s*\(\d+\)', following, re.I)))
             continued_pairs = ('for these' in line.lower() and re.match(r'^[({]\s*\d+\s*,\s*\d+', following))
             if not (broken_intersection or continued_pairs):
                 break
@@ -90,18 +108,44 @@ def relation_lines(fragment: str) -> list[str]:
     return joined
 
 
-def extract_entry(number: int, fragment: str, part: int) -> list[Recipe]:
+def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None) -> list[tuple[int, int]]:
+    """Read the initial run of bare index pairs after this entry's line-list heading."""
+    excluded = excluded or set()
+    for index, line in enumerate(lines):
+        heading = LINE_LIST.match(line)
+        if not heading or int(heading.group(1)) != number:
+            continue
+        tail = ' '.join([heading.group(2), *lines[index + 1:]])
+        pairs: list[tuple[int, int]] = []
+        position = 0
+        while match := LINE_PAIR.match(tail, position):
+            a, b = map(int, match.groups())
+            if a > 0 and b > 0 and a != b and a not in excluded and b not in excluded:
+                pairs.append(tuple(sorted((a, b))))
+            position = match.end()
+        return sorted(set(pairs), key=lambda pair: (sum(ref > NATIVE_MAX for ref in pair),
+                                                      max(pair), sum(pair)))[:MAX_LIST_LINES]
+    return []
+
+
+def extract_entry(number: int, fragment: str, part: int,
+                  excluded: set[int] | None = None) -> list[Recipe]:
     found: dict[tuple[str, tuple[int, ...]], str] = {}
     lines = relation_lines(fragment)
-    if lines and IDEAL_TITLE.search(lines[0]):
+    if any(int(match.group(1)) == number for line in lines
+           for match in INFINITE_DEFINITION.finditer(line)):
         return []
+    for first, second in combinations(listed_lines(number, lines, excluded), 2):
+        if set(first).isdisjoint(second):
+            found[('J', (*first, *second))] = f'X({number}) lies on these lines: {first}, {second}'
     for line in lines:
         relation = RELATION.match(line)
         if not relation or int(relation.group(1)) != number:
             continue
         body = relation.group(2)
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
-                                (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'), (PROJECTION, 'P'),
+                                (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
+                                (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
                                 (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T')):
             match = pattern.match(body)
             if match and not CONDITIONAL.search(body[match.end():]):
@@ -116,7 +160,7 @@ def extract_entry(number: int, fragment: str, part: int) -> list[Recipe]:
             if all(reference > 0 and reference != number for reference in refs)]
 
 
-def read_page(part: int) -> tuple[list[int], dict[int, list[Recipe]]]:
+def read_page(part: int, excluded: set[int] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
     path = CACHE / f'ETCPart{part}.html'
     source = path.read_text(encoding='utf-8', errors='replace')
     entries: list[int] = []
@@ -125,7 +169,7 @@ def read_page(part: int) -> tuple[list[int], dict[int, list[Recipe]]]:
         if number in candidates:
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
-        candidates[number] = extract_entry(number, fragment, part)
+        candidates[number] = extract_entry(number, fragment, part, excluded)
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
     return entries, candidates
@@ -147,10 +191,28 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
 
 
 def read_native_exclusions(path: Path) -> set[int]:
-    numbers = {int(row.split()[0]) for row in path.read_text(encoding='utf-8').splitlines()
-               if row.strip() and not row.lstrip().startswith('#')}
+    numbers: set[int] = set()
+    for row in path.read_text(encoding='utf-8').splitlines():
+        token = row.split('#', 1)[0].strip()
+        if not token:
+            continue
+        if not re.fullmatch(r'\d+(?:-\d+)?', token):
+            raise ValueError(f'Invalid native exclusion in {path}: {row}')
+        bounds = list(map(int, token.split('-')))
+        start, end = (bounds[0], bounds[-1])
+        if start > end:
+            raise ValueError(f'Reversed native exclusion range in {path}: {row}')
+        numbers.update(range(start, end + 1))
     if any(number < 1 or number > NATIVE_MAX for number in numbers):
         raise ValueError(f'Invalid native exclusion in {path}')
+    return numbers
+
+
+def read_nonfinite_targets(path: Path) -> set[int]:
+    numbers = {int(row.split()[0]) for row in path.read_text(encoding='utf-8').splitlines()
+               if row.strip() and not row.lstrip().startswith('#')}
+    if any(number <= NATIVE_MAX for number in numbers):
+        raise ValueError(f'Invalid extended exclusion in {path}')
     return numbers
 
 
@@ -200,23 +262,175 @@ def conjugate_levels(records: dict[int, Recipe]) -> dict[int, int]:
     return levels
 
 
+def numeric_intersection(points: list[tuple[float, float]]) -> tuple[float, float] | None:
+    p, q, r, s = points
+    u = (q[0] - p[0], q[1] - p[1])
+    v = (s[0] - r[0], s[1] - r[1])
+    lengths = math.hypot(*u) * math.hypot(*v)
+    determinant = u[0] * v[1] - u[1] * v[0]
+    if lengths < 1e-12 or abs(determinant) < 1e-6 * lengths:
+        return None
+    t = ((r[0] - p[0]) * v[1] - (r[1] - p[1]) * v[0]) / determinant
+    result = (p[0] + t * u[0], p[1] + t * u[1])
+    return result if all(math.isfinite(value) for value in result) else None
+
+
+def numeric_conjugate(p: tuple[float, float], abc: list[tuple[float, float]],
+                      isogonal: bool) -> tuple[float, float] | None:
+    a, b, c = abc
+    cross = lambda u, v: u[0]*v[1]-u[1]*v[0]
+    sub = lambda u, v: (u[0]-v[0], u[1]-v[1])
+    u, v, w = cross(sub(b,p),sub(c,p)), cross(sub(c,p),sub(a,p)), cross(sub(a,p),sub(b,p))
+    weights = [v*w, w*u, u*v]
+    if isogonal:
+        weights = [weight * sum((x-y)**2 for x,y in zip(*side))
+                   for weight, side in zip(weights, [(b,c),(c,a),(a,b)])]
+    denominator = sum(weights)
+    if abs(denominator) < 1e-12:
+        return None
+    answer = (sum(weight * vertex[0] for weight, vertex in zip(weights, abc))/denominator,
+              sum(weight * vertex[1] for weight, vertex in zip(weights, abc))/denominator)
+    return answer if all(math.isfinite(value) for value in answer) else None
+
+
+def numeric_coordinates(records: dict[int, Recipe], atlas: dict) -> dict[str, dict[int, tuple[float, float]]]:
+    results: dict[str, dict[int, tuple[float, float]]] = {}
+    for shape, native in atlas['coordinates'].items():
+        points = {int(number): tuple(xy) for number, xy in native.items()}
+        abc = [tuple(xy) for xy in atlas['triangles'][shape]]
+        visiting: set[int] = set()
+
+        def point(number: int) -> tuple[float, float] | None:
+            if number in points:
+                return points[number]
+            if number <= NATIVE_MAX or number not in records or number in visiting:
+                return None
+            visiting.add(number)
+            recipe = records[number]
+            children = [point(ref) for ref in recipe.references]
+            visiting.remove(number)
+            if any(child is None for child in children):
+                return None
+            values = children  # type: ignore[assignment]
+            op = recipe.operation
+            if op == 'J':
+                answer = numeric_intersection(values)
+            elif op in {'M', 'R'}:
+                p, q = values
+                answer = ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2) if op == 'M' else (2*q[0]-p[0], 2*q[1]-p[1])
+            elif op in {'C', 'A'}:
+                p = values[0]
+                total = (sum(v[0] for v in abc), sum(v[1] for v in abc))
+                answer = ((total[0] - p[0]) / 2, (total[1] - p[1]) / 2) if op == 'C' else (total[0]-2*p[0], total[1]-2*p[1])
+            elif op in {'P', 'L'}:
+                p, q, r = values
+                direction = (r[0]-q[0], r[1]-q[1])
+                denominator = direction[0]**2 + direction[1]**2
+                if denominator < 1e-12:
+                    return None
+                t = ((p[0]-q[0])*direction[0]+(p[1]-q[1])*direction[1])/denominator
+                foot = (q[0]+t*direction[0], q[1]+t*direction[1])
+                answer = foot if op == 'P' else (2*foot[0]-p[0], 2*foot[1]-p[1])
+            else:
+                answer = numeric_conjugate(values[0], abc, op == 'G')
+            if answer is not None and all(math.isfinite(value) for value in answer):
+                points[number] = answer
+                return answer
+            return None
+
+        for number in records:
+            point(number)
+        results[shape] = points
+    return results
+
+
+def line_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, tuple[float, float]]],
+                             incidence_lines: list[tuple[int, int]]) -> bool:
+    for points in coordinates.values():
+        try:
+            endpoints = [points[ref] for ref in recipe.references]
+        except KeyError:
+            return False
+        crossing = numeric_intersection(endpoints)
+        if crossing is None:
+            return False
+        if 'lies on these lines:' not in recipe.evidence.lower() or len(incidence_lines) < 3:
+            continue
+        directions = [(endpoints[i+1][0]-endpoints[i][0], endpoints[i+1][1]-endpoints[i][1])
+                      for i in (0, 2)]
+        support = False
+        for a, b in incidence_lines:
+            if (a, b) in (recipe.references[:2], recipe.references[2:]) or a not in points or b not in points:
+                continue
+            p, q = points[a], points[b]
+            direction = (q[0]-p[0], q[1]-p[1])
+            length = math.hypot(*direction)
+            if length < 1e-6:
+                continue
+            if any(abs(direction[0]*base[1]-direction[1]*base[0])
+                   < 1e-6 * length * math.hypot(*base) for base in directions):
+                continue
+            distance = abs(direction[0]*(crossing[1]-p[1])-direction[1]*(crossing[0]-p[0]))/length
+            if distance < 1e-5 * max(1, math.hypot(*crossing)):
+                support = True
+                break
+        if not support:
+            return False
+    return True
+
+
+def conjugate_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, tuple[float, float]]],
+                                  atlas: dict) -> bool:
+    for shape, points in coordinates.items():
+        source = points.get(recipe.references[0])
+        if source is None or numeric_conjugate(source, atlas['triangles'][shape],
+                                               recipe.operation == 'G') is None:
+            return False
+    return True
+
+
+def read_native_atlas(path: Path) -> dict:
+    atlas = json.loads(path.read_text(encoding='utf-8'))
+    if set(atlas['coordinates']) != {'acute', 'obtuse'} or set(atlas['triangles']) != {'acute', 'obtuse'}:
+        raise ValueError(f'Unexpected native coordinate sample: {path}')
+    return atlas
+
+
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
                    max_depth: int, max_length: int, max_conjugates: int = 1,
-                   blocked_native: set[int] | None = None) -> dict[int, Recipe]:
+                   blocked_native: set[int] | None = None,
+                   nonfinite_targets: set[int] | None = None, atlas: dict | None = None) -> dict[int, Recipe]:
     selected = dict(seeds)
     blocked_native = blocked_native or set()
+    nonfinite_targets = nonfinite_targets or set()
+    if set(seeds) & nonfinite_targets:
+        raise ValueError('A reviewed seed is marked nonfinite')
     if any(ref in blocked_native for recipe in seeds.values() for ref in recipe.references):
         raise ValueError('A reviewed seed references an unavailable native center')
     validate_graph(selected)
-    pending = {number for number in candidates if number > NATIVE_MAX and number not in selected}
+    pending = {number for number in candidates if number > NATIVE_MAX and number not in selected
+               and number not in nonfinite_targets}
+    incidence_lines: dict[int, list[tuple[int, int]]] = {}
+    for number, options in candidates.items():
+        incidence_lines[number] = sorted({tuple(recipe.references[index:index+2]) for recipe in options
+                                          if recipe.operation == 'J' and 'lies on these lines:' in recipe.evidence.lower()
+                                          for index in (0, 2)})
     while pending:
-        possible: list[tuple[tuple[int, int, int, int, tuple[int, ...]], Recipe]] = []
+        possible: list[tuple[tuple[int, int, int, int, int, tuple[int, ...]], Recipe]] = []
         depth, length = validate_graph(selected)
         nonlinear = conjugate_levels(selected)
+        coordinates = numeric_coordinates(selected, atlas) if atlas else None
         for number in pending:
             for recipe in candidates[number]:
-                if any(ref in blocked_native or ref > NATIVE_MAX and ref not in selected
+                if any(ref in blocked_native or ref in nonfinite_targets
+                       or ref > NATIVE_MAX and ref not in selected
                        for ref in recipe.references):
+                    continue
+                if coordinates and recipe.operation == 'J' and not line_candidate_supported(
+                        recipe, coordinates, incidence_lines[number]):
+                    continue
+                if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
+                        recipe, coordinates, atlas):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
                 candidate_length = ((900 + 15 * length.get(recipe.references[0], 27))
@@ -226,20 +440,91 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
                 if (candidate_depth <= max_depth and candidate_length <= max_length
                         and candidate_nonlinear <= max_conjugates):
-                    key = (RISK[recipe.operation], candidate_depth, candidate_length,
+                    key = (*quality(recipe), candidate_depth, candidate_length,
                            PRIORITY[recipe.operation], recipe.references)
                     possible.append((key, recipe))
         if not possible:
             break
         # Add every currently reachable point; prefer safer operations before
         # construction depth and estimated expression length.
-        best: dict[int, tuple[tuple[int, int, int, int, tuple[int, ...]], Recipe]] = {}
+        best: dict[int, tuple[tuple[int, int, int, int, int, tuple[int, ...]], Recipe]] = {}
         for item in possible:
             number = item[1].number
             if number not in best or item[0] < best[number][0]:
                 best[number] = item
         selected.update({number: item[1] for number, item in best.items()})
         pending.difference_update(best)
+    # A line-list intersection may enter before the point needed by a simpler
+    # definition. Reconsider it after the reachable graph has closed.
+    refine_coordinates = numeric_coordinates(selected, atlas) if atlas else None
+    for number in sorted(set(selected) - set(seeds)):
+        current = selected[number]
+        alternatives = [recipe for recipe in candidates.get(number, [])
+                        if quality(recipe) < quality(current)
+                        and all(ref not in blocked_native and ref not in nonfinite_targets
+                                and (ref <= NATIVE_MAX or ref in selected)
+                                for ref in recipe.references)]
+        alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
+                                              recipe.references))
+        for recipe in alternatives:
+            if refine_coordinates and recipe.operation == 'J' and not line_candidate_supported(
+                    recipe, refine_coordinates, incidence_lines[number]):
+                continue
+            if refine_coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
+                    recipe, refine_coordinates, atlas):
+                continue
+            selected[number] = recipe
+            try:
+                depth, length = validate_graph(selected)
+                nonlinear = conjugate_levels(selected)
+                valid = (max(depth.values()) <= max_depth and max(length.values()) <= max_length
+                         and max(nonlinear.values()) <= max_conjugates)
+            except ValueError:
+                valid = False
+            if valid:
+                break
+            selected[number] = current
+    # A later substitution may move a supporting line. Recheck the finished
+    # graph and replace any intersection whose final lines disagree.
+    if atlas:
+        for _ in range(5):
+            coordinates = numeric_coordinates(selected, atlas)
+            invalid = [number for number, recipe in selected.items() if recipe.operation == 'J'
+                       and not line_candidate_supported(recipe, coordinates, incidence_lines.get(number, []))]
+            if not invalid:
+                break
+            for number in invalid:
+                current = selected[number]
+                options = sorted(candidates.get(number, []),
+                                 key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
+                repaired = False
+                for recipe in options:
+                    if (recipe.operation != 'J' or recipe == current
+                            or any(ref in blocked_native or ref in nonfinite_targets
+                                   or ref > NATIVE_MAX and ref not in selected for ref in recipe.references)
+                            or not line_candidate_supported(recipe, coordinates, incidence_lines[number])):
+                        continue
+                    selected[number] = recipe
+                    try:
+                        depth, length = validate_graph(selected)
+                        nonlinear = conjugate_levels(selected)
+                        repaired = (max(depth.values()) <= max_depth and max(length.values()) <= max_length
+                                    and max(nonlinear.values()) <= max_conjugates)
+                    except ValueError:
+                        repaired = False
+                    if repaired:
+                        break
+                    selected[number] = current
+                if not repaired:
+                    selected[number] = current
+                    raise ValueError(f'No numerically consistent line pair for X({number})')
+        else:
+            raise ValueError('Line-pair consistency did not stabilize')
+        coordinates = numeric_coordinates(selected, atlas)
+        for shape, points in coordinates.items():
+            missing = set(selected) - set(points)
+            if missing:
+                raise ValueError(f'Nonfinite generated centers for {shape}: {sorted(missing)[:10]}')
     validate_graph(selected)
     return selected
 
@@ -291,6 +576,7 @@ def main() -> None:
         return
     chunk_dir = DATA / 'chunks'
     blocked_native = read_native_exclusions(DATA / 'native-unavailable.txt')
+    nonfinite_targets = read_nonfinite_targets(DATA / 'known-nonfinite.txt')
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
         for path in sorted(chunk_dir.glob('*.txt')):
@@ -301,6 +587,9 @@ def main() -> None:
         depth, length = validate_graph(records)
         if any(ref in blocked_native for recipe in records.values() for ref in recipe.references):
             raise ValueError('Generated recipe references an unavailable native center')
+        if set(records) & nonfinite_targets or any(ref in nonfinite_targets for recipe in records.values()
+                                                   for ref in recipe.references):
+            raise ValueError('Generated recipe includes a known nonfinite center')
         print(f'Valid: {len(records)} recipes, max depth {max(depth.values())}, max estimated length {max(length.values())}')
         return
     if set(args.auto_operations) - set(ARITY):
@@ -309,7 +598,7 @@ def main() -> None:
     all_candidates: dict[int, list[Recipe]] = {}
     entry_count = 0
     for part in args.parts:
-        entries, candidates = read_page(part)
+        entries, candidates = read_page(part, blocked_native | nonfinite_targets)
         entry_count += len(entries)
         for number, options in candidates.items():
             if number in all_candidates:
@@ -319,7 +608,8 @@ def main() -> None:
     selected = select_recipes({number: [recipe for recipe in options
                                          if recipe.operation in args.auto_operations]
                                for number, options in all_candidates.items()},
-                              seeds, args.max_depth, args.max_length, args.max_conjugates, blocked_native)
+                              seeds, args.max_depth, args.max_length, args.max_conjugates,
+                              blocked_native, nonfinite_targets, read_native_atlas(CACHE / 'native-atlas.json'))
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

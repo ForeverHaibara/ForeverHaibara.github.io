@@ -33,8 +33,10 @@ button.onclick = async () => {
     const dynamic = await run('Dynamic=TriangleCenter(A,B,C,n)');
     check(!dynamic.expandedCommand || dynamic.expandedCommand === 'Dynamic=TriangleCenter(A,B,C,n)', 'dynamic selector was changed');
     // Stratified sample across ETC parts, operation types, and dependency depth.
-    const ids = [3054, 3057, 3064, 3070, 3109, 3114, 3154, 5305, 3933, 5091,
-      7160, 9144, 9215, 72185, 72458, 72478, 73001, 73007, 73212];
+    const ids = [3054, 3055, 3057, 3064, 3070, 3072, 3076, 3109, 3114, 3154, 3252,
+      3559, 3641, 3670, 3933, 4116, 4590, 5091, 5111, 5305, 6061, 7160,
+      7561, 9144, 9208, 9215, 9966, 72008, 72185, 72458, 72478, 72965, 73001,
+      73007, 73212];
     const initial = new Map<number, [number, number]>();
     for (const id of ids) {
       const result = await run(`X${id}=TriangleCenter(A,B,C,${id})`);

@@ -1,0 +1,3 @@
+# Extended centers verified to be generically at infinity, excluded as targets
+# and dependencies. X(72060)'s three cyclic barycentric terms sum identically to 0.
+72060

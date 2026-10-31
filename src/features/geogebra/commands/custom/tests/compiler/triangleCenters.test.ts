@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3154, 3357, 3933, 5091, 5305, 7160, 9144, 72478, 73001]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3060, 3061, 3064, 3070, 3071, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3154, 3357, 3403, 3933, 5091, 5305, 7160, 73007, 72478, 73001]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -74,15 +74,15 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('uses the shared conjugate builder and the new line relations', () => {
-    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3064)', environment());
-    const isotomic = compileStudioCommand('TriangleCenter(A,B,C,3114)', environment());
+    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,7160)', environment());
+    const isotomic = compileStudioCommand('TriangleCenter(A,B,C,3403)', environment());
     expect(isogonal).toContain('Distance(');
     expect(isogonal).not.toContain('IsogonalConjugate(');
     expect(isotomic).toContain('If(');
     expect(isotomic).not.toContain('IsotomicConjugate(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,5091)', environment())).toContain('ClosestPoint(Line(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,9144)', environment())).toContain('Reflect(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,9144)', environment())).toContain('Line(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Reflect(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Line(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,7160)', environment()).length).toBeLessThan(50_000);
   });
 });
