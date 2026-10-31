@@ -68,7 +68,6 @@ F  = (nx wx + ny wy + 2c)(wx²+wy²)
 
 运行 `npm run dev`，在足够大的前台浏览器窗口打开 `/scripts/geogebra/browser/geogebra-qlcu1-benchmark.html`，保持 3 rounds／12 updates，点击 **Run comparison**。测量时保持窗口与视口不变，不运行其他构建任务。结果面板及 Raw results 会记录实际版本、DPR、视口和逐次数据。
 
-- [原始数据](qlcu1-timings.json)（时间保留至 0.1 ms）。
 - 实验入口：`scripts/geogebra/browser/geogebra-qlcu1-benchmark.html`、`scripts/geogebra/browser/geogebra-qlcu1-benchmark.ts`。
 - 独立方程生成器及测试：`scripts/geogebra/browser/geogebra-qlcu1-equation.ts`、`scripts/geogebra/browser/geogebra-qlcu1-equation.test.ts`。
 

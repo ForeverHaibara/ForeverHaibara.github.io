@@ -470,7 +470,7 @@ These are mathematical/type/dependency checks, not a drag-performance benchmark.
 
 The disposable `/scripts/geogebra/browser/geogebra-qlcu1-benchmark.html` compares the original
 four-point QLCu1 implementation with a fully substituted coordinate equation.
-See [the timing report and raw data](docs/benchmarks/qlcu1-performance.md) for
+See [the timing report](docs/benchmarks/qlcu1-performance.md) for
 the setup, bracket regression, equivalence checks and measured limitations.
 That report's long candidate remains experimental. For manual testing, the
 four-point QLCu1 overload now selects the shorter directed-angle equation via
