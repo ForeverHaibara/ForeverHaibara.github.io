@@ -22,7 +22,8 @@ from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, evaluate_formula,
-                                         rotate_formula, side_environment, validate_formula)
+                                         rotate_formula, side_environment, validate_formula,
+                                         MAX_FORMULA_LENGTH)
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -277,7 +278,7 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
         refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
         if (number <= NATIVE_MAX or opcode not in ARITY or len(refs) != ARITY[opcode]
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
-                or (opcode == 'B' and (not formula or len(formula) > 160))):
+                or (opcode == 'B' and (not formula or len(formula) > MAX_FORMULA_LENGTH))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             validate_formula(formula)

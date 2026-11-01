@@ -22,6 +22,7 @@ TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
 CYCLIC = re.compile(r'([ft])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
 WHERE = re.compile(r'where\s+([ft])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
 LABEL = re.compile(r'^(Barycentrics|Trilinears)\b\s*(.*)$', re.I)
+MAX_FORMULA_LENGTH = 500
 
 
 def coordinate_text(fragment: str) -> list[str]:
@@ -52,7 +53,7 @@ def normalize_formula(raw: str) -> str | None:
                  lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
     raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
     raw = re.sub(r'\s+', '', raw)
-    if not raw or len(raw) > 160:
+    if not raw or len(raw) > MAX_FORMULA_LENGTH:
         return None
     tokens: list[str] = []
     position = 0
@@ -100,7 +101,7 @@ def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
-    if len(nodes) > 160:
+    if len(nodes) > MAX_FORMULA_LENGTH:
         raise ValueError('Coordinate expression is too large')
     for node in nodes:
         if isinstance(node, (ast.Expression, ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div,
