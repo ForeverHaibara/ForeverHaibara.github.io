@@ -36,3 +36,13 @@ check types and budgets, and commit only on success. Rejected replacements leave
 recipes, reverse indices and metrics unchanged. Final full validation remains
 independent. Closure sample evaluation reuses the preceding snapshot and
 recomputes newly admitted centers; undefined results are memoized per snapshot.
+
+
+`NumericTransactions` commits the sample snapshot with structure, recomputing
+changed descendants and checking external incidence readers. Existing failures
+may remain queued; the candidate must resolve its own target and may not make a
+valid reader fail. Repair can try any admitted operation, reopen independent
+alternatives of removed centers, and use current inputs for subsequent candidates.
+There is no fixed repair-pass cap. Repeated selected states are reported as an
+incidence conflict using a bounded-size 256-bit graph fingerprint; this avoids
+retaining a full graph per queue event. Independent full audits remain mandatory.

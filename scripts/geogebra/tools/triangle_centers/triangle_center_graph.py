@@ -1,5 +1,6 @@
 """Transactional metrics for a selected DAG; candidate families remain separate."""
 from collections import ChainMap, defaultdict
+from hashlib import blake2b
 
 
 class SelectedGraph:
@@ -12,11 +13,19 @@ class SelectedGraph:
         self.reverse = defaultdict(set)
         self.metrics = {}
         self.attempts = self.commits = self.visited = 0
+        self.fingerprint = 0
+        for recipe in records.values():
+            self.fingerprint ^= self._token(recipe)
         for number, recipe in records.items():
             for ref in set(recipe.references):
                 self.reverse[ref].add(number)
         self.metrics = self._compute(set(records), records)
         self.bad = {n for n, metric in self.metrics.items() if not self._within(metric)}
+
+    @staticmethod
+    def _token(recipe):
+        text = repr((recipe.row(), recipe.part, recipe.evidence)).encode()
+        return int.from_bytes(blake2b(text, digest_size=32).digest(), 'big')
 
     def _within(self, metric):
         depth, length, conjugates = metric
@@ -78,11 +87,14 @@ class SelectedGraph:
                 return False
         except ValueError:
             return False
-        previous = self.records[number]
-        for ref in set(previous.references):
+        previous = self.records.get(number)
+        for ref in set(previous.references if previous else ()):
             self.reverse[ref].discard(number)
         for ref in set(recipe.references):
             self.reverse[ref].add(number)
+        if previous is not None:
+            self.fingerprint ^= self._token(previous)
+        self.fingerprint ^= self._token(recipe)
         self.records[number] = recipe
         self.metrics.update(updates)
         self.bad.difference_update(affected)
@@ -91,6 +103,7 @@ class SelectedGraph:
 
     def remove(self, targets):
         for number in targets:
+            self.fingerprint ^= self._token(self.records[number])
             for ref in set(self.records[number].references):
                 self.reverse[ref].discard(number)
             del self.records[number]
@@ -98,3 +111,54 @@ class SelectedGraph:
             self.bad.discard(number)
         for number in targets:
             self.reverse.pop(number, None)
+
+
+class NumericTransactions:
+    """Commit geometry with structure; preserve existing failures but introduce none."""
+    def __init__(self, graph, evaluate, validate, evidence):
+        self.graph = graph
+        self.evaluate = evaluate
+        self.validate = validate
+        self.evidence = defaultdict(set)
+        for target, references in evidence.items():
+            for ref in references:
+                self.evidence[ref].add(target)
+        self.coordinates = evaluate(graph.records, None, None)
+        self.evaluated = self.rejected = 0
+
+    def valid(self, number, records=None, coordinates=None):
+        return self.validate(number, self.graph.records if records is None else records,
+                             self.coordinates if coordinates is None else coordinates)
+
+    def apply(self, recipe):
+        proposed = None
+
+        def screen(overlay, affected):
+            nonlocal proposed
+            proposed = self.evaluate(overlay, self.coordinates, affected)
+            self.evaluated += len(affected)
+            checked = affected | {target for ref in affected for target in self.evidence.get(ref, ())
+                                  if target in overlay}
+            for target in checked:
+                if not self.valid(target, overlay, proposed):
+                    # Initial closure can contain a failed incidence witness.
+                    # Repair may leave another pre-existing failure queued, but
+                    # must resolve its own target and cannot break a valid reader.
+                    if target == recipe.number or (target in self.graph.records and self.valid(target)):
+                        return False
+            return True
+
+        if not self.graph.replace(recipe, screen):
+            self.rejected += 1
+            return False
+        self.coordinates = proposed
+        return True
+
+    def remove(self, targets):
+        self.graph.remove(targets)
+        for points in self.coordinates.values():
+            for target in targets:
+                points.pop(target, None)
+
+    def refresh(self):
+        self.coordinates = self.evaluate(self.graph.records, None, None)

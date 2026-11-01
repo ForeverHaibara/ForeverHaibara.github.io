@@ -8,10 +8,11 @@ coordinates within each X(n) entry; it never interprets unrelated incidences.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from dataclasses import dataclass
 from html import unescape
 from itertools import combinations
+from functools import lru_cache
 from pathlib import Path
 import json
 import math
@@ -22,7 +23,7 @@ from urllib.request import Request, urlopen
 
 import triangle_center_support as support
 from triangle_center_support import stage, report
-from triangle_center_graph import SelectedGraph
+from triangle_center_graph import SelectedGraph, NumericTransactions
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -818,9 +819,15 @@ def numeric_circum_inverse(p: Coordinate, abc: list[tuple[float, float]]) -> Coo
 
 
 def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -> Coordinate | None:
+    return _formula_sample(recipe.formula, tuple(tuple(xy) for xy in abc))
+
+
+@lru_cache(maxsize=16384)
+def _formula_sample(formula: str, abc: tuple[tuple[float, float], ...]) -> Coordinate | None:
+    # Pure, immutable sample results, including None/ideal; never keyed only by ID.
     a, b, c = (math.dist(abc[1], abc[2]), math.dist(abc[2], abc[0]), math.dist(abc[0], abc[1]))
     values = side_environment(a, b, c)
-    weights = [evaluate_formula(rotate_formula(recipe.formula, index), values) for index in range(3)]
+    weights = [evaluate_formula(rotate_formula(formula, index), values) for index in range(3)]
     if any(weight is None for weight in weights):
         return None
     total = sum(weights)
@@ -902,6 +909,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             elif op == 'F':
                 answer = numeric_combo(recipe, values, abc)
             elif op == 'I':
+                if not values:
+                    return None  # Directionless coverage markers are not numeric inputs.
                 d = direction(*values)
                 answer = Ideal(*d) if d is not None and all(not isinstance(v, Ideal) for v in values) and math.hypot(*d) > 1e-9 else None
             elif op in {'M', 'R'}:
@@ -1277,103 +1286,155 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     graph = SelectedGraph(selected, NATIVE_MAX, estimated_recipe_length,
                           (max_depth, max_length, max_conjugates),
                           lambda recipe, records: validate_recipe_inputs(recipe, records, native_ideal))
-    refine_coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
+    def supported(recipe, coordinates):
+        if not atlas:
+            return True
+        op = recipe.operation
+        if op == 'J':
+            return line_candidate_supported(recipe, coordinates, incidence_lines.get(recipe.number, []))
+        if op == 'I':
+            return direction_candidate_supported(recipe, coordinates, incidence_lines.get(recipe.number, []))
+        if op in {'G', 'T'}:
+            return conjugate_candidate_supported(recipe, coordinates, atlas)
+        if op == 'V':
+            return inversion_candidate_supported(recipe, coordinates, atlas)
+        if op == 'F':
+            return combo_candidate_supported(recipe, coordinates, atlas)
+        if op == 'B':
+            return formula_candidate_supported(recipe, atlas)
+        return True
+
+    def valid_result(number, records, coordinates):
+        recipe = records[number]
+        if recipe.operation == 'B':
+            return formula_candidate_supported(recipe, atlas)
+        if not any(number in points for points in coordinates.values()):
+            return False
+        # Preserve the final-screen contract: conditional non-incidence results
+        # need a valid sample; J/I must also retain their incidence evidence.
+        return supported(recipe, coordinates) if recipe.operation in {'J', 'I'} else True
+
+    geometry = (NumericTransactions(graph,
+                lambda records, cached, dirty: numeric_coordinates(records, atlas, native_directions,
+                                                                    cached=cached, dirty=dirty),
+                valid_result, {n: {ref for pair in lines for ref in pair}
+                               for n, lines in incidence_lines.items()}) if atlas else None)
+
+    def attempt(recipe):
+        if any(ref in blocked_native or ref in deferred_targets
+               or ref > NATIVE_MAX and ref not in selected for ref in recipe.references):
+            return False
+        try:
+            validate_recipe_inputs(recipe, selected, native_ideal)
+        except ValueError:
+            return False
+        if geometry and not supported(recipe, geometry.coordinates):
+            return False
+        return geometry.apply(recipe) if geometry else graph.replace(recipe)
+
     for number in sorted(set(selected) - set(seeds)):
         current = selected[number]
         options = candidates.get(number, [])
         cheaper_options = (options.explicit if isinstance(options, RecipeCandidates)
                            and quality(current) <= (2, 1) else options)
-        alternatives = [recipe for recipe in cheaper_options
-                        if quality(recipe) < quality(current)
-                        and all(ref not in blocked_native and ref not in deferred_targets
-                                and (ref <= NATIVE_MAX or ref in selected)
-                                for ref in recipe.references)]
-        alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
-                                              recipe.references))
+        alternatives = sorted((recipe for recipe in cheaper_options if quality(recipe) < quality(current)),
+                              key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
         for recipe in alternatives:
-            try:
-                validate_recipe_inputs(recipe, selected, native_ideal)
-            except ValueError:
-                continue
-            if refine_coordinates and recipe.operation == 'J' and not line_candidate_supported(
-                    recipe, refine_coordinates, incidence_lines[number]):
-                continue
-            if refine_coordinates and recipe.operation == 'I' and not direction_candidate_supported(
-                    recipe, refine_coordinates, incidence_lines[number]):
-                continue
-            if refine_coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
-                    recipe, refine_coordinates, atlas):
-                continue
-            if refine_coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
-                    recipe, refine_coordinates, atlas):
-                continue
-            if refine_coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, refine_coordinates, atlas):
-                continue
-            if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
-                continue
-            if graph.replace(recipe):
+            if attempt(recipe):
                 break
-    # A later substitution may move a supporting line. Recheck the finished
-    # graph and replace any intersection whose final lines disagree.
-    if atlas:
-        for _ in range(30):
-            coordinates = numeric_coordinates(selected, atlas, native_directions)
-            finite = set.union(*(set(points) for points in coordinates.values()))
-            missing = {number for number in set(selected) - finite if selected[number].operation != 'B'}
-            if missing:
-                number = min(missing)
+
+    # Repair arbitrary operation types, then reconsider removed/unclosed targets.
+    # Dependencies and evidence changes enqueue only potentially affected targets.
+    repair = deque()
+    repair_queued = set()
+    unresolved = set(pending)
+    reopen = deque(sorted(unresolved))
+    reopen_queued = set(unresolved)
+    repairs = pruned = reopened = 0
+
+    def enqueue_changes(changed):
+        interested = {target for ref in changed for target in watchers.get(ref, ())}
+        if geometry:
+            interested.update(target for ref in changed for target in geometry.evidence.get(ref, ()))
+        for target in sorted(interested):
+            if target in selected and geometry and not geometry.valid(target) and target not in repair_queued:
+                repair.append(target)
+                repair_queued.add(target)
+            if target in unresolved and target not in reopen_queued:
+                reopen.append(target)
+                reopen_queued.add(target)
+
+    def choices(number):
+        return sorted([seeds[number]] if number in seeds else candidates.get(number, []),
+                      key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
+
+    if geometry:
+        repair.extend(sorted(n for n in selected if not geometry.valid(n)))
+        repair_queued.update(repair)
+    # Exact repeat detection is a convergence diagnostic, not a search-size cap.
+    seen_states = set()
+    def changed_state():
+        signature = graph.fingerprint
+        if signature in seen_states:
+            raise ValueError('Repair repeated a selected graph; inspect conflicting incidence evidence')
+        seen_states.add(signature)
+
+    while True:
+        while reopen or repair:
+            # Reopening can restore an external support line before its reader
+            # is considered for removal.
+            if reopen:
+                number = reopen.popleft()
+                reopen_queued.discard(number)
+                if number not in unresolved:
+                    continue
+                for recipe in choices(number):
+                    if attempt(recipe):
+                        unresolved.remove(number)
+                        reopened += 1
+                        changed_state()
+                        enqueue_changes({number})
+                        break
+                continue
+            number = repair.popleft()
+            repair_queued.discard(number)
+            if number not in selected or geometry.valid(number):
+                continue
+            current = selected[number]
+            for recipe in choices(number):
+                if recipe != current and attempt(recipe):
+                    repairs += 1
+                    changed_state()
+                    enqueue_changes(graph.descendants({number}))
+                    break
+            else:
                 doomed = graph.descendants({number})
                 if doomed & set(seeds):
-                    raise ValueError(f'Nonfinite result reaches a reviewed seed through X({number})')
-                graph.remove(doomed)
-                print(f'Deferred nonfinite X({number}) and {len(doomed)-1} dependent recipes')
-                continue
-            invalid = [number for number, recipe in selected.items()
-                       if (recipe.operation == 'J' and not line_candidate_supported(
-                           recipe, coordinates, incidence_lines.get(number, [])))
-                       or (recipe.operation == 'I' and not direction_candidate_supported(
-                           recipe, coordinates, incidence_lines.get(number, [])))]
-            if not invalid:
-                break
-            pruned = False
-            for number in invalid:
-                if number not in selected:
-                    continue
-                current = selected[number]
-                options = sorted(candidates.get(number, []),
-                                 key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
-                                                     recipe.references))
-                repaired = False
-                for recipe in options:
-                    if (recipe.operation != current.operation or recipe == current
-                            or any(ref in blocked_native or ref in deferred_targets
-                                   or ref > NATIVE_MAX and ref not in selected for ref in recipe.references)
-                            or (recipe.operation == 'J' and not line_candidate_supported(
-                                recipe, coordinates, incidence_lines[number]))
-                            or (recipe.operation == 'I' and not direction_candidate_supported(
-                                recipe, coordinates, incidence_lines[number]))):
-                        continue
-                    repaired = graph.replace(recipe)
-                    if repaired:
-                        break
-                if not repaired:
-                    selected[number] = current
-                    doomed = graph.descendants({number})
-                    if doomed & set(seeds):
-                        raise ValueError(f'Invalid line pair reaches a reviewed seed through X({number})')
-                    graph.remove(doomed)
-                    print(f'Deferred X({number}) and {len(doomed)-1} dependent recipes after final line screen')
-                    pruned = True
-                    break
-            if pruned:
-                continue
-        else:
-            raise ValueError('Line-pair consistency did not stabilize')
-        coordinates = numeric_coordinates(selected, atlas, native_directions)
-        missing = {number for number in set(selected) - set.union(*(set(points) for points in coordinates.values()))
-                   if selected[number].operation != 'B'}
-        if missing:
-            raise ValueError(f'Nonfinite generated centers on all sample triangles: {sorted(missing)[:10]}')
+                    raise ValueError(f'Invalid construction reaches a reviewed seed through X({number})')
+                geometry.remove(doomed)
+                unresolved.update(doomed)
+                pruned += len(doomed)
+                changed_state()
+                enqueue_changes(doomed)
+                # Removed children may have independent alternatives, even if
+                # none of their remaining inputs changed.
+                for target in sorted(doomed):
+                    if target not in reopen_queued:
+                        reopen.append(target)
+                        reopen_queued.add(target)
+        if not geometry:
+            break
+        # Independently rebuild coordinates at quiescence to catch stale caches
+        # or an omitted evidence edge; no fixed number of repair passes.
+        geometry.refresh()
+        invalid = sorted(n for n in selected if not geometry.valid(n))
+        if not invalid:
+            break
+        repair.extend(invalid)
+        repair_queued.update(invalid)
+    report('repair-queue', repaired=repairs, pruned=pruned, reopened=reopened,
+           unresolved=len(unresolved), numeric_visits=geometry.evaluated if geometry else 0,
+           rejected=geometry.rejected if geometry else 0)
     validate_graph(selected)
     validate_types(selected, set(native_directions))
     report('replacement-metrics', attempts=graph.attempts, commits=graph.commits,

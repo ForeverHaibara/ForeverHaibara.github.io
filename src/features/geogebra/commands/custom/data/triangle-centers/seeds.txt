@@ -2,6 +2,21 @@
 # Explicit exclusions: id SKIP reason (optional trailing # comment).
 # Reserve SKIP for reviewed exclusions; missing pages/rules and an unclosed graph
 # are run diagnostics, not permanent exclusions. Existing reviewed rows remain as-is.
+# Reviewed 2026-11-02: construct the Auriga vertices from ETC X(5597), choose
+# the first triangle by its A-vertex being on A's side of BC. Its perspector
+# with the anticomplementary triangle is X(5601); the opposite triangle gives
+# X(5602). The printed coordinate signs at X(5601)/X(5602) are interchanged.
+5601 J 8 21 145 5598
+5602 J 2 5598 3617 5599
+# The same independent Auriga construction gives the first/second orthocenters
+# X(9834)/X(9835). Do not swap them through X(9835)'s conflicting listed pair.
+# The two triangles, hence their orthocenters, reflect in the inverter center X(55).
+9834 J 55 515 5691 8186
+9835 R 9834 55
+# ETC X(7581)/X(7582): printed trilinears and multiple native incidence lines
+# agree; the printed reflections in X(7601)/X(7602) leave the Euler line.
+7581 J 4 6 371 376
+7582 J 4 6 371 631
 3054 M 590 615
 3056 R 1469 1
 3057 J 1 3 10 11
