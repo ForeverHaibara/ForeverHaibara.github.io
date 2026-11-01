@@ -1,8 +1,13 @@
-# Native ideal ETC centers: one direction line through two finite native centers.
-# Regenerate manually with: python scripts/geogebra/tools/triangle_center_import.py native
-# Chosen line agrees with other available ETC lines on two sample triangles when possible.
-# X(1912) omitted: available native direction lines conflict.
+# Native centers undefined on at least one screened triangle.
+# id = unavailable; id p q = ideal direction along finite X(p)X(q).
+# A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.
+# Refresh the unavailable set from the GeoGebra native screen, then run:
+# python scripts/geogebra/tools/triangle_center_import.py native
+# X(1912) has conflicting direction lines.
 30 2 3
+368
+369
+370
 511 3 6
 512 187 237
 513 36 238
@@ -39,16 +44,24 @@
 544 2 101
 545 2 45
 674 6 31
+680
 688 669 864
 690 74 98
 696 313 561
 698 76 141
+700
 702 2 308
+704
+706
+708
+710
 712 76 321
 714 38 75
 716 2 561
 718 1 561
 720 6 561
+722
+724
 726 37 39
 730 10 39
 732 6 76
@@ -63,13 +76,33 @@
 758 10 12
 760 1 32
 766 31 32
+768
+772
+776
+778
+780
+782
+784
+786
 788 42 649
+790
+792
+794
+796
+802
 804 2 351
+806
+808
 812 190 646
+814
+816
+818
 824 321 693
 826 54 879
 830 661 1580
 832 656 667
+834
+838
 888 351 865
 891 1 659
 900 100 190
@@ -81,11 +114,16 @@
 928 102 103
 952 1 5
 971 4 7
+1144
 1154 5 51
+1314
+1315
 1499 3 669
 1503 4 6
 1510 110 1291
+1912
 1938 65 650
+1946
 2385 19 208
 2386 25 32
 2387 32 184
@@ -185,6 +223,8 @@
 2870 37 692
 2871 6 157
 2872 1976 2422
+2873
+2874
 2875 55 184
 2876 6 692
 2877 31 692

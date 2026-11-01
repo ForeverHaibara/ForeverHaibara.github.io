@@ -16,4 +16,6 @@
 3109 P 1 2 3
 3357 M 3 64
 3371 B a*(sin(A+pi/8))
+# Keep the previously screened ETC line pair used by X(73143).
+8004 J 3 3277 1135 8002
 73001 R 476 3109

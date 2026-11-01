@@ -269,37 +269,35 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
     return records
 
 
-def read_native_exclusions(path: Path) -> set[int]:
+def read_native_status(path: Path) -> tuple[set[int], dict[int, tuple[int, int]]]:
     numbers: set[int] = set()
-    for row in path.read_text(encoding='utf-8').splitlines():
-        token = row.split('#', 1)[0].strip()
-        if not token:
-            continue
-        if not re.fullmatch(r'\d+(?:-\d+)?', token):
-            raise ValueError(f'Invalid native exclusion in {path}: {row}')
-        bounds = list(map(int, token.split('-')))
-        start, end = (bounds[0], bounds[-1])
-        if start > end:
-            raise ValueError(f'Reversed native exclusion range in {path}: {row}')
-        numbers.update(range(start, end + 1))
-    if any(number < 1 or number > NATIVE_MAX for number in numbers):
-        raise ValueError(f'Invalid native exclusion in {path}')
-    return numbers
-
-
-def read_native_directions(path: Path) -> dict[int, tuple[int, int]]:
     directions: dict[int, tuple[int, int]] = {}
     for row in path.read_text(encoding='utf-8').splitlines():
         token = row.split('#', 1)[0].strip()
         if not token:
             continue
-        fields = list(map(int, token.split()))
-        if (len(fields) != 3 or fields[0] in directions or not 1 <= fields[0] <= NATIVE_MAX
-                or any(not 1 <= ref <= NATIVE_MAX or ref == fields[0] for ref in fields[1:])
-                or fields[1] == fields[2]):
+        if re.fullmatch(r'\d+(?:-\d+)?', token):
+            bounds = list(map(int, token.split('-')))
+            start, end = bounds[0], bounds[-1]
+            if start > end or not 1 <= start <= end <= NATIVE_MAX:
+                raise ValueError(f'Invalid native status range in {path}: {row}')
+            entries = set(range(start, end + 1))
+            if numbers & entries:
+                raise ValueError(f'Duplicate native status in {path}: {row}')
+            numbers.update(entries)
+            continue
+        if not re.fullmatch(r'\d+\s+\d+\s+\d+', token):
+            raise ValueError(f'Invalid native status in {path}: {row}')
+        number, a, b = map(int, token.split())
+        if (number in numbers or not 1 <= number <= NATIVE_MAX
+                or not 1 <= a <= NATIVE_MAX or not 1 <= b <= NATIVE_MAX
+                or len({number, a, b}) != 3):
             raise ValueError(f'Invalid native direction in {path}: {row}')
-        directions[fields[0]] = (fields[1], fields[2])
-    return directions
+        numbers.add(number)
+        directions[number] = (a, b)
+    if any(a in numbers or b in numbers for a, b in directions.values()):
+        raise ValueError(f'Native direction uses an unavailable endpoint in {path}')
+    return numbers, directions
 
 
 def read_deferred_targets(path: Path) -> set[int]:
@@ -696,13 +694,17 @@ def derive_native_directions(atlas: dict, blocked_native: set[int]) -> tuple[dic
     return dict(sorted(directions.items())), weak
 
 
-def native_direction_rows(directions: dict[int, tuple[int, int]], weak: list[int]) -> str:
-    header = ('# Native ideal ETC centers: one direction line through two finite native centers.\n'
-              '# Regenerate manually with: python scripts/geogebra/tools/triangle_center_import.py native\n'
-              '# Chosen line agrees with other available ETC lines on two sample triangles when possible.\n'
-              + ''.join(f'# X({number}) omitted: available native direction lines conflict.\n' for number in weak))
-    return header + ''.join(f'{number} {a} {b}\n'
-                            for number, (a, b) in directions.items())
+def native_status_rows(unavailable: set[int], directions: dict[int, tuple[int, int]],
+                       weak: list[int]) -> str:
+    header = ('# Native centers undefined on at least one screened triangle.\n'
+              '# id = unavailable; id p q = ideal direction along finite X(p)X(q).\n'
+              '# A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.\n'
+              '# Refresh the unavailable set from the GeoGebra native screen, then run:\n'
+              '# python scripts/geogebra/tools/triangle_center_import.py native\n'
+              + ''.join(f'# X({number}) has conflicting direction lines.\n' for number in weak))
+    return header + ''.join(f'{number} {directions[number][0]} {directions[number][1]}\n'
+                            if number in directions else f'{number}\n'
+                            for number in sorted(unavailable))
 
 
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
@@ -710,13 +712,11 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                    blocked_native: set[int] | None = None,
                    deferred_targets: set[int] | None = None, atlas: dict | None = None,
                    native_directions: dict[int, tuple[int, int]] | None = None,
-                   preferred: dict[int, Recipe] | None = None) -> dict[int, Recipe]:
-    selected = dict(seeds)
-    preferred = preferred or {}
-    def is_preferred(recipe: Recipe) -> bool:
-        requested = preferred.get(recipe.number)
-        return (requested is not None and (recipe.operation, recipe.references, recipe.formula)
-                == (requested.operation, requested.references, requested.formula))
+                   require_seeds: bool = True) -> dict[int, Recipe]:
+    # A reviewed seed may depend on another extended center. Admit it only
+    # after its references have closed, just like automatically parsed recipes.
+    selected = {number: recipe for number, recipe in seeds.items()
+                if all(reference <= NATIVE_MAX for reference in recipe.references)}
     native_directions = native_directions or {}
     blocked_native = (blocked_native or set()) - set(native_directions)
     deferred_targets = deferred_targets or set()
@@ -725,8 +725,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     if any(ref in blocked_native for recipe in seeds.values() for ref in recipe.references):
         raise ValueError('A reviewed seed references an unavailable native center')
     validate_graph(selected)
-    pending = {number for number in candidates if number > NATIVE_MAX and number not in selected
-               and number not in deferred_targets}
+    pending = {number for number in set(candidates) | set(seeds) if number > NATIVE_MAX
+               and number not in selected and number not in deferred_targets}
     incidence_lines: dict[int, list[tuple[int, int]]] = {}
     for number, options in candidates.items():
         incidence_lines[number] = sorted({tuple(recipe.references[index:index+2]) for recipe in options
@@ -739,7 +739,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         nonlinear = conjugate_levels(selected)
         coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
         for number in pending:
-            for recipe in candidates[number]:
+            for recipe in ([seeds[number]] if number in seeds else candidates.get(number, [])):
                 if any(ref in blocked_native or ref in deferred_targets
                        or ref > NATIVE_MAX and ref not in selected
                        for ref in recipe.references):
@@ -764,7 +764,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
                 if (candidate_depth <= max_depth and candidate_length <= max_length
                         and candidate_nonlinear <= max_conjugates):
-                    key = (*quality(recipe), int(not is_preferred(recipe)), candidate_depth, candidate_length,
+                    key = (*quality(recipe), candidate_depth, candidate_length,
                            PRIORITY[recipe.operation], recipe.references)
                     possible.append((key, recipe))
         if not possible:
@@ -778,17 +778,19 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 best[number] = item
         selected.update({number: item[1] for number, item in best.items()})
         pending.difference_update(best)
+    if require_seeds and set(seeds) - set(selected):
+        raise ValueError(f'Unclosed reviewed seeds: {sorted(set(seeds) - set(selected))}')
     # A line-list intersection may enter before the point needed by a simpler
     # definition. Reconsider it after the reachable graph has closed.
     refine_coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
     for number in sorted(set(selected) - set(seeds)):
         current = selected[number]
         alternatives = [recipe for recipe in candidates.get(number, [])
-                        if (quality(recipe) < quality(current) or is_preferred(recipe) and recipe != current)
+                        if quality(recipe) < quality(current)
                         and all(ref not in blocked_native and ref not in deferred_targets
                                 and (ref <= NATIVE_MAX or ref in selected)
                                 for ref in recipe.references)]
-        alternatives.sort(key=lambda recipe: (*quality(recipe), int(not is_preferred(recipe)), PRIORITY[recipe.operation],
+        alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
                                               recipe.references))
         for recipe in alternatives:
             if refine_coordinates and recipe.operation == 'J' and not line_candidate_supported(
@@ -848,8 +850,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     continue
                 current = selected[number]
                 options = sorted(candidates.get(number, []),
-                                 key=lambda recipe: (*quality(recipe), int(not is_preferred(recipe)),
-                                                     PRIORITY[recipe.operation], recipe.references))
+                                 key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
+                                                     recipe.references))
                 repaired = False
                 for recipe in options:
                     if (recipe.operation != current.operation or recipe == current
@@ -949,17 +951,13 @@ def main() -> None:
         fetch(args.parts)
         return
     chunk_dir = DATA / 'chunks'
-    blocked_native = read_native_exclusions(DATA / 'native-unavailable.txt')
+    blocked_native, native_directions = read_native_status(DATA / 'native-status.txt')
     if args.action == 'native':
         directions, weak = derive_native_directions(read_native_atlas(CACHE / 'native-atlas.json'), blocked_native)
-        (DATA / 'native-directions.txt').write_text(native_direction_rows(directions, weak), encoding='utf-8', newline='\n')
+        (DATA / 'native-status.txt').write_text(native_status_rows(blocked_native, directions, weak),
+                                                encoding='utf-8', newline='\n')
         print(f'Native ideal directions: {len(directions)}; omitted conflicting IDs: {weak}')
         return
-    native_directions = read_native_directions(DATA / 'native-directions.txt')
-    if not set(native_directions) <= blocked_native:
-        raise ValueError('A native direction was not previously screened as unavailable')
-    if any(ref in blocked_native for pair in native_directions.values() for ref in pair):
-        raise ValueError('A native direction uses an unavailable finite endpoint')
     blocked_native -= set(native_directions)
     deferred_targets = read_deferred_targets(DATA / 'deferred-centers.txt')
     if args.action == 'verify':
@@ -981,7 +979,6 @@ def main() -> None:
     if set(args.auto_operations) - set(ARITY):
         raise ValueError(f'Unknown operation in {args.auto_operations}')
     seeds = read_recipes(DATA / 'seeds.txt')
-    preferred = read_recipes(DATA / 'recipe-priority.txt')
     all_candidates: dict[int, list[Recipe]] = {}
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
@@ -996,15 +993,10 @@ def main() -> None:
     atlas = read_native_atlas(CACHE / 'native-atlas.json')
     eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations]
                 for number, options in all_candidates.items()}
-    for number, recipe in preferred.items():
-        if not any((candidate.operation, candidate.references, candidate.formula)
-                   == (recipe.operation, recipe.references, recipe.formula)
-                   for candidate in eligible.get(number, [])):
-            raise ValueError(f'Preferred X({number}) recipe is absent from parsed ETC candidates')
     relation_only = {number: [recipe for recipe in options if recipe.operation != 'B']
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions, preferred)
+                              blocked_native, deferred_targets, atlas, native_directions, require_seeds=False)
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors, priority,
                                  coordinate_lines, native_directions)
@@ -1017,7 +1009,7 @@ def main() -> None:
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions, preferred)
+                              blocked_native, deferred_targets, atlas, native_directions)
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry,
                                     line_candidate_supported, numeric_coordinates, numeric_formula,
                                     numeric_formula_projective,
-                                    read_native_directions, read_native_exclusions, read_recipes,
+                                    native_status_rows, read_native_status, read_recipes,
                                     select_recipes, split_entries, validate_graph, validate_types)
 from triangle_center_coordinates import coordinate_candidates, evaluate_formula, normalize_formula, side_environment
 
@@ -184,13 +184,13 @@ class TriangleCenterImportTest(unittest.TestCase):
             path.write_text(recipe.row() + '\n', encoding='utf-8')
             self.assertEqual(read_recipes(path)[4182].formula, recipe.formula)
 
-    def test_preferred_recipe_must_be_an_extracted_candidate(self):
-        first = Recipe(4000, 'J', (1, 2, 3, 4), evidence='X(4000) lies on these lines:')
-        preferred = Recipe(4000, 'J', (1, 3, 2, 4))
-        candidates = {4000: [first, Recipe(4000, 'J', preferred.references,
-                                           evidence='X(4000) lies on these lines:')]}
-        selected = select_recipes(candidates, {}, 6, 6000, preferred={4000: preferred})
-        self.assertEqual(selected[4000].references, preferred.references)
+    def test_extended_seed_enters_after_its_dependencies(self):
+        seed = Recipe(4000, 'J', (1, 4001, 2, 3))
+        candidates = {4000: [Recipe(4000, 'J', (1, 2, 3, 4))],
+                      4001: [Recipe(4001, 'M', (5, 6))]}
+        selected = select_recipes(candidates, {4000: seed}, 6, 6000)
+        self.assertEqual(selected[4000], seed)
+        self.assertEqual(selected[4001].operation, 'M')
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],
@@ -234,14 +234,18 @@ class TriangleCenterImportTest(unittest.TestCase):
         selected = select_recipes(candidates, {}, 6, 6000)
         self.assertEqual(selected[4000].references, (4001, 5, 6, 7))
 
-    def test_native_exclusion_ranges_are_inclusive(self):
+    def test_native_status_combines_exclusions_and_directions(self):
         with TemporaryDirectory(dir=CACHE) as folder:
-            path = Path(folder) / 'excluded.txt'
-            path.write_text('# screened\n30\n511-513\n', encoding='utf-8')
-            self.assertEqual(read_native_exclusions(path), {30, 511, 512, 513})
-            directions = Path(folder) / 'directions.txt'
-            directions.write_text('30 2 3\n511 3 6\n', encoding='utf-8')
-            self.assertEqual(read_native_directions(directions), {30: (2, 3), 511: (3, 6)})
+            path = Path(folder) / 'native-status.txt'
+            unavailable = {30, 511, 512, 513}
+            directions = {30: (2, 3), 511: (3, 6)}
+            path.write_text(native_status_rows(unavailable, directions, []), encoding='utf-8')
+            self.assertEqual(read_native_status(path), (unavailable, directions))
+            path.write_text('30 2 3\n511 3 6\n512-513\n', encoding='utf-8')
+            self.assertEqual(read_native_status(path), (unavailable, directions))
+            path.write_text('30 2 3\n30\n', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'Duplicate'):
+                read_native_status(path)
 
     def test_line_list_requires_independent_consistent_lines(self):
         points = {1: (0, 0), 2: (2, 0), 3: (1, 0), 4: (3, 0),

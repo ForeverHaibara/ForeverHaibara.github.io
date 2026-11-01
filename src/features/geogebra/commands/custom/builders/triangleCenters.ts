@@ -1,13 +1,15 @@
 import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
-import nativeDirectionsSource from '../data/triangle-centers/native-directions.txt?raw';
+import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 
 type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'B'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string };
-const nativeDirections = new Map<number, [number, number]>(nativeDirectionsSource.split(/\r?\n/u)
+const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
-  .map((row) => { const [id, from, to] = row.trim().split(/\s+/u).map(Number); return [id, [from, to]]; }));
+  .map((row) => row.trim().split(/\s+/u).map(Number))
+  .filter((fields) => fields.length === 3)
+  .map(([id, from, to]) => [id, [from, to]]));
 const chunkImports = import.meta.glob<string>('../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
 const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();

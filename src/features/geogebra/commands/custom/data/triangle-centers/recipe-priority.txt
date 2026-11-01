@@ -1,3 +1,0 @@
-# Source-derived candidate preferred when several ETC line pairs pass the sample screen.
-# This selects an existing parsed candidate; it does not add a construction by itself.
-8004 J 3 3277 1135 8002
