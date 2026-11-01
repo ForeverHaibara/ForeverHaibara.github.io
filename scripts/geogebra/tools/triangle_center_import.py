@@ -20,6 +20,9 @@ import sys
 import time
 from urllib.request import Request, urlopen
 
+import triangle_center_support as support
+from triangle_center_support import stage, report
+
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
                                          rotate_formula, side_environment, validate_formula)
@@ -381,41 +384,79 @@ def extract_entry(number: int, fragment: str, part: int,
                 found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
     recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
                if all(reference > 0 and reference != number for reference in refs)]
-    recipes.extend(candidate for line in coordinate_text(fragment)
+    coordinate_view = coordinate_text(fragment)
+    recipes.extend(candidate for line in coordinate_view
                    if (candidate := combo_candidate(number, line, part)) is not None)
-    recipes.extend(candidate for line in coordinate_text(fragment)
+    recipes.extend(candidate for line in coordinate_view
                    for candidate in shinagawa_candidates(number, line, part))
     recipes.extend(Recipe(number, kind, (), part, evidence, formula)
-                   for kind, formula, evidence in coordinate_candidates(fragment))
+                   for kind, formula, evidence in coordinate_candidates(fragment, coordinate_view))
     return recipes
 
 
+@stage
 def read_page(part: int, excluded: set[int] | None = None,
               coordinate_lines: dict[int, list[tuple[int, int]]] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
     path = CACHE / f'ETCPart{part}.html'
     source = path.read_text(encoding='utf-8', errors='replace')
+    issues = support.heading_issues(source)
+    if issues:
+        raise ValueError(f'Part {part} source preflight failed: ' + '; '.join(issues))
+    cache_path = CACHE / 'extracted' / f'{support.cache_key(source, excluded or set(), part)}.json.gz'
+    cached = support.read_cache(cache_path) if support.CACHE_ENABLED else None
+    if isinstance(cached, dict) and cached.get('schema') == 1:
+        try:
+            restored = {int(n): [Recipe(row[0], row[1], tuple(row[2]), *row[3:]) for row in rows]
+                        for n, rows in cached['candidates'].items()}
+            restored_lines = {int(n): [tuple(pair) for pair in pairs] for n, pairs in cached['lines'].items()}
+            entries = cached['entries']
+        except (KeyError, TypeError, ValueError):
+            pass
+        else:
+            if coordinate_lines is not None:
+                coordinate_lines.update(restored_lines)
+            report('cache-hit', part=part, entries=len(entries))
+            return entries, restored
+    report('cache-miss', part=part)
     entries: list[int] = []
     candidates: dict[int, list[Recipe]] = {}
+    page_lines: dict[int, list[tuple[int, int]]] = {}
     for number, fragment in split_entries(source):
         if number in candidates:
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
         candidates[number] = extract_entry(number, fragment, part, excluded)
-        if coordinate_lines is not None and any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
+        if any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
                                                 for r in candidates[number]):
-            coordinate_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
+            page_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
+    if support.CACHE_ENABLED:
+        support.write_cache(cache_path, dict(schema=1, entries=entries,
+            candidates={n: [[r.number, r.operation, r.references, r.part, r.evidence, r.formula] for r in rows]
+                        for n, rows in candidates.items()}, lines=page_lines))
+    if coordinate_lines is not None:
+        coordinate_lines.update(page_lines)
     return entries, candidates
 
 
-def read_recipes(path: Path) -> dict[int, Recipe]:
+def read_recipes(path: Path, skipped: dict[int, str] | None = None) -> dict[int, Recipe]:
     records: dict[int, Recipe] = {}
     for row in path.read_text(encoding='utf-8').splitlines():
         if not row.strip() or row.lstrip().startswith('#'):
             continue
+        row = row.split('#', 1)[0].strip()
+        if not row:
+            continue
         fields = row.split()
         number, opcode = int(fields[0]), fields[1]
+        if opcode == 'SKIP' and skipped is not None:
+            if number <= NATIVE_MAX or len(fields) < 3 or number in skipped or number in records:
+                raise ValueError(f'Invalid or duplicate skip in {path}: {row}')
+            skipped[number] = ' '.join(fields[2:])
+            continue
+        if skipped is not None and number in skipped:
+            raise ValueError(f'Conflicting skip and recipe in {path}: {row}')
         formula = fields[2] if opcode == 'B' and len(fields) == 3 else ''
         if opcode == 'F':
             pairs = [field.split(':') for field in fields[2:]]
@@ -468,14 +509,6 @@ def read_native_status(path: Path) -> tuple[set[int], dict[int, tuple[int, int]]
     return numbers, directions
 
 
-def read_deferred_targets(path: Path) -> set[int]:
-    numbers = {int(row.split()[0]) for row in path.read_text(encoding='utf-8').splitlines()
-               if row.strip() and not row.lstrip().startswith('#')}
-    if any(number <= NATIVE_MAX for number in numbers):
-        raise ValueError(f'Invalid extended exclusion in {path}')
-    return numbers
-
-
 def read_coordinate_priority(path: Path) -> set[int]:
     numbers = {int(row.split('#', 1)[0].strip()) for row in path.read_text(encoding='utf-8').splitlines()
                if row.split('#', 1)[0].strip()}
@@ -510,6 +543,7 @@ def unresolved_components(candidates: dict[int, list[Recipe]], baseline: dict[in
     return {number: root(number) for number in pending}
 
 
+@stage
 def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, Recipe],
                        atlas: dict, per_component: int | None, priority: set[int],
                        coordinate_lines: dict[int, list[tuple[int, int]]],
@@ -1026,6 +1060,7 @@ def native_status_rows(unavailable: set[int], directions: dict[int, tuple[int, i
                             for number in sorted(unavailable))
 
 
+@stage
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
                    max_depth: int, max_length: int | None, max_conjugates: int = 1,
                    blocked_native: set[int] | None = None,
@@ -1054,6 +1089,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                                           for index in (0, 2)}
                                          | {recipe.references for recipe in options if recipe.operation == 'I'})
     while pending:
+        report('closure', selected=len(selected), pending=len(pending))
         possible: list[tuple[tuple, Recipe]] = []
         depth, length = validate_graph(selected)
         nonlinear = conjugate_levels(selected)
@@ -1274,7 +1310,7 @@ def fetch(parts: list[int]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify'))
+    parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
     parser.add_argument('--auto-operations', default='MRCAPLIVJGTFB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
@@ -1283,7 +1319,28 @@ def main() -> None:
     parser.add_argument('--max-length', type=int, default=None,
                         help='Optional estimated construction-length limit; unlimited by default')
     parser.add_argument('--max-conjugates', type=int, default=1)
+    parser.add_argument('--no-cache', action='store_true', help='Bypass persistent extraction cache')
+    parser.add_argument('--report', type=Path, help='Append structured progress events to this JSONL file')
     args = parser.parse_args()
+    support.CACHE_ENABLED = not args.no_cache
+    support.REPORT = args.report
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+    report('run', action=args.action, parts=args.parts, max_depth=args.max_depth,
+           max_length=args.max_length, max_conjugates=args.max_conjugates,
+           operations=args.auto_operations, coordinate_limit=args.max_coordinate_anchors_per_component,
+           cache=support.CACHE_ENABLED, python=sys.version.split()[0])
+    if args.action in {'audit', 'build', 'check'}:
+        failures = []
+        for part in args.parts:
+            path = CACHE / f'ETCPart{part}.html'
+            issues = support.heading_issues(path.read_text(encoding='utf-8', errors='replace'))
+            report('preflight', part=part, issues=len(issues))
+            failures.extend(f'Part {part}: {issue}' for issue in issues)
+        if failures:
+            raise ValueError('Source preflight failed:\n' + '\n'.join(failures))
+        if args.action == 'audit':
+            return
     if args.action == 'fetch':
         fetch(args.parts)
         return
@@ -1296,7 +1353,9 @@ def main() -> None:
         print(f'Native ideal directions: {len(directions)}; omitted conflicting IDs: {weak}')
         return
     blocked_native -= set(native_directions)
-    deferred_targets = read_deferred_targets(DATA / 'deferred-centers.txt')
+    skipped: dict[int, str] = {}
+    all_seeds = read_recipes(DATA / 'seeds.txt', skipped)
+    deferred_targets = set(skipped)
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
         for path in sorted(chunk_dir.glob('*.txt')):
@@ -1315,7 +1374,6 @@ def main() -> None:
         return
     if set(args.auto_operations) - set(ARITY):
         raise ValueError(f'Unknown operation in {args.auto_operations}')
-    all_seeds = read_recipes(DATA / 'seeds.txt')
     ideal_markers = {number: recipe for number, recipe in all_seeds.items()
                      if recipe.operation == 'I' and not recipe.references}
     if set(ideal_markers) & deferred_targets:

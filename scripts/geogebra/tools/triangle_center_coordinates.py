@@ -7,6 +7,7 @@ by multiplying the first coordinate by side a before storage.
 from __future__ import annotations
 
 import ast
+from functools import lru_cache
 from html import unescape
 import math
 import re
@@ -42,6 +43,7 @@ def coordinate_text(fragment: str) -> list[str]:
     return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
 
 
+@lru_cache(maxsize=8192)
 def normalize_formula(raw: str) -> str | None:
     raw = (unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*')
            .replace('π', 'pi').replace('ω', '(atan(S/SW))').replace('[', '(').replace(']', ')'))
@@ -115,6 +117,7 @@ def constant_exponent(node: ast.AST) -> float | None:
     return None
 
 
+@lru_cache(maxsize=8192)
 def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
@@ -145,6 +148,7 @@ def validate_formula(formula: str) -> ast.Expression:
     return tree
 
 
+@lru_cache(maxsize=8192)
 def canonical_formula(formula: str):
     """Compare commutative sums and products without algebraic rewriting."""
     def canonical(node):
@@ -175,6 +179,7 @@ def canonical_formula(formula: str):
     return canonical(validate_formula(formula).body)
 
 
+@lru_cache(maxsize=8192)
 def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
     """Return scaling degree; None represents an identically zero literal."""
     dimensions = {**{name: 1 for name in ('a', 'b', 'c', 's', 'sa', 'sb', 'sc', 'r', 'R')},
@@ -221,9 +226,9 @@ def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
         return False, None
 
 
-def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
+def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) -> list[tuple[str, str, str]]:
     lines: list[str] = []
-    for line in coordinate_text(fragment):
+    for line in (coordinate_text(fragment) if text_lines is None else text_lines):
         # Consecutive coordinate declarations may be separated only by source
         # whitespace, which HTML collapses; each label still starts a new one.
         lines.extend(re.split(r'\s+(?=(?:Barycentrics|Trilinears)\b)', line, flags=re.I)
@@ -318,6 +323,7 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
     return list(dict.fromkeys(found))
 
 
+@lru_cache(maxsize=8192)
 def rotate_formula(formula: str, times: int) -> str:
     return re.sub(r'[A-Za-z_]+', lambda m: _rotate_name(m.group(), times), formula)
 
