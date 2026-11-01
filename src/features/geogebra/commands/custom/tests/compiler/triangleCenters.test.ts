@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { compileStudioCommand, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
 import { prepareTriangleCenter } from '../../builders/triangleCenters';
+import { createBindingCapture } from '../../bindingPlan';
 import type { CommandEnvironment } from '../../types';
 
 const environment = (): CommandEnvironment => ({
@@ -121,7 +122,7 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('keeps centers identified by a single infinity line undefined', async () => {
-    for (const id of [6364, 6365, 9043]) {
+    for (const id of [5959, 6364, 6365, 9043]) {
       await prepareTriangleCenter(id);
       expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
     }
@@ -185,14 +186,15 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('loads recovered wrapped and longer coordinates and their dependent constructions', async () => {
-    for (const id of [5374, 7638, 7639, 7640, 9728]) {
+    for (const id of [5374, 7638, 7639, 7640, 9728, 72514]) {
       await prepareTriangleCenter(id);
       const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
       expect(result).not.toContain(`,${id})`);
-      expect(result.length).toBeLessThan(50_000);
+      if (id !== 72514) expect(result.length).toBeLessThan(50_000);
     }
     expect(compileStudioCommand('TriangleCenter(A,B,C,5374)', environment())).toContain('cot(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,9728)', environment())).toContain('Distance(B,C)');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,72514)', environment()).length).toBeGreaterThan(5_000);
   });
 
   it('loads a coordinate followed by attribution and its dependent center', async () => {
@@ -211,5 +213,22 @@ describe('extended TriangleCenter dispatch', () => {
       .toBe('Reflect(TriangleCenter(A,B,C,9),TriangleCenter(A,B,C,100))');
     expect(compileStudioCommand('TriangleCenter(A,B,C,7002)', environment())).toContain('sec(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,8183)', environment())).toContain('^(1/3)');
+  });
+
+  it('loads reviewed coordinate seeds for conflicting ETC entries', async () => {
+    for (const id of [5507, 8064, 72904]) {
+      await prepareTriangleCenter(id);
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toContain('Distance(B,C)');
+    }
+  });
+
+  it('permits long triangle-center binding output without relaxing other plans', () => {
+    const longValue = '1+'.repeat(250_001) + '1';
+    const ordinary = createBindingCapture();
+    const normalToken = ordinary.captureBinding(['v1'], [longValue], 'v1', ['number']);
+    expect(() => ordinary.lower(normalToken, '0000000000000000', false)).toThrow('500,000');
+    const triangleCenter = createBindingCapture(true);
+    const centerToken = triangleCenter.captureBinding(['v1'], [longValue], 'v1', ['number']);
+    expect(triangleCenter.lower(centerToken, '0000000000000000', false).output.length).toBeGreaterThan(500_000);
   });
 });

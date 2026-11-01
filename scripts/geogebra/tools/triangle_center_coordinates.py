@@ -10,6 +10,7 @@ import ast
 from html import unescape
 import math
 import re
+import sys
 from bs4 import BeautifulSoup
 
 
@@ -23,9 +24,8 @@ CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\
 WHERE = re.compile(r'where\s+([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
 LABEL = re.compile(r'^(Barycentrics|Trilinears)\b\s*(.*)$', re.I)
 ATTRIBUTION = re.compile(r"\s+\([A-ZÀ-ÖØ-Þ][\w\uFFFD.'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w\uFFFD.'’\-]*)*\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ\uFFFD'’\-]{1,}(?:,\s*[^()]*)?\)\s*$")
-MAX_FORMULA_LENGTH = 500
-MAX_FORMULA_EXPONENT = 32
-MAX_FORMULA_NODES = 1000
+# Long ETC polynomials create deep, but otherwise ordinary, arithmetic ASTs.
+sys.setrecursionlimit(max(sys.getrecursionlimit(), 10000))
 
 
 def coordinate_text(fragment: str) -> list[str]:
@@ -53,7 +53,7 @@ def normalize_formula(raw: str) -> str | None:
     if re.search(r'\bpi\d', raw):
         return None
     for _ in range(3):
-        raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
+        raw = re.sub(r'(?<![A-Za-z])([abcS])(\d+)(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'([Ss])_([ABCabc])(?![a-z_])', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\s*/\s*(\d+)\b',
@@ -62,7 +62,7 @@ def normalize_formula(raw: str) -> str | None:
                  lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
     raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
     raw = re.sub(r'\s+', '', raw)
-    if not raw or len(raw) > MAX_FORMULA_LENGTH:
+    if not raw:
         return None
     tokens: list[str] = []
     position = 0
@@ -91,18 +91,19 @@ def normalize_formula(raw: str) -> str | None:
                 output.append('*')
         output.append(token)
     formula = ''.join(output)
-    if len(formula) > MAX_FORMULA_LENGTH:
-        return None
     try:
         validate_formula(formula)
-    except (SyntaxError, ValueError):
+    except (SyntaxError, ValueError, RecursionError, OverflowError):
         return None
     return formula
 
 
 def constant_exponent(node: ast.AST) -> float | None:
     if isinstance(node, ast.Constant):
-        return float(node.value) if isinstance(node.value, (int, float)) and abs(node.value) <= 1_000_000 else None
+        try:
+            return float(node.value) if isinstance(node.value, (int, float)) else None
+        except OverflowError:
+            return None
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
         value = constant_exponent(node.operand)
         return None if value is None else (-value if isinstance(node.op, ast.USub) else value)
@@ -116,13 +117,10 @@ def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
-    if len(nodes) > MAX_FORMULA_NODES:
-        raise ValueError('Coordinate expression is too large')
     for node in nodes:
         if isinstance(node, (ast.Expression, ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div,
                              ast.Pow, ast.UAdd, ast.USub, ast.Constant)):
-            if isinstance(node, ast.Constant) and (not isinstance(node.value, (int, float))
-                                                    or abs(node.value) > 1_000_000):
+            if isinstance(node, ast.Constant) and not isinstance(node.value, (int, float)):
                 raise ValueError('Invalid coordinate constant')
             continue
         if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow)):
@@ -130,8 +128,8 @@ def validate_formula(formula: str) -> ast.Expression:
                 exponent = constant_exponent(node.right)
                 if exponent is None:
                     raise ValueError('Variable exponent')
-                if not math.isfinite(exponent) or abs(exponent) > MAX_FORMULA_EXPONENT:
-                    raise ValueError('Exponent is too large')
+                if not math.isfinite(exponent):
+                    raise ValueError('Invalid exponent')
             continue
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             continue
@@ -211,7 +209,7 @@ def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
         raise ValueError('Unsupported dimensional syntax')
     try:
         return True, degree(validate_formula(formula).body)
-    except (ValueError, SyntaxError, KeyError):
+    except (ValueError, SyntaxError, KeyError, RecursionError, OverflowError):
         return False, None
 
 
@@ -229,7 +227,7 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
             continue
         trilinear = label.group(1).lower() == 'trilinears'
         text = label.group(2)
-        for next_line in lines[index+1:index+11]:
+        for next_line in lines[index+1:]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
             if not text:

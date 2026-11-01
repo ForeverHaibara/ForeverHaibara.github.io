@@ -16,7 +16,7 @@ export interface CompiledBindingPlan {
 }
 
 /** Captures bind() calls before either backend prints their GeoGebra syntax. */
-export const createBindingCapture = () => {
+export const createBindingCapture = (allowLongTriangleCenter = false) => {
   const nodes = new Map<string, BindingNode>();
   let serial = 0;
   const captureBinding: NonNullable<BindingAllocator['captureBinding']> = (names, values, body, kinds) => {
@@ -34,7 +34,7 @@ export const createBindingCapture = () => {
     const render = (node: BindingNode): string =>
       `Element(Zip(${expand(node.body, render)},${node.names.map((name, i) => `${name},{${expand(node.values[i], render)}}`).join(',')}),1)`;
     const output = expand(source, render);
-    if (output.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+    if (!allowLongTriangleCenter && output.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
     return output;
   };
 

@@ -18,6 +18,15 @@
 3371 B a*(sin(A+pi/8))
 # Keep the previously screened ETC line pair used by X(73143).
 8004 J 3 3277 1135 8002
+# ETC X(5959) says “tthese lines”; the reviewed list contains the infinity line X(30)X(511).
+5959 I
 73001 R 476 3109
 # ETC X(369), Peter Moses (2026-06-05): explicit cyclic barycentrics for X(3232).
 3232 B 1/((2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))^2+2*(b-c)*(2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))+6*b*c+8*a*(b+c)+5*(-a^2+b^2+c^2))
+
+# X(5507): reviewed radical-center construction; the printed coordinate disagrees with it and line X(600)X(4640).
+5507 B a*(R-a)*(R*(b+c-a)+a^2-b^2-c^2)
+# X(8064): printed coordinates agree with the isogonal conjugate of the printed ideal coordinates of X(8063); the listed line conflicts.
+8064 B a*(a/((cos(B)*cot(B/2))/(1+cos(B)-cos(C)-cos(A))-(cos(C)*cot(C/2))/(1+cos(C)-cos(A)-cos(B))))
+# X(72904): reviewed printed coordinates agree with multiple listed lines; an earlier line-pair-only selection conflicted.
+72904 B a^2*(2*a^6*b^2*c^2-4*a^4*b^4*c^2+2*a^2*b^6*c^2-4*a^4*b^2*c^4-4*a^2*b^4*c^4+2*a^2*b^2*c^6+a^6*b^2*S-3*a^4*b^4*S+3*a^2*b^6*S-b^8*S+a^6*c^2*S-2*a^4*b^2*c^2*S-2*a^2*b^4*c^2*S+3*b^6*c^2*S-3*a^4*c^4*S-2*a^2*b^2*c^4*S-4*b^4*c^4*S+3*a^2*c^6*S+3*b^2*c^6*S-c^8*S)

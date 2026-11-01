@@ -22,8 +22,7 @@ from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
-                                         rotate_formula, side_environment, validate_formula,
-                                         MAX_FORMULA_LENGTH)
+                                         rotate_formula, side_environment, validate_formula)
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -428,8 +427,8 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
             refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
         if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
-                or (opcode == 'B' and (not formula or len(formula) > MAX_FORMULA_LENGTH))
-                or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f or len(f) > MAX_FORMULA_LENGTH for f in formula.split('|'))))):
+                or (opcode == 'B' and not formula)
+                or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             for scalar in formula.split('|'):
@@ -556,13 +555,14 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
+        formulas.sort(key=lambda recipe: (-sum(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
+                                                for abc in atlas['triangles'].values()), len(recipe.formula)))
         samples = [[numeric_formula(recipe, [tuple(xy) for xy in abc])
                     for abc in atlas['triangles'].values()] for recipe in formulas]
-        if any(not any(p is not None and q is not None for p, q in zip(samples[0], other)) or
-               any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
+        if any(any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
                    for p, q in zip(samples[0], other) if p is not None and q is not None) for other in samples[1:]):
             continue
-        chosen = min(formulas, key=lambda recipe: (len(recipe.formula), recipe.formula))
+        chosen = formulas[0]
         ranked.append((len(dependents[number]), len(chosen.formula), number, chosen))
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
     selected: dict[int, Recipe] = {}
@@ -911,8 +911,11 @@ def inversion_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
 
 
 def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
-    return any(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
-               for abc in atlas['triangles'].values())
+    results = [numeric_formula_projective(recipe, [tuple(xy) for xy in abc])
+               for abc in atlas['triangles'].values()]
+    # An undefined sample does not prove a formula is undefined everywhere.
+    # Do not admit a direction-only result as a finite coordinate recipe.
+    return any(isinstance(result, tuple) for result in results) or all(result is None for result in results)
 
 
 def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict) -> bool:
@@ -1022,7 +1025,7 @@ def native_status_rows(unavailable: set[int], directions: dict[int, tuple[int, i
 
 
 def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe],
-                   max_depth: int, max_length: int, max_conjugates: int = 1,
+                   max_depth: int, max_length: int | None, max_conjugates: int = 1,
                    blocked_native: set[int] | None = None,
                    deferred_targets: set[int] | None = None, atlas: dict | None = None,
                    native_directions: dict[int, tuple[int, int]] | None = None,
@@ -1084,7 +1087,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                                                            [length.get(ref, 27) for ref in recipe.references])
                 candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
-                if (candidate_depth <= max_depth and candidate_length <= max_length
+                if (candidate_depth <= max_depth and (max_length is None or candidate_length <= max_length)
                         and candidate_nonlinear <= max_conjugates):
                     key = (*quality(recipe), candidate_depth, candidate_length,
                            PRIORITY[recipe.operation], recipe.references)
@@ -1139,7 +1142,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             try:
                 depth, length = validate_graph(selected)
                 nonlinear = conjugate_levels(selected)
-                valid = (max(depth.values()) <= max_depth and max(length.values()) <= max_length
+                valid = (max(depth.values()) <= max_depth and (max_length is None or max(length.values()) <= max_length)
                          and max(nonlinear.values()) <= max_conjugates)
             except ValueError:
                 valid = False
@@ -1152,7 +1155,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         for _ in range(30):
             coordinates = numeric_coordinates(selected, atlas, native_directions)
             finite = set.union(*(set(points) for points in coordinates.values()))
-            missing = set(selected) - finite
+            missing = {number for number in set(selected) - finite if selected[number].operation != 'B'}
             if missing:
                 number = min(missing)
                 doomed = {number}
@@ -1197,7 +1200,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     try:
                         depth, length = validate_graph(selected)
                         nonlinear = conjugate_levels(selected)
-                        repaired = (max(depth.values()) <= max_depth and max(length.values()) <= max_length
+                        repaired = (max(depth.values()) <= max_depth and (max_length is None or max(length.values()) <= max_length)
                                     and max(nonlinear.values()) <= max_conjugates)
                     except ValueError:
                         repaired = False
@@ -1225,7 +1228,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         else:
             raise ValueError('Line-pair consistency did not stabilize')
         coordinates = numeric_coordinates(selected, atlas, native_directions)
-        missing = set(selected) - set.union(*(set(points) for points in coordinates.values()))
+        missing = {number for number in set(selected) - set.union(*(set(points) for points in coordinates.values()))
+                   if selected[number].operation != 'B'}
         if missing:
             raise ValueError(f'Nonfinite generated centers on all sample triangles: {sorted(missing)[:10]}')
     validate_graph(selected)
@@ -1274,7 +1278,8 @@ def main() -> None:
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)
-    parser.add_argument('--max-length', type=int, default=10000)
+    parser.add_argument('--max-length', type=int, default=None,
+                        help='Optional estimated construction-length limit; unlimited by default')
     parser.add_argument('--max-conjugates', type=int, default=1)
     args = parser.parse_args()
     if args.action == 'fetch':
@@ -1308,7 +1313,13 @@ def main() -> None:
         return
     if set(args.auto_operations) - set(ARITY):
         raise ValueError(f'Unknown operation in {args.auto_operations}')
-    seeds = read_recipes(DATA / 'seeds.txt')
+    all_seeds = read_recipes(DATA / 'seeds.txt')
+    ideal_markers = {number: recipe for number, recipe in all_seeds.items()
+                     if recipe.operation == 'I' and not recipe.references}
+    if set(ideal_markers) & deferred_targets:
+        raise ValueError('A reviewed ideal marker is marked deferred')
+    seeds = {number: recipe for number, recipe in all_seeds.items() if number not in ideal_markers}
+    selection_exclusions = deferred_targets | set(ideal_markers)
     all_candidates: dict[int, list[Recipe]] = {}
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
@@ -1328,7 +1339,7 @@ def main() -> None:
                               and 'shinagawa coefficients' not in recipe.evidence.lower()]
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions, require_seeds=False)
+                              blocked_native, selection_exclusions, atlas, native_directions, require_seeds=False)
     reference_coordinates = numeric_coordinates(baseline, atlas, native_directions)
     accepted_shinagawa = rejected_shinagawa = 0
     for number, options in eligible.items():
@@ -1344,7 +1355,7 @@ def main() -> None:
     print(f'Shinagawa combos: {accepted_shinagawa} screened candidates; {rejected_shinagawa} rejected')
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
-                                 coordinate_lines, native_directions, deferred_targets)
+                                 coordinate_lines, native_directions, selection_exclusions)
     ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
                       if number > NATIVE_MAX and recipe.operation == 'B' and all(
                           isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
@@ -1354,7 +1365,7 @@ def main() -> None:
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, deferred_targets, atlas, native_directions)
+                              blocked_native, selection_exclusions, atlas, native_directions)
     # Directionless ideal markers are coverage metadata, never graph inputs.
     # Append only after selection and numeric screening have completed.
     if 'I' in args.auto_operations:
@@ -1363,10 +1374,13 @@ def main() -> None:
                 marker = next((r for r in options if r.operation == 'I' and not r.references), None)
                 if marker:
                     selected[number] = marker
+    # Reviewed directionless markers are always kept, like all other seeds,
+    # but cannot be used as construction inputs during graph selection.
+    selected.update(ideal_markers)
     validate_graph(selected)
     validate_types(selected, set(native_directions))
     output = chunks(selected)
-    generated = len(selected) - len(seeds)
+    generated = len(selected) - len(all_seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')
     print(f'Operations: {dict(sorted(Counter(recipe.operation for recipe in selected.values()).items()))}')
     print(f'Chunks: {len(output)}, {sum(len(value.encode()) for value in output.values()):,} bytes')

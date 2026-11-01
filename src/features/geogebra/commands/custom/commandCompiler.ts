@@ -91,6 +91,7 @@ type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ bui
 
 export const compileStudioCommand = (source: string, environment: CommandEnvironment,
   tools: ReadonlyMap<string, ToolDefinition> = studioTools, capture?: Capture): string => {
+  const allowLongTriangleCenter = extendedTriangleCenterIds(source, environment).length > 0;
   const occupied = new Set([...source.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)].map((match) => match[0]));
   for (const name of environment.objects.keys()) occupied.add(name);
   for (const tool of tools.values()) for (const overload of tool.overloads) {
@@ -172,7 +173,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
               const compiled = compile(body, definitionScope, depth + 1);
               compiled.expression = compiled.expression.replace(/"(?:\\.|[^"\\])*"|(?:\/\/|#)[^\n]*|[\p{L}_][\p{L}\p{N}_']*/gu,
                 (token) => replacements.has(token) ? `(${replacements.get(token)})` : token);
-              if (compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+              if (!allowLongTriangleCenter && compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
               return compiled;
             });
           } finally { dependencies.pop(); }
@@ -207,7 +208,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
     expression += input.slice(cursor);
     typeSource += input.slice(cursor);
     if (entireType === 'unknown') entireType = literalType(typeSource, typeScope);
-    if (expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+    if (!allowLongTriangleCenter && expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
     const literalSource = stripParens(input);
     const literal = scope.literals?.get(literalSource)
       ?? (/^(?:0|[1-9]\d*|"(?:\\.|[^"\\])*")$/u.test(literalSource) ? literalSource : undefined);
@@ -250,7 +251,7 @@ const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 
 /** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
 export const compileStudioPlan = (source: string, environment: CommandEnvironment,
   groupId: string, mode: 'medium' | 'high' = 'medium'): CompiledBindingPlan => {
-  const capture: Capture = { ...createBindingCapture(), selected: [] };
+  const capture: Capture = { ...createBindingCapture(extendedTriangleCenterIds(source, environment).length > 0), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
   const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder]
