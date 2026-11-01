@@ -113,11 +113,36 @@ def split_entries(source: str):
         yield int(match.group(1)), source[match.start():end]
 
 
+
 def entry_lines(fragment: str) -> list[str]:
-    # BR and block boundaries are authoritative; raw HTML line wraps are not.
-    fragment = re.sub(r'<br\s*/?>|</(?:p|h3|div)>|<hr\b[^>]*>', '\n', fragment, flags=re.I)
-    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text()).replace('\u00ad', '')
-    return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
+    def normalize_heading(match: re.Match) -> str:
+        heading = match.group()
+        heading = heading.replace('\r\n', '\n').replace('\r', '\n')
+        return re.sub(
+            r'[ \t]*\n(?:[ \t]*\n)*[ \t]*',
+            lambda m: ' ' if m.group().count('\n') == 1 else '\n',
+            heading,
+        )
+
+    # Normalize raw line breaks inside <h3> headings.
+    fragment = re.sub(
+        r'<h3\b[^>]*>.*?</h3>',
+        normalize_heading,
+        fragment,
+        flags=re.I | re.S,
+    )
+
+    # Preserve explicit HTML line and block boundaries.
+    fragment = re.sub(
+        r'<br\s*/?>|</(?:p|h3|div)>|<hr\b[^>]*>',
+        '\n', fragment, flags=re.I,
+    )
+    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text())
+    plain = plain.replace('\u00ad', '')
+    return [
+        re.sub(r'\s+', ' ', line).strip()
+        for line in plain.splitlines() if line.strip()
+    ]
 
 
 def relation_lines(fragment: str) -> list[str]:
