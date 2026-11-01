@@ -74,7 +74,7 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('uses the shared conjugate builder and the new line relations', () => {
-    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3396)', environment());
+    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3385)', environment());
     const isotomic = compileStudioCommand('TriangleCenter(A,B,C,9464)', environment());
     expect(isogonal).toContain('Distance(');
     expect(isogonal).not.toContain('IsogonalConjugate(');
@@ -92,7 +92,7 @@ describe('extended TriangleCenter dispatch', () => {
     expect(expanded).not.toContain('IsogonalConjugate(');
     expect(expanded.match(/sec\(/gu)).toHaveLength(3);
     expect(expanded.length).toBeLessThan(6000);
-    for (const id of [7044, 9043, 72657]) {
+    for (const id of [7044, 72657]) {
       const relation = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
       expect(relation).toContain('Distance(');
       expect(relation.length).toBeLessThan(6000);
@@ -116,6 +116,13 @@ describe('extended TriangleCenter dispatch', () => {
     expect(conjugate).toContain('Vector(TriangleCenter(A,B,C,659),TriangleCenter(A,B,C,1734))');
     expect(conjugate).toContain('Distance(');
     for (const id of [3221, 5957, 6004, 72060]) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
+    }
+  });
+
+  it('keeps centers identified by a single infinity line undefined', async () => {
+    for (const id of [6364, 6365, 9043]) {
+      await prepareTriangleCenter(id);
       expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
     }
   });

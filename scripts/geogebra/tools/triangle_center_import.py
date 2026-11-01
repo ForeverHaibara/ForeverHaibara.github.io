@@ -51,7 +51,7 @@ INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)
 ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12}
 RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4}
-LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese\s*(?:\(parallel\)\s*)?lines\s*:\s*(.*)$', re.I)
+LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\b(?:these|this)\s*(?:\(parallel\)\s*)?lines?\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
 BROKEN_LINE_TOKEN = re.compile(r'\s*[,;]?\s*\d{5,}(?=\s|$)')
@@ -274,10 +274,13 @@ def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int,
 
 
 def is_infinite_entry(number: int, lines: list[str]) -> bool:
+    # ETC uses both “these lines” lists and “this line” for the line at infinity.
+    if (30, 511) in coordinate_incidence_lines(number, lines):
+        return True
     for line in lines:
         heading = LINE_LIST.match(line)
         if heading and int(heading.group(1)) == number:
-            if '(parallel)' in line[:heading.start(2)].lower() or (30, 511) in listed_lines(number, lines, limit=None):
+            if '(parallel)' in line[:heading.start(2)].lower():
                 return True
     return any(int(match.group(1)) == number for line in lines
                for match in INFINITE_DEFINITION.finditer(line))

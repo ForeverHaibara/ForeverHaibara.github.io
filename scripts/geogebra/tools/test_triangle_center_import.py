@@ -151,6 +151,24 @@ class TriangleCenterImportTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unknown ideal direction'):
                 validate_types({4109: marker, 4110: Recipe(4110, op, refs)}, set())
 
+    def test_single_infinity_line_identifies_the_target_as_ideal(self):
+        for number, pair in [(6364, '30, 511'), (6365, '511, 30')]:
+            html = (f'<h3 id="X{number}">X({number}) = CENTER</h3>'
+                    f'<p>X({number}) lies on this line: {{{pair}}} (the infinity line)</p>'
+                    f'<p>X({number}) = isogonal conjugate of X(6135)</p>')
+            self.assertEqual([recipe.row() for recipe in extract_entry(number, html, 4)], [f'{number} I'])
+        other = ('<h3 id="X6364">X(6364) = CENTER</h3>'
+                 '<p>X(6365) lies on this line: {30, 511}</p>')
+        self.assertEqual(extract_entry(6364, other, 4), [])
+        multiple = ('<h3 id="X6364">X(6364) = CENTER</h3>'
+                    '<p>X(6364) lies on this line: {1, 2}, {30, 511}, {3, 4}</p>')
+        self.assertEqual({recipe.row() for recipe in extract_entry(6364, multiple, 4)},
+                         {'6364 I', '6364 I 1 2', '6364 I 3 4'})
+        wrapped = ('<h3 id="X6364">X(6364) = CENTER</h3>'
+                   '<p>X(6364) lies on this line: 1,2<br>30,511 3,4</p>')
+        self.assertEqual({recipe.row() for recipe in extract_entry(6364, wrapped, 4)},
+                         {'6364 I', '6364 I 1 2', '6364 I 3 4'})
+
     def test_numeric_ideal_direction_intersection_and_conjugate(self):
         triangle = [(0, 0), (6, 0), (1, 4)]
         native = {str(i): xy for i, xy in enumerate(triangle, 1)}
