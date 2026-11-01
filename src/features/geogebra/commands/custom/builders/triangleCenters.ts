@@ -3,7 +3,7 @@ import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'V' | 'B'; references: number[]; formula?: string };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'V' | 'B' | 'F'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string } | { kind: 'unknown-ideal' };
 const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -19,7 +19,7 @@ const size = (operation: Recipe['operation']) => operation === 'B' ? 0
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
-const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'pi',
+const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'SW', 'pi',
   'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc']);
 const validFormula = (formula: string): boolean => formula.length <= 500 && /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
   && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name));
@@ -37,13 +37,14 @@ const loadChunk = async (id: number): Promise<void> => {
       const [idText, opcode, ...referenceText] = row.trim().split(/\s+/u);
       const number = Number(idText);
       const operation = opcode as Recipe['operation'];
-      const formula = opcode === 'B' ? referenceText[0] : undefined;
-      const references = formula ? [] : referenceText.map(Number);
+      const pairs = opcode === 'F' ? referenceText.map((text) => text.split(':')) : [];
+      const formula = opcode === 'B' ? referenceText[0] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
+      const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0])) : formula ? [] : referenceText.map(Number);
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B'].includes(opcode)
-        || (references.length !== size(operation) && !(operation === 'I' && references.length === 0))
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B', 'F'].includes(opcode)
+        || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1])) : references.length !== size(operation) && !(operation === 'I' && references.length === 0))
         || (opcode === 'B' && !formula)
-        || (formula !== undefined && (referenceText.length !== 1 || !validFormula(formula)))
+        || (opcode === 'B' && formula !== undefined && (referenceText.length !== 1 || !validFormula(formula)))
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
       parsed.set(number, { operation, references, formula });
@@ -99,7 +100,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       }, 'number');
     }, 'vector');
   };
-  const coordinatePoint = (formula: string): string => {
+  const withSideVariables = (build: (variables: Record<string, string>) => string): string => {
     const [A, B, C] = vertices;
     return bind([`Distance(${B},${C})`, `Distance(${C},${A})`, `Distance(${A},${B})`], allocate, ([a, b, c]) => {
       const s = `((${a}+${b}+${c})/2)`;
@@ -111,8 +112,13 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         s, sa: `((${b}+${c}-${a})/2)`, sb: `((${c}+${a}-${b})/2)`, sc: `((${a}+${b}-${c})/2)`,
         S, SA: `((${b}^2+${c}^2-${a}^2)/2)`, SB: `((${c}^2+${a}^2-${b}^2)/2)`,
         SC: `((${a}^2+${b}^2-${c}^2)/2)`, r: `(${S}/(${a}+${b}+${c}))`,
-        R: `((${a}*${b}*${c})/(2*${S}))`, pi: 'pi',
+        R: `((${a}*${b}*${c})/(2*${S}))`, SW: `((${a}^2+${b}^2+${c}^2)/2)`, pi: 'pi',
       };
+      return build(variables);
+    }, 'number');
+  };
+  const coordinatePoint = (formula: string): string => withSideVariables((variables) => {
+      const [A, B, C] = vertices;
       const cyclic = (turn: number): string => formula.replace(/[A-Za-z_]+/gu, (name) => {
         let rotated = name;
         for (let i = 0; i < turn; i++) rotated = rotation[rotated] ?? rotated;
@@ -123,8 +129,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         const total = `((${u})+(${v})+(${w}))`;
         return `If(${total}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${total})`;
       }, 'number');
-    }, 'number');
-  };
+  });
   const render = (number: number): CenterValue => {
     if (number <= 3053) {
       const direction = nativeDirections.get(number);
@@ -139,6 +144,18 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       const values = recipe.references.map(render);
       if (values.some((value) => value.kind === 'unknown-ideal')) throw new Error('The ideal triangle center has no known direction.');
       if (recipe.operation === 'B') return point(coordinatePoint(recipe.formula!));
+      if (recipe.operation === 'F') {
+        const rawFormulas = recipe.formula!.split('|');
+        const buildCombo = (formulas: string[]): string => {
+        return bind(formulas, allocate, (weights) => {
+          const sum = `(${weights.join('+')})`;
+          const numerator = weights.map((weight, i) => `(${weight})*(${requirePoint(values[i])})`).join('+');
+          return `If(${sum}!=0,(${numerator})/${sum})`;
+        }, 'number');
+        };
+        return point(rawFormulas.every((formula) => !/[A-Za-z_]/u.test(formula)) ? buildCombo(rawFormulas)
+          : withSideVariables((variables) => buildCombo(rawFormulas.map((formula) => formula.replace(/[A-Za-z_]+/gu, (name) => variables[name] ? `(${variables[name]})` : name)))));
+      }
       if (recipe.operation === 'I') return values.length ? { kind: 'ideal', from: requirePoint(values[0]), to: requirePoint(values[1]) } : { kind: 'unknown-ideal' };
       if (recipe.operation === 'M') return point(`Midpoint(${requirePoint(values[0])},${requirePoint(values[1])})`);
       if (recipe.operation === 'R') return point(`Reflect(${requirePoint(values[0])},${requirePoint(values[1])})`);

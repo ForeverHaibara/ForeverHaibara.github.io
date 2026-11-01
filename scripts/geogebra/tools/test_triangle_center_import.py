@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry, listed_lines,
+from triangle_center_import import (CACHE, Ideal, Recipe, combo_candidate, numeric_combo, direction_candidate_supported, extract_entry, listed_lines,
                                     coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
                                     numeric_formula_projective, numeric_circum_inverse,
                                     native_status_rows, read_native_status, read_recipes,
@@ -14,6 +14,32 @@ from triangle_center_coordinates import coordinate_candidates, evaluate_formula,
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_etc_combos(self):
+        examples = [
+            ('X(8350) = 4*SW^2*(15*S^2-SW^2)*X(3)+3*(3*S^2-SW^2)*(S^2+SW^2)*X(7840)', (3, 7840)),
+            ('X(8350) = 3 (3 S^2 - 5 SW^2) (S^2 + SW^2) X[2] + 4 SW^2 (15 S^2 - SW^2) X[3] + 12 SW^2 (S^2 + SW^2) X[6]', (2, 3, 6)),
+            ('X(9370) = 2*r*R*X(8)+(r+2*R+s)*(r+2*R-s)*X(221)', (8, 221)),
+            ('X(3109) = 3 X[1325] - X[5196]', (1325, 5196)),
+        ]
+        for text, refs in examples:
+            number = int(text.split(')')[0][2:])
+            recipe = combo_candidate(number, text, 3)
+            self.assertIsNotNone(recipe, text)
+            self.assertEqual(recipe.references, refs)
+            with TemporaryDirectory(dir=CACHE) as folder:
+                path = Path(folder) / 'combo.txt'
+                path.write_text(recipe.row() + '\n', encoding='utf-8')
+                self.assertEqual(read_recipes(path)[number].formula, recipe.formula)
+        combo = combo_candidate(3109, examples[-1][0], 3)
+        self.assertEqual(numeric_combo(combo, [(2, 3), (4, 5)], [(0, 0), (6, 0), (1, 4)]), (1, 2))
+        self.assertIsNone(numeric_combo(Recipe(4000, 'F', (1, 2), formula='1|-1'), [(0, 0), (1, 1)], [(0, 0), (6, 0), (1, 4)]))
+        self.assertIsNone(combo_candidate(4000, 'X(4000) = X(1) + X(2) if ABC is acute', 3))
+        self.assertIsNone(combo_candidate(4000, 'X(4000) = X(1)*X(2)', 3))
+        self.assertIsNone(combo_candidate(4000, 'X(4000) = 2+3*X(1)+X(2)', 3))
+        validate_types({4000: Recipe(4000, 'I', (1, 2))}, set())
+        with self.assertRaises(ValueError):
+            validate_types({4000: Recipe(4000, 'I', (1, 2)), 4001: Recipe(4001, 'F', (4000, 2), formula='1|1')}, set())
+
     def test_heading_and_equivalent_pair_lists(self):
         html = ('<h3 id="X4000">X(4000) = MIDPOINT OF X(1) AND X(2)</h3>'
                 '<p>X(4000) = reflection of X(i) in X(j) for these (i,j): '

@@ -120,6 +120,19 @@ describe('extended TriangleCenter dispatch', () => {
     }
   });
 
+  it('compiles constant and Conway-weighted ETC combos with a guarded sum', async () => {
+    for (const id of [3622, 8350]) await prepareTriangleCenter(id);
+    const constant = compileStudioCommand('TriangleCenter(A,B,C,3622)', environment());
+    expect(constant).toContain('TriangleCenter(A,B,C,1)');
+    expect(constant).toContain('TriangleCenter(A,B,C,2)');
+    expect(constant).toContain('If(');
+    const conway = compileStudioCommand('TriangleCenter(A,B,C,8350)', environment());
+    expect(conway).toContain('Distance(B,C)');
+    expect(conway).toContain('TriangleCenter(A,B,C,6)');
+    expect(conway).toContain('If(');
+    expect(conway).not.toContain('SW');
+  });
+
   it('expands centers recovered from nonstandard ETC line lists', () => {
     for (const id of [3134, 3162, 3234]) {
       const command = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());

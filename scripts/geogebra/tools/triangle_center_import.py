@@ -21,7 +21,7 @@ import time
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
-from triangle_center_coordinates import (coordinate_candidates, evaluate_formula,
+from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula,
                                          rotate_formula, side_environment, validate_formula,
                                          MAX_FORMULA_LENGTH)
 
@@ -48,9 +48,9 @@ CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'B': 0}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'B': 11}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese\s*(?:\(parallel\)\s*)?lines\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -70,6 +70,8 @@ class Recipe:
     def row(self) -> str:
         if self.operation == 'B':
             return f'{self.number} {self.operation} {self.formula}'
+        if self.operation == 'F':
+            return f'{self.number} F ' + ' '.join(f'{ref}:{coef}' for ref, coef in zip(self.references, self.formula.split('|')))
         return ' '.join((str(self.number), self.operation, *map(str, self.references)))
 
 
@@ -100,11 +102,55 @@ def line_data(p: Coordinate, q: Coordinate) -> tuple[tuple[float, float], tuple[
     return base, d
 
 
-def quality(recipe: Recipe) -> tuple[int, int]:
+def quality(recipe: Recipe) -> tuple[float, int]:
     # An explicitly stated intersection is stronger evidence than choosing
     # two arbitrary pairs from a list of lines that merely pass through X(n).
     incidence_only = int('lies on these lines:' in recipe.evidence.lower())
+    if recipe.operation == 'F':
+        return (0 if all(not re.search(r'[A-Za-z_]', c) for c in recipe.formula.split('|')) else 3.5), incidence_only
     return RISK[recipe.operation], incidence_only
+
+
+def combo_candidate(number: int, line: str, part: int) -> Recipe | None:
+    """Parse complete sums of scalar times X(n), without interpreting prose."""
+    head = re.match(r'^X\s*\(\s*(\d+)\s*\)\s*=\s*(.*)$', line, re.I)
+    if not head or int(head.group(1)) != number:
+        return None
+    body = head.group(2)
+    matches = list(re.finditer(r'X\s*(?:\(\s*(\d+)\s*\)|\[\s*(\d+)\s*\])', body, re.I))
+    if not 2 <= len(matches) <= 6 or body[matches[-1].end():].strip():
+        return None
+    refs, coefficients = [], []
+    start = 0
+    for i, match in enumerate(matches):
+        scalar = body[start:match.start()].strip()
+        if i and (not scalar or scalar[0] not in '+-'):
+            return None
+        if scalar.endswith('*'):
+            scalar = scalar[:-1].strip()
+        scalar = {'': '1', '+': '1', '-': '-1'}.get(scalar, scalar)
+        depth = 0
+        for pos, char in enumerate(scalar):
+            if char in '([':
+                depth += 1
+            elif char in ')]':
+                depth -= 1
+            elif char in '+-' and depth == 0 and pos and scalar[pos-1] != '^':
+                return None
+            if depth < 0:
+                return None
+        if depth:
+            return None
+        formula = normalize_formula(scalar)
+        reference = int(match.group(1) or match.group(2))
+        if not formula or reference <= 0 or reference == number:
+            return None
+        refs.append(reference)
+        coefficients.append(formula)
+        start = match.end()
+    if len(set(refs)) != len(refs):
+        return None
+    return Recipe(number, 'F', tuple(refs), part, line, '|'.join(coefficients))
 
 
 def split_entries(source: str):
@@ -272,6 +318,8 @@ def extract_entry(number: int, fragment: str, part: int,
                 found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
     recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
                if all(reference > 0 and reference != number for reference in refs)]
+    recipes.extend(candidate for line in coordinate_text(fragment)
+                   if (candidate := combo_candidate(number, line, part)) is not None)
     recipes.extend(Recipe(number, kind, (), part, evidence, formula)
                    for kind, formula, evidence in coordinate_candidates(fragment))
     return recipes
@@ -303,13 +351,22 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
         fields = row.split()
         number, opcode = int(fields[0]), fields[1]
         formula = fields[2] if opcode == 'B' and len(fields) == 3 else ''
-        refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs))
+        if opcode == 'F':
+            pairs = [field.split(':') for field in fields[2:]]
+            if not all(len(pair) == 2 for pair in pairs):
+                raise ValueError(f'Invalid combo in {path}: {row}')
+            refs = tuple(int(pair[0]) for pair in pairs)
+            formula = '|'.join(pair[1] for pair in pairs)
+        else:
+            refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
-                or (opcode == 'B' and (not formula or len(formula) > MAX_FORMULA_LENGTH))):
+                or (opcode == 'B' and (not formula or len(formula) > MAX_FORMULA_LENGTH))
+                or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f or len(f) > MAX_FORMULA_LENGTH for f in formula.split('|'))))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
-            validate_formula(formula)
+            for scalar in formula.split('|'):
+                validate_formula(scalar)
         records[number] = Recipe(number, opcode, refs, formula=formula)
     return records
 
@@ -470,6 +527,8 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         return 1100 + children[0]
     if recipe.operation == 'B':
         return 150 + 18 * len(recipe.formula)
+    if recipe.operation == 'F':
+        return 600 + 18 * len(recipe.formula) + sum(children)
     return (95 if recipe.operation == 'V' else 24) + sum(children)
 
 
@@ -510,7 +569,7 @@ def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
         ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
                  for ref in recipe.references]
         op = recipe.operation
-        valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V'} else
+        valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F'} else
                  not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
         if not valid:
             raise ValueError(f'Invalid ideal-point input in X({number}) {op}')
@@ -617,6 +676,21 @@ def numeric_formula(recipe: Recipe, abc: list[tuple[float, float]]) -> tuple[flo
     return coordinate if isinstance(coordinate, tuple) else None
 
 
+def numeric_combo(recipe: Recipe, values: list[Coordinate], abc: list[tuple[float, float]]) -> tuple[float, float] | None:
+    if any(isinstance(p, Ideal) for p in values):
+        return None
+    a, b, c = math.dist(abc[1], abc[2]), math.dist(abc[2], abc[0]), math.dist(abc[0], abc[1])
+    env = side_environment(a, b, c)
+    weights = [evaluate_formula(f, env) for f in recipe.formula.split('|')]
+    if any(w is None for w in weights):
+        return None
+    total = sum(weights)
+    if abs(total) <= 1e-12 * max(1e-300, sum(abs(w) for w in weights)):
+        return None
+    result = tuple(sum(w * p[i] for w, p in zip(weights, values)) / total for i in (0, 1))
+    return result if all(math.isfinite(v) for v in result) else None
+
+
 def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                         native_directions: dict[int, tuple[int, int]] | None = None) -> dict[str, dict[int, Coordinate]]:
     results: dict[str, dict[int, Coordinate]] = {}
@@ -647,6 +721,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 answer = numeric_intersection(values)
             elif op == 'B':
                 answer = numeric_formula(recipe, abc)
+            elif op == 'F':
+                answer = numeric_combo(recipe, values, abc)
             elif op == 'I':
                 d = direction(*values)
                 answer = Ideal(*d) if d is not None and all(not isinstance(v, Ideal) for v in values) and math.hypot(*d) > 1e-9 else None
@@ -766,6 +842,19 @@ def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
                for abc in atlas['triangles'].values())
 
 
+def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict) -> bool:
+    for shape, points in coordinates.items():
+        if any(ref not in points for ref in recipe.references):
+            return False
+        result = numeric_combo(recipe, [points[ref] for ref in recipe.references], atlas['triangles'][shape])
+        if result is None:
+            return False
+        known = points.get(recipe.number)
+        if known is not None and (isinstance(known, Ideal) or math.dist(result, known) > 1e-5 * max(1, math.hypot(*result), math.hypot(*known))):
+            return False
+    return True
+
+
 def read_native_atlas(path: Path) -> dict:
     atlas = json.loads(path.read_text(encoding='utf-8'))
     if set(atlas['coordinates']) != {'acute', 'obtuse'} or set(atlas['triangles']) != {'acute', 'obtuse'}:
@@ -879,6 +968,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
+                if coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, coordinates, atlas):
+                    continue
                 if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
@@ -928,6 +1019,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 continue
             if refine_coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
                     recipe, refine_coordinates, atlas):
+                continue
+            if refine_coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, refine_coordinates, atlas):
                 continue
             if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                 continue
@@ -1067,7 +1160,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIVJGTB',
+    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=6)
     parser.add_argument('--max-depth', type=int, default=6)

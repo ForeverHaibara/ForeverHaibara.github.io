@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
-             'S', 'SA', 'SB', 'SC', 'r', 'R', 'pi'}
+             'S', 'SA', 'SB', 'SC', 'SW', 'r', 'R', 'pi'}
 FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
@@ -207,7 +207,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
             'C': math.acos(max(-1, min(1, (a*a+b*b-c*c)/(2*a*b)))),
             's': s, 'sa': s-a, 'sb': s-b, 'sc': s-c, 'S': S,
             'SA': (b*b+c*c-a*a)/2, 'SB': (c*c+a*a-b*b)/2, 'SC': (a*a+b*b-c*c)/2,
-            'r': area/s, 'R': a*b*c/(4*area), 'pi': math.pi}
+            'r': area/s, 'R': a*b*c/(4*area), 'SW': (a*a+b*b+c*c)/2, 'pi': math.pi}
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
