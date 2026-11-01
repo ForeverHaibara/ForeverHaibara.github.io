@@ -146,31 +146,47 @@ def relation_lines(fragment: str) -> list[str]:
 
 def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None,
                  limit: int | None = MAX_LIST_LINES) -> list[tuple[int, int]]:
-    """Read the initial run of bare index pairs after this entry's line-list heading."""
+    """Read and merge line pairs from all matching line-list headings."""
     excluded = excluded or set()
+    pairs: set[tuple[int, int]] = set()
+
     for index, line in enumerate(lines):
         heading = LINE_LIST.match(line)
         if not heading or int(heading.group(1)) != number:
             continue
-        tail = ' '.join([heading.group(2), *lines[index + 1:]])
-        pairs: list[tuple[int, int]] = []
+
+        # Stop at the next line-list heading.
+        tail_lines = [heading.group(2)]
+        for following in lines[index + 1:]:
+            if LINE_LIST.match(following):
+                break
+            tail_lines.append(following)
+
+        tail = ' '.join(tail_lines)
         position = 0
         while position < len(tail):
             match = LINE_PAIR.match(tail, position)
             if match:
                 a, b = map(int, match.groups())
                 if a > 0 and b > 0 and a != b and a not in excluded and b not in excluded:
-                    pairs.append(tuple(sorted((a, b))))
+                    pairs.add(tuple(sorted((a, b))))
                 position = match.end()
                 continue
+
             broken = BROKEN_LINE_TOKEN.match(tail, position)
             if not broken:
                 break
             position = broken.end()
-        ordered = sorted(set(pairs), key=lambda pair: (sum(ref > NATIVE_MAX for ref in pair),
-                                                       max(pair), sum(pair)))
-        return ordered[:limit] if limit is not None else ordered
-    return []
+
+    ordered = sorted(
+        pairs,
+        key=lambda pair: (
+            sum(ref > NATIVE_MAX for ref in pair),
+            max(pair),
+            sum(pair),
+        ),
+    )
+    return ordered[:limit] if limit is not None else ordered
 
 
 def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int, int]]:

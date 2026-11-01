@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry,
+from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry, listed_lines,
                                     coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
                                     numeric_formula_projective,
                                     native_status_rows, read_native_status, read_recipes,
@@ -274,6 +274,19 @@ class TriangleCenterImportTest(unittest.TestCase):
             path.write_text('30 2 3\n30\n', encoding='utf-8')
             with self.assertRaisesRegex(ValueError, 'Duplicate'):
                 read_native_status(path)
+
+    def test_duplicate_line_list(self):
+        lines = [
+            '''X(7677) lies on these lines:'''
+            '''X(7677) lies on these lines: {1, 1170}, {2, 1617}, {3, 390}, {7, 21}, {9, 604}'''
+        ]
+        assert listed_lines(7677, lines, limit=None) == [
+            (7, 21),
+            (3, 390),
+            (9, 604),
+            (1, 1170),
+            (2, 1617),
+        ]
 
     def test_line_list_requires_independent_consistent_lines(self):
         points = {1: (0, 0), 2: (2, 0), 3: (1, 0), 4: (3, 0),
