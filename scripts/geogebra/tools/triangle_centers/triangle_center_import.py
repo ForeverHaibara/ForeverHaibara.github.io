@@ -28,7 +28,7 @@ from triangle_center_coordinates import (coordinate_candidates, coordinate_text,
                                          rotate_formula, side_environment, validate_formula)
 
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 DATA = ROOT / 'src/features/geogebra/commands/custom/data/triangle-centers'
 CACHE = ROOT / '.cache/triangle-centers'
 NATIVE_MAX = 3053
@@ -75,6 +75,53 @@ class Recipe:
         if self.operation == 'F':
             return f'{self.number} F ' + ' '.join(f'{ref}:{coef}' for ref, coef in zip(self.references, self.formula.split('|')))
         return ' '.join((str(self.number), self.operation, *map(str, self.references)))
+
+
+class RecipeCandidates:
+    """Explicit recipes plus a shared incidence family, expanded only on demand."""
+    def __init__(self, number, explicit, lines, part=0, line_filters=()):
+        self.number = number
+        self.explicit = list(explicit)
+        self.lines = tuple(tuple(pair) for pair in lines)
+        self.part = part
+        self.line_filters = line_filters
+
+    def inferred(self):
+        explicit = {(r.operation, r.references) for r in self.explicit}
+        for first, second in combinations(self.lines, 2):
+            refs = (*first, *second)
+            if (self.number in refs or not set(first).isdisjoint(second)
+                    or ('J', refs) in explicit):
+                continue
+            recipe = Recipe(self.number, 'J', refs, self.part,
+                            f'X({self.number}) lies on these lines: {first}, {second}')
+            if all(predicate(recipe) for predicate in self.line_filters):
+                yield recipe
+
+    def __iter__(self):
+        yield from self.explicit
+        yield from self.inferred()
+
+    def __bool__(self):
+        return bool(self.explicit) or next(self.inferred(), None) is not None
+
+    def filtered(self, predicate):
+        return RecipeCandidates(self.number, [r for r in self.explicit if predicate(r)],
+                                self.lines, self.part, (*self.line_filters, predicate))
+
+    def __add__(self, extra):
+        return RecipeCandidates(self.number, self.explicit + extra, self.lines, self.part, self.line_filters)
+
+    def append(self, recipe):
+        self.explicit.append(recipe)
+
+    def __eq__(self, other):
+        return isinstance(other, RecipeCandidates) and (self.number, self.explicit, self.lines, self.part) == (
+            other.number, other.explicit, other.lines, other.part)
+
+
+def filter_candidates(options, predicate):
+    return options.filtered(predicate) if isinstance(options, RecipeCandidates) else [r for r in options if predicate(r)]
 
 
 @dataclass(frozen=True)
@@ -350,7 +397,7 @@ def is_infinite_entry(number: int, lines: list[str]) -> bool:
 
 
 def extract_entry(number: int, fragment: str, part: int,
-                  excluded: set[int] | None = None) -> list[Recipe]:
+                  excluded: set[int] | None = None, *, compact: bool = False):
     found: dict[tuple[str, tuple[int, ...]], str] = {}
     lines = relation_lines(fragment)
     if is_infinite_entry(number, lines):
@@ -360,7 +407,8 @@ def extract_entry(number: int, fragment: str, part: int,
                 found[('I', (first, second))] = f'X({number}) is the ideal point in direction X({first})X({second})'
         return [Recipe(number, opcode, refs, part, evidence) for (opcode, refs), evidence in sorted(found.items())
                 if all(reference != number for reference in refs)]
-    for first, second in combinations(listed_lines(number, lines, excluded), 2):
+    incidence = listed_lines(number, lines, excluded)
+    for first, second in (() if compact else combinations(incidence, 2)):
         if set(first).isdisjoint(second):
             found[('J', (*first, *second))] = f'X({number}) lies on these lines: {first}, {second}'
     for line in lines:
@@ -391,7 +439,7 @@ def extract_entry(number: int, fragment: str, part: int,
                    for candidate in shinagawa_candidates(number, line, part))
     recipes.extend(Recipe(number, kind, (), part, evidence, formula)
                    for kind, formula, evidence in coordinate_candidates(fragment, coordinate_view))
-    return recipes
+    return RecipeCandidates(number, recipes, incidence, part) if compact else recipes
 
 
 @stage
@@ -404,10 +452,13 @@ def read_page(part: int, excluded: set[int] | None = None,
         raise ValueError(f'Part {part} source preflight failed: ' + '; '.join(issues))
     cache_path = CACHE / 'extracted' / f'{support.cache_key(source, excluded or set(), part)}.json.gz'
     cached = support.read_cache(cache_path) if support.CACHE_ENABLED else None
-    if isinstance(cached, dict) and cached.get('schema') == 1:
+    if isinstance(cached, dict) and cached.get('schema') == 2:
         try:
-            restored = {int(n): [Recipe(row[0], row[1], tuple(row[2]), *row[3:]) for row in rows]
-                        for n, rows in cached['candidates'].items()}
+            def restore(number, value):
+                explicit = [Recipe(row[0], row[1], tuple(row[2]), *row[3:]) for row in value['recipes']]
+                return (RecipeCandidates(int(number), explicit, value['lines'], part)
+                        if 'lines' in value else explicit)
+            restored = {int(n): restore(n, value) for n, value in cached['candidates'].items()}
             restored_lines = {int(n): [tuple(pair) for pair in pairs] for n, pairs in cached['lines'].items()}
             entries = cached['entries']
         except (KeyError, TypeError, ValueError):
@@ -425,16 +476,21 @@ def read_page(part: int, excluded: set[int] | None = None,
         if number in candidates:
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
-        candidates[number] = extract_entry(number, fragment, part, excluded)
+        candidates[number] = extract_entry(number, fragment, part, excluded, compact=True)
         if any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
-                                                for r in candidates[number]):
+               for r in (candidates[number].explicit if isinstance(candidates[number], RecipeCandidates) else candidates[number])):
             page_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
     if support.CACHE_ENABLED:
-        support.write_cache(cache_path, dict(schema=1, entries=entries,
-            candidates={n: [[r.number, r.operation, r.references, r.part, r.evidence, r.formula] for r in rows]
-                        for n, rows in candidates.items()}, lines=page_lines))
+        def compact_value(options):
+            explicit = options.explicit if isinstance(options, RecipeCandidates) else options
+            value = dict(recipes=[[r.number, r.operation, r.references, r.part, r.evidence, r.formula] for r in explicit])
+            if isinstance(options, RecipeCandidates):
+                value['lines'] = options.lines
+            return value
+        support.write_cache(cache_path, dict(schema=2, entries=entries,
+            candidates={n: compact_value(options) for n, options in candidates.items()}, lines=page_lines))
     if coordinate_lines is not None:
         coordinate_lines.update(page_lines)
     return entries, candidates
@@ -585,7 +641,7 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
     for number, options in candidates.items():
         if number not in components:
             continue
-        formulas = [recipe for recipe in options if recipe.operation == 'B' and homogeneous_degree(recipe.formula)[0]
+        formulas = [recipe for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options) if recipe.operation == 'B' and homogeneous_degree(recipe.formula)[0]
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
@@ -1053,7 +1109,7 @@ def native_status_rows(unavailable: set[int], directions: dict[int, tuple[int, i
               '# id = unavailable; id p q = ideal direction along finite X(p)X(q).\n'
               '# A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.\n'
               '# Refresh the unavailable set from the GeoGebra native screen, then run:\n'
-              '# python scripts/geogebra/tools/triangle_center_import.py native\n'
+              '# python scripts/geogebra/tools/triangle_centers/triangle_center_import.py native\n'
               + ''.join(f'# X({number}) has conflicting direction lines.\n' for number in weak))
     return header + ''.join(f'{number} {directions[number][0]} {directions[number][1]}\n'
                             if number in directions else f'{number}\n'
@@ -1084,18 +1140,70 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                and number not in selected and number not in deferred_targets}
     incidence_lines: dict[int, list[tuple[int, int]]] = {}
     for number, options in candidates.items():
-        incidence_lines[number] = sorted({tuple(recipe.references[index:index+2]) for recipe in options
-                                          if recipe.operation == 'J' and 'lies on these lines:' in recipe.evidence.lower()
-                                          for index in (0, 2)}
-                                         | {recipe.references for recipe in options if recipe.operation == 'I'})
+        if isinstance(options, RecipeCandidates):
+            incidence_lines[number] = sorted(set(options.lines))
+        else:
+            incidence_lines[number] = sorted({tuple(recipe.references[index:index+2]) for recipe in options
+                                              if recipe.operation == 'J' and 'lies on these lines:' in recipe.evidence.lower()
+                                              for index in (0, 2)}
+                                             | {recipe.references for recipe in options if recipe.operation == 'I'})
+
+    families_expanded = active_visits = 0
+    closure_screened = Counter()
+
+    def ranked_options(options, depth, length, nonlinear):
+        nonlocal families_expanded
+        def ready_rank(recipes):
+            ranked = []
+            for recipe in recipes:
+                if any(ref in blocked_native or ref in deferred_targets
+                       or ref > NATIVE_MAX and ref not in selected for ref in recipe.references):
+                    continue
+                d = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
+                size = estimated_recipe_length(recipe, [length.get(ref, 27) for ref in recipe.references])
+                conjugates = int(recipe.operation in {'G', 'T'}) + max(
+                    (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
+                if d <= max_depth and (max_length is None or size <= max_length) and conjugates <= max_conjugates:
+                    ranked.append(((*quality(recipe), d, size, PRIORITY[recipe.operation], recipe.references), recipe))
+            ranked.sort(key=lambda item: item[0])
+            return ranked
+        if isinstance(options, RecipeCandidates):
+            # These groups have disjoint quality ranges. Only generate inferred
+            # intersections if every better explicit construction has failed.
+            yield from ready_rank(r for r in options.explicit if quality(r) <= (2, 1))
+            families_expanded += 1
+            yield from ready_rank(options.inferred())
+            yield from ready_rank(r for r in options.explicit if quality(r) > (2, 1))
+        else:
+            yield from ready_rank(options)
+
+    # Watch construction inputs AND incidence evidence. A newly available third
+    # support line may make an intersection valid without changing its four inputs.
+    watchers: dict[int, set[int]] = defaultdict(set)
+    for number in pending:
+        options = [seeds[number]] if number in seeds else candidates.get(number, [])
+        explicit = options.explicit if isinstance(options, RecipeCandidates) else options
+        refs = {ref for recipe in explicit for ref in recipe.references}
+        if isinstance(options, RecipeCandidates):
+            refs.update(ref for pair in options.lines for ref in pair)
+        refs.update(ref for pair in incidence_lines.get(number, []) for ref in pair)
+        for ref in refs:
+            if ref > NATIVE_MAX:
+                watchers[ref].add(number)
+    frontier = set(pending)
     while pending:
-        report('closure', selected=len(selected), pending=len(pending))
+        if not frontier:
+            frontier = set(pending)
+            report('closure-audit', pending=len(pending))
+        report('closure', selected=len(selected), pending=len(pending), active=len(frontier))
         possible: list[tuple[tuple, Recipe]] = []
         depth, length = validate_graph(selected)
         nonlinear = conjugate_levels(selected)
         coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
-        for number in pending:
-            for recipe in ([seeds[number]] if number in seeds else candidates.get(number, [])):
+        active_visits += len(frontier)
+        for number in frontier:
+            for key, recipe in ranked_options(
+                    [seeds[number]] if number in seeds else candidates.get(number, []), depth, length, nonlinear):
                 if any(ref in blocked_native or ref in deferred_targets
                        or ref > NATIVE_MAX and ref not in selected
                        for ref in recipe.references):
@@ -1104,6 +1212,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     validate_recipe_inputs(recipe, selected, native_ideal)
                 except ValueError:
                     continue
+                closure_screened[recipe.operation] += 1
                 if coordinates and recipe.operation == 'J' and not line_candidate_supported(
                         recipe, coordinates, incidence_lines[number]):
                     continue
@@ -1120,17 +1229,13 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     continue
                 if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                     continue
-                candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
-                candidate_length = estimated_recipe_length(recipe,
-                                                           [length.get(ref, 27) for ref in recipe.references])
-                candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
-                    (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
-                if (candidate_depth <= max_depth and (max_length is None or candidate_length <= max_length)
-                        and candidate_nonlinear <= max_conjugates):
-                    key = (*quality(recipe), candidate_depth, candidate_length,
-                           PRIORITY[recipe.operation], recipe.references)
-                    possible.append((key, recipe))
+                possible.append((key, recipe))
+                break  # First screened candidate is best in this fixed snapshot.
         if not possible:
+            if frontier != pending:
+                frontier = set(pending)
+                report('closure-audit', pending=len(pending))
+                continue
             break
         # Add every currently reachable point; prefer safer operations before
         # construction depth and estimated expression length.
@@ -1141,6 +1246,9 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 best[number] = item
         selected.update({number: item[1] for number, item in best.items()})
         pending.difference_update(best)
+        frontier = {target for number in best for target in watchers.get(number, ()) if target in pending}
+    report('closure-done', active_visits=active_visits, screened=dict(closure_screened),
+           families_expanded=families_expanded)
     if require_seeds and set(seeds) - set(selected):
         raise ValueError(f'Unclosed reviewed seeds: {sorted(set(seeds) - set(selected))}')
     # A line-list intersection may enter before the point needed by a simpler
@@ -1148,7 +1256,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     refine_coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
     for number in sorted(set(selected) - set(seeds)):
         current = selected[number]
-        alternatives = [recipe for recipe in candidates.get(number, [])
+        options = candidates.get(number, [])
+        cheaper_options = (options.explicit if isinstance(options, RecipeCandidates)
+                           and quality(current) <= (2, 1) else options)
+        alternatives = [recipe for recipe in cheaper_options
                         if quality(recipe) < quality(current)
                         and all(ref not in blocked_native and ref not in deferred_targets
                                 and (ref <= NATIVE_MAX or ref in selected)
@@ -1392,18 +1503,18 @@ def main() -> None:
             all_candidates[number] = options
         print(f'Part {part}: {len(entries)} entries, {sum(bool(v) for v in candidates.values())} with explicit parsed constructions')
     atlas = read_native_atlas(CACHE / 'native-atlas.json')
-    eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations
-                         and not (recipe.operation == 'I' and not recipe.references)]
+    eligible = {number: filter_candidates(options, lambda recipe: recipe.operation in args.auto_operations
+                         and not (recipe.operation == 'I' and not recipe.references))
                 for number, options in all_candidates.items()}
-    relation_only = {number: [recipe for recipe in options if recipe.operation != 'B'
-                              and 'shinagawa coefficients' not in recipe.evidence.lower()]
+    relation_only = {number: filter_candidates(options, lambda recipe: recipe.operation != 'B'
+                              and 'shinagawa coefficients' not in recipe.evidence.lower())
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, selection_exclusions, atlas, native_directions, require_seeds=False)
     reference_coordinates = numeric_coordinates(baseline, atlas, native_directions)
     accepted_shinagawa = rejected_shinagawa = 0
     for number, options in eligible.items():
-        for recipe in options:
+        for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options):
             if recipe.operation != 'F' or 'shinagawa coefficients' not in recipe.evidence.lower():
                 continue
             if shinagawa_candidate_supported(recipe, reference_coordinates, atlas, options,
@@ -1416,7 +1527,8 @@ def main() -> None:
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
                                  coordinate_lines, native_directions, selection_exclusions)
-    ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
+    ideal_formulas = [(number, recipe) for number, options in eligible.items()
+                      for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options)
                       if number > NATIVE_MAX and recipe.operation == 'B' and all(
                           isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
                           for abc in atlas['triangles'].values())]

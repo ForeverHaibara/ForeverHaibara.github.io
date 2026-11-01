@@ -12,8 +12,8 @@
 
 | 层次 | 文件与入口 | 当前职责 |
 | --- | --- | --- |
-| 离线提取 | `scripts/geogebra/tools/triangle_center_import.py`：`split_entries`、`extract_entry`、`read_page` | 按标题切条目，提取关系、线表、combo、循环坐标及证据 |
-| 坐标语法 | `scripts/geogebra/tools/triangle_center_coordinates.py` | 文本边界、公式正规化、AST 检查、循环一致性、齐次度、数值计算 |
+| 离线提取 | `scripts/geogebra/tools/triangle_centers/triangle_center_import.py`：`split_entries`、`extract_entry`、`read_page` | 按标题切条目，提取关系、线表、combo、循环坐标及证据 |
+| 坐标语法 | `scripts/geogebra/tools/triangle_centers/triangle_center_coordinates.py` | 文本边界、公式正规化、AST 检查、循环一致性、齐次度、数值计算 |
 | 图选择 | `select_recipes`、`coordinate_anchors`、`unresolved_components` | 关系基线 → Shinagawa 筛查 → 未闭合簇的坐标锚点 → 再闭包、替换和几何复筛 |
 | 生成与检查 | 导入器 `main`、`chunks` | 分块、审计表、`check` 重算比较、`verify` 无缓存静态检查 |
 | 客户端 | `builders/triangleCenters.ts` | 动态加载千号段、递归预备依赖、配方展开、有限/方向/未知方向类型 |
@@ -272,9 +272,9 @@ P3 的“全量候选 dry-run”与“全部点支持”不是同一验收项。
 复测命令（仓库根目录；现有缓存不联网、不改 chunks）：
 
 ```sh
-python scripts/geogebra/tools/triangle_center_import.py verify
-python -u scripts/geogebra/tools/triangle_center_import.py check
-python -u -m cProfile -o .cache/triangle-centers/planning-baseline.prof scripts/geogebra/tools/triangle_center_import.py check
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
+python -u scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
+python -u -m cProfile -o .cache/triangle-centers/planning-baseline.prof scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
 python -c "import pstats; pstats.Stats('.cache/triangle-centers/planning-baseline.prof').strip_dirs().sort_stats('cumulative').print_stats(25)"
 ```
 
@@ -292,3 +292,19 @@ python -c "import pstats; pstats.Stats('.cache/triangle-centers/planning-baselin
 
 
 本批验证：44 项 Python 测试通过，`verify` 通过；四页冷缓存 `check` 与原 chunks 逐字一致（观察约 125 秒）。最终版本对四页的候选、来源证据与 incidence 线表分别执行冷/热缓存往返比较，完全一致；热提取合计约 2 秒，同进程后续 `check` 约 100 秒并通过逐字比较。这不是独立进程冷/热全构建的严格加速比，AST 已在同一进程预热。正式 8,200 条生成记录未改。来源异常预检的失败是预期验收结果，尚未声称全量导入成功。
+
+
+## 10. 第二批实施：目录、紧凑诊断缓存和候选调度（2026-11-01）
+
+- ETC 脚本与测试统一移入 `scripts/geogebra/tools/triangle_centers/`；更新文档、生成来源注释和 ROOT 定位。入口保持原文件名，新目录 README 给出直接运行与测试命令。
+- `planning-topology` 的 37 个快照已从逐项编号 JSON 转为区间编号集、共享节点索引、邻接差分与 gzip。迁移逐文件核对完整还原值后替换，6,904,466 字节变为 1,412,856 字节（约减少 80%）；没有重新推断图或丢弃诊断字段。临时诊断写入器也使用新格式，避免再生成原来的冗余 JSON。
+- 提取缓存 schema 2 按目标保存显式候选和一份 incidence 线族，避免把最多 45 个交点和重复证据全部常驻存储。原有候选集合、过滤条件、线表上限和数值规则保留。候选过滤、追加坐标锚点和跨阶段传递都保留线族的延迟表示。
+- 闭包先按现有质量/深度/长度键排候选，再做类型和数值筛查，首个通过者即为当前快照的选择。排序更好的显式构造成功后，不生成、更不筛查后续线对；显式构造失败仍可回退。没有为达到性能指标收紧搜索空间。
+- 引入目标级反向 watchers：初轮后只重试受新增构造或验证输入影响的目标。第三支持线晚到也会重新入队。队列静止时仍完整扫一次残余 pending，作为固定点审计，避免未来新增验证规则遗漏隐式读取；这不是完整的候选级 AND/OR readiness 计数，也尚未实现替换事务的局部更新。
+- 新日志给出 active targets、累计访问数、闭包各操作筛查次数及展开线族次数。含残余固定点审计的两轮闭包已观察到 J 筛查 7,305 / 6,867 次；这些计数仅指闭包，不能与包含终局修理的旧 profiler 总调用量直接作倍数比较。
+- 显式交点绕过线族、缺页后备、数值失败后换线对、支持线晚到，以及区间/邻接编码的无损还原均有针对性测试。上一轮的 44 项测试保留。
+
+后续主要成本仍在配方改良时反复执行全图校验和数值坐标重算。下一批按受影响后代更新这些量，并完善来源补丁和全量 dry-run；本批不改客户端或扩大正式配方集合。
+
+
+本批最终验收：50 项 Python 测试通过；`verify` 通过，含残余审计的完整四页 `check` 与现有 8,200 行配方逐字一致，观察约 105 秒，其中冷提取约 13 秒。压缩后的四页提取缓存共 1,755,049 字节，保留 23,980 条显式候选及共享线族；独立热读取和代表条目 eager/lazy 候选（含证据）对照通过，四页读取约 0.3 秒。诊断快照 37 个均可解码，总目标节点仍为 70,208，原 JSON 未再生成。这些是本机单次观测，不是跨机器耗时保证。

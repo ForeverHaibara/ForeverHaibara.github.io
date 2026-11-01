@@ -31,11 +31,15 @@ class ImportInfrastructureTest(unittest.TestCase):
     def test_page_cache_preserves_evidence_and_invalidates_inputs(self):
         with tempfile.TemporaryDirectory(dir=importer.CACHE) as folder, patch.object(importer, 'CACHE', Path(folder)):
             page = Path(folder) / 'ETCPart3.html'
-            page.write_text('<h3 id="X4000">X(4000) = midpoint of X(1) and X(2)</h3>')
+            page.write_text('<h3 id="X4000">X(4000) = midpoint of X(1) and X(2)</h3>'
+                            '<p>X(4000) lies on these lines: 1,2 3,4 5,6</p>')
             original = importer.extract_entry
             with patch.object(importer, 'extract_entry', wraps=original) as extract:
                 cold = importer.read_page(3)
-                self.assertEqual(importer.read_page(3), cold)
+                warm = importer.read_page(3)
+                self.assertEqual(warm, cold)
+                self.assertEqual(set(warm[1][4000]), set(cold[1][4000]))
+                self.assertEqual(len(list(warm[1][4000].inferred())), 3)
                 self.assertEqual(extract.call_count, 1)
                 importer.read_page(3, {2})
                 self.assertEqual(extract.call_count, 2)

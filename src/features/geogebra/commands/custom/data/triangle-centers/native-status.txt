@@ -2,7 +2,7 @@
 # id = unavailable; id p q = ideal direction along finite X(p)X(q).
 # A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.
 # Refresh the unavailable set from the GeoGebra native screen, then run:
-# python scripts/geogebra/tools/triangle_center_import.py native
+# python scripts/geogebra/tools/triangle_centers/triangle_center_import.py native
 # X(1912) has conflicting direction lines.
 30 2 3
 368

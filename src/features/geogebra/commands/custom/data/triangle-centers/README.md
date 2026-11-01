@@ -13,11 +13,11 @@ Coordinate extraction accepts a direct first coordinate followed by `: :`, an ex
 Run from the repository root with Python 3 and `beautifulsoup4`:
 
 ```sh
-python scripts/geogebra/tools/triangle_center_import.py fetch --parts 1 2 3 4 5 37
-python scripts/geogebra/tools/triangle_center_import.py native
-python scripts/geogebra/tools/triangle_center_import.py build
-python scripts/geogebra/tools/triangle_center_import.py check
-python scripts/geogebra/tools/triangle_center_import.py verify
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py fetch --parts 1 2 3 4 5 37
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py native
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py build
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
 ```
 
 Before `native`, `build`, or `check`, run `/scripts/geogebra/browser/verification.html?page=center-anchors` against the local site, download its native coordinate sample, and copy it to `.cache/triangle-centers/native-atlas.json`. This ignored build-time sample covers two fixed triangle shapes and is never shipped to the app. Update the unavailable entries in `native-status.txt` from the same screen when the GeoGebra engine changes. The manually cached ETC Parts 1 and 2 feed `native`, which regenerates the direction entries in that same file from the target's own `(parallel)` or infinity-line incidence lists. This is an explicit maintenance action, not automatic ETC synchronization.
@@ -32,3 +32,6 @@ For an isolated source typo or damaged entry, review the exact ETC statement and
 Import maintenance: `audit --parts ...` performs heading preflight before expensive extraction. Build/check also preflight their complete input set. Ambiguous or malformed headings currently fail with all detected issues; repair file-level source boundaries explicitly before importing those pages. Individual geometric exceptions remain reviewed seeds.
 
 Build/check reuse gzip extraction checkpoints under `.cache/triangle-centers/extracted/`, invalidated by source, extraction code, filtering state, Part and parser version. Use `--no-cache` to bypass them. Formula caches are bounded and process-local. `--report .cache/triangle-centers/run.jsonl` appends stage/cache/closure events and five-second heartbeats with a run ID. Selection still recomputes globally; these caches do not freeze the graph across Part sets. See the scaling plan's implementation record for current limits.
+
+
+ETC scripts and tests now live in `scripts/geogebra/tools/triangle_centers/` (see its README). Extraction cache schema 2 retains explicit recipes plus shared incidence families; selection tries better explicit definitions before expanding inferred line pairs. Changed dependency/evidence inputs reactivate pending targets, and quiescence triggers a residual audit. The candidate set and geometric screens remain available across these paths.
