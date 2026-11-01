@@ -15,6 +15,16 @@ from triangle_center_coordinates import coordinate_candidates, coordinate_text, 
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_open_block_boundary_and_missing_on_in_line_heading(self):
+        fragment = ('<h3 id="X4000">X(4000) = CENTER</h3>'
+                    'Barycentrics a^3+D : :<br>where D=4*S*sqrt(R*(4*R+r))'
+                    '<p>X(4000) lies the Terzic circle and these lines: {1,2}, {3,4}, {5,6}</p>')
+        recipes = extract_entry(4000, fragment, 3)
+        self.assertTrue(any(r.operation == 'B' for r in recipes))
+        self.assertEqual(sum(r.operation == 'J' for r in recipes), 3)
+        self.assertEqual(listed_lines(4001, ['X(4000) lies the circle and these lines: 1,2 3,4']), [])
+
+
     def test_additional_coordinate_syntax_and_brocard_angle(self):
         examples = [
             'Trilinears f(A,B,C):f(B,C,A):f(C,A,B), where f(A,B,C)=tan(A+2ω)',

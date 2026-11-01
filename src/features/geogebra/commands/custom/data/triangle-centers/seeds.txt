@@ -71,3 +71,16 @@
 # Part 34 has two different complete definitions both labeled X(66288).
 # Both source fragments are isolated by the reviewed file patch; no ID is guessed.
 66288 SKIP source-error: conflicting duplicate definitions in cached Part 34
+
+# Reviewed PB-cluster anchors, ETC preamble immediately before X(11752).
+# U = sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S)); the Ai vertex triples independently
+# give the perspectors with ABC (11753) and the excentral triangle (11754).
+# Only these two verified anchors expand U; do not guess U/S sign conventions
+# for the rest of the preamble's inconsistent printed transformation table.
+11753 B a*(sqrt(3)*a*(-a^2+b^2+c^2)+2*S*(a+sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11754 B a*(sqrt(3)*a*(-a^2+b^2+c^2)+S*(2*a+sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+
+# Source conflict observed at X(11619): printed trilinears do not give the center
+# of {X(5),X(6),X(22)} and fail its X(2492)X(2780) line. Independent perpendicular
+# bisectors give the named center and satisfy that line on both atlas samples.
+# Leave unresolved pending a circle-center recipe; this is not a permanent SKIP.

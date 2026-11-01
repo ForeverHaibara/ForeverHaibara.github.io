@@ -169,3 +169,52 @@ class ReviewedFileBoundaryErrors(TestCase):
                 self.assertNotIn('X(67713)', entries[67712])
             with self.assertRaisesRegex(ValueError, 'source changed'):
                 prepare_source(part, raw+'<!-- changed source -->')
+
+
+class PBClusterAnchors(TestCase):
+    def test_two_anchors_match_independent_preamble_vertex_construction(self):
+        seeds = m.read_recipes(m.DATA/'seeds.txt', {})
+        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        for abc in atlas['triangles'].values():
+            sides = [math.dist(abc[1],abc[2]),math.dist(abc[2],abc[0]),math.dist(abc[0],abc[1])]
+            S = m.side_environment(*sides)['S']
+            U = math.sqrt(2*(sum(v*v for v in sides)+2*math.sqrt(3)*S))
+            vertices, excentral = [], []
+            for j in range(3):
+                a,b,c = [sides[(j+k)%3] for k in range(3)]
+                weights = [a*a*(math.sqrt(3)*(-a*a+b*b+c*c)+2*S),
+                           b*(math.sqrt(3)*b*(a*a-b*b+c*c)+2*S*(b+U)),
+                           c*(math.sqrt(3)*c*(a*a+b*b-c*c)+2*S*(c+U))]
+                vertices.append(tuple(sum(weights[k]*abc[(j+k)%3][i] for k in range(3))/sum(weights) for i in (0,1)))
+                w = [-a,b,c]
+                excentral.append(tuple(sum(w[k]*abc[(j+k)%3][i] for k in range(3))/sum(w) for i in (0,1)))
+            for number, base in [(11753,abc),(11754,excentral)]:
+                point = crossing(base[0],vertices[0],base[1],vertices[1])
+                self.assertLess(abs(cross(sub(point,base[2]),sub(vertices[2],base[2]))),1e-8)
+                self.assertLess(math.dist(point,m.numeric_formula(seeds[number],abc)),1e-8)
+
+    def test_user_examples_produce_incidence_candidates(self):
+        for part, number in [(6,11872),(21,41156)]:
+            source = (m.CACHE/f'ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')
+            fragment = dict(m.split_entries(source))[number]
+            self.assertTrue(any(r.operation=='J' for r in m.extract_entry(number,fragment,part)))
+
+
+class CircumcenterSourceConflict(TestCase):
+    def test_11619_printed_formula_conflicts_with_named_circle_center(self):
+        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        points = m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        fragment = dict(m.split_entries((m.CACHE/'ETCPart6.html').read_text(encoding='utf-8')))[11619]
+        formula = next(r for r in m.extract_entry(11619,fragment,6) if r.operation=='B')
+        for shape, xy in points.items():
+            a,b,c = [xy[n] for n in (5,6,22)]
+            ab,ac = sub(b,a),sub(c,a)
+            mid1 = tuple((a[i]+b[i])/2 for i in (0,1))
+            mid2 = tuple((a[i]+c[i])/2 for i in (0,1))
+            center = crossing(mid1,(mid1[0]-ab[1],mid1[1]+ab[0]),
+                              mid2,(mid2[0]-ac[1],mid2[1]+ac[0]))
+            self.assertAlmostEqual(math.dist(center,a),math.dist(center,b),places=8)
+            self.assertAlmostEqual(math.dist(center,a),math.dist(center,c),places=8)
+            p,d = m.line_data(xy[2492],xy[2780])
+            self.assertLess(abs(cross(sub(center,p),d))/math.hypot(*d),1e-8)
+            self.assertGreater(math.dist(center,m.numeric_formula(formula,atlas['triangles'][shape])),1e-3)

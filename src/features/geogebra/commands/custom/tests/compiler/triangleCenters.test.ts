@@ -239,4 +239,14 @@ describe('extended TriangleCenter dispatch', () => {
     const centerToken = triangleCenter.captureBinding(['v1'], [longValue], 'v1', ['number']);
     expect(triangleCenter.lower(centerToken, '0000000000000000', false).output.length).toBeGreaterThan(500_000);
   });
+  it('loads the independently reviewed PB cluster anchors without unresolved scalars', async () => {
+    for (const id of [11753, 11754]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).toContain('sqrt(3)');
+      expect(result).not.toMatch(/\bU\b/u);
+      expect(result).not.toContain(`,${id})`);
+    }
+  });
+
 });
