@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
              'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'r', 'R', 'pi'}
-FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh'}
+FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
@@ -44,7 +44,9 @@ def coordinate_text(fragment: str) -> list[str]:
 
 def normalize_formula(raw: str) -> str | None:
     raw = (unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*')
-           .replace('π', 'pi').replace('[', '(').replace(']', ')'))
+           .replace('π', 'pi').replace('ω', '(atan(S/SW))').replace('[', '(').replace(']', ')'))
+    raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\s*(\d*)\s*([ABC])(?:\s*/\s*(\d+))?',
+                 lambda m: '(%s(%s%s%s))^%s' % (m.group(1), (m.group(3) + '*') if m.group(3) else '', m.group(4), ('/' + m.group(5)) if m.group(5) else '', m.group(2)), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
                  lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
     raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc|Sqrt|Pi)\b', lambda m: m.group().lower(), raw)
@@ -154,6 +156,12 @@ def canonical_formula(formula: str):
                 return [canonical(child)]
             return (kind.__name__, tuple(sorted(flatten(node))))
         if isinstance(node, ast.BinOp):
+            # Even powers do not change when a difference is reversed.
+            exponent = constant_exponent(node.right) if isinstance(node.op, ast.Pow) else None
+            if (exponent is not None and exponent.is_integer() and int(exponent) % 2 == 0
+                    and isinstance(node.left, ast.BinOp) and isinstance(node.left.op, ast.Sub)):
+                terms = tuple(sorted((canonical(node.left.left), canonical(node.left.right))))
+                return ('EvenDifferencePower', terms, canonical(node.right))
             return (type(node.op).__name__, canonical(node.left), canonical(node.right))
         if isinstance(node, ast.UnaryOp):
             return (type(node.op).__name__, canonical(node.operand))
@@ -252,12 +260,32 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
                 text += ' ' + next_line
             else:
                 break
+        text = re.sub(r'\s+\([^()]*,\s*(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}\)\s*$', '', text, flags=re.I)
         text = ATTRIBUTION.sub('', text)
+        local = re.search(r',\s*where\s+([d-hj-qtv-z])\s*=\s*([^,]+),\s*([d-hj-qtv-z])\s*=\s*([^,]+)\s*$', text)
+        if local and local.group(1) != local.group(3):
+            substitutions = {local.group(1): local.group(2), local.group(3): local.group(4)}
+            if all(normalize_formula(value) for value in substitutions.values()):
+                text = re.sub(r'\b(?:' + '|'.join(map(re.escape, substitutions)) + r')\b',
+                              lambda m: '(' + substitutions[m.group()] + ')', text[:local.start()])
         where = WHERE.search(text)
         if where and CYCLIC.search(text[:where.start()]):
             head = CYCLIC.search(text[:where.start()])
             if head and head.group(1).lower() == where.group(1).lower() and head.groups()[1:] == where.groups()[1:]:
                 raw = text[where.end():].strip()
+                inner = WHERE.search(raw)
+                if inner:
+                    definition = raw[inner.end():].strip()
+                    inner_formula = normalize_formula(definition)
+                    if inner_formula and raw[:inner.start()].rstrip().endswith(','):
+                        call = re.compile(r'\b' + re.escape(inner.group(1)) + r'\s*\(\s*([abcABC])\s*,\s*([abcABC])\s*,\s*([abcABC])\s*\)', re.I)
+                        def expand_call(match):
+                            args = match.groups()
+                            base = inner.groups()[1:]
+                            if args not in (base, (base[1], base[2], base[0]), (base[2], base[0], base[1])):
+                                return match.group()
+                            return '(' + rotate_formula(inner_formula, (base, (base[1], base[2], base[0]), (base[2], base[0], base[1])).index(args)) + ')'
+                        raw = call.sub(expand_call, raw[:inner.start()].rstrip()[:-1])
                 formula = normalize_formula(raw)
                 if formula:
                     barycentric = normalize_formula(f'a*({formula})') if trilinear else formula
@@ -317,7 +345,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
     tree = validate_formula(formula)
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
-             'sinh': math.sinh, 'asinh': math.asinh,
+             'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),
              'csc': lambda x: 1/math.sin(x)}
 

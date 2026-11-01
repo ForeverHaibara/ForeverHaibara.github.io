@@ -919,16 +919,18 @@ def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
 
 
 def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict) -> bool:
+    valid = 0
     for shape, points in coordinates.items():
         if any(ref not in points for ref in recipe.references):
             return False
         result = numeric_combo(recipe, [points[ref] for ref in recipe.references], atlas['triangles'][shape])
         if result is None:
-            return False
+            continue
+        valid += 1
         known = points.get(recipe.number)
         if known is not None and (isinstance(known, Ideal) or math.dist(result, known) > 1e-5 * max(1, math.hypot(*result), math.hypot(*known))):
             return False
-    return True
+    return valid > 0
 
 
 def shinagawa_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict,
@@ -939,7 +941,7 @@ def shinagawa_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
         abc = atlas['triangles'][shape]
         target = numeric_combo(recipe, [points[ref] for ref in recipe.references], abc)
         if target is None:
-            return False
+            continue
         for option in alternatives:
             if option.operation != 'B' or not homogeneous_degree(option.formula)[0]:
                 continue

@@ -215,6 +215,14 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,8183)', environment())).toContain('^(1/3)');
   });
 
+  it('compiles additional ETC coordinate and partially real combo definitions', async () => {
+    for (const id of [3408, 3409, 5002, 5003, 5390, 5431, 5455, 5500, 5945, 6160, 6188, 7985, 9393]) {
+      await prepareTriangleCenter(id);
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).not.toContain(`,${id})`);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3408)', environment())).toContain('atan(');
+  });
+
   it('loads reviewed coordinate seeds for conflicting ETC entries', async () => {
     for (const id of [5507, 8064, 72904]) {
       await prepareTriangleCenter(id);

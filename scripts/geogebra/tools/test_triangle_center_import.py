@@ -15,6 +15,30 @@ from triangle_center_coordinates import coordinate_candidates, coordinate_text, 
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_additional_coordinate_syntax_and_brocard_angle(self):
+        examples = [
+            'Trilinears f(A,B,C):f(B,C,A):f(C,A,B), where f(A,B,C)=tan(A+2ω)',
+            'Trilinears T(A,B,C):T(B,C,A):T(C,A,B), where T(A,B,C)=cos(B-C) (Chris van Tienhoven, April 7, 2013)',
+            'Barycentrics (1+sec A/2)(sec B/2+sec C/2)-tan<sup>2</sup>A/2',
+            'Barycentrics f(A,B,C):f(B,C,A):f(C,A,B), where f(A,B,C)=(4 sin A)g(A,B,C)+(sin B)g(B,C,A)+(sin C)g(C,A,B), where g(A,B,C)=cos(A/3)+2 cos(B/3)cos(C/3)',
+            'Trilinears cos(A/2)*(p+q): : , where p=sin(A/2), q=cos((B-C)/2)',
+        ]
+        for text in examples:
+            with self.subTest(text=text):
+                self.assertEqual(len(coordinate_candidates('<p>' + text + '</p>')), 1)
+        omega_formula = coordinate_candidates('<p>' + examples[0] + '</p>')[0][1]
+        env = side_environment(5, 6, 7)
+        self.assertAlmostEqual(evaluate_formula(omega_formula, env), 5*math.tan(env['A']+2*math.atan(env['S']/env['SW'])))
+        self.assertEqual(coordinate_candidates('<p>Trilinears g(A,B,C):g(B,C,A):g(C,A,B), where f(A,B,C)=cos A</p>'), [])
+
+    def test_combo_can_be_real_on_only_one_sample(self):
+        recipe = shinagawa_candidates(5002, 'As a point on the Euler line, X(5002) has Shinagawa coefficients (E+2*F+2*Sqrt[F*(E+F)],-2*(E+F+Sqrt[F*(E+F)])).', 4)[0]
+        atlas = {'triangles': {'acute': [(0, 0), (4, 0), (1, 3)], 'obtuse': [(0, 0), (6, 0), (-1, 2)]}}
+        coords = {'acute': {2: (5/3, 1), 4: (1, 1)}, 'obtuse': {2: (5/3, 2/3), 4: (-1, -3.5)}}
+        self.assertIsNotNone(numeric_combo(recipe, [coords['acute'][2], coords['acute'][4]], atlas['triangles']['acute']))
+        self.assertIsNone(numeric_combo(recipe, [coords['obtuse'][2], coords['obtuse'][4]], atlas['triangles']['obtuse']))
+        self.assertTrue(shinagawa_candidate_supported(recipe, coords, atlas, [], [(2, 4)]))
+
     def test_shinagawa_coefficients_convert_to_normalized_combo(self):
         samples = [
             ('As a point on the Euler line, X(5046) has Shinagawa coefficients (abc$a$, - 4S^(2)), and also (R, -2r).',
@@ -374,6 +398,20 @@ class TriangleCenterImportTest(unittest.TestCase):
             self.assertLess(math.dist(numeric_formula(seeds[8064], tri), numeric_conjugate(source, tri, True)), 1e-9)
             target = numeric_formula(seeds[72904], tri)
             self.assertLess(abs(cross((x26[0]-x6[0],x26[1]-x6[1]), (target[0]-x6[0],target[1]-x6[1]))), 1e-8)
+
+    def test_reviewed_midpoint_trilinears(self):
+        from triangle_center_import import DATA
+        recipe = read_recipes(DATA / 'seeds.txt')[6160]
+        for triangle in [[(0, 0), (6, 0), (1, 4)], [(0, 0), (6, 0), (-1, 2)]]:
+            a, b, c = (math.dist(triangle[1], triangle[2]), math.dist(triangle[2], triangle[0]), math.dist(triangle[0], triangle[1]))
+            trilinears = [[(a+c)/(a+b), (b+a)/(b+c), (c+b)/(c+a)],
+                          [(a+b)/(a+c), (b+c)/(b+a), (c+a)/(c+b)]]
+            points = []
+            for values in trilinears:
+                weights = [side*value for side, value in zip((a, b, c), values)]
+                points.append(tuple(sum(w*p[i] for w, p in zip(weights, triangle))/sum(weights) for i in (0, 1)))
+            midpoint = tuple((points[0][i]+points[1][i])/2 for i in (0, 1))
+            self.assertLess(math.dist(numeric_formula(recipe, triangle), midpoint), 1e-9)
 
     def test_equivalent_coordinate_notation(self):
         sample = ('Barycentrics g(a,b,c) : g(b,c,a) :<br>'
