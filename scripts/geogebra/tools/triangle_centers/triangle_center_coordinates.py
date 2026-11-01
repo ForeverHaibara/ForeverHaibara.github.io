@@ -46,7 +46,7 @@ def coordinate_text(fragment: str) -> list[str]:
 @lru_cache(maxsize=8192)
 def normalize_formula(raw: str) -> str | None:
     raw = (unescape(raw).replace('−', '-').replace('×', '*').replace('·', '*')
-           .replace('π', 'pi').replace('ω', '(atan(S/SW))').replace('[', '(').replace(']', ')'))
+           .replace('π', 'pi').replace('ω', '(atan(S/SW))').replace('[', '(').replace(']', ')').replace('{', '(').replace('}', ')'))
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\s*(\d*)\s*([ABC])(?:\s*/\s*(\d+))?',
                  lambda m: '(%s(%s%s%s))^%s' % (m.group(1), (m.group(3) + '*') if m.group(3) else '', m.group(4), ('/' + m.group(5)) if m.group(5) else '', m.group(2)), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
@@ -248,6 +248,8 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
             elif (not CYCLIC.search(text) and re.search(r'[fght]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
                     and re.match(r'^\s*(?::|[fght]\s*\()', next_line, re.I)):
                 text += ' ' + next_line
+            elif re.search(r':\s*:', text) and re.match(r'^where\s+[A-Za-z]\s*=', next_line, re.I):
+                text += (' ' if text.rstrip().endswith(',') else ', ') + next_line
             elif CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
                 text += ' ' + next_line
             elif 'where' in text.lower() and '=' not in text[text.lower().find('where'):]:
@@ -267,12 +269,20 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
                 break
         text = re.sub(r'\s+\([^()]*,\s*(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}\)\s*$', '', text, flags=re.I)
         text = ATTRIBUTION.sub('', text)
-        local = re.search(r',\s*where\s+([d-hj-qtv-z])\s*=\s*([^,]+),\s*([d-hj-qtv-z])\s*=\s*([^,]+)\s*$', text)
-        if local and local.group(1) != local.group(3):
-            substitutions = {local.group(1): local.group(2), local.group(3): local.group(4)}
-            if all(normalize_formula(value) for value in substitutions.values()):
+        if re.search(r':\s*:.*\bwhere\b', text, re.I):
+            text = re.sub(r'\s*:\s*:\s*$', '', text)
+        local = re.search(r',\s*where\s+([A-Za-z])\s*=\s*([^,]+)(?:,\s*([A-Za-z])\s*=\s*([^,]+))?\s*$', text)
+        if local:
+            substitutions = {local[1]: local[2]}
+            if local[3]:
+                substitutions[local[3]] = local[4]
+            distinct = not local[3] or local[1] != local[3]
+            if (distinct and not (substitutions.keys() & (VARIABLES | FUNCTIONS))
+                    and all(normalize_formula(value) for value in substitutions.values())):
                 text = re.sub(r'\b(?:' + '|'.join(map(re.escape, substitutions)) + r')\b',
                               lambda m: '(' + substitutions[m.group()] + ')', text[:local.start()])
+            else:
+                continue  # Never silently shadow a global symbol or guess a local chain.
         where = WHERE.search(text)
         if where and CYCLIC.search(text[:where.start()]):
             head = CYCLIC.search(text[:where.start()])

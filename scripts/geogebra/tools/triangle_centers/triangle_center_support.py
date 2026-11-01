@@ -1,8 +1,10 @@
 """Offline import diagnostics and disposable, content-addressed extraction cache."""
-from functools import wraps
+from functools import wraps, lru_cache
 from pathlib import Path
+import ast
 import gzip
 import hashlib
+import inspect
 import json
 import re
 import threading
@@ -76,12 +78,40 @@ def heading_issues(source: str) -> list[str]:
     return issues
 
 
+def extraction_source_fingerprint(source):
+    tree = ast.parse(source)
+    definitions = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
+    pending = ['Recipe', 'RecipeCandidates', 'filter_candidates', 'read_page', 'extract_entry']
+    reachable = set()
+    while pending:
+        name = pending.pop()
+        if name in reachable or name not in definitions:
+            continue
+        reachable.add(name)
+        for call in ast.walk(definitions[name]):
+            if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id in definitions:
+                pending.append(call.func.id)
+    nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))
+             or getattr(node, 'name', None) in reachable]
+    return ast.dump(ast.Module(body=nodes, type_ignores=[]), include_attributes=False)
+
+
+@lru_cache(maxsize=1)
+def parser_fingerprint():
+    folder = Path(__file__).parent
+    digest = hashlib.sha256(b'extraction-cache-v3')
+    digest.update(extraction_source_fingerprint((folder/'triangle_center_import.py').read_text(encoding='utf-8')).encode())
+    for name in ('triangle_center_coordinates.py', 'triangle_center_sources.py'):
+        digest.update(ast.dump(ast.parse((folder/name).read_text(encoding='utf-8')), include_attributes=False).encode())
+    digest.update(ast.dump(ast.parse(inspect.getsource(heading_issues)), include_attributes=False).encode())
+    return digest.digest()
+
+
 def cache_key(source: str, excluded: set[int], part: int) -> str:
     import bs4
     digest = hashlib.sha256(source.encode())
     digest.update(json.dumps([part, sorted(excluded), bs4.__version__]).encode())
-    for name in ('triangle_center_import.py', 'triangle_center_coordinates.py', 'triangle_center_support.py', 'triangle_center_graph.py', 'triangle_center_sources.py'):
-        digest.update(Path(__file__).with_name(name).read_bytes())
+    digest.update(parser_fingerprint())
     return digest.hexdigest()
 
 

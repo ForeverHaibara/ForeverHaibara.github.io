@@ -63,3 +63,20 @@ python scripts/geogebra/tools/triangle_centers/triangle_center_import.py dry-run
 Coordinate transactions use a small overlay of changed/hidden values, committing
 that delta only after all checks pass. They do not copy the full coordinate map
 per replacement. Full audits still materialize the complete snapshot.
+
+
+Use `--uncovered-report .cache/triangle-centers/uncovered.json` with a build,
+check or dry-run to inspect only unresolved IDs, their source Part, candidate
+blockers and unresolved inputs. This opt-in report is not a duplicate selected
+recipe table. Primary categories summarize possibly overlapping candidate reasons;
+`geometry_or_transaction` and `coordinate_admission_or_variants` deliberately
+avoid claiming a more specific cause than observed.
+
+Coordinate parsing accepts arithmetic brace groups and one or two explicit,
+independent local scalar definitions, including a wrapped `where` line. Global
+symbol shadowing, unknown symbols and local definition chains remain rejected.
+Extraction cache fingerprints follow parser entry points and their local helper
+call graph, global grammar data, coordinate code and source patches. Solver and
+report-only edits no longer force page re-extraction; changes to parser helpers
+still invalidate the cache. This cache namespace upgrade rebuilds old checkpoints
+once, without changing generated recipe semantics.

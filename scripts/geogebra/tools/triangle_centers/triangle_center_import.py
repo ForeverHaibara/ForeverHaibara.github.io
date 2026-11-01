@@ -1479,6 +1479,73 @@ def fetch(parts: list[int]) -> None:
         print(f'Fetched Part {part}: {len(source):,} bytes')
 
 
+@stage
+def ideal_coordinate_formulas(eligible, atlas):
+    return [(number, recipe) for number, options in eligible.items()
+                      for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options)
+                      if number > NATIVE_MAX and recipe.operation == 'B' and all(
+                          isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
+                          for abc in atlas['triangles'].values())]
+
+
+@stage
+def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked, skipped, limits):
+    """Candidate-level blockers; primary buckets are summaries, not impossibility proofs."""
+    depth, length = validate_graph(records)
+    nonlinear = conjugate_levels(records)
+    entries = []
+    priority = ('coordinate_admission_or_variants', 'geometry_or_transaction', 'depth_budget',
+                'conjugate_budget', 'length_budget', 'input_type', 'ideal_formula',
+                'nonhomogeneous_formula', 'unclosed_dependency', 'missing_source_dependency',
+                'reviewed_skip_dependency', 'blocked_native')
+    for number in sorted(set(candidates)-set(records)):
+        if number <= NATIVE_MAX:
+            continue
+        reasons = Counter()
+        references = set()
+        formulas = []
+        for recipe in candidates[number]:
+            refs = recipe.references
+            references.update(ref for ref in refs if ref > NATIVE_MAX and ref not in records)
+            if any(ref in skipped for ref in refs):
+                why = 'reviewed_skip_dependency'
+            elif any(ref in blocked for ref in refs):
+                why = 'blocked_native'
+            elif any(ref > NATIVE_MAX and ref not in records and ref not in candidates for ref in refs):
+                why = 'missing_source_dependency'
+            elif any(ref > NATIVE_MAX and ref not in records for ref in refs):
+                why = 'unclosed_dependency'
+            else:
+                try:
+                    validate_recipe_inputs(recipe, records, set(directions))
+                    typed = True
+                except ValueError:
+                    typed = False
+                if not typed:
+                    why = 'input_type'
+                elif 1+max((depth.get(ref,0) for ref in refs), default=0) > limits[0]:
+                    why = 'depth_budget'
+                elif int(recipe.operation in {'G','T'})+max((nonlinear.get(ref,0) for ref in refs), default=0) > limits[2]:
+                    why = 'conjugate_budget'
+                elif limits[1] is not None and estimated_recipe_length(recipe,[length.get(ref,27) for ref in refs]) > limits[1]:
+                    why = 'length_budget'
+                elif recipe.operation == 'B':
+                    why = ('nonhomogeneous_formula' if not homogeneous_degree(recipe.formula)[0] else
+                           'ideal_formula' if not formula_candidate_supported(recipe,atlas) else
+                           'coordinate_admission_or_variants')
+                else:
+                    why = 'geometry_or_transaction'
+            reasons[why] += 1
+            if recipe.operation == 'B':
+                formulas.append(dict(formula=recipe.formula, blocker=why))
+        primary = next((why for why in priority if why in reasons), 'no_parsed_candidate')
+        entries.append(dict(id=number, part=parts[number], primary=primary,
+                            candidate_blockers=dict(reasons), unresolved_references=sorted(references),
+                            formulas=formulas))
+    return dict(count=len(entries), summary=dict(Counter(row['primary'] for row in entries)),
+                skipped=skipped, entries=entries)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
@@ -1491,6 +1558,7 @@ def main() -> None:
                         help='Optional estimated construction-length limit; unlimited by default')
     parser.add_argument('--max-conjugates', type=int, default=1)
     parser.add_argument('--no-cache', action='store_true', help='Bypass persistent extraction cache')
+    parser.add_argument('--uncovered-report', type=Path, help='Optional diagnostic JSON for unresolved IDs only')
     parser.add_argument('--report', type=Path, help='Append structured progress events to this JSONL file')
     args = parser.parse_args()
     support.CACHE_ENABLED = not args.no_cache
@@ -1554,9 +1622,11 @@ def main() -> None:
     all_candidates: dict[int, list[Recipe]] = {}
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
+    source_parts = {}
     for part in args.parts:
         entries, candidates = read_page(part, blocked_native | deferred_targets, coordinate_lines)
         entry_count += len(entries)
+        source_parts.update({number: part for number in entries})
         for number, options in candidates.items():
             if number in all_candidates:
                 raise ValueError(f'X({number}) appears in multiple ETC parts')
@@ -1587,11 +1657,7 @@ def main() -> None:
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
                                  coordinate_lines, native_directions, selection_exclusions)
-    ideal_formulas = [(number, recipe) for number, options in eligible.items()
-                      for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options)
-                      if number > NATIVE_MAX and recipe.operation == 'B' and all(
-                          isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
-                          for abc in atlas['triangles'].values())]
+    ideal_formulas = ideal_coordinate_formulas(eligible, atlas)
     print(f'Coordinate anchors: {len(anchors)} barycentric; '
           f'{len(ideal_formulas)} parsed formulas deferred as ideal')
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
@@ -1611,6 +1677,12 @@ def main() -> None:
     selected.update(ideal_markers)
     validate_graph(selected)
     validate_types(selected, set(native_directions))
+    if args.uncovered_report:
+        diagnostic = uncovered_diagnostics(all_candidates, selected, source_parts, atlas,
+            native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates))
+        args.uncovered_report.parent.mkdir(parents=True, exist_ok=True)
+        args.uncovered_report.write_text(json.dumps(diagnostic,ensure_ascii=False,indent=2),encoding='utf-8')
+        report('uncovered', count=diagnostic['count'], summary=diagnostic['summary'])
     output = chunks(selected)
     generated = len(selected) - len(all_seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')
