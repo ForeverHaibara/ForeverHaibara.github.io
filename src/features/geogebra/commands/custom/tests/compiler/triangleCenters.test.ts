@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -97,6 +97,15 @@ describe('extended TriangleCenter dispatch', () => {
       expect(relation).toContain('Distance(');
       expect(relation.length).toBeLessThan(6000);
     }
+  });
+
+  it('renders circumcircle inversion of native and extended source points', () => {
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3455)', environment()))
+      .toBe('Reflect(TriangleCenter(A,B,C,67),Circle(A,B,C))');
+    const chained = compileStudioCommand('TriangleCenter(A,B,C,3110)', environment());
+    expect(chained).toContain('Reflect(');
+    expect(chained).toContain('Circle(A,B,C)');
+    expect(chained).not.toContain('TriangleCenter(A,B,C,3286)');
   });
 
   it('uses ideal directions in intersections and isogonal conjugates', () => {

@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry, listed_lines,
                                     coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
-                                    numeric_formula_projective,
+                                    numeric_formula_projective, numeric_circum_inverse,
                                     native_status_rows, read_native_status, read_recipes,
                                     select_recipes, split_entries, unresolved_components,
                                     validate_graph, validate_types)
@@ -42,6 +42,22 @@ class TriangleCenterImportTest(unittest.TestCase):
         recipes = extract_entry(4100, html, 3)
         self.assertEqual({(r.operation, r.references) for r in recipes},
                          {('G', (7,)), ('T', (8,)), ('L', (9, 1, 2)), ('J', (1, 3, 2, 4))})
+
+    def test_circumcircle_inverse_relations(self):
+        html = ('<h3 id="X4108">X(4108) = INVERSE-IN-CIRCUMCIRCLE OF X(7)</h3>'
+                '<p>X(4108) = circumcircle-inverse of X(8)<br>'
+                'X(4108) = circumcircle-inverse of X(9) wrt another triangle</p>')
+        self.assertEqual({recipe.row() for recipe in extract_entry(4108, html, 3)},
+                         {'4108 V 7', '4108 V 8'})
+        triangle = [(0, 0), (6, 0), (1, 4)]
+        source = (1, 1)
+        inverse = numeric_circum_inverse(source, triangle)
+        self.assertIsNotNone(inverse)
+        restored = numeric_circum_inverse(inverse, triangle)
+        self.assertAlmostEqual(restored[0], source[0])
+        self.assertAlmostEqual(restored[1], source[1])
+        self.assertIsNone(numeric_circum_inverse((3, 1.375), triangle))
+        self.assertIsNone(numeric_circum_inverse(Ideal(1, 0), triangle))
 
     def test_bare_intersection_and_wrapped_line_list(self):
         html = ('<h3 id="X4101">X(4101) = INTERSECTION OF X(1)X(3) AND</h3>'

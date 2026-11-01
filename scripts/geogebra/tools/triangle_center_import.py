@@ -44,12 +44,13 @@ PROJECTION = re.compile(rf'^orthogonal projection of {POINT}\s+on\s+(?:the\s+)?l
 LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
 ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
 ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
+CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'B': 0}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'J': 7, 'G': 8, 'T': 9, 'B': 10}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'B': 0}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'B': 11}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'B': 4}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies on\b.*\bthese\s*(?:\(parallel\)\s*)?lines\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -257,7 +258,8 @@ def extract_entry(number: int, fragment: str, part: int,
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
                                 (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
-                                (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T')):
+                                (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T'),
+                                (CIRCUM_INVERSE, 'V')):
             match = pattern.match(body)
             if match and not CONDITIONAL.search(body[match.end():]):
                 found[(opcode, tuple(map(int, match.groups())))] = line
@@ -467,7 +469,7 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         return 1100 + children[0]
     if recipe.operation == 'B':
         return 150 + 18 * len(recipe.formula)
-    return 24 + sum(children)
+    return (95 if recipe.operation == 'V' else 24) + sum(children)
 
 
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
@@ -504,7 +506,7 @@ def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
         ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
                  for ref in recipe.references]
         op = recipe.operation
-        valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I'} else
+        valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V'} else
                  not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
         if not valid:
             raise ValueError(f'Invalid ideal-point input in X({number}) {op}')
@@ -564,6 +566,27 @@ def numeric_conjugate(p: Coordinate, abc: list[tuple[float, float]],
         return Ideal(*d) if allow_ideal and math.hypot(*d) > 1e-12 else None
     answer = (sum(weight * vertex[0] for weight, vertex in zip(weights, abc))/denominator,
               sum(weight * vertex[1] for weight, vertex in zip(weights, abc))/denominator)
+    return answer if all(math.isfinite(value) for value in answer) else None
+
+
+def numeric_circum_inverse(p: Coordinate, abc: list[tuple[float, float]]) -> Coordinate | None:
+    if isinstance(p, Ideal):
+        return None
+    a, b, c = abc
+    u, v = (b[0]-a[0], b[1]-a[1]), (c[0]-a[0], c[1]-a[1])
+    determinant = 2 * (u[0]*v[1]-u[1]*v[0])
+    if abs(determinant) < 1e-12:
+        return None
+    uu, vv = u[0]**2+u[1]**2, v[0]**2+v[1]**2
+    center = (a[0]+(uu*v[1]-vv*u[1])/determinant,
+              a[1]+(vv*u[0]-uu*v[0])/determinant)
+    offset = (p[0]-center[0], p[1]-center[1])
+    squared = offset[0]**2+offset[1]**2
+    if squared < 1e-12:
+        return None
+    radius_squared = (a[0]-center[0])**2+(a[1]-center[1])**2
+    answer = (center[0]+radius_squared*offset[0]/squared,
+              center[1]+radius_squared*offset[1]/squared)
     return answer if all(math.isfinite(value) for value in answer) else None
 
 
@@ -645,6 +668,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 t = ((p[0]-q[0])*d[0]+(p[1]-q[1])*d[1])/denominator
                 foot = (q[0]+t*d[0], q[1]+t*d[1])
                 answer = foot if op == 'P' else (2*foot[0]-p[0], 2*foot[1]-p[1])
+            elif op == 'V':
+                answer = numeric_circum_inverse(values[0], abc)
             else:
                 answer = numeric_conjugate(values[0], abc, op == 'G')
             if answer is not None and all(math.isfinite(value) for value in
@@ -723,6 +748,13 @@ def conjugate_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
                                                recipe.operation == 'G') is None:
             return False
     return True
+
+
+def inversion_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]],
+                                  atlas: dict) -> bool:
+    return all((source := points.get(recipe.references[0])) is not None
+               and numeric_circum_inverse(source, atlas['triangles'][shape]) is not None
+               for shape, points in coordinates.items())
 
 
 def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
@@ -840,6 +872,9 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
+                if coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
+                        recipe, coordinates, atlas):
+                    continue
                 if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
@@ -885,6 +920,9 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     recipe, refine_coordinates, incidence_lines[number]):
                 continue
             if refine_coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
+                    recipe, refine_coordinates, atlas):
+                continue
+            if refine_coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
                     recipe, refine_coordinates, atlas):
                 continue
             if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
@@ -1025,7 +1063,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIJGTB',
+    parser.add_argument('--auto-operations', default='MRCAPLIVJGTB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=6)
     parser.add_argument('--max-depth', type=int, default=6)
