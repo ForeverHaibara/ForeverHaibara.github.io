@@ -5,15 +5,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 import triangle_center_import as importer
-from triangle_center_support import heading_issues
 
 
 class ImportInfrastructureTest(unittest.TestCase):
-    def test_preflight_recognizes_missed_boundaries_and_conflicting_titles(self):
-        for anchor, title in [('X54357)', 54357), ('X67713 ', 67713), ('X57621', 57622)]:
-            self.assertTrue(heading_issues(f'<h3 id="{anchor}">X({title}) = CENTER</h3>'))
-        self.assertTrue(heading_issues('<h3 id="X4000">X(4000)</h3>' * 2))
-        self.assertEqual(heading_issues('<h3 id="X4000">X(4000) = CENTER</h3>'), [])
 
     def test_seed_skip_is_explicit_and_cannot_conflict(self):
         with tempfile.TemporaryDirectory(dir=importer.CACHE) as folder:

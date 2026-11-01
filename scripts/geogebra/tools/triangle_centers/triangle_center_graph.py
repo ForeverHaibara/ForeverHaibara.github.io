@@ -1,6 +1,46 @@
 """Transactional metrics for a selected DAG; candidate families remain separate."""
 from collections import ChainMap, defaultdict
 from hashlib import blake2b
+from collections.abc import MutableMapping
+
+
+class CoordinateOverlay(MutableMapping):
+    """Small write set over an immutable-until-commit coordinate snapshot."""
+    def __init__(self, base, dirty):
+        self.base = base
+        self.hidden = set(dirty)
+        self.changed = {}
+
+    def __getitem__(self, key):
+        if key in self.changed:
+            return self.changed[key]
+        if key in self.hidden:
+            raise KeyError(key)
+        return self.base[key]
+
+    def __setitem__(self, key, value):
+        self.changed[key] = value
+
+    def __delitem__(self, key):
+        if key not in self:
+            raise KeyError(key)
+        self.changed.pop(key, None)
+        self.hidden.add(key)
+
+    def __iter__(self):
+        yield from self.changed
+        for key in self.base:
+            if key not in self.changed and key not in self.hidden:
+                yield key
+
+    def __len__(self):
+        return sum(1 for _ in self)
+
+    def commit(self):
+        for key in self.hidden:
+            self.base.pop(key, None)
+        self.base.update(self.changed)
+        return self.base
 
 
 class SelectedGraph:
@@ -151,7 +191,8 @@ class NumericTransactions:
         if not self.graph.replace(recipe, screen):
             self.rejected += 1
             return False
-        self.coordinates = proposed
+        self.coordinates = {shape: points.commit() if isinstance(points, CoordinateOverlay) else points
+                            for shape, points in proposed.items()}
         return True
 
     def remove(self, targets):

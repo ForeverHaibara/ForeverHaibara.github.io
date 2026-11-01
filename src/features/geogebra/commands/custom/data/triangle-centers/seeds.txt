@@ -67,3 +67,7 @@
 # 5373
 # 5394
 # 5626
+
+# Part 34 has two different complete definitions both labeled X(66288).
+# Both source fragments are isolated by the reviewed file patch; no ID is guessed.
+66288 SKIP source-error: conflicting duplicate definitions in cached Part 34

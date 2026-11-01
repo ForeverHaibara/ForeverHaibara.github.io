@@ -23,7 +23,8 @@ from urllib.request import Request, urlopen
 
 import triangle_center_support as support
 from triangle_center_support import stage, report
-from triangle_center_graph import SelectedGraph, NumericTransactions
+from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
+from triangle_center_sources import prepare_source
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -448,7 +449,7 @@ def extract_entry(number: int, fragment: str, part: int,
 def read_page(part: int, excluded: set[int] | None = None,
               coordinate_lines: dict[int, list[tuple[int, int]]] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
     path = CACHE / f'ETCPart{part}.html'
-    source = path.read_text(encoding='utf-8', errors='replace')
+    source = prepare_source(part, path.read_text(encoding='utf-8', errors='replace'))
     issues = support.heading_issues(source)
     if issues:
         raise ValueError(f'Part {part} source preflight failed: ' + '; '.join(issues))
@@ -478,7 +479,8 @@ def read_page(part: int, excluded: set[int] | None = None,
         if number in candidates:
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
-        candidates[number] = extract_entry(number, fragment, part, excluded, compact=True)
+        candidates[number] = (extract_entry(number, fragment, part, excluded, compact=True)
+                              if number > NATIVE_MAX else [])
         if any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
                for r in (candidates[number].explicit if isinstance(candidates[number], RecipeCandidates) else candidates[number])):
             page_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
@@ -864,14 +866,16 @@ def numeric_combo(recipe: Recipe, values: list[Coordinate], abc: list[tuple[floa
 
 def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                         native_directions: dict[int, tuple[int, int]] | None = None, *,
-                        cached=None, dirty=None) -> dict[str, dict[int, Coordinate]]:
+                        cached=None, dirty=None, overlay=False) -> dict[str, dict[int, Coordinate]]:
     results: dict[str, dict[int, Coordinate]] = {}
     for shape, native in atlas['coordinates'].items():
-        points: dict[int, Coordinate] = (dict(cached[shape]) if cached is not None else
+        points: dict[int, Coordinate] = (CoordinateOverlay(cached[shape], dirty or ()) if overlay and cached is not None else
+                                          dict(cached[shape]) if cached is not None else
                                           {int(number): tuple(xy) for number, xy in native.items()})
-        for number in dirty or ():
-            points.pop(number, None)
-        for number, (a, b) in (native_directions or {}).items():
+        if not overlay:
+            for number in dirty or ():
+                points.pop(number, None)
+        for number, (a, b) in ((native_directions or {}).items() if cached is None else ()):
             if a in points and b in points and not isinstance(points[a], Ideal) and not isinstance(points[b], Ideal):
                 d = direction(points[a], points[b])
                 if d is not None and math.hypot(*d) > 1e-9:
@@ -1316,7 +1320,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
 
     geometry = (NumericTransactions(graph,
                 lambda records, cached, dirty: numeric_coordinates(records, atlas, native_directions,
-                                                                    cached=cached, dirty=dirty),
+                                                                    cached=cached, dirty=dirty, overlay=True),
                 valid_result, {n: {ref for pair in lines for ref in pair}
                                for n, lines in incidence_lines.items()}) if atlas else None)
 
@@ -1477,7 +1481,7 @@ def fetch(parts: list[int]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit'))
+    parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
     parser.add_argument('--auto-operations', default='MRCAPLIVJGTFB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
@@ -1497,11 +1501,11 @@ def main() -> None:
            max_length=args.max_length, max_conjugates=args.max_conjugates,
            operations=args.auto_operations, coordinate_limit=args.max_coordinate_anchors_per_component,
            cache=support.CACHE_ENABLED, python=sys.version.split()[0])
-    if args.action in {'audit', 'build', 'check'}:
+    if args.action in {'audit', 'build', 'check', 'dry-run'}:
         failures = []
         for part in args.parts:
             path = CACHE / f'ETCPart{part}.html'
-            issues = support.heading_issues(path.read_text(encoding='utf-8', errors='replace'))
+            issues = support.heading_issues(prepare_source(part, path.read_text(encoding='utf-8', errors='replace')))
             report('preflight', part=part, issues=len(issues))
             failures.extend(f'Part {part}: {issue}' for issue in issues)
         if failures:
@@ -1619,12 +1623,13 @@ def main() -> None:
         for path in chunk_dir.glob('*.txt'):
             if path.name not in output:
                 path.unlink()
-        audit = 'id\tpart\top\trefs\tevidence\n' + ''.join(
-            f'{recipe.number}\t{recipe.part}\t{recipe.operation}\t'
-            f'{recipe.formula or ",".join(map(str, recipe.references))}\t{recipe.evidence[:300]}\n'
-            for recipe in sorted(selected.values(), key=lambda item: item.number) if recipe.part)
-        CACHE.mkdir(parents=True, exist_ok=True)
-        (CACHE / 'selected.tsv').write_text(audit, encoding='utf-8', newline='\n')
+    elif args.action == 'dry-run':
+        existing = {n: r for path in chunk_dir.glob('*.txt') for n, r in read_recipes(path).items()}
+        depth, length = validate_graph(selected)
+        report('dry-run', records=len(selected), missing_existing=sorted(set(existing)-set(selected)),
+               changed_existing=sum(n in selected and r.row()!=selected[n].row() for n,r in existing.items()),
+               max_depth=max(depth.values(), default=0), max_length=max(length.values(), default=0),
+               coordinate_anchors=sum(r.operation=='B' for r in selected.values()))
     else:
         actual = {path.name: path.read_text(encoding='utf-8') for path in chunk_dir.glob('*.txt')}
         if output != actual:

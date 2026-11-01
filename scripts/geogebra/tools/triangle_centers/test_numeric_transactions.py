@@ -12,6 +12,19 @@ ATLAS = dict(triangles={'shape': [(0, 0), (6, 0), (1, 4)]},
 
 
 class NumericTransactionTest(TestCase):
+    def test_transaction_does_not_iterate_or_copy_unchanged_coordinates(self):
+        class NoFullScan(dict):
+            def __iter__(self):
+                raise AssertionError('full coordinate scan')
+            def keys(self):
+                raise AssertionError('full coordinate copy')
+
+        records = {4000: m.Recipe(4000, 'M', (1, 2))}
+        graph, geometry = self.make(records, lambda n, r, c: n in c['shape'])
+        geometry.coordinates['shape'] = NoFullScan(geometry.coordinates['shape'])
+        self.assertTrue(geometry.apply(m.Recipe(4000, 'M', (2, 2))))
+        self.assertEqual(geometry.coordinates['shape'][4000], (6, 0))
+
     def test_formula_sample_cache_tracks_formula_and_triangle(self):
         m._formula_sample.cache_clear()
         abc = ATLAS['triangles']['shape']
@@ -31,7 +44,7 @@ class NumericTransactionTest(TestCase):
         graph = SelectedGraph(records, m.NATIVE_MAX, m.estimated_recipe_length, (6, None, 1),
                               lambda recipe, overlay: m.validate_recipe_inputs(recipe, overlay, set()))
         geometry = NumericTransactions(graph,
-            lambda overlay, cached, dirty: m.numeric_coordinates(overlay, ATLAS, cached=cached, dirty=dirty),
+            lambda overlay, cached, dirty: m.numeric_coordinates(overlay, ATLAS, cached=cached, dirty=dirty, overlay=True),
             validate, evidence or {})
         return graph, geometry
 

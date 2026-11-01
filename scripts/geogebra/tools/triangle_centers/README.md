@@ -46,3 +46,20 @@ alternatives of removed centers, and use current inputs for subsequent candidate
 There is no fixed repair-pass cap. Repeated selected states are reported as an
 incidence conflict using a bounded-size 256-bit graph fingerprint; this avoids
 retaining a full graph per queue event. Independent full audits remain mandatory.
+
+
+Source-specific regressions are grouped in `test_source_errors.py` rather than
+one file per point. `triangle_center_sources.py` contains reviewed, snapshot-hash
+restricted boundary patches; the original downloaded pages remain untouched.
+Conflicting duplicate X(66288) fragments are isolated, with the exclusion reason
+in seeds. `selected.tsv` is retired; build no longer allocates or writes it.
+
+For full offline analysis without publishing runtime data:
+
+```sh
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py dry-run --parts 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 --report .cache/triangle-centers/full.jsonl
+```
+
+Coordinate transactions use a small overlay of changed/hidden values, committing
+that delta only after all checks pass. They do not copy the full coordinate map
+per replacement. Full audits still materialize the complete snapshot.
