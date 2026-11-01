@@ -86,6 +86,16 @@ def normalize_formula(raw: str) -> str | None:
     return formula
 
 
+def is_constant_exponent(node: ast.AST) -> bool:
+    if isinstance(node, ast.Constant):
+        return isinstance(node.value, (int, float))
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        return is_constant_exponent(node.operand)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+        return is_constant_exponent(node.left) and is_constant_exponent(node.right)
+    return False
+
+
 def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
@@ -100,13 +110,11 @@ def validate_formula(formula: str) -> ast.Expression:
                 raise ValueError('Invalid coordinate constant')
             continue
         if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow)):
-            if isinstance(node.op, ast.Pow) and not isinstance(node.right, ast.Constant):
-                # Rational exponents are represented by (1/2); inspect below.
-                if not (isinstance(node.right, ast.BinOp) and isinstance(node.right.op, ast.Div)
-                        and all(isinstance(x, ast.Constant) for x in (node.right.left, node.right.right))):
+            if isinstance(node.op, ast.Pow):
+                if not is_constant_exponent(node.right):
                     raise ValueError('Variable exponent')
-            if isinstance(node.op, ast.Pow) and isinstance(node.right, ast.Constant) and abs(node.right.value) > 16:
-                raise ValueError('Exponent is too large')
+                if isinstance(node.right, ast.Constant) and abs(node.right.value) > 16:
+                    raise ValueError('Exponent is too large')
             continue
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             continue
