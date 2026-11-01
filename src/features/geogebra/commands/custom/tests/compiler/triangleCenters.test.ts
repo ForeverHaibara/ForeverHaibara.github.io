@@ -179,4 +179,15 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).toContain('^3');
     for (const output of [barycentric, trilinear, conway]) expect(output.length).toBeLessThan(50_000);
   });
+
+  it('loads recovered wrapped and longer coordinates and their dependent constructions', async () => {
+    for (const id of [5374, 7638, 7639, 7640, 9728]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result.length).toBeLessThan(50_000);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5374)', environment())).toContain('cot(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,9728)', environment())).toContain('Distance(B,C)');
+  });
 });

@@ -23,14 +23,20 @@ CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\
 WHERE = re.compile(r'where\s+([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
 LABEL = re.compile(r'^(Barycentrics|Trilinears)\b\s*(.*)$', re.I)
 MAX_FORMULA_LENGTH = 500
+MAX_FORMULA_EXPONENT = 32
+MAX_FORMULA_NODES = 1000
 
 
 def coordinate_text(fragment: str) -> list[str]:
+    # Source formatting alone does not create an HTML line break. Keep a blank
+    # source line as a boundary, and leave explicit <br>/block boundaries below.
+    fragment = re.sub(r'[ \t]*\r?\n(?:[ \t]*\r?\n)*[ \t]*',
+                      lambda m: '\n' if m.group().count('\n') > 1 else ' ', fragment)
     fragment = re.sub(r'<sup[^>]*>(.*?)</sup>', lambda m: '^(' + unescape(re.sub('<[^>]+>', '', m.group(1))) + ')',
                       fragment, flags=re.I | re.S)
     fragment = re.sub(r'<sub[^>]*>(.*?)</sub>', lambda m: '_' + unescape(re.sub('<[^>]+>', '', m.group(1))),
                       fragment, flags=re.I | re.S)
-    fragment = re.sub(r'<br\s*/?>|</(?:p|h3|div)>|<hr\b[^>]*>', '\n', fragment, flags=re.I)
+    fragment = re.sub(r'<br\s*/?>|</?(?:p|h3|div)\b[^>]*>|<hr\b[^>]*>', '\n', fragment, flags=re.I)
     plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text()).replace('\u00ad', '')
     return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
 
@@ -80,6 +86,8 @@ def normalize_formula(raw: str) -> str | None:
                 output.append('*')
         output.append(token)
     formula = ''.join(output)
+    if len(formula) > MAX_FORMULA_LENGTH:
+        return None
     try:
         validate_formula(formula)
     except (SyntaxError, ValueError):
@@ -87,21 +95,23 @@ def normalize_formula(raw: str) -> str | None:
     return formula
 
 
-def is_constant_exponent(node: ast.AST) -> bool:
+def constant_exponent(node: ast.AST) -> float | None:
     if isinstance(node, ast.Constant):
-        return isinstance(node.value, (int, float))
+        return float(node.value) if isinstance(node.value, (int, float)) and abs(node.value) <= 1_000_000 else None
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
-        return is_constant_exponent(node.operand)
+        value = constant_exponent(node.operand)
+        return None if value is None else (-value if isinstance(node.op, ast.USub) else value)
     if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
-        return is_constant_exponent(node.left) and is_constant_exponent(node.right)
-    return False
+        left, right = constant_exponent(node.left), constant_exponent(node.right)
+        return left / right if left is not None and right is not None and right != 0 else None
+    return None
 
 
 def validate_formula(formula: str) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
-    if len(nodes) > MAX_FORMULA_LENGTH:
+    if len(nodes) > MAX_FORMULA_NODES:
         raise ValueError('Coordinate expression is too large')
     for node in nodes:
         if isinstance(node, (ast.Expression, ast.Load, ast.Add, ast.Sub, ast.Mult, ast.Div,
@@ -112,9 +122,10 @@ def validate_formula(formula: str) -> ast.Expression:
             continue
         if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Pow)):
             if isinstance(node.op, ast.Pow):
-                if not is_constant_exponent(node.right):
+                exponent = constant_exponent(node.right)
+                if exponent is None:
                     raise ValueError('Variable exponent')
-                if isinstance(node.right, ast.Constant) and abs(node.right.value) > 16:
+                if not math.isfinite(exponent) or abs(exponent) > MAX_FORMULA_EXPONENT:
                     raise ValueError('Exponent is too large')
             continue
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
@@ -141,7 +152,9 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
         for next_line in lines[index+1:index+11]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
-            if (not CYCLIC.search(text) and re.search(r'[fght]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
+            if not text:
+                text = next_line
+            elif (not CYCLIC.search(text) and re.search(r'[fght]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
                     and re.match(r'^\s*(?::|[fght]\s*\()', next_line, re.I)):
                 text += ' ' + next_line
             elif CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
@@ -154,6 +167,8 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
             elif WHERE.search(text) and re.match(r'^(?:sin|cos|tan|cot|sec|csc)\s*\(', next_line, re.I) and normalize_formula(next_line):
                 text += ' ' + next_line
             elif not ':' in text and text.endswith('('):
+                text += ' ' + next_line
+            elif not CYCLIC.search(text) and not re.search(r':\s*:', text) and text.count('(') > text.count(')'):
                 text += ' ' + next_line
             elif not CYCLIC.search(text) and not re.search(r':\s*:', text) and text.rstrip().endswith(('+', '-', '*', '/', '^', '(')):
                 text += ' ' + next_line

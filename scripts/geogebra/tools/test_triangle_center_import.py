@@ -10,7 +10,7 @@ from triangle_center_import import (CACHE, Ideal, Recipe, combo_candidate, numer
                                     native_status_rows, read_native_status, read_recipes,
                                     select_recipes, split_entries, unresolved_components,
                                     validate_graph, validate_types)
-from triangle_center_coordinates import coordinate_candidates, evaluate_formula, normalize_formula, side_environment
+from triangle_center_coordinates import coordinate_candidates, coordinate_text, evaluate_formula, normalize_formula, side_environment
 
 
 class TriangleCenterImportTest(unittest.TestCase):
@@ -268,6 +268,33 @@ class TriangleCenterImportTest(unittest.TestCase):
             path.write_text(recipe.row() + '\n', encoding='utf-8')
             self.assertEqual(read_recipes(path)[4182].formula, recipe.formula)
 
+    def test_wrapped_coordinates_and_exponent_limits(self):
+        self.assertEqual(coordinate_text('Barycentrics a +\n b : :'), ['Barycentrics a + b : :'])
+        self.assertEqual(coordinate_text('first\n\nsecond'), ['first', 'second'])
+        self.assertEqual(coordinate_candidates('Barycentrics a+\nb : :\n<p>Unrelated description</p>')[0][1], 'a+b')
+        wrapped = ('Trilinears (cot A)<sup>1/2</sup> : (cot<br>'
+                   'B)<sup>1/2</sup> : (cot C)<sup>1/2</sup>')
+        self.assertEqual(coordinate_candidates(wrapped)[0][1], 'a*((cot(A))^(1/2))')
+        self.assertEqual(coordinate_candidates('Barycentrics<br>a^32+b^2 : :')[0][1], 'a^32+b^2')
+        for formula in ('a^33', 'a^(-33)', 'a^(100/2)', 'a^(1/0)', 'a^b'):
+            self.assertIsNone(normalize_formula(formula), formula)
+        self.assertEqual(normalize_formula('a^(-32)'), 'a^(-32)')
+        # Fewer than 500 characters, but more than 500 Python AST nodes.
+        long_polynomial = '+'.join(['a^2'] * 100)
+        self.assertEqual(normalize_formula(long_polynomial), long_polynomial)
+        self.assertIsNone(normalize_formula('+'.join(['a^2'] * 130)))
+
+    def test_coordinate_with_restricted_real_domain(self):
+        atlas = {'triangles': {'acute': [[0, 0], [6, 0], [1, 4]],
+                               'obtuse': [[0, 0], [6, 0], [-1, 2]]},
+                 'coordinates': {'acute': {}, 'obtuse': {}}}
+        recipe = Recipe(5374, 'B', (), formula='a*((cot(A))^(1/2))')
+        self.assertIsNotNone(numeric_formula(recipe, atlas['triangles']['acute']))
+        self.assertIsNone(numeric_formula(recipe, atlas['triangles']['obtuse']))
+        anchors = coordinate_anchors({5374: [recipe]}, {}, atlas, None, set(), {}, {})
+        self.assertEqual(set(anchors), {5374})
+        self.assertEqual(set(select_recipes({5374: [recipe]}, {}, 6, 10000, atlas=atlas)), {5374})
+
     def test_extended_seed_enters_after_its_dependencies(self):
         seed = Recipe(4000, 'J', (1, 4001, 2, 3))
         candidates = {4000: [Recipe(4000, 'J', (1, 2, 3, 4))],
@@ -295,6 +322,8 @@ class TriangleCenterImportTest(unittest.TestCase):
         self.assertEqual(set(selected), {4000, 5000})
         pinned = coordinate_anchors(candidates, {}, atlas, 1, {4000, 4001}, {}, {})
         self.assertEqual(set(pinned), {4000, 4001, 5000})
+        unlimited = coordinate_anchors(candidates, {}, atlas, None, set(), {}, {})
+        self.assertEqual(set(unlimited), {4000, 4001, 5000, 5001})
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],

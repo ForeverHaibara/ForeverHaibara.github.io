@@ -448,12 +448,12 @@ def unresolved_components(candidates: dict[int, list[Recipe]], baseline: dict[in
 
 
 def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, Recipe],
-                       atlas: dict, per_component: int, priority: set[int],
+                       atlas: dict, per_component: int | None, priority: set[int],
                        coordinate_lines: dict[int, list[tuple[int, int]]],
                        native_directions: dict[int, tuple[int, int]],
                        excluded: set[int] | None = None) -> dict[int, Recipe]:
     """Screen formulas, then allocate anchors separately to dependency components."""
-    if per_component <= 0:
+    if per_component is not None and per_component <= 0:
         return {}
     components = unresolved_components(candidates, baseline, excluded)
     sizes = Counter(components.values())
@@ -463,7 +463,7 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
         for shape, points in baseline_coordinates.items():
             center = numeric_formula(recipe, [tuple(xy) for xy in atlas['triangles'][shape]])
             if center is None:
-                return False
+                continue
             known: list[float] = []
             for a, b in coordinate_lines.get(recipe.number, []):
                 if a not in points or b not in points:
@@ -494,8 +494,9 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
             continue
         samples = [[numeric_formula(recipe, [tuple(xy) for xy in abc])
                     for abc in atlas['triangles'].values()] for recipe in formulas]
-        if any(any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
-                   for p, q in zip(samples[0], other)) for other in samples[1:]):
+        if any(not any(p is not None and q is not None for p, q in zip(samples[0], other)) or
+               any(math.dist(p, q) > 1e-5 * max(1, math.hypot(*p), math.hypot(*q))
+                   for p, q in zip(samples[0], other) if p is not None and q is not None) for other in samples[1:]):
             continue
         chosen = min(formulas, key=lambda recipe: (len(recipe.formula), recipe.formula))
         ranked.append((len(dependents[number]), len(chosen.formula), number, chosen))
@@ -509,7 +510,8 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
         pinned = [item for item in options if item[2] in priority]
         # Large clusters can use several anchors. Previously selected anchors
         # remain eligible even when they exceed the ordinary local allowance.
-        allowance = max(len(pinned), min(per_component, max(1, math.ceil(sizes[component] / 5))))
+        allowance = (len(options) if per_component is None else
+                     max(len(pinned), min(per_component, max(1, math.ceil(sizes[component] / 5)))))
         for _, _, number, recipe in pinned:
             selected[number] = recipe
         count = len(pinned)
@@ -841,7 +843,7 @@ def inversion_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
 
 
 def formula_candidate_supported(recipe: Recipe, atlas: dict) -> bool:
-    return all(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
+    return any(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
                for abc in atlas['triangles'].values())
 
 
@@ -1043,7 +1045,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     if atlas:
         for _ in range(30):
             coordinates = numeric_coordinates(selected, atlas, native_directions)
-            finite = set.intersection(*(set(points) for points in coordinates.values()))
+            finite = set.union(*(set(points) for points in coordinates.values()))
             missing = set(selected) - finite
             if missing:
                 number = min(missing)
@@ -1117,10 +1119,9 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         else:
             raise ValueError('Line-pair consistency did not stabilize')
         coordinates = numeric_coordinates(selected, atlas, native_directions)
-        for shape, points in coordinates.items():
-            missing = set(selected) - set(points)
-            if missing:
-                raise ValueError(f'Nonfinite generated centers for {shape}: {sorted(missing)[:10]}')
+        missing = set(selected) - set.union(*(set(points) for points in coordinates.values()))
+        if missing:
+            raise ValueError(f'Nonfinite generated centers on all sample triangles: {sorted(missing)[:10]}')
     validate_graph(selected)
     validate_types(selected, set(native_directions))
     return selected
@@ -1165,9 +1166,9 @@ def main() -> None:
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
     parser.add_argument('--auto-operations', default='MRCAPLIVJGTFB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
-    parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=6)
+    parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)
-    parser.add_argument('--max-length', type=int, default=6000)
+    parser.add_argument('--max-length', type=int, default=10000)
     parser.add_argument('--max-conjugates', type=int, default=1)
     args = parser.parse_args()
     if args.action == 'fetch':
@@ -1221,7 +1222,7 @@ def main() -> None:
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, deferred_targets, atlas, native_directions, require_seeds=False)
-    priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component else set()
+    priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
                                  coordinate_lines, native_directions, deferred_targets)
     ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
