@@ -22,6 +22,7 @@ TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
 CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
 WHERE = re.compile(r'where\s+([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
 LABEL = re.compile(r'^(Barycentrics|Trilinears)\b\s*(.*)$', re.I)
+ATTRIBUTION = re.compile(r"\s+\([A-ZÀ-ÖØ-Þ][\w\uFFFD.'’\-]*(?:\s+[A-ZÀ-ÖØ-Þ][\w\uFFFD.'’\-]*)*\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ\uFFFD'’\-]{1,}(?:,\s*[^()]*)?\)\s*$")
 MAX_FORMULA_LENGTH = 500
 MAX_FORMULA_EXPONENT = 32
 MAX_FORMULA_NODES = 1000
@@ -55,6 +56,8 @@ def normalize_formula(raw: str) -> str | None:
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'\b([Ss])_([ABCabc])\b', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
+    raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\s*/\s*(\d+)\b',
+                 lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)}/{m.group(4)})', raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\b',
                  lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
     raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
@@ -141,7 +144,12 @@ def validate_formula(formula: str) -> ast.Expression:
 
 
 def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
-    lines = coordinate_text(fragment)
+    lines: list[str] = []
+    for line in coordinate_text(fragment):
+        # Consecutive coordinate declarations may be separated only by source
+        # whitespace, which HTML collapses; each label still starts a new one.
+        lines.extend(re.split(r'\s+(?=(?:Barycentrics|Trilinears)\b)', line, flags=re.I)
+                     if LABEL.match(line) else [line])
     found: list[tuple[str, str, str]] = []
     for index, line in enumerate(lines):
         label = LABEL.match(line)
@@ -174,11 +182,12 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
                 text += ' ' + next_line
             else:
                 break
+        text = ATTRIBUTION.sub('', text)
         where = WHERE.search(text)
         if where and CYCLIC.search(text[:where.start()]):
             head = CYCLIC.search(text[:where.start()])
             if head and head.group(1).lower() == where.group(1).lower() and head.groups()[1:] == where.groups()[1:]:
-                raw = text[where.end():].split(' (Peter ', 1)[0].strip()
+                raw = text[where.end():].strip()
                 formula = normalize_formula(raw)
                 if formula:
                     barycentric = normalize_formula(f'a*({formula})') if trilinear else formula

@@ -190,4 +190,13 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,5374)', environment())).toContain('cot(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,9728)', environment())).toContain('Distance(B,C)');
   });
+
+  it('loads a coordinate followed by attribution and its dependent center', async () => {
+    for (const id of [5458, 5509, 5508]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).toContain('Distance(');
+    }
+  });
 });

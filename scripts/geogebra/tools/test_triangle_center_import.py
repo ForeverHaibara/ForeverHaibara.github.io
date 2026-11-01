@@ -284,6 +284,29 @@ class TriangleCenterImportTest(unittest.TestCase):
         self.assertEqual(normalize_formula(long_polynomial), long_polynomial)
         self.assertIsNone(normalize_formula('+'.join(['a^2'] * 130)))
 
+    def test_coordinate_attribution_after_source_newline(self):
+        html = ('Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b),\n'
+                'where f(a,b,c) = a(b-c)<sup>2</sup>(a<sup>3</sup>-b<sup>2</sup>c-bc<sup>2</sup>)\n'
+                '&nbsp;&nbsp; (Seichii Kirikami, July 2, 2013)<p>Unrelated text</p>')
+        self.assertEqual(coordinate_candidates(html)[0][1], 'a*(b-c)^(2)*(a^(3)-b^(2)*c-b*c^(2))')
+        self.assertEqual(coordinate_candidates('Barycentrics a+b : b+c : c+a (E. Danneels)')[0][1], 'a+b')
+        self.assertEqual(normalize_formula('sin 2A/3 + cot B/2'), 'sin(2*A/3)+cot(B/2)')
+        variants = ('Trilinears 1/(4 cos A + sec(A/3)) : : (Peter Moses, April 26, 2013)<br>'
+                    'Trilinears g(A,B,C) : g(B,C,A) : g(C,A,B), '
+                    'where g(A,B,C) = (sin 2A/3)/sin(5A/3) (Randy Hutson, August 9, 2014)')
+        recipes = [Recipe(5458, 'B', (), formula=formula) for _, formula, _ in coordinate_candidates(variants)]
+        self.assertEqual(len(recipes), 2)
+        for triangle in [[(0, 0), (6, 0), (1, 4)], [(0, 0), (6, 0), (-1, 2)]]:
+            p, q = (numeric_formula(recipe, triangle) for recipe in recipes)
+            self.assertAlmostEqual(p[0], q[0])
+            self.assertAlmostEqual(p[1], q[1])
+        self.assertEqual(coordinate_candidates('Barycentrics a(b c) : :')[0][1], 'a*(b*c)')
+        adjacent = 'Barycentrics unsupported\nBarycentrics (a-b-c)^2 : :'
+        self.assertEqual(coordinate_candidates(adjacent)[0][1], '(a-b-c)^2')
+        too_long = ('Barycentrics f(a,b,c) : f(b,c,a) : f(c,a,b),\nwhere f(a,b,c) = '
+                    + '+\n'.join(['a^2'] * 130))
+        self.assertEqual(coordinate_candidates(too_long), [])
+
     def test_coordinate_with_restricted_real_domain(self):
         atlas = {'triangles': {'acute': [[0, 0], [6, 0], [1, 4]],
                                'obtuse': [[0, 0], [6, 0], [-1, 2]]},
