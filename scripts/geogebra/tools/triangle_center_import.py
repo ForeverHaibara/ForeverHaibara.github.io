@@ -316,13 +316,42 @@ def read_coordinate_priority(path: Path) -> set[int]:
     return numbers
 
 
+def unresolved_components(candidates: dict[int, list[Recipe]], baseline: dict[int, Recipe],
+                          excluded: set[int] | None = None
+                          ) -> dict[int, int]:
+    """Weak components of unresolved extended centers, ignoring shared native anchors."""
+    pending = {number for number in candidates if number > NATIVE_MAX and number not in baseline
+               and number not in (excluded or set())}
+    parent = {number: number for number in pending}
+
+    def root(number: int) -> int:
+        while parent[number] != number:
+            parent[number] = parent[parent[number]]
+            number = parent[number]
+        return number
+
+    for target in pending:
+        for recipe in candidates[target]:
+            if recipe.operation == 'B':
+                continue
+            for reference in recipe.references:
+                if reference in pending:
+                    a, b = root(target), root(reference)
+                    if a != b:
+                        parent[max(a, b)] = min(a, b)
+    return {number: root(number) for number in pending}
+
+
 def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, Recipe],
-                       atlas: dict, budget: int, priority: set[int],
+                       atlas: dict, per_component: int, priority: set[int],
                        coordinate_lines: dict[int, list[tuple[int, int]]],
-                       native_directions: dict[int, tuple[int, int]]) -> dict[int, Recipe]:
-    """Select a small set of sound formula anchors before reopening the graph."""
-    if budget <= 0:
+                       native_directions: dict[int, tuple[int, int]],
+                       excluded: set[int] | None = None) -> dict[int, Recipe]:
+    """Screen formulas, then allocate anchors separately to dependency components."""
+    if per_component <= 0:
         return {}
+    components = unresolved_components(candidates, baseline, excluded)
+    sizes = Counter(components.values())
     baseline_coordinates = numeric_coordinates(baseline, atlas, native_directions)
 
     def agrees_with_known_line(recipe: Recipe) -> bool:
@@ -342,17 +371,17 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
             if known and min(known) > 1e-5 * max(1, math.hypot(*center)):
                 return False
         return True
-    ranked: list[tuple[int, int, int, int, Recipe]] = []
+    ranked: list[tuple[int, int, int, Recipe]] = []
     dependents: dict[int, set[int]] = defaultdict(set)
     for target, options in candidates.items():
-        if target in baseline:
+        if target not in components:
             continue
         for recipe in options:
             if recipe.operation != 'B':
                 for ref in recipe.references:
                     dependents[ref].add(target)
     for number, options in candidates.items():
-        if number <= NATIVE_MAX or number in baseline:
+        if number not in components:
             continue
         formulas = [recipe for recipe in options if recipe.operation == 'B'
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
@@ -364,20 +393,28 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
                    for p, q in zip(samples[0], other)) for other in samples[1:]):
             continue
         chosen = min(formulas, key=lambda recipe: (len(recipe.formula), recipe.formula))
-        ranked.append((len(dependents[number]), len(chosen.formula), number, chosen.part, chosen))
+        ranked.append((len(dependents[number]), len(chosen.formula), number, chosen))
     ranked.sort(key=lambda item: (-item[0], item[1], item[2]))
     selected: dict[int, Recipe] = {}
-    for _, _, number, _, recipe in ranked:
-        if number in priority and len(selected) < budget:
+    by_component: dict[int, list[tuple[int, int, int, Recipe]]] = defaultdict(list)
+    for item in ranked:
+        by_component[components[item[2]]].append(item)
+    for component in sorted(by_component):
+        options = by_component[component]
+        pinned = [item for item in options if item[2] in priority]
+        # Large clusters can use several anchors. Previously selected anchors
+        # remain eligible even when they exceed the ordinary local allowance.
+        allowance = max(len(pinned), min(per_component, max(1, math.ceil(sizes[component] / 5))))
+        for _, _, number, recipe in pinned:
             selected[number] = recipe
-    for part in sorted({item[3] for item in ranked}):
-        for _, _, number, candidate_part, recipe in ranked:
-            if candidate_part == part and len([r for r in selected.values() if r.part == part]) < 4 and len(selected) < budget:
-                selected[number] = recipe
-    for _, _, number, _, recipe in ranked:
-        if len(selected) >= budget:
-            break
-        selected[number] = recipe
+        count = len(pinned)
+        for _, _, number, recipe in options:
+            if count >= allowance:
+                break
+            if number in selected:
+                continue
+            selected[number] = recipe
+            count += 1
     return selected
 
 
@@ -942,7 +979,7 @@ def main() -> None:
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
     parser.add_argument('--auto-operations', default='MRCAPLIJGTB',
                         help='Operations allowed from text extraction; existing seeds are always kept')
-    parser.add_argument('--max-coordinate-anchors', type=int, default=64)
+    parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=6)
     parser.add_argument('--max-depth', type=int, default=6)
     parser.add_argument('--max-length', type=int, default=6000)
     parser.add_argument('--max-conjugates', type=int, default=1)
@@ -997,9 +1034,9 @@ def main() -> None:
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, deferred_targets, atlas, native_directions, require_seeds=False)
-    priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors else set()
-    anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors, priority,
-                                 coordinate_lines, native_directions)
+    priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component else set()
+    anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
+                                 coordinate_lines, native_directions, deferred_targets)
     ideal_formulas = [(number, recipe) for number, options in eligible.items() for recipe in options
                       if number > NATIVE_MAX and recipe.operation == 'B' and all(
                           isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)

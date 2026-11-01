@@ -8,7 +8,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3396, 3357, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5998, 6004, 6012, 72060, 73007, 72478, 73001, 72003, 8036, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3396, 3357, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5998, 6004, 6012, 72060, 73007, 72478, 73001, 72003, 72005, 8036, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('leaves native selectors untouched, including computed numbers', () => {
@@ -127,6 +127,11 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,4174)', environment())).toContain('^(6)');
     expect(compileStudioCommand('TriangleCenter(A,B,C,5600)', environment())).toContain('^(1/2)');
     expect(compileStudioCommand('TriangleCenter(A,B,C,5998)', environment())).toContain('^(1/2)');
+    for (const id of [72005, 9232]) {
+      const independent = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(independent).toContain('If(');
+      expect(independent).toContain('Distance(B,C)');
+    }
     const conway = compileStudioCommand('TriangleCenter(A,B,C,8036)', environment());
     expect(conway).toContain('sqrt(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).toContain('^3');

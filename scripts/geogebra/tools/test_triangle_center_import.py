@@ -5,10 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from triangle_center_import import (CACHE, Ideal, Recipe, direction_candidate_supported, extract_entry,
-                                    line_candidate_supported, numeric_coordinates, numeric_formula,
+                                    coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
                                     numeric_formula_projective,
                                     native_status_rows, read_native_status, read_recipes,
-                                    select_recipes, split_entries, validate_graph, validate_types)
+                                    select_recipes, split_entries, unresolved_components,
+                                    validate_graph, validate_types)
 from triangle_center_coordinates import coordinate_candidates, evaluate_formula, normalize_formula, side_environment
 
 
@@ -191,6 +192,26 @@ class TriangleCenterImportTest(unittest.TestCase):
         selected = select_recipes(candidates, {4000: seed}, 6, 6000)
         self.assertEqual(selected[4000], seed)
         self.assertEqual(selected[4001].operation, 'M')
+
+    def test_coordinate_allowance_is_local_to_unresolved_components(self):
+        candidates = {
+            4000: [Recipe(4000, 'B', (), formula='a')],
+            4001: [Recipe(4001, 'B', (), formula='b')],
+            4002: [Recipe(4002, 'M', (4000, 4001))],
+            5000: [Recipe(5000, 'B', (), formula='a')],
+            5001: [Recipe(5001, 'B', (), formula='b')],
+            5002: [Recipe(5002, 'M', (5000, 5001))],
+        }
+        components = unresolved_components(candidates, {})
+        self.assertEqual(components[4000], components[4002])
+        self.assertNotEqual(components[4000], components[5000])
+        atlas = {'triangles': {'acute': [[0, 0], [6, 0], [1, 4]],
+                               'obtuse': [[0, 0], [6, 0], [-1, 2]]},
+                 'coordinates': {'acute': {}, 'obtuse': {}}}
+        selected = coordinate_anchors(candidates, {}, atlas, 1, set(), {}, {})
+        self.assertEqual(set(selected), {4000, 5000})
+        pinned = coordinate_anchors(candidates, {}, atlas, 1, {4000, 4001}, {}, {})
+        self.assertEqual(set(pinned), {4000, 4001, 5000})
 
     def test_cycle_cannot_enter_generated_graph(self):
         candidates = {4000: [Recipe(4000, 'C', (4001,))],
