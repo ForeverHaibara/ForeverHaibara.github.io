@@ -230,6 +230,13 @@ class TriangleCenterImportTest(unittest.TestCase):
                       4002: [Recipe(4002, 'M', (4000, 2))]}
         self.assertEqual(set(select_recipes(candidates, {}, 6, 6000)), {4000, 4002})
 
+    def test_conjugate_of_coordinate_anchor_uses_bound_source_length(self):
+        candidates = {3387: [Recipe(3387, 'B', (), formula='a*(sec(A-pi/8))')],
+                      3385: [Recipe(3385, 'G', (3387,))]}
+        selected = select_recipes(candidates, {}, 6, 6000)
+        self.assertEqual(selected[3385].operation, 'G')
+        self.assertLess(validate_graph(selected)[1][3385], 6000)
+
     def test_prefers_safer_relation_and_skips_unavailable_native_anchor(self):
         seeds = {5000: Recipe(5000, 'M', (1, 2))}
         candidates = {4000: [Recipe(4000, 'J', (1, 2, 3, 4)),

@@ -418,6 +418,16 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
     return selected
 
 
+def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
+    if recipe.operation in {'G', 'T'}:
+        # The builder binds its input point once before expanding the signed
+        # area expressions, so a long coordinate source is not repeated.
+        return 1100 + children[0]
+    if recipe.operation == 'B':
+        return 150 + 18 * len(recipe.formula)
+    return 24 + sum(children)
+
+
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
     depth: dict[int, int] = {}
     length: dict[int, int] = {}
@@ -436,9 +446,7 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
         try:
             children = [visit(reference) for reference in records[number].references]
             depth[number] = 1 + max((item[0] for item in children), default=0)
-            length[number] = ((900 + 15 * children[0][1]) if records[number].operation in {'G', 'T'}
-                              else 150 + 18 * len(records[number].formula) if records[number].operation == 'B'
-                              else 24 + sum(item[1] for item in children))
+            length[number] = estimated_recipe_length(records[number], [item[1] for item in children])
             return depth[number], length[number]
         finally:
             visiting.remove(number)
@@ -793,10 +801,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                     continue
                 candidate_depth = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
-                candidate_length = ((900 + 15 * length.get(recipe.references[0], 27))
-                                    if recipe.operation in {'G', 'T'}
-                                    else 150 + 18 * len(recipe.formula) if recipe.operation == 'B'
-                                    else 24 + sum(length.get(ref, 27) for ref in recipe.references))
+                candidate_length = estimated_recipe_length(recipe,
+                                                           [length.get(ref, 27) for ref in recipe.references])
                 candidate_nonlinear = int(recipe.operation in {'G', 'T'}) + max(
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
                 if (candidate_depth <= max_depth and candidate_length <= max_length

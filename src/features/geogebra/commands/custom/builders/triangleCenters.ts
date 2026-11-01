@@ -144,8 +144,8 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       if (recipe.operation === 'L') return point(`Reflect(${requirePoint(values[0])},${line(values[1], values[2])})`);
       if (recipe.operation === 'G' || recipe.operation === 'T') return point(values[0].kind === 'ideal'
         ? idealConjugate(values[0], recipe.operation === 'G')
-        : conjugate(recipe.operation === 'G')(
-          [...vertices, values[0].expression].map((expression) => ({ expression, type: 'point' })), allocate));
+        : bind([values[0].expression], allocate, ([source]) => conjugate(recipe.operation === 'G')(
+          [...vertices, source].map((expression) => ({ expression, type: 'point' })), allocate), 'point'));
       if (recipe.operation === 'C' || recipe.operation === 'A') {
         const [a, b, c] = vertices;
         return point(recipe.operation === 'C' ? `((${a})+(${b})+(${c})-(${requirePoint(values[0])}))/2`
