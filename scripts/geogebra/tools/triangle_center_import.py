@@ -70,7 +70,7 @@ class Recipe:
     def row(self) -> str:
         if self.operation == 'B':
             return f'{self.number} {self.operation} {self.formula}'
-        return f'{self.number} {self.operation} {" ".join(map(str, self.references))}'
+        return ' '.join((str(self.number), self.operation, *map(str, self.references)))
 
 
 @dataclass(frozen=True)
@@ -242,6 +242,7 @@ def extract_entry(number: int, fragment: str, part: int,
     found: dict[tuple[str, tuple[int, ...]], str] = {}
     lines = relation_lines(fragment)
     if is_infinite_entry(number, lines):
+        found[('I', ())] = f'X({number}) is ideal; no usable direction selected'
         for first, second in listed_lines(number, lines, excluded, limit=None):
             if (first, second) != (30, 511):
                 found[('I', (first, second))] = f'X({number}) is the ideal point in direction X({first})X({second})'
@@ -303,7 +304,7 @@ def read_recipes(path: Path) -> dict[int, Recipe]:
         number, opcode = int(fields[0]), fields[1]
         formula = fields[2] if opcode == 'B' and len(fields) == 3 else ''
         refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
-        if (number <= NATIVE_MAX or opcode not in ARITY or len(refs) != ARITY[opcode]
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and (not formula or len(formula) > MAX_FORMULA_LENGTH))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
@@ -503,6 +504,9 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
 def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
     """Ensure every stored operation can be rendered with its point/ideal inputs."""
     for number, recipe in records.items():
+        if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
+               for ref in recipe.references):
+            raise ValueError(f'Unknown ideal direction used in X({number}) {recipe.operation}')
         ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
                  for ref in recipe.references]
         op = recipe.operation
@@ -1114,7 +1118,8 @@ def main() -> None:
             all_candidates[number] = options
         print(f'Part {part}: {len(entries)} entries, {sum(bool(v) for v in candidates.values())} with explicit parsed constructions')
     atlas = read_native_atlas(CACHE / 'native-atlas.json')
-    eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations]
+    eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations
+                         and not (recipe.operation == 'I' and not recipe.references)]
                 for number, options in all_candidates.items()}
     relation_only = {number: [recipe for recipe in options if recipe.operation != 'B']
                      for number, options in eligible.items()}
@@ -1133,6 +1138,16 @@ def main() -> None:
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, deferred_targets, atlas, native_directions)
+    # Directionless ideal markers are coverage metadata, never graph inputs.
+    # Append only after selection and numeric screening have completed.
+    if 'I' in args.auto_operations:
+        for number, options in all_candidates.items():
+            if number > NATIVE_MAX and number not in selected and number not in deferred_targets:
+                marker = next((r for r in options if r.operation == 'I' and not r.references), None)
+                if marker:
+                    selected[number] = marker
+    validate_graph(selected)
+    validate_types(selected, set(native_directions))
     output = chunks(selected)
     generated = len(selected) - len(seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

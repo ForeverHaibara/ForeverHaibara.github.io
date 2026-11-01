@@ -30,8 +30,8 @@ class TriangleCenterImportTest(unittest.TestCase):
                 '<p>X(4002) lies on line X(3)X(4)<br>'
                 'X(4002) = midpoint of X(5) and X(6) if ABC is acute</p>')
         self.assertEqual(extract_entry(4002, html, 3), [])
-        self.assertEqual(extract_entry(4003, '<h3 id="X4003">X(4003) = IDEAL POINT</h3>'
-                                       '<p>X(4003) = isogonal conjugate of X(4)</p>', 3), [])
+        self.assertEqual([r.row() for r in extract_entry(4003, '<h3 id="X4003">X(4003) = IDEAL POINT</h3>'
+                                       '<p>X(4003) = isogonal conjugate of X(4)</p>', 3)], ['4003 I'])
 
     def test_conjugates_line_reflection_and_wrapped_intersection(self):
         html = ('<h3 id="X4100">X(4100) = ISOGONAL CONJUGATE OF X(7)</h3>'
@@ -97,7 +97,7 @@ class TriangleCenterImportTest(unittest.TestCase):
                 '<p>X(4102) lies on these lines: {1, 3}, {2, 4}<br>'
                 'X(4102) = infinite point of a line</p>')
         self.assertEqual({recipe.row() for recipe in extract_entry(4102, html, 3)},
-                         {'4102 I 1 3', '4102 I 2 4'})
+                         {'4102 I', '4102 I 1 3', '4102 I 2 4'})
         other = ('<h3 id="X4103">X(4103) = ISOGONAL CONJUGATE OF INFINITE POINT</h3>'
                  '<p>X(4103) lies on these lines: {1, 3}, {2, 4}</p>')
         self.assertTrue(extract_entry(4103, other, 3))
@@ -108,9 +108,22 @@ class TriangleCenterImportTest(unittest.TestCase):
         parallel = ('<h3 id="X4107">X(4107) = CENTER</h3><p>'
                     'X(4107) lies on these (parallel) lines: 1,2 3,4</p>')
         self.assertEqual({recipe.row() for recipe in extract_entry(4106, by_infinity_line, 3)},
-                         {'4106 I 1 2', '4106 I 3 4'})
+                         {'4106 I', '4106 I 1 2', '4106 I 3 4'})
         self.assertEqual({recipe.row() for recipe in extract_entry(4107, parallel, 3)},
-                         {'4107 I 1 2', '4107 I 3 4'})
+                         {'4107 I', '4107 I 1 2', '4107 I 3 4'})
+
+    def test_directionless_ideal_is_metadata_not_a_dependency(self):
+        html = '<h3 id="X4109">X(4109) = CENTER</h3><p>X(4109) lies on these lines: {30, 511}</p>'
+        marker = extract_entry(4109, html, 3)[0]
+        self.assertEqual(marker.row(), '4109 I')
+        with TemporaryDirectory(dir=CACHE) as folder:
+            path = Path(folder) / 'ideals.txt'
+            path.write_text(marker.row() + '\n', encoding='utf-8')
+            self.assertEqual(read_recipes(path)[4109].references, ())
+        validate_types({4109: marker}, set())
+        for op, refs in [('J', (1, 4109, 2, 3)), ('G', (4109,)), ('T', (4109,)), ('M', (1, 4109))]:
+            with self.assertRaisesRegex(ValueError, 'Unknown ideal direction'):
+                validate_types({4109: marker, 4110: Recipe(4110, op, refs)}, set())
 
     def test_numeric_ideal_direction_intersection_and_conjugate(self):
         triangle = [(0, 0), (6, 0), (1, 4)]
