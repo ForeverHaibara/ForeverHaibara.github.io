@@ -80,7 +80,7 @@ def cache_key(source: str, excluded: set[int], part: int) -> str:
     import bs4
     digest = hashlib.sha256(source.encode())
     digest.update(json.dumps([part, sorted(excluded), bs4.__version__]).encode())
-    for name in ('triangle_center_import.py', 'triangle_center_coordinates.py', 'triangle_center_support.py'):
+    for name in ('triangle_center_import.py', 'triangle_center_coordinates.py', 'triangle_center_support.py', 'triangle_center_graph.py'):
         digest.update(Path(__file__).with_name(name).read_bytes())
     return digest.hexdigest()
 

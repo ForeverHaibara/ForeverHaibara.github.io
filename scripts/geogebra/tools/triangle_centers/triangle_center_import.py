@@ -22,6 +22,7 @@ from urllib.request import Request, urlopen
 
 import triangle_center_support as support
 from triangle_center_support import stage, report
+from triangle_center_graph import SelectedGraph
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -855,10 +856,14 @@ def numeric_combo(recipe: Recipe, values: list[Coordinate], abc: list[tuple[floa
 
 
 def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
-                        native_directions: dict[int, tuple[int, int]] | None = None) -> dict[str, dict[int, Coordinate]]:
+                        native_directions: dict[int, tuple[int, int]] | None = None, *,
+                        cached=None, dirty=None) -> dict[str, dict[int, Coordinate]]:
     results: dict[str, dict[int, Coordinate]] = {}
     for shape, native in atlas['coordinates'].items():
-        points: dict[int, Coordinate] = {int(number): tuple(xy) for number, xy in native.items()}
+        points: dict[int, Coordinate] = (dict(cached[shape]) if cached is not None else
+                                          {int(number): tuple(xy) for number, xy in native.items()})
+        for number in dirty or ():
+            points.pop(number, None)
         for number, (a, b) in (native_directions or {}).items():
             if a in points and b in points and not isinstance(points[a], Ideal) and not isinstance(points[b], Ideal):
                 d = direction(points[a], points[b])
@@ -867,7 +872,17 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
         abc = [tuple(xy) for xy in atlas['triangles'][shape]]
         visiting: set[int] = set()
 
+        failed: set[int] = set()
+
         def point(number: int) -> Coordinate | None:
+            if number in failed:
+                return None
+            result = evaluate_point(number)
+            if result is None:
+                failed.add(number)
+            return result
+
+        def evaluate_point(number: int) -> Coordinate | None:
             if number in points:
                 return points[number]
             if number <= NATIVE_MAX or number not in records or number in visiting:
@@ -921,7 +936,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 return answer
             return None
 
-        for number in records:
+        for number in (records if dirty is None else sorted(dirty)):
             point(number)
         results[shape] = points
     return results
@@ -1191,6 +1206,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             if ref > NATIVE_MAX:
                 watchers[ref].add(number)
     frontier = set(pending)
+    coordinate_snapshot = None
+    coordinate_dirty = None
     while pending:
         if not frontier:
             frontier = set(pending)
@@ -1199,7 +1216,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         possible: list[tuple[tuple, Recipe]] = []
         depth, length = validate_graph(selected)
         nonlinear = conjugate_levels(selected)
-        coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
+        coordinates = (numeric_coordinates(selected, atlas, native_directions,
+                                           cached=coordinate_snapshot, dirty=coordinate_dirty) if atlas else None)
+        coordinate_snapshot = coordinates
+        coordinate_dirty = set()
         active_visits += len(frontier)
         for number in frontier:
             for key, recipe in ranked_options(
@@ -1246,6 +1266,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 best[number] = item
         selected.update({number: item[1] for number, item in best.items()})
         pending.difference_update(best)
+        coordinate_dirty = set(best)
         frontier = {target for number in best for target in watchers.get(number, ()) if target in pending}
     report('closure-done', active_visits=active_visits, screened=dict(closure_screened),
            families_expanded=families_expanded)
@@ -1253,6 +1274,9 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         raise ValueError(f'Unclosed reviewed seeds: {sorted(set(seeds) - set(selected))}')
     # A line-list intersection may enter before the point needed by a simpler
     # definition. Reconsider it after the reachable graph has closed.
+    graph = SelectedGraph(selected, NATIVE_MAX, estimated_recipe_length,
+                          (max_depth, max_length, max_conjugates),
+                          lambda recipe, records: validate_recipe_inputs(recipe, records, native_ideal))
     refine_coordinates = numeric_coordinates(selected, atlas, native_directions) if atlas else None
     for number in sorted(set(selected) - set(seeds)):
         current = selected[number]
@@ -1287,17 +1311,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 continue
             if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
                 continue
-            selected[number] = recipe
-            try:
-                depth, length = validate_graph(selected)
-                nonlinear = conjugate_levels(selected)
-                valid = (max(depth.values()) <= max_depth and (max_length is None or max(length.values()) <= max_length)
-                         and max(nonlinear.values()) <= max_conjugates)
-            except ValueError:
-                valid = False
-            if valid:
+            if graph.replace(recipe):
                 break
-            selected[number] = current
     # A later substitution may move a supporting line. Recheck the finished
     # graph and replace any intersection whose final lines disagree.
     if atlas:
@@ -1307,17 +1322,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             missing = {number for number in set(selected) - finite if selected[number].operation != 'B'}
             if missing:
                 number = min(missing)
-                doomed = {number}
-                while True:
-                    more = {target for target, recipe in selected.items()
-                            if target not in doomed and any(ref in doomed for ref in recipe.references)}
-                    if not more:
-                        break
-                    doomed.update(more)
+                doomed = graph.descendants({number})
                 if doomed & set(seeds):
                     raise ValueError(f'Nonfinite result reaches a reviewed seed through X({number})')
-                for target in doomed:
-                    del selected[target]
+                graph.remove(doomed)
                 print(f'Deferred nonfinite X({number}) and {len(doomed)-1} dependent recipes')
                 continue
             invalid = [number for number, recipe in selected.items()
@@ -1345,30 +1353,15 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                             or (recipe.operation == 'I' and not direction_candidate_supported(
                                 recipe, coordinates, incidence_lines[number]))):
                         continue
-                    selected[number] = recipe
-                    try:
-                        depth, length = validate_graph(selected)
-                        nonlinear = conjugate_levels(selected)
-                        repaired = (max(depth.values()) <= max_depth and (max_length is None or max(length.values()) <= max_length)
-                                    and max(nonlinear.values()) <= max_conjugates)
-                    except ValueError:
-                        repaired = False
+                    repaired = graph.replace(recipe)
                     if repaired:
                         break
-                    selected[number] = current
                 if not repaired:
                     selected[number] = current
-                    doomed = {number}
-                    while True:
-                        more = {target for target, recipe in selected.items()
-                                if target not in doomed and any(ref in doomed for ref in recipe.references)}
-                        if not more:
-                            break
-                        doomed.update(more)
+                    doomed = graph.descendants({number})
                     if doomed & set(seeds):
                         raise ValueError(f'Invalid line pair reaches a reviewed seed through X({number})')
-                    for target in doomed:
-                        del selected[target]
+                    graph.remove(doomed)
                     print(f'Deferred X({number}) and {len(doomed)-1} dependent recipes after final line screen')
                     pruned = True
                     break
@@ -1383,6 +1376,8 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             raise ValueError(f'Nonfinite generated centers on all sample triangles: {sorted(missing)[:10]}')
     validate_graph(selected)
     validate_types(selected, set(native_directions))
+    report('replacement-metrics', attempts=graph.attempts, commits=graph.commits,
+           affected_visits=graph.visited)
     return selected
 
 

@@ -27,3 +27,12 @@ these snapshots are neither runtime data nor a source of geometric definitions.
 
 See the data maintenance README and the full-range scaling plan under
 `src/features/geogebra/commands/custom/` for domain rules and staged work.
+
+
+`triangle_center_graph.py` maintains reverse dependencies and cached
+(depth, estimated length, conjugate level) metrics for the selected DAG.
+Replacement transactions recompute the target and its downstream closure,
+check types and budgets, and commit only on success. Rejected replacements leave
+recipes, reverse indices and metrics unchanged. Final full validation remains
+independent. Closure sample evaluation reuses the preceding snapshot and
+recomputes newly admitted centers; undefined results are memoized per snapshot.
