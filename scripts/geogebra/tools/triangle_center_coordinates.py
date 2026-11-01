@@ -31,7 +31,7 @@ def coordinate_text(fragment: str) -> list[str]:
     fragment = re.sub(r'<sub[^>]*>(.*?)</sub>', lambda m: '_' + unescape(re.sub('<[^>]+>', '', m.group(1))),
                       fragment, flags=re.I | re.S)
     fragment = re.sub(r'<br\s*/?>|</(?:p|h3|div)>|<hr\b[^>]*>', '\n', fragment, flags=re.I)
-    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text())
+    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text()).replace('\u00ad', '')
     return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
 
 

@@ -116,7 +116,7 @@ def split_entries(source: str):
 def entry_lines(fragment: str) -> list[str]:
     # BR and block boundaries are authoritative; raw HTML line wraps are not.
     fragment = re.sub(r'<br\s*/?>|</(?:p|h3|div)>|<hr\b[^>]*>', '\n', fragment, flags=re.I)
-    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text())
+    plain = unescape(BeautifulSoup(fragment, 'html.parser').get_text()).replace('\u00ad', '')
     return [re.sub(r'\s+', ' ', line).strip() for line in plain.splitlines() if line.strip()]
 
 
