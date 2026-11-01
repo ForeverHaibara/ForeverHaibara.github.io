@@ -19,8 +19,8 @@ FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
-CYCLIC = re.compile(r'([ft])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
-WHERE = re.compile(r'where\s+([ft])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
+CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
+WHERE = re.compile(r'where\s+([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*=', re.I)
 LABEL = re.compile(r'^(Barycentrics|Trilinears)\b\s*(.*)$', re.I)
 MAX_FORMULA_LENGTH = 500
 
@@ -40,7 +40,7 @@ def normalize_formula(raw: str) -> str | None:
            .replace('π', 'pi').replace('[', '(').replace(']', ')'))
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
                  lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
-    raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc)\b', lambda m: m.group().lower(), raw)
+    raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc|Sqrt|Pi)\b', lambda m: m.group().lower(), raw)
 
     # ETC X(3371) prints pi8; do not silently interpret it as 8*pi.
     if re.search(r'\bpi\d', raw):
@@ -141,8 +141,8 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
         for next_line in lines[index+1:index+11]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
-            if (not CYCLIC.search(text) and re.search(r'[ft]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
-                    and re.match(r'^\s*(?::|[ft]\s*\()', next_line, re.I)):
+            if (not CYCLIC.search(text) and re.search(r'[fght]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
+                    and re.match(r'^\s*(?::|[fght]\s*\()', next_line, re.I)):
                 text += ' ' + next_line
             elif CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
                 text += ' ' + next_line
@@ -162,7 +162,7 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
         where = WHERE.search(text)
         if where and CYCLIC.search(text[:where.start()]):
             head = CYCLIC.search(text[:where.start()])
-            if head and tuple(head.groups()[1:]) == tuple(where.groups()[1:]):
+            if head and head.group(1).lower() == where.group(1).lower() and head.groups()[1:] == where.groups()[1:]:
                 raw = text[where.end():].split(' (Peter ', 1)[0].strip()
                 formula = normalize_formula(raw)
                 if formula:

@@ -188,6 +188,16 @@ class TriangleCenterImportTest(unittest.TestCase):
         self.assertEqual(normalize_formula('a2b4 + S_A'), 'a^2*b^4+SA')
         self.assertIsNone(normalize_formula('sin A - u cos A'))
 
+    def test_equivalent_coordinate_notation(self):
+        sample = ('Barycentrics g(a,b,c) : g(b,c,a) :<br>'
+                  'g(c,a,b), where g(a,b,c) = a*Sqrt[3]+b<br>'
+                  'Trilinears h(A,B,C) : h(B,C,A) : h(C,A,B), '
+                  'where h(A,B,C) = Sec[(A-2 Pi)/3]')
+        self.assertEqual([formula for _, formula, _ in coordinate_candidates(sample)],
+                         ['a*sqrt(3)+b', 'a*(sec((A-2*pi)/3))'])
+        self.assertEqual(coordinate_candidates('Barycentrics g(a,b,c) : g(b,c,a) : g(c,a,b), '
+                                               'where f(a,b,c) = a'), [])
+
     def test_coordinate_numeric_domain_and_compact_roundtrip(self):
         abc = [(0, 0), (6, 0), (1, 4)]
         recipe = Recipe(4182, 'B', (), formula='a^(1/2)*(b+c-a)')
