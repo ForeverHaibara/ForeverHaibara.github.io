@@ -568,16 +568,20 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
 def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
     """Ensure every stored operation can be rendered with its point/ideal inputs."""
     for number, recipe in records.items():
-        if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
-               for ref in recipe.references):
-            raise ValueError(f'Unknown ideal direction used in X({number}) {recipe.operation}')
-        ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
-                 for ref in recipe.references]
-        op = recipe.operation
-        valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F'} else
-                 not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
-        if not valid:
-            raise ValueError(f'Invalid ideal-point input in X({number}) {op}')
+        validate_recipe_inputs(recipe, records, native_ideal)
+
+
+def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_ideal: set[int]) -> None:
+    if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
+           for ref in recipe.references):
+        raise ValueError(f'Unknown ideal direction used in X({recipe.number}) {recipe.operation}')
+    ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
+             for ref in recipe.references]
+    op = recipe.operation
+    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F'} else
+             not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
+    if not valid:
+        raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
 
 
 def conjugate_levels(records: dict[int, Recipe]) -> dict[int, int]:
@@ -935,6 +939,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     selected = {number: recipe for number, recipe in seeds.items()
                 if all(reference <= NATIVE_MAX for reference in recipe.references)}
     native_directions = native_directions or {}
+    native_ideal = set(native_directions)
     blocked_native = (blocked_native or set()) - set(native_directions)
     deferred_targets = deferred_targets or set()
     if set(seeds) & deferred_targets:
@@ -960,6 +965,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if any(ref in blocked_native or ref in deferred_targets
                        or ref > NATIVE_MAX and ref not in selected
                        for ref in recipe.references):
+                    continue
+                try:
+                    validate_recipe_inputs(recipe, selected, native_ideal)
+                except ValueError:
                     continue
                 if coordinates and recipe.operation == 'J' and not line_candidate_supported(
                         recipe, coordinates, incidence_lines[number]):
@@ -1013,6 +1022,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         alternatives.sort(key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation],
                                               recipe.references))
         for recipe in alternatives:
+            try:
+                validate_recipe_inputs(recipe, selected, native_ideal)
+            except ValueError:
+                continue
             if refine_coordinates and recipe.operation == 'J' and not line_candidate_supported(
                     recipe, refine_coordinates, incidence_lines[number]):
                 continue

@@ -199,4 +199,13 @@ describe('extended TriangleCenter dispatch', () => {
       expect(result).toContain('Distance(');
     }
   });
+
+  it('loads recovered conjugate, reflection and coordinate cases', async () => {
+    for (const id of [3232, 5528, 7002, 8183]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3232)', environment())).toContain('asinh(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5528)', environment()))
+      .toBe('Reflect(TriangleCenter(A,B,C,9),TriangleCenter(A,B,C,100))');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,7002)', environment())).toContain('sec(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,8183)', environment())).toContain('^(1/3)');
+  });
 });

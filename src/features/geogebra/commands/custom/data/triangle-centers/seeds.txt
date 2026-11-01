@@ -19,3 +19,5 @@
 # Keep the previously screened ETC line pair used by X(73143).
 8004 J 3 3277 1135 8002
 73001 R 476 3109
+# ETC X(369), Peter Moses (2026-06-05): explicit cyclic barycentrics for X(3232).
+3232 B 1/((2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))^2+2*(b-c)*(2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))+6*b*c+8*a*(b+c)+5*(-a^2+b^2+c^2))

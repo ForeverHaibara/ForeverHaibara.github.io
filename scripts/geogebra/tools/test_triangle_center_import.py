@@ -1,6 +1,7 @@
 """Focused tests for ETC text parsing and dependency selection."""
 
 import unittest
+import math
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -244,6 +245,39 @@ class TriangleCenterImportTest(unittest.TestCase):
                          'a+((a-b+c)*(a+b-c))^(1/2)')
         self.assertEqual(normalize_formula('a2b4 + S_A'), 'a^2*b^4+SA')
         self.assertIsNone(normalize_formula('sin A - u cos A'))
+
+    def test_single_coordinate_and_commutative_cyclic_coordinates(self):
+        single = 'Barycentrics a sec<sup>4</sup>(B/4+ C/4)'
+        self.assertEqual(coordinate_candidates(single)[0][1], 'a*(sec(B/4+C/4))^4')
+        self.assertEqual(coordinate_candidates('Barycentrics a+b'), [])
+        triple = ('Barycentrics a - a<sup>1/3</sup>b<sup>1/3</sup>c<sup>1/3</sup> : '
+                  'b - a<sup>1/3</sup>b<sup>1/3</sup>c<sup>1/3</sup> : '
+                  'c - a<sup>1/3</sup>b<sup>1/3</sup>c<sup>1/3</sup>')
+        self.assertEqual(coordinate_candidates(triple)[0][1], 'a-a^(1/3)*b^(1/3)*c^(1/3)')
+        self.assertEqual(coordinate_candidates('Barycentrics a-b : b-c : c-b'), [])
+
+    def test_selector_skips_unusable_ideal_input(self):
+        candidates = {5528: [Recipe(5528, 'R', (1, 528)), Recipe(5528, 'R', (9, 100))]}
+        atlas = {'triangles': {'acute': [[0, 0], [6, 0], [1, 4]], 'obtuse': [[0, 0], [6, 0], [-1, 2]]},
+                 'coordinates': {s: {'1': [0, 0], '2': [1, 0], '11': [0, 1], '9': [2, 1], '100': [3, 2]}
+                                 for s in ('acute', 'obtuse')}}
+        selected = select_recipes(candidates, {}, 6, 6000, atlas=atlas, native_directions={528: (2, 11)})
+        self.assertEqual(selected[5528].row(), '5528 R 9 100')
+
+    def test_3232_reviewed_formula_agrees_with_isotomic_369(self):
+        from triangle_center_import import DATA
+        recipe = read_recipes(DATA / 'seeds.txt')[3232]
+        for a, b, c in [(5, 6, 7), (13, 10, 7), (4, 5, 6)]:
+            q = 12*(a*b+b*c+c*a)-(a+b+c)**2
+            lp = (a+b+c)/2 + math.sqrt(q)*math.sinh(math.asinh(12*math.sqrt(3)*(b-c)*(c-a)*(a-b)/q**1.5)/3)/math.sqrt(3)
+            def yff(x, y, z):
+                return lp**2-(2*z+x)*lp-x*x+y*y+2*z*z+2*y*z+3*z*x+2*x*y
+            reference = [1/yff(*sides) for sides in [(a,b,c), (b,c,a), (c,a,b)]]
+            from triangle_center_coordinates import rotate_formula
+            env = side_environment(a, b, c)
+            actual = [evaluate_formula(rotate_formula(recipe.formula, i), env) for i in range(3)]
+            for got, expected in zip(actual, reference):
+                self.assertAlmostEqual(got/sum(actual), expected/sum(reference), places=10)
 
     def test_equivalent_coordinate_notation(self):
         sample = ('Barycentrics g(a,b,c) : g(b,c,a) :<br>'

@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
              'S', 'SA', 'SB', 'SC', 'SW', 'r', 'R', 'pi'}
-FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc'}
+FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
@@ -143,6 +143,30 @@ def validate_formula(formula: str) -> ast.Expression:
     return tree
 
 
+def canonical_formula(formula: str):
+    """Compare commutative sums and products without algebraic rewriting."""
+    def canonical(node):
+        if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Mult)):
+            kind = type(node.op)
+            def flatten(child):
+                if isinstance(child, ast.BinOp) and isinstance(child.op, kind):
+                    return flatten(child.left) + flatten(child.right)
+                return [canonical(child)]
+            return (kind.__name__, tuple(sorted(flatten(node))))
+        if isinstance(node, ast.BinOp):
+            return (type(node.op).__name__, canonical(node.left), canonical(node.right))
+        if isinstance(node, ast.UnaryOp):
+            return (type(node.op).__name__, canonical(node.operand))
+        if isinstance(node, ast.Call):
+            return ('Call', node.func.id, canonical(node.args[0]))
+        if isinstance(node, ast.Name):
+            return ('Name', node.id)
+        if isinstance(node, ast.Constant):
+            return ('Constant', str(node.value))
+        raise ValueError('Unsupported coordinate syntax')
+    return canonical(validate_formula(formula).body)
+
+
 def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
     lines: list[str] = []
     for line in coordinate_text(fragment):
@@ -205,10 +229,18 @@ def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
         parts = text.split(':')
         if len(parts) == 3:
             formulas = [normalize_formula(part.strip()) for part in parts]
-            if all(formulas) and rotate_formula(formulas[0], 1) == formulas[1] and rotate_formula(formulas[0], 2) == formulas[2]:
+            if all(formulas) and all(canonical_formula(rotate_formula(formulas[0], i)) == canonical_formula(formulas[i]) for i in (1, 2)):
                 barycentric = normalize_formula(f'a*({formulas[0]})') if trilinear else formulas[0]
                 if barycentric:
                     found.append(('B', barycentric, line))
+        elif len(parts) == 1:
+            formula = normalize_formula(text)
+            if formula:
+                swapped = re.sub(r'[A-Za-z_]+', lambda m: {'b': 'c', 'c': 'b', 'B': 'C', 'C': 'B', 'sb': 'sc', 'sc': 'sb', 'SB': 'SC', 'SC': 'SB'}.get(m.group(), m.group()), formula)
+                if canonical_formula(formula) == canonical_formula(swapped):
+                    barycentric = normalize_formula(f'a*({formula})') if trilinear else formula
+                    if barycentric:
+                        found.append(('B', barycentric, line))
     return list(dict.fromkeys(found))
 
 
@@ -237,6 +269,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
     tree = validate_formula(formula)
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
+             'sinh': math.sinh, 'asinh': math.asinh,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),
              'csc': lambda x: 1/math.sin(x)}
 
