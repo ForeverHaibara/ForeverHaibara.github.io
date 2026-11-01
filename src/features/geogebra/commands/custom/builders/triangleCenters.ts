@@ -19,7 +19,7 @@ const size = (operation: Recipe['operation']) => operation === 'B' ? 0
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
-const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'SW', 'pi',
+const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'pi',
   'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh']);
 const validFormula = (formula: string): boolean => formula.length <= 500 && /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
   && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name));
@@ -105,6 +105,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
     return bind([`Distance(${B},${C})`, `Distance(${C},${A})`, `Distance(${A},${B})`], allocate, ([a, b, c]) => {
       const s = `((${a}+${b}+${c})/2)`;
       const S = `(2*sqrt(${s}*(${s}-${a})*(${s}-${b})*(${s}-${c})))`;
+      const E = `((${a}*${b}*${c})^2/(${S}^2))`;
       const variables: Record<string, string> = {
         a, b, c, A: `acos((${b}^2+${c}^2-${a}^2)/(2*${b}*${c}))`,
         B: `acos((${c}^2+${a}^2-${b}^2)/(2*${c}*${a}))`,
@@ -112,7 +113,8 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         s, sa: `((${b}+${c}-${a})/2)`, sb: `((${c}+${a}-${b})/2)`, sc: `((${a}+${b}-${c})/2)`,
         S, SA: `((${b}^2+${c}^2-${a}^2)/2)`, SB: `((${c}^2+${a}^2-${b}^2)/2)`,
         SC: `((${a}^2+${b}^2-${c}^2)/2)`, r: `(${S}/(${a}+${b}+${c}))`,
-        R: `((${a}*${b}*${c})/(2*${S}))`, SW: `((${a}^2+${b}^2+${c}^2)/2)`, pi: 'pi',
+        R: `((${a}*${b}*${c})/(2*${S}))`, SW: `((${a}^2+${b}^2+${c}^2)/2)`,
+        E, F: `((${a}^2+${b}^2+${c}^2)/2-${E})`, pi: 'pi',
       };
       return build(variables);
     }, 'number');

@@ -5,16 +5,72 @@ import math
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from triangle_center_import import (CACHE, Ideal, Recipe, combo_candidate, numeric_combo, direction_candidate_supported, extract_entry, listed_lines,
+from triangle_center_import import (CACHE, Ideal, Recipe, combo_candidate, shinagawa_candidates, shinagawa_candidate_supported, numeric_combo, direction_candidate_supported, extract_entry, listed_lines,
                                     coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
                                     numeric_formula_projective, numeric_circum_inverse,
                                     native_status_rows, read_native_status, read_recipes,
                                     select_recipes, split_entries, unresolved_components,
                                     validate_graph, validate_types)
-from triangle_center_coordinates import coordinate_candidates, coordinate_text, evaluate_formula, normalize_formula, side_environment
+from triangle_center_coordinates import coordinate_candidates, coordinate_text, evaluate_formula, homogeneous_degree, normalize_formula, side_environment
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_shinagawa_coefficients_convert_to_normalized_combo(self):
+        samples = [
+            ('As a point on the Euler line, X(5046) has Shinagawa coefficients (abc$a$, - 4S^(2)), and also (R, -2r).',
+             ['5046 F 2:3*(a*b*c*(a+b+c)) 4:-4*S^(2)', '5046 F 2:3*(R) 4:-2*r']),
+            ('As a point on the Euler line, X(5051) has Shinagawa coefficients (a*b*c+$a$(E+F),a*b*c-$a*SA$).',
+             ['5051 F 2:3*(a*b*c+(a+b+c)*(E+F)) 4:a*b*c-(a*SA+b*SB+c*SC)']),
+        ]
+        for line, expected in samples:
+            number = int(line.split('X(')[1].split(')')[0])
+            self.assertEqual([r.row() for r in shinagawa_candidates(number, line, 4)], expected)
+        equivalent = shinagawa_candidates(5046, samples[0][0], 4)
+        for triangle, centroid, orthocenter in [
+            ([(0, 0), (4, 0), (1, 3)], (5/3, 1), (1, 1)),
+            ([(0, 0), (6, 0), (-1, 2)], (5/3, 2/3), (-1, -3.5)),
+        ]:
+            p, q = [numeric_combo(item, [centroid, orthocenter], triangle) for item in equivalent]
+            self.assertAlmostEqual(p[0], q[0])
+            self.assertAlmostEqual(p[1], q[1])
+        text = 'As a point on the Euler line, X(4000) has Shinagawa coefficients (2, 3).'
+        recipe = shinagawa_candidates(4000, text, 3)[0]
+        triangle = [(0, 0), (4, 0), (1, 3)]
+        centroid, orthocenter = (5/3, 1), (1, 1)
+        actual = numeric_combo(recipe, [centroid, orthocenter], triangle)
+        a, b, c = (math.dist(triangle[1], triangle[2]), math.dist(triangle[2], triangle[0]), math.dist(triangle[0], triangle[1]))
+        env = side_environment(a, b, c)
+        weights = [2*env['S']**2 + 3*env['SB']*env['SC'],
+                   2*env['S']**2 + 3*env['SC']*env['SA'],
+                   2*env['S']**2 + 3*env['SA']*env['SB']]
+        expected = [sum(w*p[i] for w, p in zip(weights, triangle))/sum(weights) for i in (0, 1)]
+        for value, reference in zip(actual, expected):
+            self.assertAlmostEqual(value, reference)
+        self.assertAlmostEqual(env['E'], 4*env['R']**2)
+        self.assertAlmostEqual(env['F'], env['SW']-env['E'])
+        self.assertEqual(normalize_formula('bcS_BS_C+2EF+aS_A'), 'b*c*SB*SC+2*E*F+a*SA')
+        symbolic = ('As a point on the Euler line, X(4002) has Shinagawa coefficients '
+                    '($aS_A$abc, -$bcS_BS_C$), and also Shinagawa coefficients (R, r).')
+        self.assertEqual([r.row() for r in shinagawa_candidates(4002, symbolic, 3)],
+                         ['4002 F 2:3*((a*SA+b*SB+c*SC)*a*b*c) 4:-(b*c*SB*SC+c*a*SC*SA+a*b*SA*SB)',
+                          '4002 F 2:3*(R) 4:r'])
+        self.assertEqual(shinagawa_candidates(4001, text, 3), [])
+        self.assertEqual(shinagawa_candidates(4000, text[:-1] + ' if ABC is acute', 3), [])
+        self.assertEqual(shinagawa_candidates(4000, text.replace('(2, 3)', '(2, 3'), 3), [])
+        bad = 'As a point on the Euler line, X(4000) has Shinagawa coefficients (E^3-F^3*-768*F*S^2,E^3).'
+        self.assertEqual(shinagawa_candidates(4000, bad, 3), [])
+        self.assertFalse(homogeneous_degree('a*(13*SA+22)')[0])
+        self.assertTrue(homogeneous_degree('a*(13*cos(A)+22*sin(A))')[0])
+
+    def test_shinagawa_screen_rejects_conflicting_coordinates_and_lines(self):
+        recipe = shinagawa_candidates(4000, 'As a point on the Euler line, X(4000) has Shinagawa coefficients (1,1).', 3)[0]
+        tri = [[0, 0], [4, 0], [1, 3]]
+        atlas = {'triangles': {'acute': tri, 'obtuse': tri}}
+        coords = {shape: {2: (5/3, 1), 4: (1, 1), 1: (0, 0), 3: (0, 2)} for shape in atlas['triangles']}
+        self.assertTrue(shinagawa_candidate_supported(recipe, coords, atlas, [], []))
+        self.assertFalse(shinagawa_candidate_supported(recipe, coords, atlas, [], [(1, 3)]))
+        self.assertFalse(shinagawa_candidate_supported(recipe, coords, atlas,
+                         [Recipe(4000, 'B', (), formula='1')], []))
     def test_etc_combos(self):
         examples = [
             ('X(8350) = 4*SW^2*(15*S^2-SW^2)*X(3)+3*(3*S^2-SW^2)*(S^2+SW^2)*X(7840)', (3, 7840)),

@@ -164,8 +164,12 @@ describe('extended TriangleCenter dispatch', () => {
       expect(radical).toContain('^(1/2)');
       expect(radical).toContain('If(');
     }
-    expect(compileStudioCommand('TriangleCenter(A,B,C,3078)', environment())).toContain('cos(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,3856)', environment())).toContain('^(4)');
+    const shinagawa = compileStudioCommand('TriangleCenter(A,B,C,3078)', environment());
+    expect(shinagawa).toContain('TriangleCenter(A,B,C,2)');
+    expect(shinagawa).toContain('TriangleCenter(A,B,C,4)');
+    expect(shinagawa).toContain('Distance(B,C)');
+    expect(shinagawa).not.toMatch(/\b[EF]\b/u);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5600)', environment())).toContain('^(4)');
     expect(compileStudioCommand('TriangleCenter(A,B,C,4174)', environment())).toContain('^(6)');
     expect(compileStudioCommand('TriangleCenter(A,B,C,5600)', environment())).toContain('^(1/2)');
     expect(compileStudioCommand('TriangleCenter(A,B,C,5998)', environment())).toContain('^(1/2)');

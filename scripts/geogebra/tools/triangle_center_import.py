@@ -21,7 +21,7 @@ import time
 from urllib.request import Request, urlopen
 
 from bs4 import BeautifulSoup
-from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula,
+from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
                                          rotate_formula, side_environment, validate_formula,
                                          MAX_FORMULA_LENGTH)
 
@@ -151,6 +151,67 @@ def combo_candidate(number: int, line: str, part: int) -> Recipe | None:
     if len(set(refs)) != len(refs):
         return None
     return Recipe(number, 'F', tuple(refs), part, line, '|'.join(coefficients))
+
+
+def shinagawa_candidates(number: int, line: str, part: int) -> list[Recipe]:
+    """Convert ETC's (u,v) into the ordinary normalized combo (3u)X(2)+vX(4)."""
+    head = re.search(r'\bAs\s+a\s+point\s+on\s+the\s+Euler\s+line\s*,\s*X\s*\(\s*(\d+)\s*\)\s+has\s+Shinagawa\s+coefficients\s*', line, re.I)
+    if not head or int(head.group(1)) != number or CONDITIONAL.search(line[head.end():]):
+        return []
+
+    def parse_pair(start: int):
+        if start >= len(line) or line[start] != '(':
+            return None
+        depth, comma, in_sum = 0, None, False
+        for pos in range(start, len(line)):
+            char = line[pos]
+            if char == '$':
+                in_sum = not in_sum
+            elif not in_sum and char in '([':
+                depth += 1
+            elif not in_sum and char in ')]':
+                depth -= 1
+                if depth == 0:
+                    if char != ')' or comma is None:
+                        return None
+                    return line[start+1:comma], line[comma+1:pos], pos+1
+                if depth < 0:
+                    return None
+            elif not in_sum and char == ',' and depth == 1:
+                if comma is not None:
+                    return None
+                comma = pos
+        return None
+
+    def scalar(raw: str) -> str | None:
+        def expand(match: re.Match) -> str:
+            term = normalize_formula(match.group(1))
+            if not term:
+                raise ValueError('Invalid cyclic sum')
+            return '(' + '+'.join(rotate_formula(term, i) for i in range(3)) + ')'
+        try:
+            return normalize_formula(re.sub(r'\$([^$]+)\$', expand, raw))
+        except ValueError:
+            return None
+
+    found: list[Recipe] = []
+    position = head.end()
+    while (pair := parse_pair(position)) is not None:
+        u, v, end = pair
+        first, second = scalar(u), scalar(v)
+        if first and second:
+            valid_first, degree_first = homogeneous_degree(first)
+            valid_second, degree_second = homogeneous_degree(second)
+            if valid_first and valid_second and (degree_first is None or degree_second is None
+                    or math.isclose(degree_first, degree_second, abs_tol=1e-10)):
+                weighted = normalize_formula(f'3*({first})')
+                if weighted:
+                    found.append(Recipe(number, 'F', (2, 4), part, line, f'{weighted}|{second}'))
+        following = re.match(r'\s*,?\s*and\s+also\s*(?:Shinagawa\s+coefficients\s*)?', line[end:], re.I)
+        if not following:
+            break
+        position = end + following.end()
+    return found
 
 
 def split_entries(source: str):
@@ -323,6 +384,8 @@ def extract_entry(number: int, fragment: str, part: int,
                if all(reference > 0 and reference != number for reference in refs)]
     recipes.extend(candidate for line in coordinate_text(fragment)
                    if (candidate := combo_candidate(number, line, part)) is not None)
+    recipes.extend(candidate for line in coordinate_text(fragment)
+                   for candidate in shinagawa_candidates(number, line, part))
     recipes.extend(Recipe(number, kind, (), part, evidence, formula)
                    for kind, formula, evidence in coordinate_candidates(fragment))
     return recipes
@@ -339,7 +402,8 @@ def read_page(part: int, excluded: set[int] | None = None,
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
         candidates[number] = extract_entry(number, fragment, part, excluded)
-        if coordinate_lines is not None and any(r.operation == 'B' for r in candidates[number]):
+        if coordinate_lines is not None and any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
+                                                for r in candidates[number]):
             coordinate_lines[number] = coordinate_incidence_lines(number, relation_lines(fragment))
     if not entries or entries != sorted(entries):
         raise ValueError(f'Missing or unordered X(n) headings in {path}')
@@ -488,7 +552,7 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
     for number, options in candidates.items():
         if number not in components:
             continue
-        formulas = [recipe for recipe in options if recipe.operation == 'B'
+        formulas = [recipe for recipe in options if recipe.operation == 'B' and homogeneous_degree(recipe.formula)[0]
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
@@ -864,6 +928,35 @@ def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, C
     return True
 
 
+def shinagawa_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict,
+                                  alternatives: list[Recipe], lines: list[tuple[int, int]]) -> bool:
+    if not combo_candidate_supported(recipe, coordinates, atlas):
+        return False
+    for shape, points in coordinates.items():
+        abc = atlas['triangles'][shape]
+        target = numeric_combo(recipe, [points[ref] for ref in recipe.references], abc)
+        if target is None:
+            return False
+        for option in alternatives:
+            if option.operation != 'B' or not homogeneous_degree(option.formula)[0]:
+                continue
+            reference = numeric_formula(option, abc)
+            if reference is not None and math.dist(target, reference) > 1e-5 * max(1, math.hypot(*target), math.hypot(*reference)):
+                return False
+        distances = []
+        for a, b in lines:
+            if a not in points or b not in points:
+                continue
+            line = line_data(points[a], points[b])
+            if line is None:
+                continue
+            base, direction = line
+            distances.append(abs(direction[0]*(target[1]-base[1])-direction[1]*(target[0]-base[0])) / math.hypot(*direction))
+        if distances and min(distances) > 1e-5 * max(1, math.hypot(*target)):
+            return False
+    return True
+
+
 def read_native_atlas(path: Path) -> dict:
     atlas = json.loads(path.read_text(encoding='utf-8'))
     if set(atlas['coordinates']) != {'acute', 'obtuse'} or set(atlas['triangles']) != {'acute', 'obtuse'}:
@@ -1231,10 +1324,24 @@ def main() -> None:
     eligible = {number: [recipe for recipe in options if recipe.operation in args.auto_operations
                          and not (recipe.operation == 'I' and not recipe.references)]
                 for number, options in all_candidates.items()}
-    relation_only = {number: [recipe for recipe in options if recipe.operation != 'B']
+    relation_only = {number: [recipe for recipe in options if recipe.operation != 'B'
+                              and 'shinagawa coefficients' not in recipe.evidence.lower()]
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, deferred_targets, atlas, native_directions, require_seeds=False)
+    reference_coordinates = numeric_coordinates(baseline, atlas, native_directions)
+    accepted_shinagawa = rejected_shinagawa = 0
+    for number, options in eligible.items():
+        for recipe in options:
+            if recipe.operation != 'F' or 'shinagawa coefficients' not in recipe.evidence.lower():
+                continue
+            if shinagawa_candidate_supported(recipe, reference_coordinates, atlas, options,
+                                              coordinate_lines.get(number, [])):
+                relation_only[number].append(recipe)
+                accepted_shinagawa += 1
+            else:
+                rejected_shinagawa += 1
+    print(f'Shinagawa combos: {accepted_shinagawa} screened candidates; {rejected_shinagawa} rejected')
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
                                  coordinate_lines, native_directions, deferred_targets)

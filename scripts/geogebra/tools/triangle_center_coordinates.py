@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
-             'S', 'SA', 'SB', 'SC', 'SW', 'r', 'R', 'pi'}
+             'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'r', 'R', 'pi'}
 FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
@@ -54,7 +54,7 @@ def normalize_formula(raw: str) -> str | None:
         return None
     for _ in range(3):
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d{1,2})(?=[abc]|\b)', r'\1^\2', raw)
-    raw = re.sub(r'\b([Ss])_([ABCabc])\b', lambda m: m.group(1) + m.group(2).upper()
+    raw = re.sub(r'([Ss])_([ABCabc])(?![a-z_])', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\s*/\s*(\d+)\b',
                  lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)}/{m.group(4)})', raw)
@@ -72,8 +72,10 @@ def normalize_formula(raw: str) -> str | None:
             return None
         token = match.group()
         if token.isalpha() and token not in VARIABLES | FUNCTIONS:
-            if re.fullmatch('[abcSrR]{2,3}', token):
-                tokens.extend(token)
+            # Conway products are often written without multiplication signs,
+            # e.g. aS_A, bcS_BS_C, or EF. Match only known symbols.
+            if re.fullmatch(r'(?:SA|SB|SC|SW|sa|sb|sc|[abcSsrREF])+', token):
+                tokens.extend(re.findall(r'SA|SB|SC|SW|sa|sb|sc|[abcSsrREF]', token))
             else:
                 return None
         else:
@@ -165,6 +167,52 @@ def canonical_formula(formula: str):
             return ('Constant', str(node.value))
         raise ValueError('Unsupported coordinate syntax')
     return canonical(validate_formula(formula).body)
+
+
+def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
+    """Return scaling degree; None represents an identically zero literal."""
+    dimensions = {**{name: 1 for name in ('a', 'b', 'c', 's', 'sa', 'sb', 'sc', 'r', 'R')},
+                  **{name: 2 for name in ('S', 'SA', 'SB', 'SC', 'SW', 'E', 'F')},
+                  **{name: 0 for name in ('A', 'B', 'C', 'pi')}}
+
+    def degree(node: ast.AST) -> float | None:
+        if isinstance(node, ast.Constant):
+            return None if node.value == 0 else 0
+        if isinstance(node, ast.Name):
+            return dimensions[node.id]
+        if isinstance(node, ast.UnaryOp):
+            return degree(node.operand)
+        if isinstance(node, ast.Call):
+            value = degree(node.args[0])
+            if node.func.id == 'sqrt':
+                return None if value is None else value / 2
+            if value not in (None, 0):
+                raise ValueError('Dimensional function argument')
+            return 0
+        if isinstance(node, ast.BinOp):
+            left = degree(node.left)
+            if isinstance(node.op, ast.Pow):
+                exponent = constant_exponent(node.right)
+                if exponent is None:
+                    raise ValueError('Variable exponent')
+                return 0 if exponent == 0 else None if left is None else left * exponent
+            right = degree(node.right)
+            if isinstance(node.op, (ast.Add, ast.Sub)):
+                if left is None: return right
+                if right is None: return left
+                if not math.isclose(left, right, abs_tol=1e-10):
+                    raise ValueError('Inconsistent dimensions')
+                return left
+            if isinstance(node.op, ast.Mult):
+                return None if left is None or right is None else left + right
+            if isinstance(node.op, ast.Div):
+                if right is None: raise ValueError('Division by zero')
+                return None if left is None else left - right
+        raise ValueError('Unsupported dimensional syntax')
+    try:
+        return True, degree(validate_formula(formula).body)
+    except (ValueError, SyntaxError, KeyError):
+        return False, None
 
 
 def coordinate_candidates(fragment: str) -> list[tuple[str, str, str]]:
@@ -263,7 +311,9 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
             'C': math.acos(max(-1, min(1, (a*a+b*b-c*c)/(2*a*b)))),
             's': s, 'sa': s-a, 'sb': s-b, 'sc': s-c, 'S': S,
             'SA': (b*b+c*c-a*a)/2, 'SB': (c*c+a*a-b*b)/2, 'SC': (a*a+b*b-c*c)/2,
-            'r': area/s, 'R': a*b*c/(4*area), 'SW': (a*a+b*b+c*c)/2, 'pi': math.pi}
+            'r': area/s, 'R': a*b*c/(4*area), 'SW': (a*a+b*b+c*c)/2,
+            'E': 4*(a*b*c/(4*area))**2, 'F': (a*a+b*b+c*c)/2-4*(a*b*c/(4*area))**2,
+            'pi': math.pi}
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
