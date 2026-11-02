@@ -151,6 +151,58 @@ class ReviewedSourceConflictTest(TestCase):
 
 
 class OtherReviewedSourceErrors(TestCase):
+    def test_10685_missing_plus_confirmed_by_brocard_anticevian_geometry(self):
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[10685]
+        for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(2,-3),(10,-1),(3,4)]]:
+            a,b,c=[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)]
+            lines=[]
+            for weights in [[a*a*c*c,a*a*b*b,b*b*c*c],[a*a*b*b,b*b*c*c,c*c*a*a]]:
+                p=weighted_point(weights,abc)
+                tri=[weighted_point([-w if j==k else w for j,w in enumerate(weights)],abc) for k in range(3)]
+                lines.extend([p,m.numeric_conjugate(p,tri,True)])
+            target=m.numeric_intersection(lines)
+            self.assertLess(math.dist(m.numeric_formula(recipe,abc),target),1e-8)
+            # Homogeneity alone cannot determine the missing operator's sign.
+            wrong=recipe.formula.replace('(b^2+c^2)+b^4','(b^2+c^2)-b^4')
+            self.assertTrue(m.homogeneous_degree(wrong)[0])
+            self.assertGreater(math.dist(m.numeric_formula(Recipe(10685,'B',(),formula=wrong),abc),target),1e-3)
+
+    def test_steiner_minor_vertices_and_curvature_centers(self):
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        cases=[[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],
+               [(2,-3),(10,-1),(3,4)],[(0,0),(4,0),(2.00001,3.47)],
+               [(0,0),(4,0),(1.99999,3.47)]]
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8')))
+        text='\n'.join(m.coordinate_text(entries[39204]))
+        raw=re.search(r'Barycentrics\s+(.+?)(?: : :|\n)',text)[1]
+        printed=Recipe(39204,'B',(),formula=m.normalize_formula(raw.replace('J^2','(9-(a^2+b^2+c^2)/R^2)')))
+        for original in cases:
+            for turn in range(3):
+                abc=original[turn:]+original[:turn]
+                G=tuple(sum(p[i] for p in abc)/3 for i in (0,1))
+                q=[[2/3*sum((p[i]-G[i])*(p[j]-G[j]) for p in abc) for j in (0,1)] for i in (0,1)]
+                gap=math.hypot(q[0][0]-q[1][1],2*q[0][1])
+                major=(q[0][0]+q[1][1]+gap)/2;minor=major-gap
+                sides=[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)]
+                K=weighted_point([a*a for a in sides],abc);v=sub(K,G)
+                projected=tuple(major*v[i]-sum(q[i][j]*v[j] for j in (0,1)) for i in (0,1))
+                expected=tuple(G[i]+math.sqrt(minor)*projected[i]/math.hypot(*projected) for i in (0,1))
+                vertex=m.numeric_formula(seeds[39204],abc)
+                self.assertLess(math.dist(vertex,expected),1e-7)
+                center=m.numeric_combo(seeds[39302],[G,vertex],abc)
+                expected_center=tuple(G[i]-gap/minor*(vertex[i]-G[i]) for i in (0,1))
+                self.assertLess(math.dist(center,expected_center),1e-7)
+                if original in cases[:3]:
+                    self.assertLess(math.dist(vertex,m.numeric_formula(printed,abc)),1e-8)
+                # Three actual points on the ellipse near its minor vertex
+                # independently approach the same osculating-circle center.
+                e=sub(vertex,G);e=tuple(t/math.sqrt(minor) for t in e);n=(-e[1],e[0]);h=1e-3
+                neighbors=[tuple(G[i]+math.sqrt(minor)*e[i]*math.cos(t)+math.sqrt(major)*n[i]*math.sin(t)
+                                 for i in (0,1)) for t in (-h,0,h)]
+                sampled=m.numeric_circle_center(neighbors)
+                self.assertLess(math.dist(center,sampled),1e-4)
+        self.assertIsNone(m.numeric_formula(seeds[39204],[(0,0),(4,0),(2,3.47)]))
+
     def test_32072_lucas_inner_vertex_matrix_centroid(self):
         recipe=m.read_recipes(m.DATA/'seeds.txt',{})[32072]
         for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(2,-3),(10,-1),(3,4)]]:

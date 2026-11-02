@@ -169,3 +169,21 @@
 # For conic U*yz+V*zx+W*xy=0, center=(U*(V+W-U):...). U,V,W are the
 # cross product of the two rows (yz,zx,xy) at the finite input points.
 39038 B 162 2167 x*u*(z*v-y*w)*(y*v*(x*w-z*u)+z*w*(y*u-x*v)-x*u*(z*v-y*w))
+
+# Steiner minor-axis anchor: project the symmedian-centroid direction onto
+# the minor eigenspace and normalize its zero-sum barycentric vector.
+# Matches the printed first branch without J or a product of imaginary roots.
+# The source lines {2,1341} at 39204/39205 are on the wrong (major) axis.
+# Some isosceles labels genuinely give 0:0:0; leave those undefined.
+39204 B 1+sqrt(6)*(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*((a^2-b^2)+(a^2-c^2))+4*(a^2-b^2)*(a^2-c^2)-(a^2-b^2)^2-(a^2-c^2)^2)/sqrt(((sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*((a^2-b^2)+(a^2-c^2))+4*(a^2-b^2)*(a^2-c^2)-(a^2-b^2)^2-(a^2-c^2)^2))^2+((sqrt(((b^2-c^2)^2+(c^2-a^2)^2+(a^2-b^2)^2)/2)*((b^2-c^2)+(b^2-a^2))+4*(b^2-c^2)*(b^2-a^2)-(b^2-c^2)^2-(b^2-a^2)^2))^2+((sqrt(((c^2-a^2)^2+(a^2-b^2)^2+(b^2-c^2)^2)/2)*((c^2-a^2)+(c^2-b^2))+4*(c^2-a^2)*(c^2-b^2)-(c^2-a^2)^2-(c^2-b^2)^2))^2)
+# Curvature center G-(major^2-minor^2)/minor^2*(vertex-G).
+# Rationalized denominator avoids cancellation in s-2*sqrt(D).
+39302 F 2:1+(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*(a^2+b^2+c^2+2*sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2))/(3*S^2)) 39204:-(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*(a^2+b^2+c^2+2*sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2))/(3*S^2))
+# Source 39303 mistakenly labels its own reflection as 30303.
+39303 R 39302 2
+
+# X(10685): missing + between the last two degree-12 terms. Confirmed
+# independently by the two Brocard points, their anticevian triangles, and
+# each point's isogonal conjugate relative to that triangle. The - variant
+# is homogeneous too but fails this construction on independent samples.
+10685 B a^10*(b^2+c^2)-a^8*(3*b^4+b^2*c^2+3*c^4)+2*a^6*(b^6+b^4*c^2+b^2*c^4+c^6)+a^4*(-2*b^6*c^2+b^4*c^4-2*b^2*c^6)-a^2*b^2*c^2*(b^2-c^2)^2*(b^2+c^2)+b^4*c^4*(b^2-c^2)^2

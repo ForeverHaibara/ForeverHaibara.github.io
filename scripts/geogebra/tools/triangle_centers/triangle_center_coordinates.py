@@ -55,9 +55,9 @@ def normalize_formula(raw: str) -> str | None:
                  lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
     raw = re.sub(r'\b(?:' + '|'.join(sorted(FUNCTIONS | {'log', 'pi'})) + r')\b',
                  lambda m: 'ln' if m.group().lower() == 'log' else m.group().lower(), raw, flags=re.I)
-    # Only unambiguous side differences use bare bars. General abs(...) is an
-    # ordinary checked unary function; nested/ambiguous bar notation is rejected.
-    raw = re.sub(r'\|\s*([abc])\s*-\s*([abc])\s*\|', r'(abs(\1-\2))', raw)
+    # Flat bar pairs delimit an arithmetic expression. The resulting whole AST
+    # still has to validate; unmatched/nested bars and malformed groups fail.
+    raw = re.sub(r'\|([^|]+)\|', r'(abs(\1))', raw)
     raw = re.sub(r'\b(max|min)\s*\(\s*([abc])\s*,\s*([abc])\s*\)',
                  lambda m: f'(({m[2]}+{m[3]}{"+" if m[1].lower()=="max" else "-"}abs({m[2]}-{m[3]}))/2)', raw, flags=re.I)
 

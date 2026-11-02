@@ -148,6 +148,16 @@ describe('extended TriangleCenter dispatch', () => {
     }
   });
 
+  it('compiles the reviewed Steiner minor branch and Brocard source repair', async () => {
+    for (const id of [39204, 39302, 39303, 10685]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:J|SA|SB|SC|SW|S)\b/u);
+      expect(result).toContain('Distance(');
+    }
+  });
+
   it('compiles constant and Conway-weighted ETC combos with a guarded sum', async () => {
     for (const id of [3622, 8350]) await prepareTriangleCenter(id);
     const constant = compileStudioCommand('TriangleCenter(A,B,C,3622)', environment());

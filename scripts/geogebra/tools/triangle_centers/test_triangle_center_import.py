@@ -777,6 +777,36 @@ class CircleAndLogTest(TestCase):
 
 
 class AbsoluteCoordinatesTest(TestCase):
+    def test_flat_arithmetic_bars_keep_power_and_product_scope(self):
+        for raw,expected in [('|b^(2)-c^(2)|',13),('|(a^2-b^2)(a^2-c^2)|',264),
+                             ('a^2|b^2-c^2|',325),('|sin(B-C)|',None)]:
+            formula=normalize_formula(raw);self.assertIsNotNone(formula,raw)
+            if expected is not None:self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),expected)
+        for raw in ['|a+(b|','|a+|b-c||','|unknown|','|a|b|','||b-c||']:
+            self.assertIsNone(normalize_formula(raw),raw)
+
+    def test_steiner_ellipse_inverse_known_members_and_involution(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for kind,members in [('CIRCUMELLIPSE',[(1,239),(3,401)]),('INELLIPSE',[(1,3008),(3,441)])]:
+            for source,target in members:
+                title=f'STEINER-{kind}-INVERSE OF X({source})'
+                recipe=next(r for r in extract_entry(99999,f'<h3>X(99999) = {title}</h3>',23) if r.operation=='B')
+                self.assertEqual(recipe.references,(source,))
+                alias=f'inverse-in-Steiner-{kind.lower()} of X({source})'
+                self.assertEqual(next(r.formula for r in extract_entry(99999,f'<h3>X(99999) = {alias}</h3>',23) if r.operation=='B'),recipe.formula)
+                for shape,abc in atlas['triangles'].items():
+                    point=m.numeric_transform_formula(recipe,native[shape][source],abc)
+                    self.assertLess(math.dist(point,native[shape][target]),1e-8)
+                    restored=m.numeric_transform_formula(recipe,point,abc)
+                    self.assertLess(math.dist(restored,native[shape][source]),1e-8)
+                    G=native[shape][2]
+                    self.assertIsNone(m.numeric_transform_formula(recipe,G,abc))
+                for suffix in [' wrt the excentral triangle',' in triangle BCI',' if ABC is acute']:
+                    self.assertFalse(any(r.operation=='B' for r in extract_entry(99999,f'<h3>X(99999) = {title}{suffix}</h3>',23)))
+        self.assertFalse(any(r.operation=='B' for r in extract_entry(99999,
+            '<h3>X(99999) = STEINER-INELLIPSE-INVERSE OF X(2)</h3>',23)))
+
     def test_side_extrema_match_absolute_value_identity_under_permutations(self):
         for a,b,c in [(5,6,7),(7,5,6),(6,7,5),(5,5,6)]:
             env = side_environment(a,b,c)

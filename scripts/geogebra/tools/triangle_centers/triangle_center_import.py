@@ -54,6 +54,7 @@ ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
 CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
 BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
+STEINER_INVERSE = re.compile(rf'^(?:STEINER-(CIRCUMELLIPSE|INELLIPSE)-INVERSE|inverse-in-Steiner-(circumellipse|inellipse)) of {POINT}[\s.,;]*$',re.I)
 VU_FIRST = re.compile(rf'^VU 1ST PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 VU_SECOND = re.compile(rf'^VU 2ND PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 # Derived from intersections of the circumcevian and BB2/CC2 triangles, rather
@@ -514,6 +515,15 @@ def extract_entry(number: int, fragment: str, part: int,
     for line in lines:
         relation = RELATION.match(line)
         if relation and int(relation[1]) == number:
+            if match := STEINER_INVERSE.fullmatch(relation[2]):
+                source=int(match[3])
+                if source>0 and source not in (2,number):
+                    # Affine inversion about the centroid: the circumellipse
+                    # has barycentric equation xy+yz+zx=0; its inellipse is
+                    # the half-sized concentric ellipse. No imaginary input.
+                    formula=('x^2-y*z' if (match[1] or match[2]).lower()=='circumellipse'
+                             else '2*x^2+y^2+z^2-x*y-2*y*z-x*z')
+                    recipes.append(Recipe(number,'B',(source,),part,line,formula))
             if candidate := steiner_major_candidate(number, relation[2], part):
                 recipes.append(candidate)
             if match := VU_CIRCLES.fullmatch(relation[2]):
@@ -997,6 +1007,9 @@ def numeric_transform_formula(recipe: Recipe, source: Coordinate, abc) -> tuple[
 @lru_cache(maxsize=4096)
 def _transform_sample(formula, sources, abc):
     validate_transform_formula(formula,len(sources))
+    if formula in {'x^2-y*z','2*x^2+y^2+z^2-x*y-2*y*z-x*z'}:
+        if sources[0]==tuple(sum(p[i] for p in abc)/3 for i in (0,1)):
+            return None  # The inversion center has no finite inverse.
     if formula == VU_CIRCLES_FORMULA:
         four=[*sources,*[numeric_conjugate(p,abc,True) for p in sources]]
         if any(not isinstance(p,tuple) for p in four):

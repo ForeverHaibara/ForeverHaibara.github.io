@@ -49,6 +49,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | ETC `where p=..., q=..., t=...` | 最多三个独立局部标量，可换行 | 不允许全局名称遮蔽、未定义引用、局部定义链 |
 | ETC `where x:y:z=...` / `where x=..., y and z are defined cyclically` | 明确声明的局部循环三元组 | 须验证循环等价；不由单独 x 定义猜测 y/z |
 | ETC `where f(a,b,c)=...` | 一个显式局部循环函数，可嵌于首坐标表达式 | 不允许递归、未知函数或非循环调用；不能泛化解释任意自然语言定义 |
+| ETC `Steiner-circumellipse-inverse` / `Steiner-inellipse-inverse of X(p)` | 关于重心的相应椭圆反演，复用单输入 B | 只匹配无参考三角形/条件后缀的完整关系；反演中心 X(2) 没有有限逆像 |
 | ETC 关系、线表及交点标题 | 提取 M/R/... 等配方及共享入射线族 | 自身编号必须匹配；`{30,511}` 或与 X(30)X(511) 的明确交点识别理想状态，再从其它有限线提取方向 |
 | `native-status.txt` 中 `n` / `lo-hi` | 不可用原生编号或连续范围 | 原生数据维护输入；不是扩展配方 |
 | `native-status.txt` 中 `n p q` | 原生理想点的有限方向 | p/q 为其方向所依据的原生有限点 |
@@ -106,6 +107,8 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 
 指纹按解析入口及其实际辅助函数调用图失效，纯数值求值/齐次性修改不会使所有源页重解析。标题族相似度仅用于诊断，不把一条目的数学证据转移到另一条目。日志保留实际冷提取/热缓存差别，避免将重复统计时间误判为选择算法成本。
 
-Steiner 长轴规则从形状矩阵和曲率独立推导，复用重心与实焦点的 F 组合；短轴原坐标的等腰退化和分支另行审阅。VU PCC、VU 双圆与 Vietnamese 等有输入公式均须检查每个输入的独立射影缩放；圆反演仅明确映射未经参考三角形修改的 ABC 圆。
+Steiner 长轴规则从形状矩阵和曲率独立推导，复用重心与实焦点的 F 组合；短轴 seed 采用短轴投影向量的正范数归一化，并以实曲率位移求圆心；部分等腰分支仍保留无定义。VU PCC、VU 双圆与 Vietnamese 等有输入公式均须检查每个输入的独立射影缩放；圆反演仅明确映射未经参考三角形修改的 ABC 圆。
 
 正式数据与最新全量进展分别见数据目录 README 和 `src/features/geogebra/commands/custom/docs/triangle-centers-uncovered.md`、`triangle-centers-scaling-plan.md`。全量 dry-run 不等于已经发布全量运行时数据。
+
+按复核优先级整理的源定义冲突、端点数值证据与已确认修复见 `src/features/geogebra/commands/custom/docs/triangle-centers-source-review.md`。诊断代码不是源错误证明。
