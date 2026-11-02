@@ -20,6 +20,7 @@ VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
 FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln', 'abs'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'x': 'y', 'y': 'z', 'z': 'x',
+          'u': 'v', 'v': 'w', 'w': 'u',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
 CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
@@ -164,7 +165,7 @@ def constant_exponent(node: ast.AST) -> float | None:
 
 
 @lru_cache(maxsize=8192)
-def validate_formula(formula: str, pair_distance: bool = False, source_coordinates: bool = False) -> ast.Expression:
+def validate_formula(formula: str, pair_distance: bool = False, source_coordinates: int = 0) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
@@ -186,6 +187,7 @@ def validate_formula(formula: str, pair_distance: bool = False, source_coordinat
             continue
         if isinstance(node, ast.Name) and (node.id in VARIABLES or node.id == 'd' and pair_distance
                                            or node.id in {'x','y','z'} and source_coordinates or
+                                           node.id in {'u','v','w'} and source_coordinates == 2 or
                                            node.id in FUNCTIONS and isinstance(parents.get(node), ast.Call)
                                            and parents[node].func is node):
             continue
@@ -228,7 +230,7 @@ def canonical_formula(formula: str):
 
 @lru_cache(maxsize=8192)
 def homogeneous_degree(formula: str, pair_distance: bool = False,
-                       source_coordinates: bool = False, source_scale: bool = False) -> tuple[bool, float | None]:
+                       source_coordinates: int = 0, source_scale: int = 0) -> tuple[bool, float | None]:
     """Return scaling degree; None represents an identically zero literal."""
     dimensions = {**{name: 1 for name in ('a', 'b', 'c', 's', 'sa', 'sb', 'sc', 'r', 'R')},
                   **{name: 2 for name in ('S', 'SA', 'SB', 'SC', 'SW', 'E', 'F')},
@@ -238,7 +240,9 @@ def homogeneous_degree(formula: str, pair_distance: bool = False,
     if source_coordinates:
         if source_scale:
             dimensions = dict.fromkeys(dimensions,0)
-        dimensions.update(dict.fromkeys(('x','y','z'),1 if source_scale else 0))
+        dimensions.update(dict.fromkeys(('x','y','z'),1 if source_scale == 1 else 0))
+        if source_coordinates == 2:
+            dimensions.update(dict.fromkeys(('u','v','w'),1 if source_scale == 2 else 0))
 
     def degree(node: ast.AST) -> float | None:
         if isinstance(node, ast.Constant):
@@ -277,7 +281,7 @@ def homogeneous_degree(formula: str, pair_distance: bool = False,
                 return None if left is None else left - right
         raise ValueError('Unsupported dimensional syntax')
     try:
-        tree = (validate_formula(formula,source_coordinates=True) if source_coordinates else
+        tree = (validate_formula(formula,source_coordinates=source_coordinates) if source_coordinates else
                 validate_formula(formula,True) if pair_distance else validate_formula(formula))
         return True, degree(tree.body)
     except (ValueError, SyntaxError, KeyError, RecursionError, OverflowError):
@@ -330,18 +334,9 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
         text = expand_cyclic_coordinate_calls(text)
         if re.search(r':\s*:.*\bwhere\b', text, re.I):
             text = re.sub(r'\s*:\s*:\s*$', '', text)
-        local = re.search(r',\s*where\s+([A-Za-z])\s*=\s*([^,]+)(?:,\s*([A-Za-z])\s*=\s*([^,]+))?\s*$', text)
-        if local:
-            substitutions = {local[1]: local[2]}
-            if local[3]:
-                substitutions[local[3]] = local[4]
-            distinct = not local[3] or local[1] != local[3]
-            if (distinct and not (substitutions.keys() & (VARIABLES | FUNCTIONS))
-                    and all(normalize_formula(value) for value in substitutions.values())):
-                text = re.sub(r'\b(?:' + '|'.join(map(re.escape, substitutions)) + r')\b',
-                              lambda m: '(' + substitutions[m.group()] + ')', text[:local.start()])
-            else:
-                continue  # Never silently shadow a global symbol or guess a local chain.
+        text = expand_scalar_locals(text)
+        if text is None:
+            continue
         where = WHERE.search(text)
         if where and CYCLIC.search(text[:where.start()]):
             head = CYCLIC.search(text[:where.start()])
@@ -396,6 +391,45 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
     return list(dict.fromkeys(found))
 
 
+def expand_scalar_locals(text: str) -> str | None:
+    """Expand explicit independent locals and explicitly declared cyclic triples."""
+    ratio=re.search(r'(?:,\s*)?\bwhere\s+([A-Za-z])\s*:\s*([A-Za-z])\s*:\s*([A-Za-z])\s*=\s*([^:]+):([^:]+):([^:]+)\s*$',text,re.I)
+    if ratio:
+        names=ratio.groups()[:3];values=[normalize_formula(value.strip().removesuffix('.')) for value in ratio.groups()[3:]]
+        if len(set(names))!=3 or set(names)&(VARIABLES|FUNCTIONS) or not all(values):
+            return None
+        if any(canonical_formula(rotate_formula(values[0],j))!=canonical_formula(values[j]) for j in (1,2)):
+            return None
+        substitutions=dict(zip(names,values));prefix=text[:ratio.start()].rstrip(' ,')
+    else:
+        local=re.search(r'(?:,\s*)?\bwhere\s+([A-Za-z])\s*=',text,re.I)
+        if not local:
+            return text
+        prefix=text[:local.start()].rstrip(' ,');definition=text[local.start():]
+        definition=re.sub(r'^,?\s*where\s+','',definition,flags=re.I)
+        trailing=bool(re.search(r':\s*:\s*$',definition))
+        definition=re.sub(r'\s*:\s*:\s*$','',definition).strip().removesuffix('.')
+        cyclic=re.fullmatch(r'([A-Za-z])\s*=\s*(.+?)\s*,?\s*(?:and\s+)?([A-Za-z])\s+and\s+([A-Za-z])\s+are defined cyclically',definition,re.I)
+        if cyclic:
+            names=[cyclic[1],cyclic[3],cyclic[4]];first=normalize_formula(cyclic[2])
+            if not first or len(set(names))!=3 or set(names)&(VARIABLES|FUNCTIONS):
+                return None
+            substitutions={name:rotate_formula(first,j) for j,name in enumerate(names)}
+        else:
+            pairs=re.split(r'\s*,\s*|\s+and\s+(?=[A-Za-z]\s*=)',definition)
+            matches=[re.fullmatch(r'([A-Za-z])\s*=\s*(.+)',pair) for pair in pairs]
+            if not 1<=len(matches)<=3 or not all(matches):
+                return None
+            substitutions={match[1]:normalize_formula(match[2]) for match in matches}
+            if (len(substitutions)!=len(matches) or substitutions.keys()&(VARIABLES|FUNCTIONS)
+                    or not all(substitutions.values())):
+                return None
+        if trailing and ':' not in prefix:
+            prefix+=' : :'
+    return re.sub(r'\b(?:'+'|'.join(map(re.escape,substitutions))+r')\b',
+                  lambda hit:'('+substitutions[hit[0]]+')',prefix)
+
+
 def expand_cyclic_coordinate_calls(text: str) -> str:
     """Expand one explicit local function in a coordinate expression, not prose."""
     where = WHERE.search(text)
@@ -442,7 +476,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
-    tree = (validate_formula(formula,source_coordinates=True) if 'x' in values else
+    tree = (validate_formula(formula,source_coordinates=2 if 'u' in values else 1) if 'x' in values else
             validate_formula(formula,True) if 'd' in values else validate_formula(formula))
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
              'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log, 'abs': abs,

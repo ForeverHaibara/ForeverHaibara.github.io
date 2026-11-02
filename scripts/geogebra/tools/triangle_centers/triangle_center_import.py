@@ -63,6 +63,11 @@ VU_SECOND_FORMULA = ('4*(x*c^2+z*a^2)*(x*b^2+y*a^2)'
     '*(x*a^2-x*b^2-x*c^2+y*a^2-y*b^2+y*c^2)'
     '-x^2*(a^2-b^2-c^2)^2'
     '*(2*x*b^2+y*a^2+y*b^2-y*c^2)*(2*x*c^2+z*a^2-z*b^2+z*c^2)')
+VU_CIRCLES_FORMULA = '(c^2*x*y*u^2+b^2*x*z*u^2+a^2*y*z*u^2-c^2*x^2*u*v+b^2*x*z*u*v-c^2*x*z*u*v+a^2*y*z*u*v-b^2*x^2*u*w-b^2*x*y*u*w+c^2*x*y*u*w+a^2*y*z*u*w-a^2*x^2*v*w-a^2*x*y*v*w-a^2*x*z*v*w)*(-a^2*c^2*x*y*u*v+c^4*x*y*u*v-a^2*c^2*y^2*u*v+b^2*c^2*x*z*u*v-a^2*c^2*x*y*v^2-a^2*c^2*y^2*v^2-a^2*c^2*y*z*v^2+b^2*c^2*x*y*u*w+b^4*x*z*u*w+a^2*b^2*y*z*u*w-a^2*c^2*y^2*v*w+a^2*b^2*x*z*v*w+a^4*y*z*v*w-a^2*c^2*y*z*v*w)*(c^4*x*y*u*v+b^2*c^2*x*z*u*v+a^2*c^2*y*z*u*v+b^2*c^2*x*y*u*w-a^2*b^2*x*z*u*w+b^4*x*z*u*w-a^2*b^2*z^2*u*w+a^2*c^2*x*y*v*w+a^4*y*z*v*w-a^2*b^2*y*z*v*w-a^2*b^2*z^2*v*w-a^2*b^2*x*z*w^2-a^2*b^2*y*z*w^2-a^2*b^2*z^2*w^2)'
+VIETNAMESE_ANTI_FORMULA = '(x-y-z)*(-y*u+x*v)*(u-v-w)*(-z*u+x*w)*(b^2*(-(y-z)^3*u^2*w+x^3*u*w*(-v+w)+x^2*(z*u^2*(v-2*w)-z*(v-w)^3+y*u^2*w)+x*u*(y^2*(v-w)*w+z^2*(u^2-v^2+3*v*w-2*w^2)+y*z*(-u^2+v^2-4*v*w+3*w^2)))+c^2*((y-z)^3*u^2*v+x^3*u*v*(v-w)+x*u*(z^2*v*(-v+w)+y^2*(u^2-2*v^2+3*v*w-w^2)+y*z*(-u^2+3*v^2-4*v*w+w^2))+x^2*(z*u^2*v+y*((v-w)^3+u^2*(-2*v+w))))+a^2*(x^3*u*v*w+(y-z)*(z^2*v*(-u^2+v*(v-w))+2*y*z*v*w*(-v+w)+y^2*w*(u^2+(v-w)*w))-x*u*(y^2*v*w+z^2*v*w+y*z*(-u^2+v^2-4*v*w+w^2))-x^2*(y*w*(u^2+(v-w)*w)+z*v*(u^2+v*(-v+w)))))'
+VIETNAMESE_CEVIAN_FORMULA = 'a^2*(x+y)*(x+z)*(u+v)*(u+w)*(z*v-y*w)'
+VU_CIRCLES = re.compile(rf'^VU \(\s*{POINT}\s*,\s*{POINT}\s*\)-CIRCLES PERSPECTOR[\s.,;]*$',re.I)
+VIETNAMESE = re.compile(rf'^VIETNAMESE POINT OF THESE TRIANGLES: (CEVIAN|ANTICEVIAN) OF {POINT} AND \1 OF {POINT}[\s.,;]*$',re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
@@ -87,7 +92,7 @@ class Recipe:
 
     def row(self) -> str:
         if self.operation == 'B':
-            source = f'{self.references[0]} ' if self.references else ''
+            source = ' '.join(map(str,self.references))+' ' if self.references else ''
             return f'{self.number} B {source}{self.formula}'
         if self.operation == 'F':
             return f'{self.number} F ' + ' '.join(f'{ref}:{coef}' for ref, coef in zip(self.references, self.formula.split('|')))
@@ -459,6 +464,16 @@ def extract_entry(number: int, fragment: str, part: int,
                if all(reference > 0 and reference != number for reference in refs)]
     for line in lines:
         relation = RELATION.match(line)
+        if relation and int(relation[1]) == number:
+            if match := VU_CIRCLES.fullmatch(relation[2]):
+                refs=tuple(map(int,match.groups()))
+                if number not in refs and refs[0]!=refs[1]:
+                    recipes.append(Recipe(number,'B',refs,part,line,VU_CIRCLES_FORMULA))
+            if match := VIETNAMESE.fullmatch(relation[2]):
+                refs=(int(match[2]),int(match[3]))
+                if number not in refs and refs[0]!=refs[1]:
+                    formula=VIETNAMESE_CEVIAN_FORMULA if match[1].lower()=='cevian' else VIETNAMESE_ANTI_FORMULA
+                    recipes.append(Recipe(number,'B',refs,part,line,formula))
         if relation and int(relation[1]) == number and (match := VU_SECOND.fullmatch(relation[2])):
             source = int(match[1])
             if source > 0 and source not in (3,number):
@@ -561,7 +576,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             continue
         if skipped is not None and number in skipped:
             raise ValueError(f'Conflicting skip and recipe in {path}: {row}')
-        formula = fields[-1] if opcode == 'B' and len(fields) in (3,4) else ''
+        formula = fields[-1] if opcode == 'B' and len(fields) in (3,4,5) else ''
         if opcode == 'F':
             pairs = [field.split(':') for field in fields[2:]]
             if not all(len(pair) == 2 for pair in pairs):
@@ -570,7 +585,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             formula = '|'.join(pair[1] for pair in pairs)
         else:
             refs = (tuple(map(int,fields[2:-1])) if opcode == 'B' else tuple(map(int, fields[2:])))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs)==1) and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs) in (1,2)) and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and not formula)
                 or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
@@ -578,7 +593,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
         if formula:
             for scalar in formula.split('|'):
                 if opcode=='B' and refs:
-                    validate_transform_formula(scalar)
+                    validate_transform_formula(scalar,len(refs))
                 elif opcode=='F' and len(refs)==2 and 'd' in scalar:
                     validate_formula(scalar,True)
                 else:
@@ -659,7 +674,8 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
                        atlas: dict, per_component: int | None, priority: set[int],
                        coordinate_lines: dict[int, list[tuple[int, int]]],
                        native_directions: dict[int, tuple[int, int]],
-                       excluded: set[int] | None = None) -> dict[int, Recipe]:
+                       excluded: set[int] | None = None,
+                       reviewed_nonreal: set[int] | None = None) -> dict[int, Recipe]:
     """Screen formulas, then allocate anchors separately to dependency components."""
     if per_component is not None and per_component <= 0:
         return {}
@@ -700,6 +716,15 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
+        if number in (reviewed_nonreal or ()):
+            # Undefined samples may represent an untested real domain in general,
+            # but that inference is not justified for an explicitly reviewed
+            # nonreal root. Do not propagate this restriction to dependents.
+            formulas=[r for r in formulas if any(numeric_formula(r,[tuple(p) for p in abc]) is not None
+                                                for abc in atlas['triangles'].values())]
+            if not formulas:
+                report('nonreal-anchor-rejected',number=number)
+                continue
         formulas.sort(key=lambda recipe: (-sum(numeric_formula(recipe, [tuple(xy) for xy in abc]) is not None
                                                 for abc in atlas['triangles'].values()), len(recipe.formula)))
         samples = [[numeric_formula(recipe, [tuple(xy) for xy in abc])
@@ -782,7 +807,7 @@ def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
 
 def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_ideal: set[int]) -> None:
     if recipe.operation == 'B' and recipe.references:
-        validate_transform_formula(recipe.formula)
+        validate_transform_formula(recipe.formula,len(recipe.references))
     if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
            for ref in recipe.references):
         raise ValueError(f'Unknown ideal direction used in X({recipe.number}) {recipe.operation}')
@@ -904,28 +929,37 @@ def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -
 
 
 @lru_cache(maxsize=8192)
-def validate_transform_formula(formula: str) -> None:
-    validate_formula(formula,source_coordinates=True)
-    if not all(homogeneous_degree(formula,source_coordinates=True,source_scale=scale)[0]
-               for scale in (False,True)):
+def validate_transform_formula(formula: str, source_count: int = 1) -> None:
+    validate_formula(formula,source_coordinates=source_count)
+    if not all(homogeneous_degree(formula,source_coordinates=source_count,source_scale=scale)[0]
+               for scale in range(source_count+1)):
         raise ValueError('Nonhomogeneous point-coordinate transform')
 
 
 def numeric_transform_formula(recipe: Recipe, source: Coordinate, abc) -> tuple[float,float] | None:
-    if isinstance(source,Ideal):
+    sources = [source] if len(recipe.references)==1 else source
+    if any(isinstance(p,Ideal) for p in sources):
         return None
-    return _transform_sample(recipe.formula,tuple(source),tuple(tuple(p) for p in abc))
+    return _transform_sample(recipe.formula,tuple(tuple(p) for p in sources),tuple(tuple(p) for p in abc))
 
 
 @lru_cache(maxsize=4096)
-def _transform_sample(formula, source, abc):
-    validate_transform_formula(formula)
+def _transform_sample(formula, sources, abc):
+    validate_transform_formula(formula,len(sources))
+    if formula == VU_CIRCLES_FORMULA:
+        four=[*sources,*[numeric_conjugate(p,abc,True) for p in sources]]
+        if any(not isinstance(p,tuple) for p in four):
+            return None
+        scale=max(math.dist(abc[i],abc[(i+1)%3]) for i in range(3))
+        if any(math.dist(p,q)<=1e-9*scale for i,p in enumerate(four) for q in four[i+1:]):
+            return None  # The defining two circles must not coincide generically.
     env = side_environment(*[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)])
-    weights = []
-    for j in range(3):
-        b,c = abc[(j+1)%3],abc[(j+2)%3]
-        weights.append((b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
-    env.update(zip(('x','y','z'),weights))
+    for source,names in zip(sources,[('x','y','z'),('u','v','w')]):
+        weights = []
+        for j in range(3):
+            b,c = abc[(j+1)%3],abc[(j+2)%3]
+            weights.append((b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
+        env.update(zip(names,weights))
     result = weighted_coordinate([evaluate_formula(rotate_formula(formula,j),env) for j in range(3)],abc)
     return result if isinstance(result,tuple) else None
 
@@ -1021,7 +1055,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             if op == 'J':
                 answer = numeric_intersection(values)
             elif op == 'B':
-                answer = (numeric_transform_formula(recipe,values[0],abc) if values
+                answer = (numeric_transform_formula(recipe,values[0] if len(values)==1 else values,abc) if values
                           else numeric_formula(recipe, abc))
             elif op == 'F':
                 answer = numeric_combo(recipe, values, abc)
@@ -1161,7 +1195,8 @@ def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, C
     for shape, points in coordinates.items():
         if any(ref not in points for ref in recipe.references):
             return False
-        result = (numeric_transform_formula(recipe,points[recipe.references[0]],atlas['triangles'][shape])
+        result = (numeric_transform_formula(recipe,points[recipe.references[0]] if len(recipe.references)==1
+                                           else [points[ref] for ref in recipe.references],atlas['triangles'][shape])
                   if recipe.operation=='B' else
                   numeric_combo(recipe, [points[ref] for ref in recipe.references], atlas['triangles'][shape]))
         if result is None:
@@ -1692,6 +1727,8 @@ def main() -> None:
                         help='Optional estimated construction-length limit; unlimited by default')
     parser.add_argument('--max-conjugates', type=int, default=1)
     parser.add_argument('--no-cache', action='store_true', help='Bypass persistent extraction cache')
+    parser.add_argument('--skip-ideal-audit', action='store_true',
+                        help='Skip only the auxiliary ideal-formula inventory; all selection/numeric checks still run')
     parser.add_argument('--uncovered-report', type=Path, help='Optional diagnostic JSON for unresolved IDs only')
     parser.add_argument('--report', type=Path, help='Append structured progress events to this JSONL file')
     args = parser.parse_args()
@@ -1794,10 +1831,16 @@ def main() -> None:
     print(f'Shinagawa combos: {accepted_shinagawa} screened candidates; {rejected_shinagawa} rejected')
     priority = read_coordinate_priority(DATA / 'coordinate-priority.txt') if args.max_coordinate_anchors_per_component != 0 else set()
     anchors = coordinate_anchors(eligible, baseline, atlas, args.max_coordinate_anchors_per_component, priority,
-                                 coordinate_lines, native_directions, selection_exclusions)
-    ideal_formulas = ideal_coordinate_formulas(eligible, atlas)
+                                 coordinate_lines, native_directions, selection_exclusions,
+                                 {n for n,kind in domains.items() if kind=='nonreal'})
+    if args.skip_ideal_audit:
+        ideal_formulas=None
+        report('ideal-audit-skipped',selection_checks='unchanged')
+    else:
+        ideal_formulas = ideal_coordinate_formulas(eligible, atlas)
     print(f'Coordinate anchors: {len(anchors)} barycentric; '
-          f'{len(ideal_formulas)} parsed formulas deferred as ideal')
+          + (f'{len(ideal_formulas)} parsed formulas deferred as ideal' if ideal_formulas is not None
+             else 'auxiliary ideal-formula inventory not repeated'))
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,

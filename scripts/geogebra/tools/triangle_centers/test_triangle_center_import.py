@@ -635,6 +635,38 @@ class TopologyEncodingTest(TestCase):
 
 
 class CoordinateLocalTest(TestCase):
+    def test_garcia_capitan_coordinates_have_real_and_nonreal_samples(self):
+        source=(m.CACHE/'sources/ETCPart6.html').read_text(encoding='utf-8',errors='replace')
+        entries=dict(m.split_entries(source));atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        domains={};m.read_recipes(m.DATA/'seeds.txt',{},domains)
+        for n in [11065,11066]:
+            formula=m.coordinate_candidates(entries[n])[0][1]
+            states=[m.numeric_formula(m.Recipe(n,'B',(),formula=formula),abc) for abc in atlas['triangles'].values()]
+            states.append(m.numeric_formula(m.Recipe(n,'B',(),formula=formula),[(0,0),(6,0),(3.1,5)]))
+            self.assertTrue(any(p is None for p in states))
+            self.assertTrue(any(p is not None for p in states))
+            self.assertEqual(domains[n],'conditional_complex')
+
+    def test_three_independent_and_explicit_cyclic_scalar_definitions(self):
+        env=side_environment(5,6,7)
+        for source in ['Barycentrics x+y+z : : , where x=cos(A/2), y=cos(B/2), z=cos(C/2)',
+                       'Barycentrics x+y+z : : , where x:y:z=cos(A/2):cos(B/2):cos(C/2)',
+                       'Barycentrics x+y+z : : , where x=cos(A/2), and y and z are defined cyclically.']:
+            formula=coordinate_candidates(source)[0][1]
+            self.assertAlmostEqual(evaluate_formula(formula,env),sum(math.cos(env[k]/2) for k in ('A','B','C')))
+        for bad in ['Barycentrics x+y+z : : , where x:y:z=a:c:b',
+                    'Barycentrics x+y+z : : , where x=a,y=x,z=b',
+                    'Barycentrics x+y+z : : , where x=a',
+                    'Barycentrics x+y+z : : , where x=a, and b and z are defined cyclically.']:
+            self.assertEqual(coordinate_candidates(bad),[])
+
+    def test_locals_before_cyclic_marker_and_sentence_terminator(self):
+        examples=['Trilinears p+q, where p=sin(A/2) and q=cos((B-C)/2) : :',
+                  'Barycentrics a^2+T : : where T = S.',
+                  'Barycentrics a^2+T : : , where T = S.']
+        for source in examples:
+            self.assertEqual(len(coordinate_candidates(source)),1,source)
+        self.assertEqual(coordinate_candidates('Barycentrics a+T : : where T=unknown(a).'),[])
     def test_local_cyclic_function_calls_in_first_coordinate(self):
         source = 'Barycentrics (b-c)*f(b,c,a)*f(c,a,b) : : , where f(a,b,c)=a^2+b*c'
         formula = coordinate_candidates(source)[0][1]
@@ -792,6 +824,21 @@ class TitleDiagnosticsTest(TestCase):
 
 
 class UncoveredDiagnosticsTest(TestCase):
+    def test_reviewed_nonreal_roots_do_not_use_unconfirmed_coordinate_anchors(self):
+        atlas=dict(triangles={'shape':[(0,0),(6,0),(1,4)]},coordinates={'shape':{}})
+        options={4000:[m.Recipe(4000,'B',(),formula='sqrt(-a^2)')],
+                 4001:[m.Recipe(4001,'B',(),formula='a')]}
+        normal=m.coordinate_anchors(options,{},atlas,None,set(),{},{})
+        self.assertEqual(set(normal),{4000,4001})
+        reviewed=m.coordinate_anchors(options,{},atlas,None,set(),{},{},reviewed_nonreal={4000})
+        self.assertEqual(set(reviewed),{4001})
+
+    def test_coordinate_numeric_edits_do_not_invalidate_extraction(self):
+        roots=('coordinate_candidates','normalize_formula','validate_formula')
+        source='GRAMMAR = 1\ndef coordinate_candidates(x):\n    return normalize_formula(x)\ndef normalize_formula(x):\n    return validate_formula(x)\ndef validate_formula(x):\n    return x+1\ndef evaluate_formula(x):\n    return x*2\n'
+        original=extraction_source_fingerprint(source,roots)
+        self.assertEqual(original,extraction_source_fingerprint(source.replace('x*2','x*3'),roots))
+        self.assertNotEqual(original,extraction_source_fingerprint(source.replace('x+1','x+2'),roots))
     def test_solver_and_report_edits_do_not_invalidate_extraction(self):
         source = "VALUE = 3\ndef extract_entry(x):\n    return x+1\ndef select_recipes(x):\n    return x\n"
         original = extraction_source_fingerprint(source)
@@ -948,6 +995,57 @@ class ImportInfrastructureTest(unittest.TestCase):
                 page.write_text('<h3 id="X4000)">X(4000) = midpoint of X(1) and X(3)</h3>')
                 with self.assertRaisesRegex(ValueError, 'preflight'):
                     importer.read_page(3)
+
+
+class PairCenterTest(TestCase):
+    def test_pair_families_agree_with_geometry_symmetry_and_source_titles(self):
+        from test_source_errors import vu_pair_geometry,vietnamese_geometry
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')))
+        for shape,abc in atlas['triangles'].items():
+            for n in range(38536,38551):
+                recipe=next(r for r in m.extract_entry(n,entries[n],20) if r.operation=='B' and len(r.references)==2)
+                points=[native[shape][ref] for ref in recipe.references]
+                actual=m.numeric_transform_formula(recipe,points,abc)
+                expected,error=vu_pair_geometry(abc,*points)
+                self.assertLess(math.dist(actual,expected),1e-7);self.assertLess(error,1e-7)
+                self.assertLess(math.dist(actual,m.numeric_transform_formula(recipe,points[::-1],abc)),1e-7)
+                conjugates=[m.numeric_conjugate(p,abc,True) for p in points]
+                self.assertLess(math.dist(actual,m.numeric_transform_formula(recipe,conjugates,abc)),1e-7)
+            for kind,formula in [('cevian',m.VIETNAMESE_CEVIAN_FORMULA),('anticevian',m.VIETNAMESE_ANTI_FORMULA)]:
+                for p in range(1,7):
+                    for u in range(p+1,7):
+                        points=[native[shape][p],native[shape][u]]
+                        expected,error=vietnamese_geometry(abc,*points,kind)
+                        recipe=m.Recipe(100000,'B',(p,u),formula=formula)
+                        actual=m.numeric_transform_formula(recipe,points,abc)
+                        if expected is None:
+                            self.assertIsNone(actual)
+                        else:
+                            self.assertLess(math.dist(actual,expected),1e-6)
+                            self.assertLess(error,1e-6)
+                            self.assertLess(math.dist(actual,m.numeric_transform_formula(recipe,points[::-1],abc)),1e-6)
+        for n,refs in [(39191,(2,4)),(39192,(2,5)),(39194,(3,4)),(39195,(3,5))]:
+            candidate=next(r for r in m.extract_entry(n,entries[n],20) if r.operation=='B')
+            self.assertEqual(candidate.references,refs)  # Use headings, not the inconsistent preamble table.
+
+    def test_pair_scope_roundtrip_and_circle_degeneracy(self):
+        for formula in [m.VU_CIRCLES_FORMULA,m.VIETNAMESE_ANTI_FORMULA,m.VIETNAMESE_CEVIAN_FORMULA]:
+            m.validate_transform_formula(formula,2)
+        for bad in ['x+u','x*u+a','x*u+d','x+unknown']:
+            with self.assertRaises(ValueError):m.validate_transform_formula(bad,2)
+        with self.assertRaises(ValueError):m.validate_transform_formula('x*u',1)
+        for body in ['VU (X(2),X(8))-CIRCLES PERSPECTOR',
+                     'VIETNAMESE POINT OF THESE TRIANGLES: ANTICEVIAN OF X(1) AND ANTICEVIAN OF X(4)']:
+            for suffix in [' wrt medial triangle',' in excentral triangle',' when ABC is acute']:
+                self.assertEqual(m.extract_entry(100000,'X(100000) = '+body+suffix,20),[])
+        abc=[(0,0),(6,0),(1,4)];P=(2,1);Q=m.numeric_conjugate(P,abc,True)
+        recipe=m.Recipe(100000,'B',(1,2),formula=m.VU_CIRCLES_FORMULA)
+        self.assertIsNone(m.numeric_transform_formula(recipe,[P,Q],abc))
+        self.assertIsNone(m.numeric_transform_formula(recipe,[P,P],abc))
+        with TemporaryDirectory(dir=CACHE) as folder:
+            path=Path(folder)/'recipes.txt';path.write_text(recipe.row(),encoding='utf-8')
+            self.assertEqual(m.read_recipes(path)[100000].row(),recipe.row())
 
 
 class VuPccTest(TestCase):

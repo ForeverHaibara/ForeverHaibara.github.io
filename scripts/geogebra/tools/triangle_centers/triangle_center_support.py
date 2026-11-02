@@ -78,10 +78,10 @@ def heading_issues(source: str) -> list[str]:
     return issues
 
 
-def extraction_source_fingerprint(source):
+def extraction_source_fingerprint(source, roots=None):
     tree = ast.parse(source)
     definitions = {node.name: node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
-    pending = ['Recipe', 'RecipeCandidates', 'filter_candidates', 'read_page', 'extract_entry']
+    pending = list(roots) if roots is not None else ['Recipe', 'RecipeCandidates', 'filter_candidates', 'read_page', 'extract_entry']
     reachable = set()
     while pending:
         name = pending.pop()
@@ -101,8 +101,9 @@ def parser_fingerprint():
     folder = Path(__file__).parent
     digest = hashlib.sha256(b'extraction-cache-v3')
     digest.update(extraction_source_fingerprint((folder/'triangle_center_import.py').read_text(encoding='utf-8')).encode())
-    for name in ('triangle_center_coordinates.py', 'triangle_center_sources.py'):
-        digest.update(ast.dump(ast.parse((folder/name).read_text(encoding='utf-8')), include_attributes=False).encode())
+    digest.update(extraction_source_fingerprint((folder/'triangle_center_coordinates.py').read_text(encoding='utf-8'),
+                  roots=('coordinate_candidates','coordinate_text','normalize_formula','validate_formula')).encode())
+    digest.update(ast.dump(ast.parse((folder/'triangle_center_sources.py').read_text(encoding='utf-8')),include_attributes=False).encode())
     # Source hints affect cached metadata; report-only title grouping does not.
     from triangle_center_diagnostics import entry_metadata
     digest.update(ast.dump(ast.parse(inspect.getsource(entry_metadata)),include_attributes=False).encode())

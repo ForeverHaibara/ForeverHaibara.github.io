@@ -90,7 +90,7 @@ recipe table. Primary categories summarize possibly overlapping candidate reason
 `geometry_or_transaction` and `coordinate_admission_or_variants` deliberately
 avoid claiming a more specific cause than observed.
 
-Coordinate parsing accepts arithmetic brace groups and one or two explicit,
+Coordinate parsing accepts arithmetic brace groups and up to three explicit,
 independent local scalar definitions, including a wrapped `where` line. Global
 symbol shadowing, unknown symbols and local definition chains remain rejected.
 Extraction cache fingerprints follow parser entry points and their local helper
@@ -106,8 +106,8 @@ can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
 circle center, a damaged PB entry, and a power-curve tangent pole respectively.
 Out-of-Part J/I seeds close without assuming that their page incidence table
 was loaded; their construction inputs still undergo numeric/type screening.
-The full dry-run now contains 70,088 records and 127 unresolved entries, while
-the published small set contains 8,206 records. See the uncovered-analysis doc
+The full dry-run now contains 70,112 records and 103 unresolved entries, while
+the published small set contains 8,208 records. See the uncovered-analysis doc
 for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.
 
 `triangle_center_domains.py` propagates reviewed complex-domain root sets for
@@ -147,8 +147,8 @@ in the uncovered-analysis report. Runtime uses GeoGebra's circle reflection.
 The Vu 1st PCC rule reuses a two-point distance-scoped F combo and restores eight
 Part 20 centers. It is checked against independently constructed pedal/circumcevian
 perspectors and known native members. Vu 2nd PCC now uses an independently derived dependent-coordinate formula.
-The latest unresolved report is `reports/uncovered/uncovered-vu-second.json`;
-full stages/logs are under `runs/vu-second/`, relative to the cache root.
+The latest unresolved report is `reports/uncovered/uncovered-multi-family-final.json`;
+full stages/logs are under `runs/multi-family/`, relative to the cache root.
 
 `B source formula` applies a cyclic barycentric formula to one finite center.
 Only this form permits x/y/z, which rotate along with a/b/c and are checked for
@@ -157,3 +157,17 @@ the dependency graph rather than independent coordinate-anchor admission. Client
 and numeric caches bind/key the source explicitly; undefined and ideal results
 are not admitted as finite samples. The Vu second PCC source typo is reviewed in
 `test_source_errors.py`; related rule tests stay in the existing import/graph files.
+
+Pair transforms use `B source1 source2 formula`, with x/y/z and u/v/w scoped to
+the two finite inputs and separate homogeneous-scaling checks. Strict ABC-only
+VU circles and cevian/anticevian Vietnamese rules reuse this format. Local scalar
+triples, declared cyclic triples and ordinary where punctuation are supported.
+The two Vijay source exceptions remain reviewed seeds, not a generalized title rule.
+
+Parser fingerprints now follow the coordinate parser call graph instead of the
+entire coordinate module: evaluator and homogeneity-only changes do not force
+re-extraction. `--skip-ideal-audit` skips only the auxiliary all-formula ideal
+inventory after it has already run on an unchanged formula pool/atlas; graph,
+input-type, geometry and final numeric checks always run. Default behavior is
+unchanged. Explicitly reviewed nonreal roots cannot become coordinate anchors
+solely because their formulas are undefined on both atlas samples.

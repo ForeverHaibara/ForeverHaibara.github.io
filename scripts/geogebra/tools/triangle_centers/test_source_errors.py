@@ -18,6 +18,85 @@ def cross(p, q):
     return p[0]*q[1]-p[1]*q[0]
 
 
+def barycentrics(point,abc):
+    return [cross(sub(abc[(j+1)%3],point),sub(abc[(j+2)%3],point)) for j in range(3)]
+
+
+def weighted_point(weights,abc):
+    return tuple(sum(weights[j]*abc[j][i] for j in range(3))/sum(weights) for i in (0,1))
+
+
+def reviewed_bc_formula(number):
+    source=(m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')
+    text='\n'.join(m.coordinate_text(dict(m.split_entries(source))[number]))
+    raw=re.search(r'Barycentrics\s+(.*?)\s*:\s*:',text,re.S)[1]
+    fixed=raw.replace('a b c','b c')
+    if number==38494:
+        fixed=fixed.replace('b c(b+c-2a)','a b c(b+c-2a)')
+    return m.normalize_formula(fixed)
+
+
+def vijay_triangles(abc):
+    P,V,T=[],[],[]
+    for j in range(3):
+        tri=[abc[(j+k)%3] for k in range(3)]
+        a,b,c=[math.dist(tri[(i+1)%3],tri[(i+2)%3]) for i in range(3)]
+        R=m.side_environment(a,b,c)['R']
+        Ab=weighted_point([0,4*R+c,c],tri);Ac=weighted_point([0,b,4*R+b],tri)
+        Bc=weighted_point([a,0,4*R+a],tri);Ba=weighted_point([4*R+c,0,c],tri)
+        Ca=weighted_point([4*R+b,b,0],tri);Cb=weighted_point([a,4*R+a,0],tri)
+        oldCb=weighted_point([a,2*R,0],tri);oldBc=weighted_point([a,0,2*R],tri)
+        P.append(m.numeric_intersection([Ca,Bc,Cb,Ba]))
+        V.append(m.numeric_intersection([Ac,Bc,Ab,Cb]))
+        T.append(m.numeric_intersection([Ba,oldCb,Ca,oldBc]))
+    return P,V,T
+
+
+def vu_pair_geometry(abc,P,U):
+    P1,U1=[m.numeric_conjugate(point,abc,True) for point in (P,U)]
+    vertices=[]
+    for A in abc:
+        first=m.numeric_circle_center([A,P,U]);second=m.numeric_circle_center([A,P1,U1])
+        d=(-(second[1]-first[1]),second[0]-first[0])
+        t=-2*sum(d[i]*(A[i]-first[i]) for i in (0,1))/sum(value*value for value in d)
+        vertices.append(tuple(A[i]+t*d[i] for i in (0,1)))
+    target=m.numeric_intersection([abc[0],vertices[0],abc[1],vertices[1]])
+    p,d=m.line_data(abc[2],vertices[2])
+    error=abs(cross(d,sub(target,p)))/math.hypot(*d)
+    return target,error
+
+
+def vietnamese_geometry(abc,P,U,kind):
+    triangles=[]
+    for point in (P,U):
+        weights=barycentrics(point,abc);vertices=[]
+        for j in range(3):
+            w=list(weights);w[j]=0 if kind=='cevian' else -w[j]
+            vertices.append(weighted_point(w,abc))
+        triangles.append(vertices)
+    first,second=triangles
+    connectors=[(first[j],second[j]) for j in range(3)]
+    vertex=[m.numeric_intersection([*connectors[(j+1)%3],*connectors[(j+2)%3]]) for j in range(3)]
+    axes=[];circles=[]
+    for j in range(3):
+        pair=[]
+        for tri in triangles:
+            triplet=[vertex[j],tri[(j+1)%3],tri[(j+2)%3]]
+            center=m.numeric_circle_center(triplet)
+            pair.append((center,math.dist(center,triplet[0])**2))
+        (c,r),(d,s)=pair;normal=tuple(2*(d[i]-c[i]) for i in (0,1))
+        constant=sum(v*v for v in d)-s-sum(v*v for v in c)+r
+        base=tuple(constant*v/sum(x*x for x in normal) for v in normal)
+        axes.append((base,(base[0]-normal[1],base[1]+normal[0])))
+        circles.append(pair)
+    target=m.numeric_intersection([*axes[0],*axes[1]])
+    if target is None:
+        return None,None
+    (c,r),(d,s)=circles[2]
+    error=abs((math.dist(target,c)**2-r)-(math.dist(target,d)**2-s))
+    return target,error
+
+
 def crossing(p, q, r, s):
     d, e = sub(q, p), sub(s, r)
     t = cross(sub(r, p), e)/cross(d, e)
@@ -177,6 +256,32 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
 class PBClusterAnchors(TestCase):
+    def test_reviewed_vijay_and_vu_bc_errors_agree_with_independent_geometry(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        source=(m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')
+        entries=dict(m.split_entries(source));seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        for n in [38493,38494,38538,38546,38547,38549,38550]:
+            original=m.coordinate_candidates(entries[n])[0][1]
+            self.assertFalse(m.homogeneous_degree(original)[0],n)
+            fixed=reviewed_bc_formula(n);self.assertTrue(m.homogeneous_degree(fixed)[0])
+            if n in seeds:self.assertEqual(seeds[n].formula,fixed)
+            for shape,abc in atlas['triangles'].items():
+                if n in (38493,38494):
+                    P,V,T=vijay_triangles(abc);other=V if n==38493 else T
+                    target=m.numeric_intersection([P[0],other[0],P[1],other[1]])
+                    p,d=m.line_data(P[2],other[2]);error=abs(cross(d,sub(target,p)))/math.hypot(*d)
+                else:
+                    refs=tuple(map(int,m.VU_CIRCLES.fullmatch(m.entry_metadata(entries[n])['title']).groups()))
+                    target,error=vu_pair_geometry(abc,*[native[shape][ref] for ref in refs])
+                    generic=m.numeric_transform_formula(m.Recipe(n,'B',refs,formula=m.VU_CIRCLES_FORMULA),
+                                 [native[shape][ref] for ref in refs],abc)
+                    self.assertLess(math.dist(generic,target),1e-7)
+                self.assertLess(error,1e-7)
+                fixed_point=m.numeric_formula(m.Recipe(n,'B',(),formula=fixed),abc)
+                self.assertLess(math.dist(fixed_point,target),1e-7)
+        # A wholesale replacement would corrupt a genuine abc term in X(38494).
+        bad=reviewed_bc_formula(38494).replace('a*b*c*(b+c-2*a)','b*c*(b+c-2*a)')
+        self.assertFalse(m.homogeneous_degree(bad)[0])
     def test_vu_second_preamble_has_a_reviewed_extra_factor_not_a_new_parser_rule(self):
         raw = (m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')
         text = ' '.join(m.coordinate_text(dict(m.split_entries(raw))[38899]))

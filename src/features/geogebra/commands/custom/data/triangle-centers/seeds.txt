@@ -124,3 +124,15 @@
 # ETC X(39641/39642) explicitly give imaginary Brocard-inellipse foci with i.
 39641 DOMAIN nonreal
 39642 DOMAIN nonreal
+
+# X(38493/38494): reviewed extra a in selected printed bc terms. Preserve
+# the genuine abc*(b+c-2a) in X(38494); global abc -> bc is incorrect.
+# Verified by the preamble midpoint/intersection construction of P'a,Va,Ra
+# and concurrency of all three corresponding lines on both atlas shapes.
+38493 B a*(4*R+b)*(4*R+c)*(4*R+b+c)*(32*R^3+16*(a+b+c)*R^2+2*R*(a^2+4*a*b+4*a*c+3*b*c)+a*(a*b+a*c+2*b*c))
+38494 B 256*R^5+64*R^4*(2*a+b+c)+16*R^3*b*c-8*R^2*(a^2*(b+c)+a*(b^2+c^2+b*c))-2*R*(a^2*(b^2+c^2)+a*b*c*(b+c-2*a))+a^2*b*c*(b+c)
+
+# ETC explicitly says X(11065/11066) are not always real-valued.
+# The parsed coordinates are real on a near-equilateral independent sample.
+11065 DOMAIN conditional_complex
+11066 DOMAIN conditional_complex

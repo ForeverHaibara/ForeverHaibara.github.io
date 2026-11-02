@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Exercise a distance-scoped combo without publishing Part 20 data.
 vi.mock('../../data/triangle-centers/chunks/40.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n' };
+  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n40997 B 1 2 x*u\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -297,6 +297,24 @@ describe('extended TriangleCenter dispatch', () => {
     expect(result).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
     expect(result).not.toContain(',40998)');
     expect(result.match(/TriangleCenter\(A,B,C,9\)/gu)).toHaveLength(1);
+  });
+
+  it('binds both sources once for a two-input coordinate recipe',async () => {
+    await prepareTriangleCenter(40997);
+    const result=compileStudioCommand('TriangleCenter(A,B,C,40997)',environment());
+    expect(result).not.toMatch(/\b[xyzuvw]\b(?!\s*\()/u);
+    expect(result).not.toContain(',40997)');
+    for (const id of [1,2]) expect(result.match(new RegExp(`TriangleCenter\\(A,B,C,${id}\\)`,'gu'))).toHaveLength(1);
+  });
+
+  it('loads the reviewed Vijay-Paasche-Hutson seeds from their new chunk',async () => {
+    for (const id of [38493,38494]) {
+      await prepareTriangleCenter(id);
+      const result=compileStudioCommand(`TriangleCenter(A,B,C,${id})`,environment());
+      expect(result).toContain('Distance(');
+      expect(result).not.toMatch(/\bR\b/u);
+      expect(result).not.toContain(`,${id})`);
+    }
   });
 
 });
