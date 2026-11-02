@@ -18,11 +18,13 @@ const size = (operation: Recipe['operation']) => operation === 'B' ? 0
   : operation === 'J' ? 4 : ['P', 'L', 'O'].includes(operation) ? 3
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
+  x: 'y', y: 'z', z: 'x',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
 const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'pi',
   'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln', 'abs']);
-const validFormula = (formula: string, pairDistance = false): boolean => /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
-  && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name) || pairDistance && name === 'd');
+const validFormula = (formula: string, pairDistance = false, sourceCoordinates = false): boolean => /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
+  && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name) || pairDistance && name === 'd'
+    || sourceCoordinates && ['x', 'y', 'z'].includes(name));
 
 const loadChunk = async (id: number): Promise<void> => {
   const chunk = Math.floor(id / 1000);
@@ -38,13 +40,14 @@ const loadChunk = async (id: number): Promise<void> => {
       const number = Number(idText);
       const operation = opcode as Recipe['operation'];
       const pairs = opcode === 'F' ? referenceText.map((text) => text.split(':')) : [];
-      const formula = opcode === 'B' ? referenceText[0] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
-      const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0])) : formula ? [] : referenceText.map(Number);
+      const formula = opcode === 'B' ? referenceText[referenceText.length - 1] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
+      const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0]))
+        : opcode === 'B' ? referenceText.length === 2 ? [Number(referenceText[0])] : [] : referenceText.map(Number);
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
         || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
-        || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(operation === 'V' && references.length === 3))
+        || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(operation === 'V' && references.length === 3) && !(operation === 'B' && references.length === 1))
         || (opcode === 'B' && !formula)
-        || (opcode === 'B' && formula !== undefined && (referenceText.length !== 1 || !validFormula(formula)))
+        || (opcode === 'B' && formula !== undefined && (![1, 2].includes(referenceText.length) || !validFormula(formula, false, references.length === 1)))
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
       parsed.set(number, { operation, references, formula });
@@ -119,7 +122,9 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       return build(variables);
     }, 'number');
   };
-  const coordinatePoint = (formula: string): string => withSideVariables((variables) => {
+  const coordinatePoint = (formula: string, source?: string): string => {
+    const build = (bound: Record<string, string>) => withSideVariables((sides) => {
+      const variables = { ...sides, ...bound };
       const [A, B, C] = vertices;
       const cyclic = (turn: number): string => formula.replace(/[A-Za-z_]+/gu, (name) => {
         let rotated = name;
@@ -131,7 +136,14 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         const total = `((${u})+(${v})+(${w}))`;
         return `If(${total}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${total})`;
       }, 'number');
-  });
+    });
+    if (source === undefined) return build({});
+    return bind([source], allocate, ([p]) => {
+      const areas = [[vertices[1], vertices[2]], [vertices[2], vertices[0]], [vertices[0], vertices[1]]]
+        .map(([b, c]) => `((x(${b})-x(${p}))*(y(${c})-y(${p}))-(y(${b})-y(${p}))*(x(${c})-x(${p})))`);
+      return bind(areas, allocate, ([x, y, z]) => build({ x, y, z }), 'number');
+    }, 'point');
+  };
   const render = (number: number): CenterValue => {
     if (number <= 3053) {
       const direction = nativeDirections.get(number);
@@ -145,7 +157,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
     try {
       const values = recipe.references.map(render);
       if (values.some((value) => value.kind === 'unknown-ideal')) throw new Error('The ideal triangle center has no known direction.');
-      if (recipe.operation === 'B') return point(coordinatePoint(recipe.formula!));
+      if (recipe.operation === 'B') return point(coordinatePoint(recipe.formula!, values.length ? requirePoint(values[0]) : undefined));
       if (recipe.operation === 'F') {
         const rawFormulas = recipe.formula!.split('|');
         const buildCombo = (formulas: string[], points = values.map(requirePoint)): string => {

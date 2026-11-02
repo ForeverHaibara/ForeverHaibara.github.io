@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Exercise a distance-scoped combo without publishing Part 20 data.
 vi.mock('../../data/triangle-centers/chunks/40.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n' };
+  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -287,6 +287,16 @@ describe('extended TriangleCenter dispatch', () => {
     expect(result).toContain('TriangleCenter(A,B,C,560)');
     expect(result).not.toMatch(/\bd\b/u);
     expect(result).not.toContain(',40999)');
+  });
+
+  it('binds source barycentrics in a dependent coordinate recipe', async () => {
+    await prepareTriangleCenter(40998);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,40998)',environment());
+    expect(result).toContain('TriangleCenter(A,B,C,9)');
+    expect(result).toContain('x(');
+    expect(result).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
+    expect(result).not.toContain(',40998)');
+    expect(result.match(/TriangleCenter\(A,B,C,9\)/gu)).toHaveLength(1);
   });
 
 });

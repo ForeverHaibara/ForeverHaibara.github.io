@@ -951,6 +951,71 @@ class ImportInfrastructureTest(unittest.TestCase):
 
 
 class VuPccTest(TestCase):
+    def test_second_pcc_matches_independent_geometry_and_known_members(self):
+        atlas = m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native = m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            O = native[shape][3]
+            def second(A,d):
+                t = -2*sum(d[i]*(A[i]-O[i]) for i in (0,1))/sum(v*v for v in d)
+                return tuple(A[i]+t*d[i] for i in (0,1))
+            for n in [1,2,4,5,6,8,9,10,31,32,75,76,83]:
+                P = native[shape][n]
+                vertices2,vertices4 = [],[]
+                for A in abc:
+                    midpoint = tuple((A[i]+P[i])/2 for i in (0,1))
+                    vertices2.append(second(A,(-(midpoint[1]-O[1]),midpoint[0]-O[0])))
+                    vertices4.append(second(A,tuple(P[i]-A[i] for i in (0,1))))
+                vertices3 = [m.numeric_intersection([abc[(j+1)%3],vertices2[(j+1)%3],
+                              abc[(j+2)%3],vertices2[(j+2)%3]]) for j in range(3)]
+                target = m.numeric_intersection([vertices3[0],vertices4[0],vertices3[1],vertices4[1]])
+                line = m.line_data(vertices3[2],vertices4[2])
+                p,d = line
+                self.assertLess(abs(d[0]*(target[1]-p[1])-d[1]*(target[0]-p[0]))/math.hypot(*d),1e-7)
+                recipe = m.Recipe(100000,'B',(n,),formula=m.VU_SECOND_FORMULA)
+                actual = m.numeric_transform_formula(recipe,P,abc)
+                self.assertLess(math.dist(actual,target),1e-7)
+                known = {1:1394,4:4}.get(n)
+                if known: self.assertLess(math.dist(actual,native[shape][known]),1e-8)
+                known_line = {2:(2,154),6:(6,1597)}.get(n)
+                if known_line:
+                    p,d = m.line_data(*[native[shape][ref] for ref in known_line])
+                    self.assertLess(abs(d[0]*(actual[1]-p[1])-d[1]*(actual[0]-p[0]))/math.hypot(*d),1e-7)
+
+    def test_source_coordinate_transform_scope_scaling_and_degenerate_inputs(self):
+        m.validate_transform_formula(m.VU_SECOND_FORMULA)
+        for bad in ['x+a','x+1','d*x','unknown*x']:
+            with self.assertRaises(ValueError,msg=bad): m.validate_transform_formula(bad)
+        self.assertEqual(coordinate_candidates('Barycentrics x+y+z : :'),[])
+        abc=[(0,0),(6,0),(1,4)];P=(2,1)
+        recipe=m.Recipe(4000,'B',(1,),formula=m.VU_SECOND_FORMULA)
+        actual=m.numeric_transform_formula(recipe,P,abc)
+        for order in [(1,2,0),(0,2,1)]:
+            relabelled=m.numeric_transform_formula(recipe,P,[abc[j] for j in order])
+            self.assertLess(math.dist(relabelled,actual),1e-8)
+        for scale in (.1,10):
+            transformed=m.numeric_transform_formula(recipe,tuple(t*scale for t in P),
+                            [tuple(t*scale for t in point) for point in abc])
+            self.assertLess(math.dist(transformed,tuple(t*scale for t in actual)),1e-8)
+        self.assertIsNone(m.numeric_transform_formula(recipe,m.Ideal(1,0),abc))
+        self.assertIsNone(m.numeric_transform_formula(m.Recipe(4000,'B',(1,),formula='x-x'),P,abc))
+        with self.assertRaises(ValueError): m.validate_types({4000:recipe},{1})
+        with TemporaryDirectory(dir=CACHE) as folder:
+            path=Path(folder)/'recipe.txt';path.write_text(recipe.row(),encoding='utf-8')
+            self.assertEqual(read_recipes(path)[4000].row(),recipe.row())
+        for suffix in [' wrt medial triangle',' in excentral triangle',' when ABC is acute']:
+            self.assertEqual(m.extract_entry(38923,'X(38923) = VU 2ND PCC PERSPECTOR OF X(9)'+suffix,20),[])
+
+    def test_dependent_coordinate_recipe_closes_after_its_source_without_an_anchor(self):
+        atlas=dict(triangles={'shape':[(0,0),(6,0),(1,4)]},
+                   coordinates={'shape':{'1':(0,0),'2':(6,0)}})
+        candidates={4000:[m.Recipe(4000,'M',(1,2))],
+                    4001:[m.Recipe(4001,'B',(4000,),formula='x')]}
+        selected=m.select_recipes(candidates,{},6,None,atlas=atlas)
+        self.assertEqual(set(selected),{4000,4001})
+        self.assertEqual(m.numeric_coordinates(selected,atlas)['shape'][4001],(3,0))
+        self.assertEqual(m.validate_graph(selected)[0][4001],2)
+
     def test_existing_formula_contexts_share_one_validation_cache_key(self):
         m.validate_formula.cache_clear()
         homogeneous_degree.cache_clear()

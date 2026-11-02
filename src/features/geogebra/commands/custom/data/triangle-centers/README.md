@@ -104,4 +104,7 @@ once its incidence evidence became readable; a named-circle-center recipe is a
 future recovery path, not a permanent SKIP.
 
 
-Two-reference `F` coefficients may use `d=Distance(X(p),X(q))`; it has side-length dimension and is unavailable in `B` or combos with more inputs. Inputs and d are bound once at runtime. An unqualified Vu 1st PCC perspector of X(p) maps to `F p:2*R^2 3:d^2-R^2`, derived and independently checked from the circumcevian/pedal-circle construction. No Vu 2nd PCC rule is inferred from the damaged preamble.
+Two-reference `F` coefficients may use `d=Distance(X(p),X(q))`; it has side-length dimension and is unavailable in `B` or combos with more inputs. Inputs and d are bound once at runtime. An unqualified Vu 1st PCC perspector of X(p) maps to `F p:2*R^2 3:d^2-R^2`, derived and independently checked from the circumcevian/pedal-circle construction. The Vu 2nd PCC rule uses a coordinate transform independently derived from its geometry and checked against the preamble typo.
+
+
+`B source formula` applies cyclic coordinates to one finite input center, with scoped x/y/z denoting its homogeneous barycentrics. Ordinary `B formula` retains its existing meaning and rejects these names. Both triangle-unit scaling and input projective scaling must be homogeneous. The source is a real dependency: input types, depth, estimated size and numeric transactions apply before admission. The client binds the input and its three signed areas once. The Vu 2nd PCC rule uses this form; no individual target seeds are needed.

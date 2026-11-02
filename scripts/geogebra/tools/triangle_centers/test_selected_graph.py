@@ -121,6 +121,18 @@ ATLAS = dict(triangles={'shape': [(0, 0), (6, 0), (1, 4)]},
 
 
 class NumericTransactionTest(TestCase):
+    def test_coordinate_transform_tracks_parent_changes_and_rolls_back_undefined_result(self):
+        records = {4000:m.Recipe(4000,'M',(1,2)),4001:m.Recipe(4001,'B',(4000,),formula='x')}
+        graph,geometry = self.make(records,lambda n,r,c: n in c['shape'])
+        self.assertEqual(geometry.coordinates['shape'][4001],(3,0))
+        self.assertTrue(geometry.apply(m.Recipe(4000,'M',(2,2))))
+        self.assertEqual(geometry.coordinates['shape'][4001],(6,0))
+        before = deepcopy(geometry.coordinates)
+        self.assertFalse(geometry.apply(m.Recipe(4001,'B',(4000,),formula='x-x')))
+        self.assertEqual(geometry.coordinates,before)
+        self.assertEqual(records[4001].formula,'x')
+        self.assertFalse(graph.replace(m.Recipe(4000,'B',(4001,),formula='x')))
+
     def test_transaction_does_not_iterate_or_copy_unchanged_coordinates(self):
         class NoFullScan(dict):
             def __iter__(self):

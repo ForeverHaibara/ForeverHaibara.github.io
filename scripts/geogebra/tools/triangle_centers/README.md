@@ -106,7 +106,7 @@ can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
 circle center, a damaged PB entry, and a power-curve tangent pole respectively.
 Out-of-Part J/I seeds close without assuming that their page incidence table
 was loaded; their construction inputs still undergo numeric/type screening.
-The full dry-run now contains 70,081 records and 134 unresolved entries, while
+The full dry-run now contains 70,088 records and 127 unresolved entries, while
 the published small set contains 8,206 records. See the uncovered-analysis doc
 for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.
 
@@ -146,6 +146,14 @@ in the uncovered-analysis report. Runtime uses GeoGebra's circle reflection.
 
 The Vu 1st PCC rule reuses a two-point distance-scoped F combo and restores eight
 Part 20 centers. It is checked against independently constructed pedal/circumcevian
-perspectors and known native members. Vu 2nd PCC remains under source review.
-The latest unresolved report is `reports/uncovered/uncovered-vu-first.json`;
-full stages/logs are under `runs/vu-first/`, relative to the cache root.
+perspectors and known native members. Vu 2nd PCC now uses an independently derived dependent-coordinate formula.
+The latest unresolved report is `reports/uncovered/uncovered-vu-second.json`;
+full stages/logs are under `runs/vu-second/`, relative to the cache root.
+
+`B source formula` applies a cyclic barycentric formula to one finite center.
+Only this form permits x/y/z, which rotate along with a/b/c and are checked for
+homogeneous source scaling separately from triangle scaling. It closes through
+the dependency graph rather than independent coordinate-anchor admission. Client
+and numeric caches bind/key the source explicitly; undefined and ideal results
+are not admitted as finite samples. The Vu second PCC source typo is reviewed in
+`test_source_errors.py`; related rule tests stay in the existing import/graph files.

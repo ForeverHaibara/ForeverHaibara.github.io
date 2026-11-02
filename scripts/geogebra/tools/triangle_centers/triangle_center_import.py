@@ -55,6 +55,14 @@ CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse)
 CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
 BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
 VU_FIRST = re.compile(rf'^VU 1ST PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
+VU_SECOND = re.compile(rf'^VU 2ND PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
+# Derived from intersections of the circumcevian and BB2/CC2 triangles, rather
+# than transcribing the damaged degree-eight polynomial in the ETC preamble.
+VU_SECOND_FORMULA = ('4*(x*c^2+z*a^2)*(x*b^2+y*a^2)'
+    '*(x*a^2-x*b^2-x*c^2+z*a^2+z*b^2-z*c^2)'
+    '*(x*a^2-x*b^2-x*c^2+y*a^2-y*b^2+y*c^2)'
+    '-x^2*(a^2-b^2-c^2)^2'
+    '*(2*x*b^2+y*a^2+y*b^2-y*c^2)*(2*x*c^2+z*a^2-z*b^2+z*c^2)')
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
@@ -79,7 +87,8 @@ class Recipe:
 
     def row(self) -> str:
         if self.operation == 'B':
-            return f'{self.number} {self.operation} {self.formula}'
+            source = f'{self.references[0]} ' if self.references else ''
+            return f'{self.number} B {source}{self.formula}'
         if self.operation == 'F':
             return f'{self.number} F ' + ' '.join(f'{ref}:{coef}' for ref, coef in zip(self.references, self.formula.split('|')))
         return ' '.join((str(self.number), self.operation, *map(str, self.references)))
@@ -448,6 +457,12 @@ def extract_entry(number: int, fragment: str, part: int,
     recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)],
                       '2*R^2|d^2-R^2' if opcode=='F' else '') for opcode, refs in sorted(found)
                if all(reference > 0 and reference != number for reference in refs)]
+    for line in lines:
+        relation = RELATION.match(line)
+        if relation and int(relation[1]) == number and (match := VU_SECOND.fullmatch(relation[2])):
+            source = int(match[1])
+            if source > 0 and source not in (3,number):
+                recipes.append(Recipe(number,'B',(source,),part,line,VU_SECOND_FORMULA))
     coordinate_view = coordinate_text(fragment)
     recipes.extend(candidate for line in coordinate_view
                    if (candidate := combo_candidate(number, line, part)) is not None)
@@ -546,7 +561,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             continue
         if skipped is not None and number in skipped:
             raise ValueError(f'Conflicting skip and recipe in {path}: {row}')
-        formula = fields[2] if opcode == 'B' and len(fields) == 3 else ''
+        formula = fields[-1] if opcode == 'B' and len(fields) in (3,4) else ''
         if opcode == 'F':
             pairs = [field.split(':') for field in fields[2:]]
             if not all(len(pair) == 2 for pair in pairs):
@@ -554,15 +569,17 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             refs = tuple(int(pair[0]) for pair in pairs)
             formula = '|'.join(pair[1] for pair in pairs)
         else:
-            refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
+            refs = (tuple(map(int,fields[2:-1])) if opcode == 'B' else tuple(map(int, fields[2:])))
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs)==1) and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and not formula)
                 or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             for scalar in formula.split('|'):
-                if opcode=='F' and len(refs)==2 and 'd' in scalar:
+                if opcode=='B' and refs:
+                    validate_transform_formula(scalar)
+                elif opcode=='F' and len(refs)==2 and 'd' in scalar:
                     validate_formula(scalar,True)
                 else:
                     validate_formula(scalar)
@@ -627,7 +644,7 @@ def unresolved_components(candidates: dict[int, list[Recipe]], baseline: dict[in
 
     for target in pending:
         for recipe in candidates[target]:
-            if recipe.operation == 'B':
+            if recipe.operation == 'B' and not recipe.references:
                 continue
             for reference in recipe.references:
                 if reference in pending:
@@ -673,13 +690,13 @@ def coordinate_anchors(candidates: dict[int, list[Recipe]], baseline: dict[int, 
         if target not in components:
             continue
         for recipe in options:
-            if recipe.operation != 'B':
+            if recipe.operation != 'B' or recipe.references:
                 for ref in recipe.references:
                     dependents[ref].add(target)
     for number, options in candidates.items():
         if number not in components:
             continue
-        formulas = [recipe for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options) if recipe.operation == 'B' and homogeneous_degree(recipe.formula)[0]
+        formulas = [recipe for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options) if recipe.operation == 'B' and not recipe.references and homogeneous_degree(recipe.formula)[0]
                     and formula_candidate_supported(recipe, atlas) and agrees_with_known_line(recipe)]
         if not formulas:
             continue
@@ -723,7 +740,7 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         # area expressions, so a long coordinate source is not repeated.
         return 1100 + children[0]
     if recipe.operation == 'B':
-        return 150 + 18 * len(recipe.formula)
+        return 150 + 18 * len(recipe.formula) + sum(children)
     if recipe.operation == 'F':
         return 600 + 18 * len(recipe.formula) + sum(children)
     return (95 if recipe.operation == 'V' else 24) + sum(children)
@@ -764,13 +781,15 @@ def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
 
 
 def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_ideal: set[int]) -> None:
+    if recipe.operation == 'B' and recipe.references:
+        validate_transform_formula(recipe.formula)
     if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
            for ref in recipe.references):
         raise ValueError(f'Unknown ideal direction used in X({recipe.number}) {recipe.operation}')
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O'} else
+    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O', 'B'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
         raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
@@ -884,12 +903,43 @@ def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -
     return _formula_sample(recipe.formula, tuple(tuple(xy) for xy in abc))
 
 
+@lru_cache(maxsize=8192)
+def validate_transform_formula(formula: str) -> None:
+    validate_formula(formula,source_coordinates=True)
+    if not all(homogeneous_degree(formula,source_coordinates=True,source_scale=scale)[0]
+               for scale in (False,True)):
+        raise ValueError('Nonhomogeneous point-coordinate transform')
+
+
+def numeric_transform_formula(recipe: Recipe, source: Coordinate, abc) -> tuple[float,float] | None:
+    if isinstance(source,Ideal):
+        return None
+    return _transform_sample(recipe.formula,tuple(source),tuple(tuple(p) for p in abc))
+
+
+@lru_cache(maxsize=4096)
+def _transform_sample(formula, source, abc):
+    validate_transform_formula(formula)
+    env = side_environment(*[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)])
+    weights = []
+    for j in range(3):
+        b,c = abc[(j+1)%3],abc[(j+2)%3]
+        weights.append((b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
+    env.update(zip(('x','y','z'),weights))
+    result = weighted_coordinate([evaluate_formula(rotate_formula(formula,j),env) for j in range(3)],abc)
+    return result if isinstance(result,tuple) else None
+
+
 @lru_cache(maxsize=16384)
 def _formula_sample(formula: str, abc: tuple[tuple[float, float], ...]) -> Coordinate | None:
     # Pure, immutable sample results, including None/ideal; never keyed only by ID.
     a, b, c = (math.dist(abc[1], abc[2]), math.dist(abc[2], abc[0]), math.dist(abc[0], abc[1]))
     values = side_environment(a, b, c)
     weights = [evaluate_formula(rotate_formula(formula, index), values) for index in range(3)]
+    return weighted_coordinate(weights,abc)
+
+
+def weighted_coordinate(weights, abc):
     if any(weight is None for weight in weights):
         return None
     total = sum(weights)
@@ -971,7 +1021,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             if op == 'J':
                 answer = numeric_intersection(values)
             elif op == 'B':
-                answer = numeric_formula(recipe, abc)
+                answer = (numeric_transform_formula(recipe,values[0],abc) if values
+                          else numeric_formula(recipe, abc))
             elif op == 'F':
                 answer = numeric_combo(recipe, values, abc)
             elif op == 'I':
@@ -1110,7 +1161,9 @@ def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, C
     for shape, points in coordinates.items():
         if any(ref not in points for ref in recipe.references):
             return False
-        result = numeric_combo(recipe, [points[ref] for ref in recipe.references], atlas['triangles'][shape])
+        result = (numeric_transform_formula(recipe,points[recipe.references[0]],atlas['triangles'][shape])
+                  if recipe.operation=='B' else
+                  numeric_combo(recipe, [points[ref] for ref in recipe.references], atlas['triangles'][shape]))
         if result is None:
             continue
         valid += 1
@@ -1130,7 +1183,7 @@ def shinagawa_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
         if target is None:
             continue
         for option in alternatives:
-            if option.operation != 'B' or not homogeneous_degree(option.formula)[0]:
+            if option.operation != 'B' or option.references or not homogeneous_degree(option.formula)[0]:
                 continue
             reference = numeric_formula(option, abc)
             if reference is not None and math.dist(target, reference) > 1e-5 * max(1, math.hypot(*target), math.hypot(*reference)):
@@ -1329,8 +1382,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     continue
                 if coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, coordinates, atlas):
                     continue
-                if atlas and recipe.operation == 'B' and not formula_candidate_supported(recipe, atlas):
-                    continue
+                if atlas and recipe.operation == 'B':
+                    if not (combo_candidate_supported(recipe,coordinates,atlas) if recipe.references
+                            else formula_candidate_supported(recipe, atlas)):
+                        continue
                 possible.append((key, recipe))
                 break  # First screened candidate is best in this fixed snapshot.
         if not possible:
@@ -1374,12 +1429,13 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         if op == 'F':
             return combo_candidate_supported(recipe, coordinates, atlas)
         if op == 'B':
-            return formula_candidate_supported(recipe, atlas)
+            return (combo_candidate_supported(recipe,coordinates,atlas) if recipe.references
+                    else formula_candidate_supported(recipe, atlas))
         return True
 
     def valid_result(number, records, coordinates):
         recipe = records[number]
-        if recipe.operation == 'B':
+        if recipe.operation == 'B' and not recipe.references:
             return formula_candidate_supported(recipe, atlas)
         if not any(number in points for points in coordinates.values()):
             return False
@@ -1553,7 +1609,7 @@ def fetch(parts: list[int]) -> None:
 def ideal_coordinate_formulas(eligible, atlas):
     return [(number, recipe) for number, options in eligible.items()
                       for recipe in (options.explicit if isinstance(options, RecipeCandidates) else options)
-                      if number > NATIVE_MAX and recipe.operation == 'B' and all(
+                      if number > NATIVE_MAX and recipe.operation == 'B' and not recipe.references and all(
                           isinstance(numeric_formula_projective(recipe, [tuple(xy) for xy in abc]), Ideal)
                           for abc in atlas['triangles'].values())]
 
@@ -1602,7 +1658,7 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
                     why = 'conjugate_budget'
                 elif limits[1] is not None and estimated_recipe_length(recipe,[length.get(ref,27) for ref in refs]) > limits[1]:
                     why = 'length_budget'
-                elif recipe.operation == 'B':
+                elif recipe.operation == 'B' and not recipe.references:
                     why = ('nonhomogeneous_formula' if not homogeneous_degree(recipe.formula)[0] else
                            'ideal_formula' if not formula_candidate_supported(recipe,atlas) else
                            'coordinate_admission_or_variants')
@@ -1718,7 +1774,7 @@ def main() -> None:
     eligible = {number: filter_candidates(options, lambda recipe: recipe.operation in args.auto_operations
                          and not (recipe.operation == 'I' and not recipe.references))
                 for number, options in all_candidates.items()}
-    relation_only = {number: filter_candidates(options, lambda recipe: recipe.operation != 'B'
+    relation_only = {number: filter_candidates(options, lambda recipe: (recipe.operation != 'B' or recipe.references)
                               and 'shinagawa coefficients' not in recipe.evidence.lower())
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
@@ -1783,7 +1839,8 @@ def main() -> None:
         report('dry-run', records=len(selected), missing_existing=sorted(set(existing)-set(selected)),
                changed_existing=sum(n in selected and r.row()!=selected[n].row() for n,r in existing.items()),
                max_depth=max(depth.values(), default=0), max_length=max(length.values(), default=0),
-               coordinate_anchors=sum(r.operation=='B' for r in selected.values()))
+               coordinate_anchors=sum(r.operation=='B' and not r.references for r in selected.values()),
+               coordinate_transforms=sum(r.operation=='B' and bool(r.references) for r in selected.values()))
     else:
         actual = {path.name: path.read_text(encoding='utf-8') for path in chunk_dir.glob('*.txt')}
         if output != actual:

@@ -177,6 +177,27 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
 class PBClusterAnchors(TestCase):
+    def test_vu_second_preamble_has_a_reviewed_extra_factor_not_a_new_parser_rule(self):
+        raw = (m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')
+        text = ' '.join(m.coordinate_text(dict(m.split_entries(raw))[38899]))
+        printed = re.search(r'T\(P\)\s*=\s*(.*?)\s*:\s*:',text)[1]
+        self.assertIn('8a a^4',printed)
+        def polynomial(value):
+            value = re.sub(r'\b[pqr]\b',lambda hit:dict(p='x',q='y',r='z')[hit[0]],value)
+            value = re.sub(r'(\d)([abcxyz])',r'\1*\2',value)
+            value = re.sub(r'(?<=[a-z0-9)])\s+(?=[a-z0-9(])','*',value)
+            return re.sub(r'\s+','',value)
+        with self.assertRaises(ValueError): m.validate_transform_formula(polynomial(printed))
+        corrected = polynomial(printed.replace('8a a^4','8*a^4'))
+        m.validate_transform_formula(corrected)
+        atlas = m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native = m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            p = native[shape][9]
+            a = m.numeric_transform_formula(m.Recipe(4000,'B',(9,),formula=corrected),p,abc)
+            b = m.numeric_transform_formula(m.Recipe(4000,'B',(9,),formula=m.VU_SECOND_FORMULA),p,abc)
+            self.assertLess(math.dist(a,b),1e-8)
+
     def test_11667_expanded_roots_match_independent_euler_combo(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt',{})
         raw = (m.CACHE/'sources'/'ETCPart6.html').read_text(encoding='utf-8',errors='replace')

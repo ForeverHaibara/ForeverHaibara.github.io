@@ -430,3 +430,9 @@ seeds 的 DOMAIN 元数据与所选/候选引用传播区分复数风险和非�
 撤销临时 K，V 按一/三参数共用；13 个测试文件合并为 3 个，原 94 项保留。缓存 143 个产物无损移入 sources/native/runs/reports/planning/research/experiments 等目录，提取与原生样本路径、文档引用同步更新。
 
 从独立 pedal-circle/circumcevian 几何及已有成员核对 VU 第一类，复用允许双输入距离 d 的 F 配方，恢复 X(38910)–X(38917) 八点。全量 70,081，未覆盖 134，其中无候选 50；没有旧覆盖退出，预算未变。普通公式的 AST 验证继续共用默认缓存键，d 的作用域不外溢到 B。97 项 Python、24 项编译测试、正式库 check/verify 通过。小库仍 8,206 条，未发布全量数据；下一步 VU 第二类、其它标题族与数值审计开销见 [未覆盖分析](triangle-centers-uncovered.md)。
+
+## 20. VU 第二类与依赖坐标（2026-11-02）
+
+用独立圆/迹线交点推导第二类透视中心，并以符号比较确认前言额外 a 的具体残差。复用 `B source formula` 表达有输入的循环重心坐标，x/y/z 限于该作用域，分别检查边长与输入齐次缩放；接入依赖图和数值事务，不作为独立坐标锚点。
+
+全量恢复 X(38923)–X(38929) 七点至 **70,088**，剩余 **127**，无候选 **43**，没有旧覆盖退出。原 15 点 VU PCC 未覆盖族已全部闭合。小库 8,206 条未变，未发布全量；102 项 Python、25 项编译测试、TS 类型检查及 check/verify 通过。下一步 Vietnamese/anticevian、Steiner 相关族与 PB 独立审阅见 [未覆盖分析](triangle-centers-uncovered.md)。

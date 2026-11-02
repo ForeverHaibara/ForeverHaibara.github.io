@@ -19,6 +19,7 @@ VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
              'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'r', 'R', 'pi'}
 FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln', 'abs'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
+          'x': 'y', 'y': 'z', 'z': 'x',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
 CYCLIC = re.compile(r'([fght])\s*\(\s*([aA])\s*,\s*([bB])\s*,\s*([cC])\s*\)\s*:\s*\1\s*\(\s*\3\s*,\s*\4\s*,\s*\2\s*\)\s*:\s*\1\s*\(\s*\4\s*,\s*\2\s*,\s*\3\s*\)', re.I)
@@ -163,7 +164,7 @@ def constant_exponent(node: ast.AST) -> float | None:
 
 
 @lru_cache(maxsize=8192)
-def validate_formula(formula: str, pair_distance: bool = False) -> ast.Expression:
+def validate_formula(formula: str, pair_distance: bool = False, source_coordinates: bool = False) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
@@ -183,7 +184,8 @@ def validate_formula(formula: str, pair_distance: bool = False) -> ast.Expressio
             continue
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             continue
-        if isinstance(node, ast.Name) and (node.id in VARIABLES or node.id == 'd' and pair_distance or
+        if isinstance(node, ast.Name) and (node.id in VARIABLES or node.id == 'd' and pair_distance
+                                           or node.id in {'x','y','z'} and source_coordinates or
                                            node.id in FUNCTIONS and isinstance(parents.get(node), ast.Call)
                                            and parents[node].func is node):
             continue
@@ -225,13 +227,18 @@ def canonical_formula(formula: str):
 
 
 @lru_cache(maxsize=8192)
-def homogeneous_degree(formula: str, pair_distance: bool = False) -> tuple[bool, float | None]:
+def homogeneous_degree(formula: str, pair_distance: bool = False,
+                       source_coordinates: bool = False, source_scale: bool = False) -> tuple[bool, float | None]:
     """Return scaling degree; None represents an identically zero literal."""
     dimensions = {**{name: 1 for name in ('a', 'b', 'c', 's', 'sa', 'sb', 'sc', 'r', 'R')},
                   **{name: 2 for name in ('S', 'SA', 'SB', 'SC', 'SW', 'E', 'F')},
                   **{name: 0 for name in ('A', 'B', 'C', 'pi')}}
     if pair_distance:
         dimensions['d'] = 1
+    if source_coordinates:
+        if source_scale:
+            dimensions = dict.fromkeys(dimensions,0)
+        dimensions.update(dict.fromkeys(('x','y','z'),1 if source_scale else 0))
 
     def degree(node: ast.AST) -> float | None:
         if isinstance(node, ast.Constant):
@@ -270,7 +277,8 @@ def homogeneous_degree(formula: str, pair_distance: bool = False) -> tuple[bool,
                 return None if left is None else left - right
         raise ValueError('Unsupported dimensional syntax')
     try:
-        tree = validate_formula(formula,True) if pair_distance else validate_formula(formula)
+        tree = (validate_formula(formula,source_coordinates=True) if source_coordinates else
+                validate_formula(formula,True) if pair_distance else validate_formula(formula))
         return True, degree(tree.body)
     except (ValueError, SyntaxError, KeyError, RecursionError, OverflowError):
         return False, None
@@ -434,7 +442,8 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
-    tree = validate_formula(formula,True) if 'd' in values else validate_formula(formula)
+    tree = (validate_formula(formula,source_coordinates=True) if 'x' in values else
+            validate_formula(formula,True) if 'd' in values else validate_formula(formula))
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
              'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log, 'abs': abs,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),
