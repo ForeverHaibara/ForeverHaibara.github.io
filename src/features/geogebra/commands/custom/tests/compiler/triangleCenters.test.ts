@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Exercise a distance-scoped combo without publishing Part 20 data.
 vi.mock('../../data/triangle-centers/chunks/40.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n40997 B 1 2 x*u\n' };
+  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n40997 B 1 2 x*u\n40996 B 520 x^3\n40995 P 1 2 520\n40994 L 1 2 520\n40993 B 520 x\n40992 B 5959 x^3\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -128,7 +128,7 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('keeps centers identified by a single infinity line undefined', async () => {
-    for (const id of [5959, 6364, 6365, 9043, 20403]) {
+    for (const id of [5959, 6364, 6365, 9043, 20403, 64802]) {
       await prepareTriangleCenter(id);
       expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
     }
@@ -156,6 +156,29 @@ describe('extended TriangleCenter dispatch', () => {
       expect(result).not.toMatch(/\b(?:J|SA|SB|SC|SW|S)\b/u);
       expect(result).toContain('Distance(');
     }
+  });
+
+  it('preserves projective directions for powers, projections and reflections', async () => {
+    for (const id of [40996, 40995, 40994, 40993, 40992]) await prepareTriangleCenter(id);
+    const cube = compileStudioCommand('TriangleCenter(A,B,C,40996)', environment());
+    expect(cube).toContain('Vector(TriangleCenter(A,B,C,110),TriangleCenter(A,B,C,250))');
+    expect(cube.match(/Vector\(/gu)).toHaveLength(1);
+    expect(cube).not.toContain('TriangleCenter(A,B,C,520)');
+    expect(cube).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,40995)', environment())).toContain('ClosestPoint(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,40994)', environment())).toContain('Reflect(');
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,40993)', environment())).toThrow(/finite inputs/u);
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,40992)', environment())).toThrow(/no known direction/u);
+  });
+
+  it('loads the reviewed PB branch roots and algebraic-product targets', async () => {
+    for (const id of [11761, 11770, 11779, 11788, 13137, 14079, 14087, 14088, 14090, 14821]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:U|S|SA|SB|SC|SW)\b/u);
+    }
+    for (const id of [12025, 32584]) await expect(prepareTriangleCenter(id)).rejects.toThrow(/not implemented/u);
   });
 
   it('compiles constant and Conway-weighted ETC combos with a guarded sum', async () => {

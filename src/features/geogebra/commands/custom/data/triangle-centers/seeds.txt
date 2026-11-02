@@ -187,3 +187,50 @@
 # each point's isogonal conjugate relative to that triangle. The - variant
 # is homogeneous too but fails this construction on independent samples.
 10685 B a^10*(b^2+c^2)-a^8*(3*b^4+b^2*c^2+3*c^4)+2*a^6*(b^6+b^4*c^2+b^2*c^4+c^6)+a^4*(-2*b^6*c^2+b^4*c^4-2*b^2*c^6)-a^2*b^2*c^2*(b^2-c^2)^2*(b^2+c^2)+b^4*c^4*(b^2-c^2)^2
+
+# User review 2026-11-02: 12025 uses a nonhomogeneous formula; the original
+# Hyacinthos 25422 construction was identified as X(11). Do not draw a guessed
+# homogeneous repair or silently alias the erroneous ETC entry.
+12025 SKIP source-error: nonhomogeneous formula; reviewed original geometry reduces to X(11)
+# 32584: the mutual-polar conic matrix for the Schroeter anticevian
+# triangle has off-diagonal (w,v,u), u=b^2-c^2, v=c^2-a^2, w=a^2-b^2.
+# Its center is (u^2:v^2:w^2)=X(115), not the printed degree-9/10 mixture.
+32584 SKIP source-error: nonhomogeneous formula conflicts with mutual-polar center X(115)
+# PB/Montesdeoca-Hung: audited all 36 PB perspectors from independent
+# vertex matrices. All 32 already selected points agree; add only four roots.
+# Star: S changes sign INSIDE U as well. The preamble diameter-circle
+# condition rejects keeping U+ for the X(16) group. Each sign below is frozen
+# before expanding the root; do not copy the erroneous printed 11770/11779
+# swap or 11788 missing multiplication.
+11761 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*S)+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*S*(sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11770 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*S)+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*S*(-sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11779 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*(-S))+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(-S)*(sqrt(2*(a^2+b^2+c^2-2*sqrt(3)*S))))
+11788 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*(-S))+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(-S)*(-sqrt(2*(a^2+b^2+c^2-2*sqrt(3)*S))))
+# User-reviewed targets, without adjudicating contradictory endpoint
+# definitions: 14079 agrees with its barycentric product and two other lines.
+14079 B a*abs(b-c)
+# 14821: printed coordinates, GL construction, and the X(38)*X(7829)
+# product agree. Isolate the conflicting {11709,14933} incidence claim.
+14821 B 38 7829 x*u
+# 13137: the actual pedal/Simson line of X(98) gives the printed point
+# after reflection. The labeled line X(115)X(523) is not that Simson line.
+# Printed coordinates and four native lines agree; use two native pairs.
+13137 J 4 512 23 1976
+# 51539/51540: explicit conjugate complex coordinates. The real and
+# imaginary barycentric triples have a generically nonzero 2x2 minor;
+# squaring the imaginary Brocard foci does not make these real points.
+# This is a direct projective reality check, not nonreal propagation.
+51539 DOMAIN nonreal
+51540 DOMAIN nonreal
+# 64802: the cyclic degree-six coordinate sum cancels identically;
+# a nonzero witness gives an ideal point. Its previous finite construction
+# is not a reason to admit it as a finite B. Direction remains unreviewed.
+64802 I
+# Focused family audit after restoring 14079: the old A(14084) path
+# moved 14087 away from its BSS/isotomic coordinate, and propagated to
+# 14088; 14090 used an inconsistent 14083 line. Preserve the mutually
+# agreeing BSS, printed coordinates, and G/T definitions. Do not decide
+# the separate singular-focus definitions of 14083/14084 by this choice.
+14087 B abs((a-b)*(a-c))
+14088 B a^2*abs(b-c)
+14090 B a^2*abs(b^2-c^2)

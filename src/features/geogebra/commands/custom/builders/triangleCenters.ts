@@ -124,7 +124,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       return build(variables);
     }, 'number');
   };
-  const coordinatePoint = (formula: string, sources: string[] = []): string => {
+  const coordinatePoint = (formula: string, sources: CenterValue[] = []): string => {
     const build = (bound: Record<string, string>) => withSideVariables((sides) => {
       const variables = { ...sides, ...bound };
       const [A, B, C] = vertices;
@@ -140,11 +140,15 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       }, 'number');
     });
     if (!sources.length) return build({});
-    return bind(sources, allocate, (points) => {
-      const areas = points.flatMap((p) => [[vertices[1], vertices[2]], [vertices[2], vertices[0]], [vertices[0], vertices[1]]]
-        .map(([b, c]) => `((x(${b})-x(${p}))*(y(${c})-y(${p}))-(y(${b})-y(${p}))*(x(${c})-x(${p})))`));
+    const expressions = sources.map((source) => source.kind === 'ideal'
+      ? `Vector(${source.from},${source.to})` : requirePoint(source));
+    return bind(expressions, allocate, (points) => {
+      const areas = points.flatMap((p, i) => [[vertices[1], vertices[2]], [vertices[2], vertices[0]], [vertices[0], vertices[1]]]
+        .map(([b, c]) => sources[i].kind === 'ideal'
+          ? `(x(${p})*(y(${b})-y(${c}))-y(${p})*(x(${b})-x(${c})))`
+          : `((x(${b})-x(${p}))*(y(${c})-y(${p}))-(y(${b})-y(${p}))*(x(${c})-x(${p})))`));
       return bind(areas, allocate, (names) => build(Object.fromEntries(names.map((name, i) => [['x', 'y', 'z', 'u', 'v', 'w'][i], name]))), 'number');
-    }, 'point');
+    }, sources.map((source) => source.kind === 'ideal' ? 'vector' : 'point'));
   };
   const render = (number: number): CenterValue => {
     if (number <= 3053) {
@@ -159,7 +163,12 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
     try {
       const values = recipe.references.map(render);
       if (values.some((value) => value.kind === 'unknown-ideal')) throw new Error('The ideal triangle center has no known direction.');
-      if (recipe.operation === 'B') return point(coordinatePoint(recipe.formula!, values.map(requirePoint)));
+      if (recipe.operation === 'B') {
+        if (values.some((value) => value.kind === 'ideal') && !(values.length === 1 && ['x^2', 'x^3'].includes(recipe.formula!))) {
+          throw new Error('This coordinate transform requires finite inputs.');
+        }
+        return point(coordinatePoint(recipe.formula!, values));
+      }
       if (recipe.operation === 'F') {
         const rawFormulas = recipe.formula!.split('|');
         const buildCombo = (formulas: string[], points = values.map(requirePoint)): string => {

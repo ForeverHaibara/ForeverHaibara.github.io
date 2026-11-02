@@ -18,8 +18,8 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `R p q` | X(p) 关于 X(q) 的中心反射 | 两个有限点；q 为反射中心 |
 | `C p` | 补点 | 相对 ABC，重心为位似中心，比例 -1/2 |
 | `A p` | 反补点 | 相对 ABC，比例 -2 |
-| `P p q r` | X(p) 在直线 X(q)X(r) 上的正交投影 | 三个有限点 |
-| `L p q r` | X(p) 关于直线 X(q)X(r) 的反射 | 三个有限点 |
+| `P p q r` | X(p) 在直线 X(q)X(r) 上的正交投影 | p 有限；q/r 定义的线至多一个有已知方向的理想输入 |
+| `L p q r` | X(p) 关于直线 X(q)X(r) 的反射 | p 有限；q/r 定义的线至多一个有已知方向的理想输入 |
 | `I p q` | 沿有限直线 X(p)X(q) 方向的理想点 | p、q 有限且不重合；可供支持理想输入的操作引用 |
 | `I` | 理想点已确认，方向未知或当前不可用 | 状态覆盖；不能作为其它构造的输入，不伪造有限坐标 |
 | `J p q r t` | 直线 X(p)X(q) 与 X(r)X(t) 的交点 | 每条线至多一个有方向理想输入；平行线不会作为有限 J 准入 |
@@ -31,7 +31,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `F p:w1 q:w2 ...` | 加权有限点组合，结果为 Σwi·X(i)/Σwi | 2–6 个互异输入；权重同量纲，权重和非零；公式不含空白 |
 | 双输入 F 中的 `d` | 两个输入点之间的距离 | 仅 F 恰有两个输入时可用；边长量纲；运行时只绑定一次输入与距离 |
 | `B f` | 循环重心坐标 `f(a,b,c):f(b,c,a):f(c,a,b)` | 纯坐标公式，须满足齐次性；有限锚点与理想状态分开处理 |
-| `B p f` | 使用 X(p) 重心坐标的循环变换 | 仅此作用域增加 `x,y,z`，随循环一起替换；输入须有限 |
+| `B p f` | 使用 X(p) 重心坐标的循环变换 | 仅此作用域增加 `x,y,z`，随循环一起替换；仅 x²/x³ 模板可接收有方向理想输入，其余须有限 |
 | `B p q f` | 使用两个输入重心坐标的循环变换 | 第一输入 `x,y,z`，第二输入 `u,v,w`；两个输入分别检查射影缩放齐次性 |
 | `n DOMAIN nonreal` | 已审阅、一般位置下非实的点 | seeds 元数据，不生成实平面配方；列入 `resolved_nonreal`，不计未覆盖 |
 | `n DOMAIN conditional_complex` | 在不同三角形域上可能为实或复 | seeds 元数据；保留实域构造资格，不等同 SKIP 或永久非实 |
@@ -46,6 +46,8 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | ETC `Barycentrics ...` / `Trilinears ...` | 导入坐标标签；可有前导等号 | 三线坐标先乘 a 转为重心坐标；循环三元组须核对一致 |
 | ETC `: :`、循环完整三元组、括号/方括号/算术花括号 | 导入时的坐标缩写与分组 | 不放宽未知符号、括号不平衡或非循环表达式 |
 | ETC `sin A` 等有界裸函数、`log(...)`、绝对值、`min/max` | 导入时规范化为存储公式 | 裸函数只读明确边界的原子；log 规范化为 ln；维度相关对数差须有严格恒等变换 |
+| ETC `barycentric square/cube of X(p)` | 逐重心坐标平方/立方，复用单输入 B | 有方向理想输入从方向向量计算齐次重心坐标；裸 I 禁止作输入，非有限结果不冒认有限点 |
+| ETC `where J=\|OH\|/R` | 显式局部声明按 Euler 长度恒等式展开 | 不把 J 或 OH 添加为未绑定全局变量；不会据另一条目的约定猜本条 J |
 | ETC `where p=..., q=..., t=...` | 最多三个独立局部标量，可换行 | 不允许全局名称遮蔽、未定义引用、局部定义链 |
 | ETC `where x:y:z=...` / `where x=..., y and z are defined cyclically` | 明确声明的局部循环三元组 | 须验证循环等价；不由单独 x 定义猜测 y/z |
 | ETC `where f(a,b,c)=...` | 一个显式局部循环函数，可嵌于首坐标表达式 | 不允许递归、未知函数或非循环调用；不能泛化解释任意自然语言定义 |
@@ -92,7 +94,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `geometry_or_transaction` | 输入和静态预算可用，但几何筛选或替换事务未通过/未选入 | 核查退化、入射冲突及后继影响；此分类不宣称更精确的失败根因 |
 | `reviewed_nonreal_domain` | **已解决状态**：已审阅的一般位置非实根 | 位于 `resolved_nonreal[].reason`，不在 entries/count/summary，不生成实平面绘图配方 |
 | `possible_complex_dependencies` | **风险字段**：所选依赖或候选依赖可能涉及复数域根 | 不等于结果非实；复共轭抵消、独立实构造与条件实域须分别判断 |
-| `skipped` | seeds 中明确 SKIP 的编号及原始原因文字 | 独立维护，不与“未解析/未闭合/超预算”混成一种状态 |
+| `skipped` | seeds 中明确 SKIP 的编号及原始原因文字 | 已排除的目标不计 entries/count；依赖它的其它点仍可标 reviewed_skip_dependency |
 | `domains` / `resolved_nonreal` | 域注记原表 / 本次范围内已处理的非实目标 | 用于审计状态去向；DOMAIN 不增加运行时配方数量 |
 
 解析异常、源标题重复、配方环、非法 seeds 或最终数值审计失败会直接使命令失败；这些硬错误不能通过生成一份 uncovered 报告来掩盖。已审阅非实根只排除根本身，不把“非实”结论沿引用传播；例如 X(5002)/X(5003) 在某些域为复点，其平均值仍可能为实点。
@@ -112,3 +114,8 @@ Steiner 长轴规则从形状矩阵和曲率独立推导，复用重心与实焦
 正式数据与最新全量进展分别见数据目录 README 和 `src/features/geogebra/commands/custom/docs/triangle-centers-uncovered.md`、`triangle-centers-scaling-plan.md`。全量 dry-run 不等于已经发布全量运行时数据。
 
 按复核优先级整理的源定义冲突、端点数值证据与已确认修复见 `src/features/geogebra/commands/custom/docs/triangle-centers-source-review.md`。诊断代码不是源错误证明。
+
+
+坐标锚点会在初始选择后对尚未闭合的小集合重试：早期线端点定义可能已改善，不能永久沿用早期拒绝结论。每次试选仍使用完整候选池和全部图/几何约束；只提交严格增加覆盖且不丢当前旧覆盖的结果，直至静止，不使用固定轮数。显式每分量锚点上限按初始分量保留预算，0 仍禁用此机制；`late-coordinate-anchors` 事件记录提议、增加和丢失编号，拒绝的试选不替换旧快照。
+
+PB 用户复核已扩大为全部 36 个透视中心的独立几何审计；星号组通过直径圆条件确定 U 也随 S 重算。现有 32 个已选位置均正确，仅为四个根增加 seeds。12025/32584 按原始几何核验记 SKIP，而不是猜测同次式或悄悄重定向到 11/115。51539/51540 经直接射影实性检验记 nonreal，没有按依赖传播结论。

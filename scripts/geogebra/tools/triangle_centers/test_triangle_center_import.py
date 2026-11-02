@@ -19,6 +19,42 @@ from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_projective_barycentric_powers_and_line_operations(self):
+        abc=[(0,0),(3,0),(0,3)]
+        for op,expected in [('P',(2,0)),('L',(2,-3))]:
+            recipe=Recipe(4000,op,(1,2,30))
+            validate_types({4000:recipe},{30})
+            for scale in [1e-7,1,1e7]:
+                atlas=dict(triangles={'t':abc},coordinates={'t':{'1':(2,3),'2':(1,0)}})
+                p=numeric_coordinates({4000:recipe},atlas,cached={'t':{1:(2,3),2:(1,0),30:Ideal(scale,0)}})['t'][4000]
+                self.assertLess(math.dist(p,expected),1e-9)
+            for refs in [(30,1,2),(1,30,31)]:
+                with self.assertRaises(ValueError):validate_types({4000:Recipe(4000,op,refs)},{30,31})
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        recipe=next(r for r in extract_entry(23613,'<h3>X(23613) = Barycentric cube of X(520)</h3>',13) if r.operation=='B')
+        validate_types({23613:recipe},{520})
+        for shape,triangle in atlas['triangles'].items():
+            expected=m.numeric_formula(Recipe(23613,'B',(),formula='cos(A)^6*(b^2-c^2)^3'),triangle)
+            for scale in [1e-4,1,1e4]:
+                d=native[shape][520];point=m.numeric_transform_formula(recipe,Ideal(d.dx*scale,d.dy*scale),triangle)
+                self.assertLess(math.dist(point,expected),1e-7)
+        self.assertIsNone(m.numeric_transform_formula(recipe,Ideal(1,0),abc))
+        with self.assertRaisesRegex(ValueError,'Unknown ideal direction'):
+            validate_types({4000:Recipe(4000,'I',()),4001:Recipe(4001,'B',(4000,),formula='x^3')},set())
+        with self.assertRaises(ValueError):validate_types({4000:Recipe(4000,'B',(520,),formula='x')},{520})
+        self.assertFalse(any(r.operation=='B' for r in extract_entry(4000,'<h3>X(4000) = barycentric cube of X(520) in triangle BCI</h3>',13)))
+
+    def test_explicit_oh_ratio_local_does_not_define_implicit_j(self):
+        self.assertIsNone(normalize_formula('J'))
+        self.assertFalse(coordinate_candidates('Barycentrics a*(1+J) : :'))
+        formula=coordinate_candidates('Barycentrics a*(1+J) : : , where J=|OH|/R')[0][1]
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            env=side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
+            ratio=math.dist(native[shape][3],native[shape][4])/env['R']
+            self.assertAlmostEqual(evaluate_formula(formula,env),env['a']*(1+ratio))
+
     def test_infinity_line_heading_variants_keep_target_identity(self):
         for heading in ['X{4000) lies on these lines: {30,511}, {1,2}',
                         'X(4000 lies on these lines: {30,511}, {1,2}',
@@ -876,6 +912,33 @@ class TitleDiagnosticsTest(TestCase):
 
 
 class UncoveredDiagnosticsTest(TestCase):
+    def test_late_anchor_retry_after_endpoint_improvement_respects_component_budget(self):
+        import sys
+        abc=[(0,0),(6,0),(1,4)]
+        target=m.numeric_formula(Recipe(4001,'B',(),formula='a^2'),abc)
+        G=tuple(sum(p[i] for p in abc)/3 for i in (0,1))
+        atlas={'triangles':{'t':abc},'coordinates':{'t':{
+            '1':(0,0),'2':tuple(2*target[i]-G[i] for i in (0,1)),
+            '3':(3,0),'4':(0,3),'5':(3,-3)}}}
+        candidates={4000:[Recipe(4000,'B',(),formula='1')],
+                    4001:[Recipe(4001,'B',(),formula='a^2'),Recipe(4001,'M',(4000,4004))],
+                    4002:[Recipe(4002,'J',(1,3,4,5)),Recipe(4002,'M',(4000,2))],4004:[]}
+        def page(part,excluded,lines,metadata):
+            lines[4001]=[(4002,1)]
+            return list(candidates),candidates
+        for limit,expected in [(None,{4000,4001,4002}),(1,{4000,4002})]:
+            with TemporaryDirectory(dir=m.CACHE) as directory:
+                data=Path(directory);(data/'chunks').mkdir()
+                for name in ['seeds.txt','native-status.txt','coordinate-priority.txt']:(data/name).write_text('')
+                captured={};original=m.chunks
+                def capture(records):
+                    captured.update(records);return original(records)
+                argv=['importer','dry-run','--parts','1','--skip-ideal-audit']
+                if limit is not None:argv+=['--max-coordinate-anchors-per-component',str(limit)]
+                with patch.object(m,'DATA',data),patch.object(m,'read_page',side_effect=page),patch.object(m,'read_native_atlas',return_value=atlas),patch.object(m,'chunks',side_effect=capture),patch.object(sys,'argv',argv):
+                    m.main()
+                self.assertEqual(set(captured),expected)
+
     def test_reviewed_nonreal_roots_do_not_use_unconfirmed_coordinate_anchors(self):
         atlas=dict(triangles={'shape':[(0,0),(6,0),(1,4)]},coordinates={'shape':{}})
         options={4000:[m.Recipe(4000,'B',(),formula='sqrt(-a^2)')],
@@ -910,7 +973,7 @@ class UncoveredDiagnosticsTest(TestCase):
             4005: [m.Recipe(4005, 'B', (), formula='a+b^2')],
             4006: [m.Recipe(4006, 'B', (), formula='b-c')],
             4007: [m.Recipe(4007, 'B', (), formula='a')],
-            4008: [m.Recipe(4008, 'M', (66288, 1))], 7000: []}
+            4008: [m.Recipe(4008, 'M', (66288, 1))], 7000: [],66288: []}
         atlas = dict(triangles={'shape': [(0, 0), (6, 0), (1, 4)]}, coordinates={})
         result = m.uncovered_diagnostics(candidates, {5000: m.Recipe(5000, 'G', (1,))},
                                         {n: 3 for n in candidates}, atlas, {}, {30},
@@ -927,6 +990,19 @@ class UncoveredDiagnosticsTest(TestCase):
 
 
 class DomainAnnotationsTest(TestCase):
+    def test_51539_square_of_complex_focus_is_generically_nonreal(self):
+        # Divide imaginary components by the common nonzero area factor S.
+        # This leaves integer polynomial triples on integer-sided witnesses.
+        for a,b,c in [(5,6,7),(13,14,15)]:
+            S2=4*((a+b+c)*(-a+b+c)*(a-b+c)*(a+b-c)/16)
+            real=[x**4*(y*y*z*z-2*S2) for x,y,z in [(a,b,c),(b,c,a),(c,a,b)]]
+            imag=[x**4*(-x*x+y*y+z*z) for x,y,z in [(a,b,c),(b,c,a),(c,a,b)]]
+            minor=real[0]*imag[1]-real[1]*imag[0]
+            expected=a**4*b**4*(a*a-b*b)*(c*c*(a*a+b*b-c*c)-4*S2)
+            self.assertEqual(minor,expected);self.assertNotEqual(minor,0)
+        domains={};m.read_recipes(m.DATA/'seeds.txt',{},domains)
+        self.assertEqual({n:domains[n] for n in [51539,51540]},dict.fromkeys([51539,51540],'nonreal'))
+
     def test_verify_excludes_reviewed_nonreal_but_keeps_conditional_domains(self):
         import sys
         with TemporaryDirectory(dir=m.CACHE) as directory:
@@ -993,7 +1069,7 @@ class DomainAnnotationsTest(TestCase):
         recipes = m.read_recipes(m.DATA/'seeds.txt',{},domains)
         self.assertEqual({n:domains[n] for n in range(5000,5004)},
                          dict.fromkeys(range(5000,5004),'conditional_complex'))
-        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642})
+        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642,51539,51540})
         self.assertFalse(set(domains) & set(recipes))
 
     def test_5002_5003_complex_midpoint_is_real_on_both_atlas_shapes(self):

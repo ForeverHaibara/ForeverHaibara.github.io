@@ -391,6 +391,14 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
     return list(dict.fromkeys(found))
 
 
+def normalize_scalar_definition(value: str) -> str | None:
+    # Only an explicit definition binds this standard ABC length ratio.
+    # Do not infer J in another entry just because this convention is common.
+    if re.fullmatch(r'\s*\|OH\|\s*/\s*R\s*',value):
+        value='sqrt(9-(a^2+b^2+c^2)/R^2)'
+    return normalize_formula(value)
+
+
 def expand_scalar_locals(text: str) -> str | None:
     """Expand explicit independent locals and explicitly declared cyclic triples."""
     ratio=re.search(r'(?:,\s*)?\bwhere\s+([A-Za-z])\s*:\s*([A-Za-z])\s*:\s*([A-Za-z])\s*=\s*([^:]+):([^:]+):([^:]+)\s*$',text,re.I)
@@ -420,7 +428,7 @@ def expand_scalar_locals(text: str) -> str | None:
             matches=[re.fullmatch(r'([A-Za-z])\s*=\s*(.+)',pair) for pair in pairs]
             if not 1<=len(matches)<=3 or not all(matches):
                 return None
-            substitutions={match[1]:normalize_formula(match[2]) for match in matches}
+            substitutions={match[1]:normalize_scalar_definition(match[2]) for match in matches}
             if (len(substitutions)!=len(matches) or substitutions.keys()&(VARIABLES|FUNCTIONS)
                     or not all(substitutions.values())):
                 return None

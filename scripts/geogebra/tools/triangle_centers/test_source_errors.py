@@ -23,7 +23,56 @@ def barycentrics(point,abc):
 
 
 def weighted_point(weights,abc):
-    return tuple(sum(weights[j]*abc[j][i] for j in range(3))/sum(weights) for i in (0,1))
+    return tuple(sum(weights[j]*abc[j][i] for j in range(len(weights)))/sum(weights) for i in (0,1))
+
+
+def pb_vertices(abc, group, *, keep_original_u=False):
+    """PB preamble vertices; star changes S inside U as well as outside it."""
+    sides=[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)]
+    area=m.side_environment(*sides)['S'];signed=area if group<2 else -area
+    root_area=area if keep_original_u else signed
+    U=math.sqrt(2*(sum(a*a for a in sides)+2*math.sqrt(3)*root_area))
+    U*=1 if group%2==0 else -1
+    vertices=[]
+    for j in range(3):
+        a,b,c=[sides[(j+k)%3] for k in range(3)]
+        weights=[a*a*(math.sqrt(3)*(-a*a+b*b+c*c)+2*signed),
+                 b*(math.sqrt(3)*b*(a*a-b*b+c*c)+2*signed*(b+U)),
+                 c*(math.sqrt(3)*c*(a*a+b*b-c*c)+2*signed*(c+U))]
+        vertices.append(weighted_point(weights,[abc[(j+k)%3] for k in range(3)]))
+    return vertices
+
+
+def pb_reference_vertices(abc, kind):
+    # Independent trilinear vertex matrices, converted to barycentrics.
+    # ETC IndexOfTrianglesReferencedInETC.html (accessed 2026-11-02).
+    sides=[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)];vertices=[]
+    for j in range(3):
+        a,b,c=[sides[(j+k)%3] for k in range(3)];s=a+b+c
+        if kind==0: w=[1,0,0]
+        elif kind==1: w=[-a,b,c]
+        elif kind==2: w=[-(b-c)**2*s,(a+c)**2*(a+b-c),(a+b)**2*(a-b+c)]
+        elif kind==3: w=[-a*a*s,b*(a+c)*(a+b-c),c*(a+b)*(a-b+c)]
+        elif kind==4: w=[(a**3-(b+c)*a*a-(b+c)**2*a+(b*b-c*c)*(b-c))/(4*b*c),b,c]
+        elif kind==5: w=[-((b+c)*a+b*b+c*c)**2*a*a/s,b*b*(a+c)**2*(a+b-c),c*c*(a+b)**2*(a-b+c)]
+        elif kind==6: w=[a*a/s,-b*b/(a+b-c),-c*c/(a-b+c)]
+        elif kind==7: w=[-a,2*b*b/(a+b-c),2*c*c/(a-b+c)]
+        elif kind==8:
+            first=(2*a**5*(a+2*b+2*c)+4*a**3*(b*b+3*b*c+c*c)*s
+                   +(3*b**4+3*c**4+4*b*c*(3*b*b+5*b*c+3*c*c))*a*a
+                   +(b+c)**2*(2*(b+c)*(b*b+c*c)*a+b**4+c**4))
+            w=[a*first,-b*(a+c)**2*(a*a+b*a+c*(b+c))**2,-c*(a+b)**2*(a*a+c*a+b*(c+b))**2]
+        else: raise ValueError(kind)
+        vertices.append(weighted_point(w,[abc[(j+k)%3] for k in range(3)]))
+    return vertices
+
+
+def pb_perspector(abc, group, kind):
+    first,second=pb_vertices(abc,group),pb_reference_vertices(abc,kind)
+    point=m.numeric_intersection([first[0],second[0],first[1],second[1]])
+    p,d=m.line_data(first[2],second[2])
+    error=abs(cross(sub(point,p),d))/math.hypot(*d)
+    return point,error
 
 
 def reviewed_bc_formula(number):
@@ -451,6 +500,134 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
 class PBClusterAnchors(TestCase):
+    def test_64802_coordinate_sum_is_identically_zero(self):
+        # In each cyclic monomial family the coefficients are 4-2-2 and
+        # -7+5+2. The zero-sum polynomial is not the zero vector generically.
+        def f(a,b,c):return 4*a**6-7*a**4*b*b+5*a*a*b**4-2*b**6-7*a**4*c*c+2*b**4*c*c+5*a*a*c**4+2*b*b*c**4-2*c**6
+        for a,b,c in [(5,6,7),(13,14,15)]:
+            weights=[f(a,b,c),f(b,c,a),f(c,a,b)]
+            self.assertEqual(sum(weights),0);self.assertTrue(any(weights))
+        seed=m.read_recipes(m.DATA/'seeds.txt',{})[64802]
+        self.assertEqual((seed.operation,seed.references),('I',()))
+
+    def test_declared_oh_clusters_obey_independent_euler_relations(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        formulas={}
+        for part,numbers in [(10,[18871]),(20,[38001,38002])]:
+            es=dict(m.split_entries((m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8')))
+            for n in numbers:
+                formulas[n]=next(r for r in m.extract_entry(n,es[n],part) if r.operation=='B')
+        for shape,abc in atlas['triangles'].items():
+            env=m.side_environment(*[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)])
+            J=math.dist(native[shape][3],native[shape][4])/env['R']
+            first=3*(2*env['r']-env['R']-env['R']*J)
+            second=-(6*env['r']-3*env['R']-env['R']*J)
+            expected=weighted_point([first,second],[native[shape][2],native[shape][3]])
+            self.assertLess(math.dist(m.numeric_formula(formulas[18871],abc),expected),1e-8)
+            p,q=[m.numeric_formula(formulas[n],abc) for n in [38001,38002]]
+            self.assertLess(math.dist(m.numeric_circum_inverse(p,abc),q),1e-8)
+            for point in (p,q):
+                self.assertLess(abs(cross(sub(point,native[shape][2]),sub(native[shape][3],native[shape][2]))),1e-7)
+
+    def test_all_36_pb_perspectors_against_independent_vertex_matrices(self):
+        es=dict(m.split_entries(prepare_source(6,(m.CACHE/'sources/ETCPart6.html').read_text(encoding='utf-8',errors='replace'))))
+        candidates={n:m.extract_entry(n,es[n],6,compact=True) for n in range(11753,11789)}
+        seeds={n:r for n,r in m.read_recipes(m.DATA/'seeds.txt',{}).items() if n in candidates}
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');blocked,directions=m.read_native_status(m.DATA/'native-status.txt')
+        selected=m.select_recipes(candidates,seeds,6,None,1,blocked,set(),atlas,directions)
+        self.assertEqual(set(selected),set(candidates))
+        points=m.numeric_coordinates(selected,atlas,directions)
+        for shape,abc in atlas['triangles'].items():
+            for n in candidates:
+                expected,error=pb_perspector(abc,(n-11753)//9,(n-11753)%9)
+                self.assertLess(error,1e-7,(shape,n))
+                self.assertLess(math.dist(points[shape][n],expected),1e-7,(shape,n))
+        for abc in [[(0,0),(15,0),(8.4,11.2)],[(2,-3),(14,-3),(4,5)]]:
+            for n in (11761,11770,11779,11788):
+                expected,error=pb_perspector(abc,(n-11753)//9,8)
+                self.assertLess(error,1e-7)
+                self.assertLess(math.dist(m.numeric_formula(seeds[n],abc),expected),1e-7)
+
+    def test_pb_star_recomputes_u_to_preserve_diameter_circle(self):
+        for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(0,0),(15,0),(8.4,11.2)]]:
+            for group in (0,2):
+                first,second=pb_vertices(abc,group),pb_vertices(abc,group+1)
+                for i in range(3):
+                    center=tuple((first[i][j]+second[i][j])/2 for j in (0,1))
+                    radius=math.dist(center,first[i])
+                    for k in (1,2):self.assertAlmostEqual(math.dist(center,abc[(i+k)%3]),radius,places=7)
+            first,second=pb_vertices(abc,2,keep_original_u=True),pb_vertices(abc,3,keep_original_u=True)
+            center=tuple((first[0][j]+second[0][j])/2 for j in (0,1))
+            self.assertGreater(abs(math.dist(center,abc[1])-math.dist(center,first[0])),1e-3)
+
+    def test_user_reviewed_targets_keep_coordinates_without_overwriting_focal_endpoints(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        records={n:r for p in (m.DATA/'chunks').glob('*.txt') for n,r in m.read_recipes(p).items()}
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{});records.update(seeds)
+        points=m.numeric_coordinates(records,atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for shape,abc in atlas['triangles'].items():
+            expected=m.numeric_formula(Recipe(14079,'B',(),formula='a*abs(b-c)'),abc)
+            self.assertLess(math.dist(expected,points[shape][14079]),1e-8)
+            es=dict(m.split_entries((m.CACHE/'sources/ETCPart8.html').read_text(encoding='utf-8')))
+            formula=m.coordinate_candidates(es[14821])[0][1]
+            self.assertLess(math.dist(m.numeric_formula(Recipe(14821,'B',(),formula=formula),abc),points[shape][14821]),1e-8)
+
+    def test_absolute_family_pins_bss_and_conjugates_not_conflicting_focus_paths(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        for abc in atlas['triangles'].values():
+            p78=m.numeric_formula(Recipe(14078,'B',(),formula='abs(b-c)'),abc)
+            p89=m.numeric_formula(Recipe(14089,'B',(),formula='abs((a^2-b^2)*(a^2-c^2))'),abc)
+            p87,p88,p90=[m.numeric_formula(seeds[n],abc) for n in [14087,14088,14090]]
+            self.assertLess(math.dist(p87,m.numeric_conjugate(p78,abc,False)),1e-8)
+            self.assertLess(math.dist(p88,m.numeric_conjugate(p87,abc,True)),1e-8)
+            self.assertLess(math.dist(p90,m.numeric_conjugate(p89,abc,True)),1e-8)
+            p79=m.numeric_formula(seeds[14079],abc)
+            target=m.numeric_formula(Recipe(60545,'B',(),formula='a*abs(b-c)*(-a+b+c)'),abc)
+            p,d=m.line_data(p79,p88)
+            self.assertLess(abs(cross(sub(target,p),d))/math.hypot(*d),1e-8)
+
+    def test_reviewed_skips_are_not_guessed_homogeneous_repairs(self):
+        skipped={};records=m.read_recipes(m.DATA/'seeds.txt',skipped)
+        for n,part in [(12025,7),(32584,17)]:
+            self.assertIn(n,skipped);self.assertNotIn(n,records)
+            es=dict(m.split_entries((m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8')))
+            formula=m.coordinate_candidates(es[n])[0][1]
+            self.assertFalse(m.homogeneous_degree(formula)[0])
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native=m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            a,b,c=[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)]
+            u,v,w=b*b-c*c,c*c-a*a,a*a-b*b
+            M=[[0,w,v],[w,0,u],[v,u,0]]
+            center=[u*u,v*v,w*w]
+            result=[sum(M[i][j]*center[j] for j in range(3)) for i in range(3)]
+            for value in result:self.assertAlmostEqual(value,-u*v*w,places=7)
+            self.assertLess(math.dist(weighted_point(center,abc),native[shape][115]),1e-8)
+            for i,p in enumerate([(u,-v,-w),(-u,v,-w),(-u,-v,w)]):
+                polar=[sum(M[k][j]*p[j] for j in range(3)) for k in range(3)]
+                for k in range(3):
+                    if k!=i:self.assertAlmostEqual(polar[k],0,places=8)
+
+    def test_13137_true_simson_reflection_rejects_mislabeled_line(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[13137]
+        points=m.numeric_coordinates({13137:recipe},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        es=dict(m.split_entries((m.CACHE/'sources/ETCPart7.html').read_text(encoding='utf-8')))
+        raw='\n'.join(m.coordinate_text(es[13137])).split('Barycentrics',1)[1].splitlines()[0]
+        formula=m.normalize_formula(raw)
+        for shape,abc in atlas['triangles'].items():
+            ps=points[shape];P=ps[98];feet=[]
+            for i in range(3):
+                q,r=abc[(i+1)%3],abc[(i+2)%3];d=sub(r,q)
+                t=sum((P[j]-q[j])*d[j] for j in (0,1))/sum(x*x for x in d)
+                feet.append(tuple(q[j]+t*d[j] for j in (0,1)))
+            q,d=m.line_data(feet[0],feet[1]);t=sum((P[j]-q[j])*d[j] for j in (0,1))/sum(x*x for x in d)
+            reflected=tuple(2*(q[j]+t*d[j])-P[j] for j in (0,1))
+            self.assertLess(math.dist(ps[13137],reflected),1e-8)
+            self.assertLess(math.dist(ps[13137],m.numeric_formula(Recipe(13137,'B',(),formula=formula),abc)),1e-8)
+            q,d=m.line_data(ps[115],ps[523])
+            self.assertGreater(abs(cross(sub(feet[0],q),d))/math.hypot(*d),1e-3)
+
     def test_reviewed_vijay_and_vu_bc_errors_agree_with_independent_geometry(self):
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
         source=(m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')

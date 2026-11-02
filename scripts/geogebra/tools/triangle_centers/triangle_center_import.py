@@ -55,6 +55,7 @@ CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse)
 CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
 BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
 STEINER_INVERSE = re.compile(rf'^(?:STEINER-(CIRCUMELLIPSE|INELLIPSE)-INVERSE|inverse-in-Steiner-(circumellipse|inellipse)) of {POINT}[\s.,;]*$',re.I)
+BARYCENTRIC_POWER = re.compile(rf'^barycentric (square|cube) of {POINT}[\s.,;]*$',re.I)
 VU_FIRST = re.compile(rf'^VU 1ST PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 VU_SECOND = re.compile(rf'^VU 2ND PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 # Derived from intersections of the circumcevian and BB2/CC2 triangles, rather
@@ -515,6 +516,11 @@ def extract_entry(number: int, fragment: str, part: int,
     for line in lines:
         relation = RELATION.match(line)
         if relation and int(relation[1]) == number:
+            if match := BARYCENTRIC_POWER.fullmatch(relation[2]):
+                source=int(match[2])
+                if source>0 and source!=number:
+                    recipes.append(Recipe(number,'B',(source,),part,line,
+                                          'x^2' if match[1].lower()=='square' else 'x^3'))
             if match := STEINER_INVERSE.fullmatch(relation[2]):
                 source=int(match[3])
                 if source>0 and source not in (2,number):
@@ -875,7 +881,9 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O', 'B'} else
+    valid = (not ideal[0] and not all(ideal[1:]) if op in {'P','L'} else
+             not any(ideal) or projective_power(recipe) if op=='B' else
+             not any(ideal) if op in {'M', 'R', 'C', 'A', 'I', 'V', 'F', 'O'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
         raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
@@ -997,11 +1005,15 @@ def validate_transform_formula(formula: str, source_count: int = 1) -> None:
         raise ValueError('Nonhomogeneous point-coordinate transform')
 
 
+def projective_power(recipe: Recipe) -> bool:
+    return recipe.operation=='B' and len(recipe.references)==1 and recipe.formula in {'x^2','x^3'}
+
+
 def numeric_transform_formula(recipe: Recipe, source: Coordinate, abc) -> tuple[float,float] | None:
     sources = [source] if len(recipe.references)==1 else source
-    if any(isinstance(p,Ideal) for p in sources):
+    if any(isinstance(p,Ideal) for p in sources) and not projective_power(recipe):
         return None
-    return _transform_sample(recipe.formula,tuple(tuple(p) for p in sources),tuple(tuple(p) for p in abc))
+    return _transform_sample(recipe.formula,tuple(p if isinstance(p,Ideal) else tuple(p) for p in sources),tuple(tuple(p) for p in abc))
 
 
 @lru_cache(maxsize=4096)
@@ -1022,7 +1034,8 @@ def _transform_sample(formula, sources, abc):
         weights = []
         for j in range(3):
             b,c = abc[(j+1)%3],abc[(j+2)%3]
-            weights.append((b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
+            weights.append(source.dx*(b[1]-c[1])-source.dy*(b[0]-c[0]) if isinstance(source,Ideal)
+                           else (b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
         env.update(zip(names,weights))
     result = weighted_coordinate([evaluate_formula(rotate_formula(formula,j),env) for j in range(3)],abc)
     return result if isinstance(result,tuple) else None
@@ -1141,13 +1154,13 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 answer = ((total[0] - p[0]) / 2, (total[1] - p[1]) / 2) if op == 'C' else (total[0]-2*p[0], total[1]-2*p[1])
             elif op in {'P', 'L'}:
                 p, q, r = values
-                if any(isinstance(v, Ideal) for v in values):
+                line = line_data(q,r)
+                if isinstance(p,Ideal) or line is None:
                     return None
-                d = (r[0]-q[0], r[1]-q[1])
-                denominator = d[0]**2 + d[1]**2
-                if denominator < 1e-12:
-                    return None
-                t = ((p[0]-q[0])*d[0]+(p[1]-q[1])*d[1])/denominator
+                q,d = line
+                norm=math.hypot(*d)
+                d=(d[0]/norm,d[1]/norm)
+                t = (p[0]-q[0])*d[0]+(p[1]-q[1])*d[1]
                 foot = (q[0]+t*d[0], q[1]+t*d[1])
                 answer = foot if op == 'P' else (2*foot[0]-p[0], 2*foot[1]-p[1])
             elif op == 'O':
@@ -1730,7 +1743,7 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
                             title=metadata.get(n,{}).get('title',''))
                         for n in sorted(candidates) if n>NATIVE_MAX and domains.get(n)=='nonreal']
     for number in sorted(set(candidates)-set(records)):
-        if number <= NATIVE_MAX:
+        if number <= NATIVE_MAX or number in skipped:
             continue
         if domains.get(number) == 'nonreal':
             continue  # Reviewed real-plane non-drawability is a resolved status.
@@ -1916,6 +1929,43 @@ def main() -> None:
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
                               blocked_native, selection_exclusions, atlas, native_directions)
+    # A formula rejected against the early relation-only snapshot can agree
+    # once other coordinate anchors have corrected/closed its line endpoints.
+    # Re-screen only the residual graph; retain the complete candidate search
+    # when selecting a trial. Each commit strictly grows coverage, so this
+    # reaches quiescence without a fixed pass cap or repeated source parsing.
+    initial_components = (unresolved_components(eligible,baseline,selection_exclusions)
+                          if args.max_coordinate_anchors_per_component is not None else {})
+    reserved = Counter(initial_components.get(n,n) for n in anchors)
+    while args.max_coordinate_anchors_per_component != 0:
+        pending = {n:options for n,options in eligible.items() if n not in selected}
+        extra = coordinate_anchors(pending,selected,atlas,None,priority,coordinate_lines,
+                                   native_directions,selection_exclusions,
+                                   {n for n,kind in domains.items() if kind=='nonreal'})
+        extra = {n:r for n,r in extra.items() if n not in anchors or r!=anchors[n]}
+        if args.max_coordinate_anchors_per_component is not None:
+            used = Counter(initial_components.get(n,n) for n in anchors)
+            within_budget = {}
+            for n,r in extra.items():
+                component = initial_components.get(n,n)
+                capacity = max(args.max_coordinate_anchors_per_component,reserved[component])
+                if n in anchors or used[component] < capacity:
+                    within_budget[n]=r
+                    used[component] += int(n not in anchors)
+            extra = within_budget
+        if not extra:
+            break
+        proposed = {**anchors,**extra}
+        trial = select_recipes({n:options+([proposed[n]] if n in proposed else [])
+                                for n,options in relation_only.items()},seeds,
+                               args.max_depth,args.max_length,args.max_conjugates,
+                               blocked_native,selection_exclusions,atlas,native_directions)
+        lost = set(selected)-set(trial)
+        added = set(trial)-set(selected)
+        report('late-coordinate-anchors',proposed=sorted(extra),added=sorted(added),lost=sorted(lost))
+        if lost or not added:
+            break  # Failed trials never replace the preceding valid snapshot.
+        anchors,selected = proposed,trial
     # Directionless ideal markers are coverage metadata, never graph inputs.
     # Append only after selection and numeric screening have completed.
     if 'I' in args.auto_operations:
