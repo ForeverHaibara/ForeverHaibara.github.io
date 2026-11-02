@@ -240,3 +240,15 @@
 # over the reals on their generic domains; no real-plane drawing required.
 65627 DOMAIN nonreal
 65628 DOMAIN nonreal
+
+# User confirmed with the independent GeoGebra singular-focus tool (K340/K792).
+# Preserve the reviewed focal definitions; do not replace by conflicting affine relations.
+14083 J 120 4220 3 14680
+14084 J 729 2080 351 14830
+
+# 4201/13740 cannot both be complements of each other. X(4201)'s explicit
+# Euler-line intersection and coordinates agree; X(13740)=C(4201), not conversely.
+4201 J 2 3 8 38
+# 9858's explicit r/R combo, printed coordinates and native incidence lines
+# agree. The isolated C(20012) statement does not; preserve the checked combo.
+9858 F 3:r*(r+8*R) 9:-(r+2*R)*(r+4*R)

@@ -19,6 +19,49 @@ from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_ceva_cross_native_identities_and_order(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        # Four independent ETC X(1) identities also pin the asymmetric order.
+        for body,refs in [('cevapoint of X(2) and X(192)',(2,192)),
+                          ('crosspoint of X(2) and X(7)',(2,7)),
+                          ('X(2)-Ceva conjugate of X(9)',(2,9)),
+                          ('X(2)-cross conjugate of X(87)',(2,87))]:
+            recipe=m.ceva_cross_candidates(4000,body,3)[0]
+            self.assertEqual(recipe.references,refs)
+            m.validate_transform_formula(recipe.formula,2)
+            for shape,points in native.items():
+                actual=m.numeric_transform_formula(recipe,[points[n] for n in refs],atlas['triangles'][shape])
+                self.assertLess(math.dist(actual,points[1]),1e-8)
+            with self.assertRaises(ValueError):validate_types({4000:recipe},{refs[0]})
+
+    def test_ceva_cross_lists_do_not_admit_triangle_qualifiers_or_partial_pairs(self):
+        for prefix,expected in [('cevapoint of X(i) and X(j)',[(2,192),(6,55)]),
+                                ('X(i)-Ceva conjugate of X(j)',[(192,2),(55,6)])]:
+            body=prefix+' for these (i,j): (192,2), {55,6}'
+            self.assertEqual([r.references for r in m.ceva_cross_candidates(4000,body,3)],expected)
+            for suffix in [' wrt excentral triangle',' in triangle BCI',', (9,broken)']:
+                self.assertFalse(m.ceva_cross_candidates(4000,body+suffix,3))
+        for body in ['cevapoint of X(2) and X(7) in triangle BCI',
+                     'X(2)-cross conjugate of X(87) when ABC is acute',
+                     'cevapoint of X(4000) and X(7)']:
+            self.assertFalse(m.ceva_cross_candidates(4000,body,3))
+
+    def test_13580_13581_close_via_finite_cross_conjugates_without_implicit_j(self):
+        entries=dict(split_entries((m.CACHE/'sources/ETCPart7.html').read_text(encoding='utf-8',errors='replace')))
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        records=m.read_recipes(m.DATA/'chunks/8.txt')
+        native=m.numeric_coordinates({n:records[n] for n in [8115,8116]},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for n,other in [(13580,8115),(13581,8116)]:
+            options=extract_entry(n,entries[n],7)
+            recipe=next(r for r in options if r.operation=='B' and r.references==(other,2))
+            self.assertFalse(any(r.operation=='B' and not r.references for r in options))
+            for shape,points in native.items():
+                point=m.numeric_transform_formula(recipe,[points[other],points[2]],atlas['triangles'][shape])
+                base,d=m.line_data(points[262],points[2552 if n==13580 else 2553])
+                residual=abs((point[0]-base[0])*d[1]-(point[1]-base[1])*d[0])/math.hypot(*d)
+                self.assertLess(residual,1e-8)
+
     def test_reflection_opcode_uses_arity_without_accepting_retired_l(self):
         with TemporaryDirectory(dir=m.CACHE) as directory:
             path=Path(directory)/'recipes.txt'

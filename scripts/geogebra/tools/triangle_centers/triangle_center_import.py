@@ -24,7 +24,7 @@ from urllib.request import Request, urlopen
 import triangle_center_support as support
 from triangle_center_support import stage, report
 from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
-from triangle_center_sources import prepare_source
+from triangle_center_sources import prepare_source, reviewed_line_allowed
 from triangle_center_domains import DOMAIN_KINDS, complex_dependency_roots
 from triangle_center_diagnostics import entry_metadata, title_groups
 
@@ -56,6 +56,17 @@ CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{
 BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
 STEINER_INVERSE = re.compile(rf'^(?:STEINER-(CIRCUMELLIPSE|INELLIPSE)-INVERSE|inverse-in-Steiner-(circumellipse|inellipse)) of {POINT}[\s.,;]*$',re.I)
 BARYCENTRIC_POWER = re.compile(rf'^barycentric (square|cube) of {POINT}[\s.,;]*$',re.I)
+CEVA_CROSS_POINT = re.compile(rf'^(cevapoint|crosspoint) of {POINT} and {POINT}[\s.,;]*$',re.I)
+CEVA_CROSS_CONJUGATE = re.compile(rf'^{POINT}-(Ceva|cross) conjugate of {POINT}[\s.,;]*$',re.I)
+# x/y/z are the first input; u/v/w the second. Conjugates take the point
+# defining X first and the point P second for an X-conjugate of P, as in
+# CevaConjugate(A,B,C,X,P) and CrossConjugate(A,B,C,X,P).
+CEVA_CROSS_FORMULAS = {
+    'cevapoint': '(x*v+y*u)*(x*w+z*u)',
+    'crosspoint': 'x*u*(y*w+z*v)',
+    'ceva conjugate': 'u*(-y*z*u+z*x*v+x*y*w)',
+    'cross conjugate': 'u*(-y*w*u+z*u*v+x*v*w)*(-z*u*v+x*v*w+y*w*u)',
+}
 VU_FIRST = re.compile(rf'^VU 1ST PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 VU_SECOND = re.compile(rf'^VU 2ND PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 # Derived from intersections of the circumcevian and BB2/CC2 triangles, rather
@@ -400,7 +411,7 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
             position = broken.end()
 
     ordered = sorted(
-        pairs,
+        (pair for pair in pairs if reviewed_line_allowed(number,pair)),
         key=lambda pair: (
             sum(ref > NATIVE_MAX for ref in pair),
             max(pair),
@@ -418,7 +429,7 @@ def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int,
             a, b = int(match.group(2)), int(match.group(3))
             if a > 0 and b > 0 and a != b:
                 pairs.append(tuple(sorted((a, b))))
-    return sorted(set(pairs))
+    return sorted(pair for pair in set(pairs) if reviewed_line_allowed(number,pair))
 
 
 def infinity_intersection_lines(number: int, lines: list[str]) -> list[tuple[int,int]]:
@@ -476,6 +487,28 @@ def steiner_major_candidate(number: int, title: str, part: int) -> Recipe | None
     return Recipe(number, 'F', (2, focus), part, title, f'1-{factor}|{factor}')
 
 
+def ceva_cross_candidates(number: int, body: str, part: int):
+    """Only complete ABC relations; never infer triangle-relative variants."""
+    definitions=[]
+    if match := CEVA_CROSS_POINT.fullmatch(body):
+        definitions.append((match[1].lower(),tuple(sorted(map(int,match.groups()[1:])))))
+    elif match := CEVA_CROSS_CONJUGATE.fullmatch(body):
+        definitions.append((match[2].lower()+' conjugate',(int(match[1]),int(match[3]))))
+    else:
+        for prefix,kind,ordered in [
+                ('cevapoint of X(i) and X(j)','cevapoint',False),
+                ('crosspoint of X(i) and X(j)','crosspoint',False),
+                ('X(i)-Ceva conjugate of X(j)','ceva conjugate',True),
+                ('X(i)-cross conjugate of X(j)','cross conjugate',True)]:
+            match=re.fullmatch(re.escape(prefix)+r'\s+for these\s*\(i,j\)\s*:\s*(.*)',body,re.I)
+            if match and re.fullmatch(r'(?:\s*[,;]?\s*[({]\s*\d+\s*,\s*\d+\s*[)}])+[\s.;]*',match[1]):
+                for pair in PAIR.findall(match[1]):
+                    refs=tuple(map(int,pair))
+                    definitions.append((kind,refs if ordered else tuple(sorted(refs))))
+    return [Recipe(number,'B',refs,part,body,CEVA_CROSS_FORMULAS[kind])
+            for kind,refs in definitions if all(ref>0 and ref!=number for ref in refs)]
+
+
 def extract_entry(number: int, fragment: str, part: int,
                   excluded: set[int] | None = None, *, compact: bool = False):
     found: dict[tuple[str, tuple[int, ...]], str] = {}
@@ -524,6 +557,7 @@ def extract_entry(number: int, fragment: str, part: int,
     for line in lines:
         relation = RELATION.match(line)
         if relation and int(relation[1]) == number:
+            recipes.extend(ceva_cross_candidates(number,relation[2],part))
             if match := BARYCENTRIC_POWER.fullmatch(relation[2]):
                 source=int(match[2])
                 if source>0 and source!=number:

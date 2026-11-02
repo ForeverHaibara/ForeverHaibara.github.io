@@ -200,6 +200,61 @@ class ReviewedSourceConflictTest(TestCase):
 
 
 class OtherReviewedSourceErrors(TestCase):
+    def test_4201_9858_primary_definitions_overrule_false_complement_relations(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        formulas={}
+        for part,ns in [(3,[4201]),(5,[9858]),(7,[13740]),(11,[20012])]:
+            entries=dict(m.split_entries((m.CACHE/f'sources/ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')))
+            for n in ns:formulas[n]=Recipe(n,'B',(),formula=m.coordinate_candidates(entries[n])[0][1])
+        points=m.numeric_coordinates({n:seeds[n] for n in [4201,9858]},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for shape,abc in atlas['triangles'].items():
+            for n in [4201,9858]:
+                expected=m.numeric_formula(formulas[n],abc)
+                self.assertLess(math.dist(points[shape][n],expected),1e-8)
+            for n,other in [(4201,13740),(9858,20012)]:
+                p=m.numeric_formula(formulas[other],abc)
+                complement=tuple((sum(v[i] for v in abc)-p[i])/2 for i in (0,1))
+                self.assertGreater(math.dist(points[shape][n],complement),1e-3)
+            p=points[shape][4201]
+            complement=tuple((sum(v[i] for v in abc)-p[i])/2 for i in (0,1))
+            self.assertLess(math.dist(m.numeric_formula(formulas[13740],abc),complement),1e-8)
+            # Independent native lines support the printed X(9858) combo.
+            for first,second in [(3,9),(443,938)]:
+                base,d=m.line_data(native[shape][first],native[shape][second])
+                self.assertLess(abs(cross(sub(points[shape][9858],base),d))/math.hypot(*d),1e-8)
+
+    def test_14821_accidental_6913_collinearity_is_not_general_incidence(self):
+        from fractions import Fraction
+        formulas=[]
+        for part,n in [(8,14821),(6,11709),(8,14933)]:
+            entries=dict(m.split_entries((m.CACHE/f'sources/ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')))
+            formulas.append(m.coordinate_candidates(entries[n])[0][1])
+        ratios=[]
+        for a,b,c in [(6,9,13),(13,14,15)]:
+            # Checked polynomial ASTs, evaluated with integers: no cancellation
+            # from floating point or native-center implementations in this witness.
+            vectors=[[eval(m.rotate_formula(f,j).replace('^','**'),{'__builtins__':{}},dict(a=a,b=b,c=c))
+                      for j in range(3)] for f in formulas]
+            p,q,r=vectors
+            determinant=p[0]*(q[1]*r[2]-q[2]*r[1])-p[1]*(q[0]*r[2]-q[2]*r[0])+p[2]*(q[0]*r[1]-q[1]*r[0])
+            ratios.append(Fraction(determinant,sum(p)*sum(q)*sum(r)))
+        self.assertEqual(ratios[0],Fraction(71298654909147,912201855096415469494240))
+        self.assertLess(abs(ratios[0]),1e-9)
+        self.assertGreater(abs(ratios[1]),0.5)
+        fragment='X(14821) lies on this line: {11709,14933}, {1,2}'
+        lines=m.relation_lines(fragment)
+        self.assertNotIn((11709,14933),m.listed_lines(14821,lines))
+        self.assertNotIn((11709,14933),m.coordinate_incidence_lines(14821,lines))
+        self.assertIn((1,2),m.listed_lines(14821,lines))
+        self.assertIn((11709,14933),m.listed_lines(14822,['X(14822) lies on this line: {11709,14933}']))
+
+    def test_user_confirmed_singular_foci_are_pinned_without_rederivation(self):
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        self.assertEqual(seeds[14083].row(),'14083 J 120 4220 3 14680')
+        self.assertEqual(seeds[14084].row(),'14084 J 729 2080 351 14830')
+
     def test_10685_missing_plus_confirmed_by_brocard_anticevian_geometry(self):
         recipe=m.read_recipes(m.DATA/'seeds.txt',{})[10685]
         for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(2,-3),(10,-1),(3,4)]]:
@@ -345,7 +400,7 @@ class OtherReviewedSourceErrors(TestCase):
         recipes = {n: next(r for r in m.extract_entry(n,entries[n],20)
                            if r.operation=='F' and r.references[0]==2) for n in numbers}
         focus_recipes = {n: next(r for r in m.extract_entry(n,entries[n],20)
-                                if r.operation=='B') for n in (39158,39159)}
+                                if r.operation=='B' and not r.references) for n in (39158,39159)}
         triangles = [[(0,0),(6,0),(1,4)], [(0,0),(6,0),(-1,2)],
                      [(2,-3),(10,-1),(3,4)], [(0,0),(4,0),(2,3.47)]]
         for abc in triangles:

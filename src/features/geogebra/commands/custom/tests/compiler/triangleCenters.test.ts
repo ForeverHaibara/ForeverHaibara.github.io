@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Synthetic protocol fixtures above the current ETC range, in the existing tail chunk.
 vi.mock('../../data/triangle-centers/chunks/73.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n' };
+  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -15,7 +15,7 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
   it('loads and compiles a representative from every published chunk', async () => {
@@ -28,6 +28,15 @@ describe('extended TriangleCenter dispatch', () => {
       const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
       expect(result, `X(${id})`).not.toContain(`TriangleCenter(A,B,C,${id})`);
       expect(result, `X(${id})`).not.toMatch(/\b(?:NaN|Infinity|undefined)\b/u);
+    }
+  });
+
+  it('compiles the recovered finite cross-conjugates without guessing local J', async () => {
+    for (const id of [13580, 13581]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:J|z|u|v|w)\b/u);
     }
   });
 
@@ -253,7 +262,8 @@ describe('extended TriangleCenter dispatch', () => {
       expect(independent).not.toContain(`TriangleCenter(A,B,C,${id})`);
       expect(independent).not.toMatch(/\b(?:SA|SB|SC|SW|S)\b/u);
     }
-    const conway = compileStudioCommand('TriangleCenter(A,B,C,8036)', environment());
+    // Keep Conway rendering independent of changes to production recipe selection.
+    const conway = compileStudioCommand('TriangleCenter(A,B,C,73991)', environment());
     expect(conway).toContain('sqrt(');
     expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).not.toContain('TriangleCenter(A,B,C,72003)');
     for (const output of [barycentric, trilinear, conway]) expect(output.length).toBeLessThan(50_000);
