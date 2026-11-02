@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
              'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'r', 'R', 'pi'}
-FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan'}
+FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
@@ -51,6 +51,7 @@ def normalize_formula(raw: str) -> str | None:
                  lambda m: '(%s(%s%s%s))^%s' % (m.group(1), (m.group(3) + '*') if m.group(3) else '', m.group(4), ('/' + m.group(5)) if m.group(5) else '', m.group(2)), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
                  lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
+    raw = re.sub(r'\blog\s*(?=\()', 'ln', raw, flags=re.I)
     raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc|Sqrt|Pi)\b', lambda m: m.group().lower(), raw)
 
     # ETC X(3371) prints pi8; do not silently interpret it as 8*pi.
@@ -239,7 +240,7 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
         if not label:
             continue
         trilinear = label.group(1).lower() == 'trilinears'
-        text = label.group(2)
+        text = re.sub(r'^\s*=\s*', '', label.group(2))
         for next_line in lines[index+1:]:
             if LABEL.match(next_line) or re.match(r'^X\s*\(\d+\)', next_line, re.I):
                 break
@@ -361,7 +362,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
     tree = validate_formula(formula)
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
-             'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan,
+             'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),
              'csc': lambda x: 1/math.sin(x)}
 

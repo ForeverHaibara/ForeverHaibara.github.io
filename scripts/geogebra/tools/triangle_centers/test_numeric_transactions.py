@@ -85,6 +85,16 @@ class NumericTransactionTest(TestCase):
 
 
 class RepairQueueTest(TestCase):
+    def test_out_of_part_seeds_close_without_page_incidence_table(self):
+        candidates = {4000: [m.Recipe(4000,'M',(1,2))]}
+        seeds = {5000:m.Recipe(5000,'J',(1,2,4000,3)),
+                 5001:m.Recipe(5001,'I',(1,4000))}
+        atlas = dict(triangles=ATLAS['triangles'],
+                     coordinates={'shape':{'1':(0,0),'2':(6,0),'3':(1,4)}})
+        selected = m.select_recipes(candidates,seeds,6,None,atlas=atlas)
+        self.assertEqual(set(selected),{4000,5000,5001})
+        self.assertEqual(m.numeric_coordinates(selected,atlas)['shape'][5000],(3,0))
+
     def test_more_than_thirty_independent_failures_use_other_operation(self):
         seed = m.Recipe(5000, 'B', (), formula='1/(a-a)')
         candidates = {n: [m.Recipe(n, 'M', (5000, 1)), m.Recipe(n, 'B', (), formula='1')]

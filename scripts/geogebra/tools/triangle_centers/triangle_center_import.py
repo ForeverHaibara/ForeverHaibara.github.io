@@ -50,12 +50,13 @@ LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?line\s+
 ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
 ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
+CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this)\s*(?:\(parallel\)\s*)?lines?\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -423,7 +424,7 @@ def extract_entry(number: int, fragment: str, part: int,
                                 (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
                                 (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T'),
-                                (CIRCUM_INVERSE, 'V')):
+                                (CIRCUM_INVERSE, 'V'), (CIRCLE_CENTER, 'O')):
             match = pattern.match(body)
             if match and not CONDITIONAL.search(body[match.end():]):
                 found[(opcode, tuple(map(int, match.groups())))] = line
@@ -736,7 +737,7 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F'} else
+    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
         raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
@@ -797,6 +798,20 @@ def numeric_conjugate(p: Coordinate, abc: list[tuple[float, float]],
     answer = (sum(weight * vertex[0] for weight, vertex in zip(weights, abc))/denominator,
               sum(weight * vertex[1] for weight, vertex in zip(weights, abc))/denominator)
     return answer if all(math.isfinite(value) for value in answer) else None
+
+
+def numeric_circle_center(points):
+    if any(isinstance(p, Ideal) for p in points):
+        return None
+    a,b,c = points
+    u,v = (b[0]-a[0],b[1]-a[1]), (c[0]-a[0],c[1]-a[1])
+    determinant = 2*(u[0]*v[1]-u[1]*v[0])
+    if determinant == 0:
+        return None
+    uu,vv = sum(x*x for x in u),sum(x*x for x in v)
+    result = (a[0]+(uu*v[1]-vv*u[1])/determinant,
+              a[1]+(u[0]*vv-v[0]*uu)/determinant)
+    return result if all(math.isfinite(x) for x in result) else None
 
 
 def numeric_circum_inverse(p: Coordinate, abc: list[tuple[float, float]]) -> Coordinate | None:
@@ -939,6 +954,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 t = ((p[0]-q[0])*d[0]+(p[1]-q[1])*d[1])/denominator
                 foot = (q[0]+t*d[0], q[1]+t*d[1])
                 answer = foot if op == 'P' else (2*foot[0]-p[0], 2*foot[1]-p[1])
+            elif op == 'O':
+                answer = numeric_circle_center(values)
             elif op == 'V':
                 answer = numeric_circum_inverse(values[0], abc)
             else:
@@ -1247,10 +1264,10 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                     continue
                 closure_screened[recipe.operation] += 1
                 if coordinates and recipe.operation == 'J' and not line_candidate_supported(
-                        recipe, coordinates, incidence_lines[number]):
+                        recipe, coordinates, incidence_lines.get(number, [])):
                     continue
                 if coordinates and recipe.operation == 'I' and not direction_candidate_supported(
-                        recipe, coordinates, incidence_lines[number]):
+                        recipe, coordinates, incidence_lines.get(number, [])):
                     continue
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
@@ -1550,7 +1567,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFB',
+    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBO',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)

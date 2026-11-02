@@ -80,3 +80,14 @@ call graph, global grammar data, coordinate code and source patches. Solver and
 report-only edits no longer force page re-extraction; changes to parser helpers
 still invalidate the cache. This cache namespace upgrade rebuilds old checkpoints
 once, without changing generated recipe semantics.
+
+Three-finite-center circumcenters use `O p q r`, with matching numeric and
+GeoGebra `Center(Circle(...))` implementations. Natural `log(...)` is normalized
+to `ln(...)`; logarithm arguments must remain dimensionless. Coordinate labels
+can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
+circle center, a damaged PB entry, and a power-curve tangent pole respectively.
+Out-of-Part J/I seeds close without assuming that their page incidence table
+was loaded; their construction inputs still undergo numeric/type screening.
+The full dry-run now contains 70,055 records and 160 unresolved entries, while
+the published small set contains 8,205 records. See the uncovered-analysis doc
+for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.

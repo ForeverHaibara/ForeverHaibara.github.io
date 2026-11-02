@@ -172,6 +172,17 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
 class PBClusterAnchors(TestCase):
+    def test_11755_reviewed_intersection_matches_balanced_printed_coordinate(self):
+        seeds = m.read_recipes(m.DATA/'seeds.txt', {})
+        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        selected = {n: seeds[n] for n in (11753,11755)}
+        points = m.numeric_coordinates(selected,atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        formula = m.Recipe(11755,'B',(),formula=(
+            '2*a^3*b*c*(sqrt(3)*(-a^2+b^2+c^2)+2*S)'
+            '+sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))*((-a+b+c)*(b-c)^2*(a+b+c)*S)'))
+        for shape, abc in atlas['triangles'].items():
+            self.assertLess(math.dist(points[shape][11755],m.numeric_formula(formula,abc)),1e-8)
+
     def test_two_anchors_match_independent_preamble_vertex_construction(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt', {})
         atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
@@ -204,6 +215,8 @@ class CircumcenterSourceConflict(TestCase):
     def test_11619_printed_formula_conflicts_with_named_circle_center(self):
         atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
         points = m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        seed = m.read_recipes(m.DATA/'seeds.txt', {})[11619]
+        corrected = m.numeric_coordinates({11619:seed},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         fragment = dict(m.split_entries((m.CACHE/'ETCPart6.html').read_text(encoding='utf-8')))[11619]
         formula = next(r for r in m.extract_entry(11619,fragment,6) if r.operation=='B')
         for shape, xy in points.items():
@@ -215,6 +228,7 @@ class CircumcenterSourceConflict(TestCase):
                               mid2,(mid2[0]-ac[1],mid2[1]+ac[0]))
             self.assertAlmostEqual(math.dist(center,a),math.dist(center,b),places=8)
             self.assertAlmostEqual(math.dist(center,a),math.dist(center,c),places=8)
+            self.assertLess(math.dist(center,corrected[shape][11619]),1e-8)
             p,d = m.line_data(xy[2492],xy[2780])
             self.assertLess(abs(cross(sub(center,p),d))/math.hypot(*d),1e-8)
             self.assertGreater(math.dist(center,m.numeric_formula(formula,atlas['triangles'][shape])),1e-3)

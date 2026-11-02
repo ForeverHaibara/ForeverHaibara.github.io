@@ -83,4 +83,18 @@
 # Source conflict observed at X(11619): printed trilinears do not give the center
 # of {X(5),X(6),X(22)} and fail its X(2492)X(2780) line. Independent perpendicular
 # bisectors give the named center and satisfy that line on both atlas samples.
-# Leave unresolved pending a circle-center recipe; this is not a permanent SKIP.
+# Restored by the finite three-center circumcenter recipe below.
+
+# ETC X(11755): its line list starts with a stray backslash and its printed
+# first coordinate lacks one closing parenthesis. The two explicit incidence
+# lines below agree with the balanced coordinate after expanding preamble U,
+# on both independent atlas samples. Do not relax general syntax for this typo.
+11755 J 11 15 12 11753
+
+# X(11619)'s named three-point circle definition independently agrees with
+# its incidence line, unlike the printed coordinates (see source-error tests).
+11619 O 5 6 22
+# Power curve P(t)=(a^t:b^t:c^t): its tangent at t=1 has coefficients
+# (bc*ln(c/b),ca*ln(a/c),ab*ln(b/a)); reciprocal line coefficients give
+# the printed trilinear pole X(40300). A verified root for its dependent cluster.
+40300 B a/ln(c/b)

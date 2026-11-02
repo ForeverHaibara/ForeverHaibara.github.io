@@ -249,4 +249,17 @@ describe('extended TriangleCenter dispatch', () => {
     }
   });
 
+  it('compiles finite three-center circles and natural-log coordinates', async () => {
+    for (const id of [11619, 40300, 72481, 72891]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,11619)', environment()))
+      .toBe('Center(Circle(TriangleCenter(A,B,C,5),TriangleCenter(A,B,C,6),TriangleCenter(A,B,C,22)))');
+    for (const id of [72481, 72891]) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toContain('Center(Circle(');
+    }
+    const logarithmic = compileStudioCommand('TriangleCenter(A,B,C,40300)', environment());
+    expect(logarithmic).toContain('ln(');
+    expect(logarithmic).not.toContain('log(');
+    expect(logarithmic).not.toContain(',40300)');
+  });
+
 });
