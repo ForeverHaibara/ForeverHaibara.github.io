@@ -24,9 +24,9 @@ from urllib.request import Request, urlopen
 import triangle_center_support as support
 from triangle_center_support import stage, report
 from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
-from triangle_center_sources import prepare_source, reviewed_line_allowed
+from triangle_center_sources import prepare_source
 from triangle_center_domains import DOMAIN_KINDS, complex_dependency_roots
-from triangle_center_diagnostics import entry_metadata, title_groups
+from triangle_center_diagnostics import entry_metadata, title_groups, intersection_title_hints
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -411,7 +411,7 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
             position = broken.end()
 
     ordered = sorted(
-        (pair for pair in pairs if reviewed_line_allowed(number,pair)),
+        pairs,
         key=lambda pair: (
             sum(ref > NATIVE_MAX for ref in pair),
             max(pair),
@@ -429,7 +429,7 @@ def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int,
             a, b = int(match.group(2)), int(match.group(3))
             if a > 0 and b > 0 and a != b:
                 pairs.append(tuple(sorted((a, b))))
-    return sorted(pair for pair in set(pairs) if reviewed_line_allowed(number,pair))
+    return sorted(set(pairs))
 
 
 def infinity_intersection_lines(number: int, lines: list[str]) -> list[tuple[int,int]]:
@@ -1234,10 +1234,12 @@ def line_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Co
         crossing = numeric_intersection(endpoints)
         if crossing is None:
             return False
-        if 'lies on these lines:' not in recipe.evidence.lower() or len(incidence_lines) < 3:
+        incidence_only = 'lies on these lines:' in recipe.evidence.lower()
+        if len(incidence_lines) < 3:
             continue
         directions = [direction(endpoints[i], endpoints[i+1]) for i in (0, 2)]
         support = False
+        independent = []
         for a, b in incidence_lines:
             if (a, b) in (recipe.references[:2], recipe.references[2:]) or a not in points or b not in points:
                 continue
@@ -1255,7 +1257,14 @@ def line_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Co
             if distance < 1e-5 * max(1, math.hypot(*crossing)):
                 support = True
                 break
-        if not support:
+            # Count distinct geometric lines, not repeated endpoint pairs on
+            # the same line. One damaged incidence cannot veto an explicit
+            # intersection; absent/parallel evidence is not a contradiction.
+            if not any(abs(d[0]*v[1]-d[1]*v[0]) < 1e-6*length*math.hypot(*v)
+                       and abs(d[0]*(q[1]-p[1])-d[1]*(q[0]-p[0]))/length
+                           < 1e-5*max(1,math.hypot(*crossing)) for q,v in independent):
+                independent.append(line)
+        if not support and (incidence_only or len(independent)>=2):
             return False
     return True
 
@@ -1858,7 +1867,8 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
         entries.append(entry)
     return dict(count=len(entries), summary=dict(Counter(row['primary'] for row in entries)),
                 skipped=skipped, domains=domains, resolved_nonreal=resolved_nonreal,
-                entries=entries, title_groups=title_groups(entries))
+                entries=entries, title_groups=title_groups(entries),
+                intersection_title_hints=intersection_title_hints(candidates,metadata,records))
 
 
 def main() -> None:

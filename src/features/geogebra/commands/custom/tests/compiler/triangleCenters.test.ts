@@ -18,6 +18,22 @@ const environment = (): CommandEnvironment => ({
 beforeAll(async () => { for (const id of [73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
+  it('uses the reviewed repairs and the cancelled Danneels coordinates', async () => {
+    for (const id of [7742, 8037, 40822, 48720, 72796]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,7742)', environment()))
+      .toBe('Intersect(Line(TriangleCenter(A,B,C,1),TriangleCenter(A,B,C,3)),Line(TriangleCenter(A,B,C,22),TriangleCenter(A,B,C,1612)))');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,40822)', environment()))
+      .toBe('Intersect(Line(TriangleCenter(A,B,C,5),TriangleCenter(A,B,C,264)),Line(TriangleCenter(A,B,C,290),TriangleCenter(A,B,C,1352)))');
+    const danneels = compileStudioCommand('TriangleCenter(A,B,C,8037)', environment());
+    for (const source of [1131, 3068]) expect(danneels).not.toContain(`TriangleCenter(A,B,C,${source})`);
+    const perspector = compileStudioCommand('TriangleCenter(A,B,C,48720)', environment());
+    for (const source of [115, 1043]) expect(perspector).not.toContain(`TriangleCenter(A,B,C,${source})`);
+    for (const [id, result] of [[8037, danneels], [48720, perspector]] as const) {
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW|S)\b/u);
+    }
+  });
+
   it('loads and compiles a representative from every published chunk', async () => {
     const chunks = import.meta.glob('../../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
     expect(Object.keys(chunks)).toHaveLength(71);

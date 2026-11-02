@@ -252,3 +252,35 @@
 # 9858's explicit r/R combo, printed coordinates and native incidence lines
 # agree. The isolated C(20012) statement does not; preserve the checked combo.
 9858 F 3:r*(r+8*R) 9:-(r+2*R)*(r+4*R)
+
+# User review 2026-11-03: the isolated V(5560) relation is false; other
+# definitions of both 5560 and 7742 are retained. Use the verified native lines.
+7742 J 1 3 22 1612
+# 8037: the Ceva relation is correct generically. On the obtuse atlas shape
+# X(1131)=A and the unsimplified map has a 0:0:0 base point. Cancel the
+# common factor algebraically; use its continuous polynomial coordinates.
+8037 B (a^2+S)*(a^2+b^2-c^2+S)*(a^2-b^2+c^2+S)
+# User independently checked Dao / X-parabola-tangential perspectivity.
+# The printed coordinates are correct; the cevapoint(115,1043) relation is not.
+48720 B (b^2-c^2)*(b+c)*(2*a^7-(b+c)*a^6-(3*b^2+4*b*c+3*c^2)*a^5+(b+c)*(5*b^2-9*b*c+5*c^2)*a^4+4*(b+c)^2*b*c*a^3-(b+c)*(7*b^4+7*c^4-6*b*c*(b^2+b*c+c^2))*a^2+(b^2-8*b*c+c^2)*(b^2-c^2)^2*a+(b^2-c^2)^2*(b+c)*(3*b^2-5*b*c+3*c^2))
+# User review: X(40822)'s title uses 6 where the compatible line table
+# uses 2. These two independently confirmed listed native lines suffice.
+40822 J 5 264 290 1352
+# User review: X(72796)'s title uses 8 where compatible incidences use 80.
+72796 J 80 53618 1293 30198
+# Additional reviewed title/line conflicts: corrected endpoint pairs agree
+# with each target's coordinates on both atlas shapes; all available listed
+# lines support these positions. No global identifier replacement is made.
+# 71989: 27196 -> 27186 (191 available supporting lines); opens the correct
+# R(71989,5278) position for 72215 without changing that valid reflection.
+71989 J 1 27186 2 902
+# 72498: 36063 -> 36036 (11 supporting lines).
+72498 J 31 36061 75 36036
+# The following two titles have only two listed lines, so the generic
+# independent-line screen cannot decide them. Both corrected intersections
+# also match the printed coordinates; keep these as reviewed exceptions.
+72939 J 3 15111 34152 63631
+73051 J 52 27361 1154 3627
+# 72941: corrected X(3)X(15111) intersection matches its coordinates and
+# 31 listed lines; leave the separate 15366 dependency question open.
+72941 J 3 15111 26 476

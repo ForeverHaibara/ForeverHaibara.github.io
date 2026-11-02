@@ -19,6 +19,33 @@ from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_explicit_intersection_needs_consistent_independent_evidence(self):
+        points={1:(-1,0),2:(1,0),3:(0,-1),4:(0,1),5:(0,1),6:(1,2),
+                7:(0,3),8:(1,5),9:(2,3),10:(3,4),11:(-1,-1),12:(1,1)}
+        explicit=Recipe(4000,'J',(1,2,3,4),evidence='X(4000) = intersection of lines X(1)X(2) and X(3)X(4)')
+        self.assertFalse(line_candidate_supported(explicit,{'t':points},[(1,2),(3,4),(5,6),(7,8)]))
+        # Missing support, a single bad line, or repeated copies of it are
+        # insufficient evidence to reject an explicitly stated intersection.
+        self.assertTrue(line_candidate_supported(explicit,{'t':points},[(1,2),(3,4)]))
+        self.assertTrue(line_candidate_supported(explicit,{'t':points},[(1,2),(3,4),(5,6)]))
+        self.assertTrue(line_candidate_supported(explicit,{'t':points},[(1,2),(5,6),(9,10)]))
+        self.assertTrue(line_candidate_supported(explicit,{'t':points},[(1,2),(5,6),(7,8),(11,12)]))
+
+    def test_title_incidence_hints_do_not_rewrite_recipes_or_uncovered_counts(self):
+        candidates={72796:RecipeCandidates(72796,[],[(80,53618),(1293,30198)]),
+                    40822:RecipeCandidates(40822,[],[(2,6331),(3,17984)]),
+                    4000:RecipeCandidates(4000,[],[(1,2),(3,4)]),
+                    4001:RecipeCandidates(4001,[],[(1,2),(3,4)])}
+        metadata={72796:dict(title='X(8)X(53618)∩X(1293)X(30198)'),
+                  40822:dict(title='X(6)X(6331)∩X(3)X(17984)'),
+                  4000:dict(title='X(1)X(2)∩X(3)X(4)'),
+                  4001:dict(title='X(1)X(2)∩X(3)X(4) wrt excentral triangle')}
+        hints=m.intersection_title_hints(candidates,metadata,{72796:Recipe(72796,'J',(80,53618,1293,30198))})
+        self.assertEqual([h['id'] for h in hints],[40822,72796])
+        self.assertTrue(hints[1]['selected'])
+        self.assertEqual(hints[1]['possible_endpoint_conflicts'][0]['listed_line'],(80,53618))
+        self.assertEqual(candidates[40822].lines,((2,6331),(3,17984)))
+
     def test_ceva_cross_native_identities_and_order(self):
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
         native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
@@ -735,6 +762,19 @@ class CandidateFamilyTest(TestCase):
                                   {}, 6, None, atlas=atlas)
         self.assertEqual(set(selected), {4000, 4001})
         self.assertEqual(selected[4000].references, (1, 2, 3, 4))
+
+    def test_late_independent_lines_repair_an_explicit_intersection(self):
+        points={1:(-1,0),2:(1,0),3:(0,-1),4:(0,1),5:(0,1),6:(1,2),
+                7:(0,3),9:(-3,-1),10:(0,-1),11:(0,3),12:(2,7)}
+        atlas=dict(triangles={'sample':[(0,0),(6,0),(1,4)]},
+                   coordinates={'sample':{str(n):p for n,p in points.items()}})
+        explicit=Recipe(4000,'J',(1,2,3,4),evidence='X(4000) = intersection of lines')
+        pool=RecipeCandidates(4000,[explicit],[(1,2),(3,4),(5,6),(7,4001),(9,10)])
+        selected=select_recipes({4000:pool,4001:[Recipe(4001,'M',(11,12))]},
+                                {},6,None,atlas=atlas)
+        self.assertEqual(set(selected),{4000,4001})
+        self.assertNotEqual(selected[4000].references,explicit.references)
+        self.assertLess(math.dist(numeric_coordinates(selected,atlas)['sample'][4000],(-2,-1)),1e-8)
 
 
 class TopologyEncodingTest(TestCase):

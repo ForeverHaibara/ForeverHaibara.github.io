@@ -3,15 +3,6 @@ import hashlib
 import re
 from triangle_center_support import report
 
-# User-reviewed false incidences, not exclusions of the centers themselves.
-# X(14821): accidental near-collinearity on the ETC 6-9-13 sample; contradicted
-# by its independently checked GL/crosspoint definition on generic triangles.
-REVIEWED_FALSE_LINES = {14821: {(11709, 14933)}}
-
-
-def reviewed_line_allowed(number, pair):
-    return tuple(sorted(pair)) not in REVIEWED_FALSE_LINES.get(number, ())
-
 SNAPSHOTS = {28: '9dc382cda2bd1a13568ea43375936ebdfa4f4caed9dec8b6cf26da668406c371', 29: '46f081b5c09cb2aac0523e00b312c67c96ec5a3cb2b849b28bf75c4447472da9', 34: '164f0de41e204ce098f84b627165791398770042052a30f802f8c5210175f322', 36: 'c1175b21df78ea2989247161219bd34c426866d1345178b0780f583922f1c5c4', 1: '374c222535fe737a57f52da99fdde3cec6ba01d78b1d7ad84b7588e95e8d88cf', 31: '61167d9047a440ad539a0d0335d4fb8e97334cc0418e874d686015e8d3201d91', 35: '0d59a729dbb3120d4f4057fad34333b3475236f943995855c497ade6c257ad06'}
 
 

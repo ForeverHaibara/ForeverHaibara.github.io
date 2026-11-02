@@ -245,10 +245,66 @@ class OtherReviewedSourceErrors(TestCase):
         self.assertGreater(abs(ratios[1]),0.5)
         fragment='X(14821) lies on this line: {11709,14933}, {1,2}'
         lines=m.relation_lines(fragment)
-        self.assertNotIn((11709,14933),m.listed_lines(14821,lines))
-        self.assertNotIn((11709,14933),m.coordinate_incidence_lines(14821,lines))
+        # Keep the source faithfully; the reviewed definition is in seeds,
+        # not a point-specific filter embedded in the parser.
+        self.assertIn((11709,14933),m.listed_lines(14821,lines))
+        self.assertIn((11709,14933),m.coordinate_incidence_lines(14821,lines))
         self.assertIn((1,2),m.listed_lines(14821,lines))
         self.assertIn((11709,14933),m.listed_lines(14822,['X(14822) lies on this line: {11709,14933}']))
+        self.assertEqual(m.read_recipes(m.DATA/'seeds.txt',{})[14821].row(),'14821 B 38 7829 x*u')
+
+    def test_8037_correct_ceva_relation_has_a_removable_base_point(self):
+        seed=m.read_recipes(m.DATA/'seeds.txt',{})[8037]
+        # Write X=a^2, Y=b^2, Z=c^2, T=S. Clearing the denominators of
+        # X(1131) leaves a common t0*t1*t2; cancellation gives the seed.
+        for X,Y,Z,T in [(53,5,36,12),(41,17,36,24),(8,13,17,7)]:
+            q=[X+T,Y+T,Z+T];t=[Y+Z-X+T,Z+X-Y+T,X+Y-Z+T]
+            for i in range(3):
+                j,k=(i+1)%3,(i+2)%3
+                self.assertEqual(-t[i]*q[i]+t[j]*q[j]+t[k]*q[k],t[j]*t[k])
+        formula=Recipe(1131,'B',(),formula='1/(2*SA+S)')
+        other=Recipe(3068,'B',(),formula='a^2+S')
+        transform=Recipe(8037,'B',(1131,3068),formula=m.CEVA_CROSS_FORMULAS['ceva conjugate'])
+        for abc in [[(0,0),(6,0),(1,4)],[(1,2),(8,2),(3,7)]]:
+            source=m.numeric_formula(formula,abc);p=m.numeric_formula(other,abc)
+            self.assertLess(math.dist(m.numeric_transform_formula(transform,[source,p],abc),m.numeric_formula(seed,abc)),1e-8)
+        abc=[(0,0),(6,0),(-1,2)]
+        self.assertIsNone(m.numeric_transform_formula(transform,[abc[0],m.numeric_formula(other,abc)],abc))
+        self.assertLess(math.dist(m.numeric_formula(seed,abc),abc[0]),1e-12)
+
+    def test_user_reviewed_intersections_and_dao_perspector_are_seeded(self):
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        for n,row in [(7742,'7742 J 1 3 22 1612'),(40822,'40822 J 5 264 290 1352'),
+                      (72796,'72796 J 80 53618 1293 30198')]:
+            self.assertEqual(seeds[n].row(),row)
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart25.html').read_text(encoding='utf-8',errors='replace')))
+        self.assertEqual(seeds[48720].operation,'B')
+        self.assertFalse(seeds[48720].references)
+        self.assertEqual(seeds[48720].formula,m.coordinate_candidates(entries[48720])[0][1])
+
+    def test_reviewed_title_repairs_match_coordinates_without_number_replacement(self):
+        targets={40822:21,72796:37,71989:36,72498:37,72939:37,72941:37,73051:37}
+        records={n:r for path in (m.DATA/'chunks').glob('*.txt') for n,r in m.read_recipes(path).items()}
+        records.update(m.read_recipes(m.DATA/'seeds.txt',{}))
+        closure={}
+        def visit(n):
+            if n<=m.NATIVE_MAX or n in closure:return
+            closure[n]=records[n]
+            for ref in records[n].references:visit(ref)
+        for n in targets:visit(n)
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        points=m.numeric_coordinates(closure,atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for part in set(targets.values()):
+            entries=dict(m.split_entries((m.CACHE/f'sources/ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')))
+            for n in [n for n in targets if targets[n]==part]:
+                formulas=[Recipe(n,'B',(),formula=f) for _,f,_ in m.coordinate_candidates(entries[n])]
+                for shape,abc in atlas['triangles'].items():
+                    expected=[m.numeric_formula(r,abc) for r in formulas]
+                    self.assertTrue(any(p is not None and math.dist(points[shape][n],p)<1e-7 for p in expected),(n,shape))
+        # The parser must preserve the raw mistaken title as evidence. Only
+        # the reviewed seed supplies the selected corrected construction.
+        fragment='<h3>X(72796) = X(8)X(53618)&cap;X(1293)X(30198)</h3>'
+        self.assertTrue(any(r.references==(8,53618,1293,30198) for r in m.extract_entry(72796,fragment,37)))
 
     def test_user_confirmed_singular_foci_are_pinned_without_rederivation(self):
         seeds=m.read_recipes(m.DATA/'seeds.txt',{})
