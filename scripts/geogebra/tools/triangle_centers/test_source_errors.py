@@ -151,6 +151,63 @@ class ReviewedSourceConflictTest(TestCase):
 
 
 class OtherReviewedSourceErrors(TestCase):
+    def test_steiner_major_vertices_and_curvature_centers(self):
+        source = (m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8')
+        entries = dict(m.split_entries(source))
+        numbers = [39202,39203,39206,39207,39300,39301,39304,39305]
+        recipes = {n: next(r for r in m.extract_entry(n,entries[n],20)
+                           if r.operation=='F' and r.references[0]==2) for n in numbers}
+        focus_recipes = {n: next(r for r in m.extract_entry(n,entries[n],20)
+                                if r.operation=='B') for n in (39158,39159)}
+        triangles = [[(0,0),(6,0),(1,4)], [(0,0),(6,0),(-1,2)],
+                     [(2,-3),(10,-1),(3,4)], [(0,0),(4,0),(2,3.47)]]
+        for abc in triangles:
+            G = tuple(sum(p[i] for p in abc)/3 for i in (0,1))
+            # Independent Cartesian covariance, no side-length radical formula.
+            q = [[2/3*sum((p[i]-G[i])*(p[j]-G[j]) for p in abc)
+                  for j in (0,1)] for i in (0,1)]
+            gap = math.hypot(q[0][0]-q[1][1],2*q[0][1])
+            major = (q[0][0]+q[1][1]+gap)/2
+            minor = (q[0][0]+q[1][1]-gap)/2
+            foci = {n: m.numeric_formula(r,abc) for n,r in focus_recipes.items()}
+            for n, recipe in recipes.items():
+                with self.subTest(triangle=abc,number=n):
+                    focus = foci[recipe.references[1]]
+                    v = sub(focus,G)
+                    self.assertAlmostEqual(sum(x*x for x in v),gap,places=8)
+                    self.assertLess(math.hypot(*(sum(q[i][j]*v[j] for j in (0,1))-major*v[i]
+                                                for i in (0,1))),1e-8)
+                    point = m.numeric_combo(recipe,[G,focus],abc)
+                    offset = sub(point,G)
+                    scale = .5 if n in (39206,39207,39304,39305) else 1
+                    distance = math.sqrt(major) if n<39300 else gap/math.sqrt(major)
+                    self.assertAlmostEqual(math.hypot(*offset),scale*distance,delta=1e-7)
+                    self.assertGreater(sum(offset[i]*v[i] for i in (0,1)),0)
+                    # Center of curvature: vertex minus inward normal * b^2/a.
+                    if n>=39300:
+                        vertex = tuple(G[i]+scale*math.sqrt(major/gap)*v[i] for i in (0,1))
+                        expected = tuple(vertex[i]-scale*minor/math.sqrt(major*gap)*v[i] for i in (0,1))
+                        self.assertLess(math.dist(point,expected),1e-8)
+            # Both original preambles share a zero-sum base vector, so their
+            # root multipliers fix the same branch as the original foci.
+            for n in (39158,39202,39300):
+                text = '\n'.join(m.coordinate_text(entries[n]))
+                raw = re.search(r'Barycentrics\s+(.+?)(?: : :|\n)',text)[1]
+                raw = raw.replace('J^2','(9-(a^2+b^2+c^2)/R^2)')
+                printed = m.numeric_formula(Recipe(n,'B',(),formula=m.normalize_formula(raw)),abc)
+                expected = foci[n] if n==39158 else m.numeric_combo(recipes[n],[G,foci[39158]],abc)
+                self.assertLess(math.dist(printed,expected),1e-7)
+
+    def test_steiner_title_rule_is_scoped_to_real_major_branches(self):
+        for title in ['3RD VERTEX OF THE STEINER CIRCUMELLIPSE',
+                      'CENTER OF OSCULATING CIRCLE OF VERTEX (-1,1,1) OF STEINER INELLIPSE',
+                      '1ST VERTEX OF THE STEINER INELLIPSE IN THE EXCENTRAL TRIANGLE',
+                      '1ST VERTEX OF THE STEINER INELLIPSE wrt X(4)']:
+            self.assertIsNone(m.steiner_major_candidate(99999,title,20))
+        recipe = m.steiner_major_candidate(39202,'1ST VERTEX OF THE STEINER CIRCUMELLIPSE',20)
+        self.assertIsNone(m.numeric_combo(recipe,[(1,1),(1,1)],
+                                         [(0,0),(2,0),(1,math.sqrt(3))]))
+
     def test_3232_reviewed_formula_agrees_with_isotomic_369(self):
         from triangle_center_import import DATA
         recipe = read_recipes(DATA / 'seeds.txt', {})[3232]

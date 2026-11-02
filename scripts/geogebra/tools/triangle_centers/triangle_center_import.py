@@ -418,6 +418,29 @@ def is_infinite_entry(number: int, lines: list[str]) -> bool:
                for match in INFINITE_DEFINITION.finditer(line))
 
 
+def steiner_major_candidate(number: int, title: str, part: int) -> Recipe | None:
+    """Real major-axis branches only; the minor-axis printed radicals differ."""
+    vertex = re.fullmatch(r'(1ST|2ND) VERTEX OF THE STEINER (CIRCUMELLIPSE|INELLIPSE)', title, re.I)
+    circle = re.fullmatch(r'CENTER OF OSCULATING CIRCLE OF VERTEX \(1,(-?1),-1\) OF STEINER (CIRCUMELLIPSE|INELLIPSE)', title, re.I)
+    if not vertex and not circle:
+        return None
+    # Q=(2/3)sum((A-G)(A-G)^t) has eigenvalues (s +/- 2sqrt(D))/9.
+    # Its focal distance squared is 4sqrt(D)/9. Vertex/focus distance is k;
+    # curvature-center/focus distance is 1/k. Inellipse distances are halved.
+    # Sum of squares avoids cancellation close to the equilateral case.
+    delta = 'sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)'
+    k = f'sqrt((a^2+b^2+c^2+2*{delta})/(4*{delta}))'
+    factor = k if vertex else f'(1/{k})'
+    match = vertex or circle
+    if match[2].upper() == 'INELLIPSE':
+        factor = f'({factor}/2)'
+    first = vertex[1].upper() == '1ST' if vertex else circle[1] == '1'
+    focus = 39158 if first else 39159
+    if number in (2, focus):
+        return None
+    return Recipe(number, 'F', (2, focus), part, title, f'1-{factor}|{factor}')
+
+
 def extract_entry(number: int, fragment: str, part: int,
                   excluded: set[int] | None = None, *, compact: bool = False):
     found: dict[tuple[str, tuple[int, ...]], str] = {}
@@ -465,6 +488,8 @@ def extract_entry(number: int, fragment: str, part: int,
     for line in lines:
         relation = RELATION.match(line)
         if relation and int(relation[1]) == number:
+            if candidate := steiner_major_candidate(number, relation[2], part):
+                recipes.append(candidate)
             if match := VU_CIRCLES.fullmatch(relation[2]):
                 refs=tuple(map(int,match.groups()))
                 if number not in refs and refs[0]!=refs[1]:

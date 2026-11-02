@@ -26,6 +26,12 @@ Double-point F coefficients may use `d`, their finite input distance; this name 
 scoped to F with exactly two references and is rejected in cyclic B coordinates.
 The client binds input points and d once before expanding those coefficients.
 
+Steiner major-axis vertices and their curvature centers reuse two-input F
+recipes from the real foci X(39158/39159) and centroid. Titles must name ABC's
+Steiner ellipse exactly; minor-axis branches and other reference triangles are
+excluded. The discriminant uses a sum of squared side-square differences.
+Independent Cartesian covariance/curvature checks live in `test_source_errors.py`.
+
 `triangle_center_import.py` handles source preflight, extraction, graph selection,
 and generated recipes. `triangle_center_coordinates.py` owns the checked formula
 syntax. `triangle_center_support.py` owns progress events and disposable cache IO.
