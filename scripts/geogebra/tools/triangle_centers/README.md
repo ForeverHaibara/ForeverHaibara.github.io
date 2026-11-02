@@ -88,6 +88,21 @@ can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
 circle center, a damaged PB entry, and a power-curve tangent pole respectively.
 Out-of-Part J/I seeds close without assuming that their page incidence table
 was loaded; their construction inputs still undergo numeric/type screening.
-The full dry-run now contains 70,055 records and 160 unresolved entries, while
+The full dry-run now contains 70,062 records and 153 unresolved entries, while
 the published small set contains 8,205 records. See the uncovered-analysis doc
 for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.
+
+`triangle_center_domains.py` propagates reviewed complex-domain root sets for
+opt-in unresolved diagnostics. `DOMAIN nonreal` and `DOMAIN conditional_complex`
+rows in seeds are metadata, never construction recipes or skips. Selected recipes
+override unused alternatives during propagation. Unresolved alternatives yield
+possible dependency risks; conjugate cancellation and independently real recipes
+prevent treating reachability as a theorem of nonreality. The queue visits each
+(root, target) once and reads shared incidence endpoints without expanding pairs.
+
+Bare function normalization is shared with the existing angle shorthand. Only
+explicitly bounded atoms are accepted. The exact positive-side logarithm identity
+is rewritten on the arithmetic AST, before dimensional checking. Absolute values
+retain scaling degree; side min/max and side-difference bars use checked `abs`
+arithmetic. Tests cover argument ambiguity, scaling, cycle propagation, alternative
+recipes, and the real midpoint of the complex X(5002)/X(5003) pair.

@@ -98,3 +98,20 @@
 # (bc*ln(c/b),ca*ln(a/c),ab*ln(b/a)); reciprocal line coefficients give
 # the printed trilinear pole X(40300). A verified root for its dependent cluster.
 40300 B a/ln(c/b)
+
+# DOMAIN rows are reviewed diagnostics, not recipes, skips or runtime coverage.
+# ETC X(5003) explicitly states that X(5000..5003) are nonreal for obtuse ABC.
+# X(5002)+X(5003) nevertheless has the real midpoint X(858); do not infer that
+# every dependent point is nonreal. Existing real-domain recipes remain usable.
+5000 DOMAIN conditional_complex
+5001 DOMAIN conditional_complex
+5002 DOMAIN conditional_complex
+5003 DOMAIN conditional_complex
+# ETC Part 20: imaginary foci of the Steiner circumellipse/inellipse.
+# An ellipse with positive unequal semiaxes has imaginary foci on its minor axis
+# at center +/- i*sqrt(major^2-minor^2), not finite real-plane points.
+# Equilateral/coincident-axis degeneracies do not supply a generic real domain.
+39160 DOMAIN nonreal
+39161 DOMAIN nonreal
+39164 DOMAIN nonreal
+39165 DOMAIN nonreal

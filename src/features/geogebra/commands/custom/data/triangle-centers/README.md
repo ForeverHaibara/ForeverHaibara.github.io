@@ -28,6 +28,28 @@ Before `native`, `build`, or `check`, run `/scripts/geogebra/browser/verificatio
 
 For an isolated source typo or damaged entry, review the exact ETC statement and independently check the intended construction or ideal-point status, then add the reviewed recipe and a source/reason comment to `seeds.txt`. Do not broaden a general parser rule solely to accommodate one damaged entry. For example, X(5959) has an `I` seed because its infinity-line list says `tthese`; its direction is not available from the current graph.
 
+Reviewed domain metadata also lives in `seeds.txt`: `id DOMAIN nonreal` describes
+a generically nonreal point, and `id DOMAIN conditional_complex` records a point
+with both real and complex triangle domains. These rows are neither recipes nor
+`SKIP` exclusions and never enter runtime chunks or coverage totals. Diagnostics
+propagate possible complex dependencies through selected recipes and unresolved
+candidate alternatives, including cyclic clusters, without expanding incidence
+pairs. This is a risk annotation, not a proof that the result is nonreal: ETC's
+X(5002) and X(5003) are complex for obtuse ABC but have real midpoint X(858).
+An independent real construction remains eligible. Conditional coordinate
+formulas continue to work on their real domain; complex intermediate arithmetic
+is not implemented by this metadata.
+
+Bare unary functions share a normalization step: existing angle forms such as
+`sin 2A/3` retain their meaning, while `log b - log c` becomes `ln(b/c)`.
+Logarithmic differences are rewritten structurally, so `2*log b-log c` and
+`-log b-log c` do not undergo an invalid substring substitution. Individual
+dimensional logarithms remain rejected. Ambiguous `log bc`, `log b/c` and
+`log b^2` require parentheses. `abs(...)` preserves its argument's dimension;
+simple side-difference bars and explicit `min(b,c)`/`max(b,c)` normalize to
+absolute-value arithmetic. A full cyclic triple may have a redundant trailing
+`: :`, but still has to pass cyclic equivalence checking.
+
 
 Import maintenance: `audit --parts ...` performs heading preflight before expensive extraction. Build/check also preflight their complete input set. Ambiguous or malformed headings currently fail with all detected issues; repair file-level source boundaries explicitly before importing those pages. Individual geometric exceptions remain reviewed seeds.
 

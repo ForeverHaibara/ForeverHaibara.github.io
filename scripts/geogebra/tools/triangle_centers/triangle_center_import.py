@@ -25,6 +25,7 @@ import triangle_center_support as support
 from triangle_center_support import stage, report
 from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
 from triangle_center_sources import prepare_source
+from triangle_center_domains import DOMAIN_KINDS, complex_dependency_roots
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -501,8 +502,10 @@ def read_page(part: int, excluded: set[int] | None = None,
     return entries, candidates
 
 
-def read_recipes(path: Path, skipped: dict[int, str] | None = None) -> dict[int, Recipe]:
+def read_recipes(path: Path, skipped: dict[int, str] | None = None,
+                 domains: dict[int, str] | None = None) -> dict[int, Recipe]:
     records: dict[int, Recipe] = {}
+    reviewed_domains: dict[int, str] = {}
     for row in path.read_text(encoding='utf-8').splitlines():
         if not row.strip() or row.lstrip().startswith('#'):
             continue
@@ -511,8 +514,14 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None) -> dict[int,
             continue
         fields = row.split()
         number, opcode = int(fields[0]), fields[1]
+        if opcode == 'DOMAIN' and skipped is not None:
+            if (number <= NATIVE_MAX or len(fields) != 3 or fields[2] not in DOMAIN_KINDS
+                    or number in reviewed_domains or number in skipped):
+                raise ValueError(f'Invalid or duplicate domain in {path}: {row}')
+            reviewed_domains[number] = fields[2]
+            continue
         if opcode == 'SKIP' and skipped is not None:
-            if number <= NATIVE_MAX or len(fields) < 3 or number in skipped or number in records:
+            if number <= NATIVE_MAX or len(fields) < 3 or number in skipped or number in records or number in reviewed_domains:
                 raise ValueError(f'Invalid or duplicate skip in {path}: {row}')
             skipped[number] = ' '.join(fields[2:])
             continue
@@ -536,6 +545,8 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None) -> dict[int,
             for scalar in formula.split('|'):
                 validate_formula(scalar)
         records[number] = Recipe(number, opcode, refs, formula=formula)
+    if domains is not None:
+        domains.update(reviewed_domains)
     return records
 
 
@@ -1506,11 +1517,13 @@ def ideal_coordinate_formulas(eligible, atlas):
 
 
 @stage
-def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked, skipped, limits):
+def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked, skipped, limits, domains=None):
     """Candidate-level blockers; primary buckets are summaries, not impossibility proofs."""
     depth, length = validate_graph(records)
     nonlinear = conjugate_levels(records)
     entries = []
+    domains = domains or {}
+    complex_roots = complex_dependency_roots(candidates, records, domains) if domains else {}
     priority = ('coordinate_admission_or_variants', 'geometry_or_transaction', 'depth_budget',
                 'conjugate_budget', 'length_budget', 'input_type', 'ideal_formula',
                 'nonhomogeneous_formula', 'unclosed_dependency', 'missing_source_dependency',
@@ -1556,11 +1569,15 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
             if recipe.operation == 'B':
                 formulas.append(dict(formula=recipe.formula, blocker=why))
         primary = next((why for why in priority if why in reasons), 'no_parsed_candidate')
-        entries.append(dict(id=number, part=parts[number], primary=primary,
-                            candidate_blockers=dict(reasons), unresolved_references=sorted(references),
-                            formulas=formulas))
+        entry = dict(id=number, part=parts[number], primary=primary,
+                     candidate_blockers=dict(reasons), unresolved_references=sorted(references), formulas=formulas)
+        if domains.get(number) == 'nonreal':
+            entry.update(primary='reviewed_nonreal_domain', candidate_primary=primary)
+        if number in complex_roots:
+            entry['possible_complex_dependencies'] = sorted(complex_roots[number])
+        entries.append(entry)
     return dict(count=len(entries), summary=dict(Counter(row['primary'] for row in entries)),
-                skipped=skipped, entries=entries)
+                skipped=skipped, domains=domains, entries=entries)
 
 
 def main() -> None:
@@ -1610,7 +1627,10 @@ def main() -> None:
         return
     blocked_native -= set(native_directions)
     skipped: dict[int, str] = {}
-    all_seeds = read_recipes(DATA / 'seeds.txt', skipped)
+    domains: dict[int, str] = {}
+    all_seeds = read_recipes(DATA / 'seeds.txt', skipped, domains)
+    if domains:
+        report('reviewed-domains', counts=dict(Counter(domains.values())))
     deferred_targets = set(skipped)
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
@@ -1696,7 +1716,7 @@ def main() -> None:
     validate_types(selected, set(native_directions))
     if args.uncovered_report:
         diagnostic = uncovered_diagnostics(all_candidates, selected, source_parts, atlas,
-            native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates))
+            native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates), domains)
         args.uncovered_report.parent.mkdir(parents=True, exist_ok=True)
         args.uncovered_report.write_text(json.dumps(diagnostic,ensure_ascii=False,indent=2),encoding='utf-8')
         report('uncovered', count=diagnostic['count'], summary=diagnostic['summary'])

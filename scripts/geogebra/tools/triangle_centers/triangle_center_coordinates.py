@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 VARIABLES = {'a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc',
              'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'r', 'R', 'pi'}
-FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln'}
+FUNCTIONS = {'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln', 'abs'}
 ROTATE = {'a': 'b', 'b': 'c', 'c': 'a', 'A': 'B', 'B': 'C', 'C': 'A',
           'sa': 'sb', 'sb': 'sc', 'sc': 'sa', 'SA': 'SB', 'SB': 'SC', 'SC': 'SA'}
 TOKEN = re.compile(r'\d+(?:\.\d+)?|\.\d+|[A-Za-z_]+|[()+*/^,-]')
@@ -51,8 +51,13 @@ def normalize_formula(raw: str) -> str | None:
                  lambda m: '(%s(%s%s%s))^%s' % (m.group(1), (m.group(3) + '*') if m.group(3) else '', m.group(4), ('/' + m.group(5)) if m.group(5) else '', m.group(2)), raw)
     raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\^\((\d+)\)\(([^()]*)\)',
                  lambda m: f'({m.group(1)}({m.group(3)}))^{m.group(2)}', raw)
-    raw = re.sub(r'\blog\s*(?=\()', 'ln', raw, flags=re.I)
-    raw = re.sub(r'\b(?:Sin|Cos|Tan|Cot|Sec|Csc|Sqrt|Pi)\b', lambda m: m.group().lower(), raw)
+    raw = re.sub(r'\b(?:' + '|'.join(sorted(FUNCTIONS | {'log', 'pi'})) + r')\b',
+                 lambda m: 'ln' if m.group().lower() == 'log' else m.group().lower(), raw, flags=re.I)
+    # Only unambiguous side differences use bare bars. General abs(...) is an
+    # ordinary checked unary function; nested/ambiguous bar notation is rejected.
+    raw = re.sub(r'\|\s*([abc])\s*-\s*([abc])\s*\|', r'(abs(\1-\2))', raw)
+    raw = re.sub(r'\b(max|min)\s*\(\s*([abc])\s*,\s*([abc])\s*\)',
+                 lambda m: f'(({m[2]}+{m[3]}{"+" if m[1].lower()=="max" else "-"}abs({m[2]}-{m[3]}))/2)', raw, flags=re.I)
 
     # ETC X(3371) prints pi8; do not silently interpret it as 8*pi.
     if re.search(r'\bpi\d', raw):
@@ -61,10 +66,7 @@ def normalize_formula(raw: str) -> str | None:
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d+)(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'([Ss])_([ABCabc])(?![a-z_])', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
-    raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\s*/\s*(\d+)\b',
-                 lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)}/{m.group(4)})', raw)
-    raw = re.sub(r'\b(sin|cos|tan|cot|sec|csc)\s+(\d*)\s*([ABC])\b',
-                 lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
+    raw = normalize_bare_functions(raw)
     raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
     raw = re.sub(r'\s+', '', raw)
     if not raw:
@@ -97,10 +99,52 @@ def normalize_formula(raw: str) -> str | None:
         output.append(token)
     formula = ''.join(output)
     try:
+        formula = normalize_log_ratios(formula)
         validate_formula(formula)
     except (SyntaxError, ValueError, RecursionError, OverflowError):
         return None
     return formula
+
+
+def normalize_log_ratios(formula: str) -> str:
+    """Cancel scale in ln(b)-ln(c) only when it is an entire AST subtraction.
+
+    Sides are positive, so this identity is exact. Substring replacement would
+    incorrectly rewrite 2*ln(b)-ln(c) or -ln(b)-ln(c).
+    """
+    if 'ln(' not in formula:
+        return formula
+    changed = False
+    def side_log(node):
+        return (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == 'ln' and len(node.args) == 1 and not node.keywords
+                and isinstance(node.args[0], ast.Name) and node.args[0].id in {'a','b','c'})
+    class Ratios(ast.NodeTransformer):
+        def visit_BinOp(self, node):
+            nonlocal changed
+            self.generic_visit(node)
+            if isinstance(node.op, ast.Sub) and side_log(node.left) and side_log(node.right):
+                changed = True
+                return ast.Call(func=ast.Name(id='ln',ctx=ast.Load()),
+                                args=[ast.BinOp(left=node.left.args[0],op=ast.Div(),right=node.right.args[0])],
+                                keywords=[])
+            return node
+    tree = Ratios().visit(ast.parse(formula.replace('^','**'),mode='eval'))
+    return ast.unparse(tree).replace(' ','').replace('**','^') if changed else formula
+
+
+def normalize_bare_functions(raw: str) -> str:
+    """Insert calls with explicit atom boundaries; never guess log b/c or log bc."""
+    angles = r'(sin|cos|tan|cot|sec|csc)'
+    raw = re.sub(r'\b' + angles + r'\s+(\d*)\s*([ABC])\s*/\s*(\d+)\b',
+                 lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)}/{m.group(4)})', raw)
+    raw = re.sub(r'\b' + angles + r'\s+(\d*)\s*([ABC])\b',
+                 lambda m: f'{m.group(1)}({m.group(2) + "*" if m.group(2) else ""}{m.group(3)})', raw)
+    # A general bare function consumes one known symbol, followed by a delimiter.
+    # Powers/products/quotients require parentheses to disambiguate the argument.
+    symbols = '|'.join(sorted(VARIABLES, key=lambda s: (-len(s), s)))
+    return re.sub(r'\b(' + '|'.join(sorted(FUNCTIONS)) + r')\s+(' + symbols + r')(?=\s*(?:[+\-):,]|$))',
+                  lambda m: f'{m.group(1)}({m.group(2)})', raw)
 
 
 def constant_exponent(node: ast.AST) -> float | None:
@@ -196,6 +240,8 @@ def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
             return degree(node.operand)
         if isinstance(node, ast.Call):
             value = degree(node.args[0])
+            if node.func.id == 'abs':
+                return value
             if node.func.id == 'sqrt':
                 return None if value is None else value / 2
             if value not in (None, 0):
@@ -308,6 +354,10 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
                     if barycentric:
                         found.append(('B', barycentric, line))
             continue
+        # Some entries print a full cyclic triple and then another empty : :.
+        explicit_parts = text.split(':')
+        if len(explicit_parts) == 5 and all(not value.strip() for value in explicit_parts[3:]):
+            text = ':'.join(explicit_parts[:3])
         direct = re.match(r'^(.*?)\s*:\s*:', text)
         if direct:
             formula = normalize_formula(direct.group(1))
@@ -362,7 +412,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
     tree = validate_formula(formula)
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
-             'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log,
+             'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log, 'abs': abs,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),
              'csc': lambda x: 1/math.sin(x)}
 

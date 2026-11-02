@@ -20,7 +20,7 @@ const size = (operation: Recipe['operation']) => operation === 'B' ? 0
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
 const coordinateNames = new Set(['a', 'b', 'c', 'A', 'B', 'C', 's', 'sa', 'sb', 'sc', 'S', 'SA', 'SB', 'SC', 'SW', 'E', 'F', 'pi',
-  'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln']);
+  'r', 'R', 'sqrt', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'asinh', 'atan', 'ln', 'abs']);
 const validFormula = (formula: string): boolean => /^[A-Za-z0-9_()+*/^,.-]+$/u.test(formula)
   && [...formula.matchAll(/[A-Za-z_]+/gu)].every(([name]) => coordinateNames.has(name));
 

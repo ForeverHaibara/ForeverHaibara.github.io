@@ -2,10 +2,27 @@
 import math
 from unittest import TestCase
 import triangle_center_import as m
-from triangle_center_coordinates import coordinate_candidates, homogeneous_degree, evaluate_formula, side_environment
+from triangle_center_coordinates import coordinate_candidates, homogeneous_degree, evaluate_formula, side_environment, normalize_formula
 
 
 class CircleAndLogTest(TestCase):
+    def test_bare_functions_keep_explicit_argument_boundaries(self):
+        for source, expected in [('sin A','sin(A)'),('sin 2A/3','sin(2*A/3)'),
+                                 ('cos B cot B/2','cos(B)*cot(B/2)'),
+                                 ('LOG b - log c','ln(b/c)'),('a*(log b-log c)','a*ln(b/c)'),
+                                 ('ln (c/b)','ln(c/b)'),('sinh A','sinh(A)')]:
+            self.assertEqual(normalize_formula(source),expected,source)
+        for source in ['log bc','log b/c','log b^2','log unknown','log b c']:
+            self.assertIsNone(normalize_formula(source),source)
+        self.assertFalse(homogeneous_degree(normalize_formula('log b'))[0])
+        for expression in ['2*log b-log c', '-log b-log c', 'log b+log c']:
+            self.assertFalse(homogeneous_degree(normalize_formula(expression))[0],expression)
+        self.assertEqual(normalize_formula('-(log b-log c)'),'-ln(b/c)')
+        formula = coordinate_candidates('Barycentrics a^2*(b^4-c^4)/(log b-log c) : :')[0][1]
+        self.assertTrue(homogeneous_degree(formula)[0])
+        self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),
+                               evaluate_formula(formula,side_environment(10,12,14))/64)
+
     def test_center_parse_finite_domain_and_degenerate_inputs(self):
         recipes = m.extract_entry(4000, '<h3 id="X4000">X(4000) = CENTER OF THE CIRCLE {X(5),X(6),X(22)}</h3>', 3)
         self.assertEqual(recipes[0].row(), '4000 O 5 6 22')
