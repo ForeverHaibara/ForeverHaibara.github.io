@@ -62,7 +62,7 @@ def unpack(payload):
 def main():
     import json
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--folder', type=Path, default=ROOT / '.cache/triangle-centers/planning-topology')
+    parser.add_argument('--folder', type=Path, default=ROOT / '.cache/triangle-centers/planning/topology')
     args = parser.parse_args()
     before = after = count = 0
     for source in sorted(args.folder.glob('*.json')):

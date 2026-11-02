@@ -163,7 +163,7 @@ def constant_exponent(node: ast.AST) -> float | None:
 
 
 @lru_cache(maxsize=8192)
-def validate_formula(formula: str) -> ast.Expression:
+def validate_formula(formula: str, pair_distance: bool = False) -> ast.Expression:
     tree = ast.parse(formula.replace('^', '**'), mode='eval')
     nodes = list(ast.walk(tree))
     parents = {child: parent for parent in nodes for child in ast.iter_child_nodes(parent)}
@@ -183,7 +183,7 @@ def validate_formula(formula: str) -> ast.Expression:
             continue
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             continue
-        if isinstance(node, ast.Name) and (node.id in VARIABLES or
+        if isinstance(node, ast.Name) and (node.id in VARIABLES or node.id == 'd' and pair_distance or
                                            node.id in FUNCTIONS and isinstance(parents.get(node), ast.Call)
                                            and parents[node].func is node):
             continue
@@ -225,11 +225,13 @@ def canonical_formula(formula: str):
 
 
 @lru_cache(maxsize=8192)
-def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
+def homogeneous_degree(formula: str, pair_distance: bool = False) -> tuple[bool, float | None]:
     """Return scaling degree; None represents an identically zero literal."""
     dimensions = {**{name: 1 for name in ('a', 'b', 'c', 's', 'sa', 'sb', 'sc', 'r', 'R')},
                   **{name: 2 for name in ('S', 'SA', 'SB', 'SC', 'SW', 'E', 'F')},
                   **{name: 0 for name in ('A', 'B', 'C', 'pi')}}
+    if pair_distance:
+        dimensions['d'] = 1
 
     def degree(node: ast.AST) -> float | None:
         if isinstance(node, ast.Constant):
@@ -268,7 +270,8 @@ def homogeneous_degree(formula: str) -> tuple[bool, float | None]:
                 return None if left is None else left - right
         raise ValueError('Unsupported dimensional syntax')
     try:
-        return True, degree(validate_formula(formula).body)
+        tree = validate_formula(formula,True) if pair_distance else validate_formula(formula)
+        return True, degree(tree.body)
     except (ValueError, SyntaxError, KeyError, RecursionError, OverflowError):
         return False, None
 
@@ -431,7 +434,7 @@ def side_environment(a: float, b: float, c: float) -> dict[str, float]:
 
 
 def evaluate_formula(formula: str, values: dict[str, float]) -> float | None:
-    tree = validate_formula(formula)
+    tree = validate_formula(formula,True) if 'd' in values else validate_formula(formula)
     funcs = {'sqrt': math.sqrt, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
              'sinh': math.sinh, 'asinh': math.asinh, 'atan': math.atan, 'ln': math.log, 'abs': abs,
              'cot': lambda x: 1/math.tan(x), 'sec': lambda x: 1/math.cos(x),

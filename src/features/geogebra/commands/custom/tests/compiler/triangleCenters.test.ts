@@ -1,8 +1,14 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { compileStudioCommand, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
 import { prepareTriangleCenter } from '../../builders/triangleCenters';
 import { createBindingCapture } from '../../bindingPlan';
 import type { CommandEnvironment } from '../../types';
+
+// Exercise a distance-scoped combo without publishing Part 20 data.
+vi.mock('../../data/triangle-centers/chunks/40.txt?raw', async (importOriginal) => {
+  const original = await importOriginal<{ default: string }>();
+  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n' };
+});
 
 const environment = (): CommandEnvironment => ({
   objects: new Map([['A', 'point'], ['B', 'point'], ['C', 'point'], ['n', 'number']]),
@@ -272,6 +278,15 @@ describe('extended TriangleCenter dispatch', () => {
     expect(inverse).toContain('Circle(TriangleCenter(A,B,C,182),TriangleCenter(A,B,C,3))');
     expect(inverse).not.toContain(',4254)');
     expect(inverse).not.toContain(',5120)');
+  });
+
+  it('binds the two input points and distance in a Vu first PCC combo', async () => {
+    await prepareTriangleCenter(40999);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,40999)', environment());
+    expect(result).toContain('Distance(');
+    expect(result).toContain('TriangleCenter(A,B,C,560)');
+    expect(result).not.toMatch(/\bd\b/u);
+    expect(result).not.toContain(',40999)');
   });
 
 });

@@ -54,13 +54,13 @@ ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
 CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
 BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
+VU_FIRST = re.compile(rf'^VU 1ST PCC PERSPECTOR OF {POINT}[\s.,;]*$', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3, 'K': 3}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1, 'K': 1}
-PRIORITY['K'] = 7
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this)\s*(?:\(parallel\)\s*)?lines?\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -424,9 +424,13 @@ def extract_entry(number: int, fragment: str, part: int,
         if not relation or int(relation.group(1)) != number:
             continue
         body = relation.group(2)
+        if (match := VU_FIRST.fullmatch(body)) and int(match[1]) not in (3,number) and number != 3:
+            # Vu first PCC: O + 2R^2(P-O)/(OP^2+R^2). d is scoped to this
+            # two-point affine combo, never a free cyclic-coordinate variable.
+            found[('F',(int(match[1]),3))] = line
         if match := BROCARD_INVERSE.fullmatch(body):
             # ETC X(182): center of the Brocard circle, diameter X(3)X(6).
-            found[('K', (int(match[1]),182,3))] = line
+            found[('V', (int(match[1]),182,3))] = line
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
                                 (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
@@ -441,7 +445,8 @@ def extract_entry(number: int, fragment: str, part: int,
                                ('reflection of X(i) and X(j) for these', 'R')):
             if body.lower().startswith(prefix.lower()):
                 found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
-    recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)]) for opcode, refs in sorted(found)
+    recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)],
+                      '2*R^2|d^2-R^2' if opcode=='F' else '') for opcode, refs in sorted(found)
                if all(reference > 0 and reference != number for reference in refs)]
     coordinate_view = coordinate_text(fragment)
     recipes.extend(candidate for line in coordinate_view
@@ -457,7 +462,7 @@ def extract_entry(number: int, fragment: str, part: int,
 def read_page(part: int, excluded: set[int] | None = None,
               coordinate_lines: dict[int, list[tuple[int, int]]] | None = None,
               metadata: dict | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
-    path = CACHE / f'ETCPart{part}.html'
+    path = CACHE / 'sources' / f'ETCPart{part}.html'
     source = prepare_source(part, path.read_text(encoding='utf-8', errors='replace'))
     issues = support.heading_issues(source)
     if issues:
@@ -550,14 +555,17 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             formula = '|'.join(pair[1] for pair in pairs)
         else:
             refs = () if opcode == 'B' else tuple(map(int, fields[2:]))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs) and not (opcode == 'F' and 2 <= len(refs) <= 6))
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and not formula)
                 or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             for scalar in formula.split('|'):
-                validate_formula(scalar)
+                if opcode=='F' and len(refs)==2 and 'd' in scalar:
+                    validate_formula(scalar,True)
+                else:
+                    validate_formula(scalar)
         records[number] = Recipe(number, opcode, refs, formula=formula)
     if domains is not None:
         domains.update(reviewed_domains)
@@ -718,7 +726,7 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         return 150 + 18 * len(recipe.formula)
     if recipe.operation == 'F':
         return 600 + 18 * len(recipe.formula) + sum(children)
-    return (95 if recipe.operation in {'V','K'} else 24) + sum(children)
+    return (95 if recipe.operation == 'V' else 24) + sum(children)
 
 
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
@@ -762,7 +770,7 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O', 'K'} else
+    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
         raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
@@ -906,6 +914,8 @@ def numeric_combo(recipe: Recipe, values: list[Coordinate], abc: list[tuple[floa
         return None
     a, b, c = math.dist(abc[1], abc[2]), math.dist(abc[2], abc[0]), math.dist(abc[0], abc[1])
     env = side_environment(a, b, c)
+    if len(values) == 2 and 'd' in recipe.formula:
+        env['d'] = math.dist(values[0],values[1])
     weights = [evaluate_formula(f, env) for f in recipe.formula.split('|')]
     if any(w is None for w in weights):
         return None
@@ -994,9 +1004,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
             elif op == 'O':
                 answer = numeric_circle_center(values)
             elif op == 'V':
-                answer = numeric_circum_inverse(values[0], abc)
-            elif op == 'K':
-                answer = numeric_circle_inverse(values)
+                answer = (numeric_circle_inverse(values) if len(values)==3
+                          else numeric_circum_inverse(values[0], abc))
             else:
                 answer = numeric_conjugate(values[0], abc, op == 'G')
             if answer is not None and all(math.isfinite(value) for value in
@@ -1079,7 +1088,7 @@ def conjugate_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
 
 def inversion_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]],
                                   atlas: dict) -> bool:
-    if recipe.operation == 'K':
+    if len(recipe.references) == 3:
         return all(all(ref in points for ref in recipe.references)
                    and numeric_circle_inverse([points[ref] for ref in recipe.references]) is not None
                    for points in coordinates.values())
@@ -1152,7 +1161,7 @@ def derive_native_directions(atlas: dict, blocked_native: set[int]) -> tuple[dic
     directions: dict[int, tuple[int, int]] = {}
     weak: list[int] = []
     for part in (1, 2):
-        source = (CACHE / f'ETCPart{part}.html').read_text(encoding='utf-8', errors='replace')
+        source = (CACHE / 'sources' / f'ETCPart{part}.html').read_text(encoding='utf-8', errors='replace')
         for number, fragment in split_entries(source):
             if number > NATIVE_MAX:
                 continue
@@ -1315,7 +1324,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
-                if coordinates and recipe.operation in {'V','K'} and not inversion_candidate_supported(
+                if coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
                 if coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, coordinates, atlas):
@@ -1360,7 +1369,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             return direction_candidate_supported(recipe, coordinates, incidence_lines.get(recipe.number, []))
         if op in {'G', 'T'}:
             return conjugate_candidate_supported(recipe, coordinates, atlas)
-        if op in {'V','K'}:
+        if op == 'V':
             return inversion_candidate_supported(recipe, coordinates, atlas)
         if op == 'F':
             return combo_candidate_supported(recipe, coordinates, atlas)
@@ -1534,7 +1543,8 @@ def fetch(parts: list[int]) -> None:
                 time.sleep(2 ** attempt)
         if len(source) < 10_000 or not HEADING.search(source.decode('utf-8', errors='replace')):
             raise ValueError(f'ETC page {part} has no recognizable entries')
-        path = CACHE / f'ETCPart{part}.html'
+        path = CACHE / 'sources' / f'ETCPart{part}.html'
+        path.parent.mkdir(parents=True,exist_ok=True)
         path.write_bytes(source)
         print(f'Fetched Part {part}: {len(source):,} bytes')
 
@@ -1618,7 +1628,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBOK',
+    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBO',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)
@@ -1640,7 +1650,7 @@ def main() -> None:
     if args.action in {'audit', 'build', 'check', 'dry-run'}:
         failures = []
         for part in args.parts:
-            path = CACHE / f'ETCPart{part}.html'
+            path = CACHE / 'sources' / f'ETCPart{part}.html'
             issues = support.heading_issues(prepare_source(part, path.read_text(encoding='utf-8', errors='replace')))
             report('preflight', part=part, issues=len(issues))
             failures.extend(f'Part {part}: {issue}' for issue in issues)
@@ -1654,7 +1664,7 @@ def main() -> None:
     chunk_dir = DATA / 'chunks'
     blocked_native, native_directions = read_native_status(DATA / 'native-status.txt')
     if args.action == 'native':
-        directions, weak = derive_native_directions(read_native_atlas(CACHE / 'native-atlas.json'), blocked_native)
+        directions, weak = derive_native_directions(read_native_atlas(CACHE / 'native' / 'native-atlas.json'), blocked_native)
         (DATA / 'native-status.txt').write_text(native_status_rows(blocked_native, directions, weak),
                                                 encoding='utf-8', newline='\n')
         print(f'Native ideal directions: {len(directions)}; omitted conflicting IDs: {weak}')
@@ -1704,7 +1714,7 @@ def main() -> None:
                 raise ValueError(f'X({number}) appears in multiple ETC parts')
             all_candidates[number] = options
         print(f'Part {part}: {len(entries)} entries, {sum(bool(v) for v in candidates.values())} with explicit parsed constructions')
-    atlas = read_native_atlas(CACHE / 'native-atlas.json')
+    atlas = read_native_atlas(CACHE / 'native' / 'native-atlas.json')
     eligible = {number: filter_candidates(options, lambda recipe: recipe.operation in args.auto_operations
                          and not (recipe.operation == 'I' and not recipe.references))
                 for number, options in all_candidates.items()}

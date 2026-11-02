@@ -107,7 +107,7 @@
 - 四页候选还有大量指向其它 Part 的引用；全量图中的候选拓扑会发生结构变化，而不仅是给四页图末尾追加节点。
 - 全量诊断还看到 `99500、146111、241948、330980、430998、716234` 等未出现在当前来源集合的引用。它们应进入“缺失/可疑引用及来源证据”报告，不能自行猜改数字，也不能静默忽略。
 
-这次带公式纯函数缓存的诊断提取约 176 秒；它省略了部分 incidence 准备和全部求解/数值验证，**不是完整构建耗时**。没有实测或外推完整全量选择器的完成时间。逐页统计与小型邻接表保存在 `.cache/triangle-centers/planning-topology/`，汇总为 `planning-topology-four.json`、`planning-topology-all.json`；这些是诊断快照，非可发布数据。
+这次带公式纯函数缓存的诊断提取约 176 秒；它省略了部分 incidence 准备和全部求解/数值验证，**不是完整构建耗时**。没有实测或外推完整全量选择器的完成时间。逐页统计与小型邻接表保存在 `.cache/triangle-centers/planning/topology/`，汇总为 `planning-topology-four.json`、`planning-topology-all.json`；这些是诊断快照，非可发布数据。
 
 ## 2. 性能问题与复杂度判断
 
@@ -274,8 +274,8 @@ P3 的“全量候选 dry-run”与“全部点支持”不是同一验收项。
 ```sh
 python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
 python -u scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
-python -u -m cProfile -o .cache/triangle-centers/planning-baseline.prof scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
-python -c "import pstats; pstats.Stats('.cache/triangle-centers/planning-baseline.prof').strip_dirs().sort_stats('cumulative').print_stats(25)"
+python -u -m cProfile -o .cache/triangle-centers/planning/planning-baseline.prof scripts/geogebra/tools/triangle_centers/triangle_center_import.py check
+python -c "import pstats; pstats.Stats('.cache/triangle-centers/planning/planning-baseline.prof').strip_dirs().sort_stats('cumulative').print_stats(25)"
 ```
 
 本轮临时 `planning_probe.py` 提供阶段包装和纯函数 memo 实验；`planning_topology.py` 提供带异常隔离的结构诊断及逐页检查点。它们是工作区实验，不是新的正式导入接口；诊断结果不得直接交给 `build`。长期保留的结论在本文，临时缓存可按需清理。
@@ -322,7 +322,7 @@ P0/P1 的基础版本已基本完成；后续可按实际长任务补日志粒�
 
 同四页、同参数的 `check` 冷提取约 14 秒、完整运行约 36 秒；两个选择阶段约 1.9 / 5.5 秒。独立进程复用磁盘提取缓存的重算约 32 秒，`check` 和 `verify` 均通过，正式 8,200 行配方逐字未变。上述耗时为本机观测，未承诺固定加速倍数。
 
-热重算的函数计数：`validate_graph` 为 20 次，`conjugate_levels` 为 15 次，分别对照最初记录的 2,604 / 1,879 次；另有两次 `SelectedGraph` 的初始全图建索引/指标计算。两轮合计 2,585 次替换尝试、1,850 次提交，累计局部结构访问 4,769 个节点。25 次 `numeric_coordinates` 中有 13 次使用增量快照；函数调用次数并不代表所有节点仍重复求值。日志见 `.cache/triangle-centers/p2-check.jsonl` 与 `p2-warm.jsonl`。
+热重算的函数计数：`validate_graph` 为 20 次，`conjugate_levels` 为 15 次，分别对照最初记录的 2,604 / 1,879 次；另有两次 `SelectedGraph` 的初始全图建索引/指标计算。两轮合计 2,585 次替换尝试、1,850 次提交，累计局部结构访问 4,769 个节点。25 次 `numeric_coordinates` 中有 13 次使用增量快照；函数调用次数并不代表所有节点仍重复求值。日志见 `.cache/triangle-centers/runs/p2/p2-check.jsonl` 与 `p2-warm.jsonl`。
 
 **P2 剩余工作**：数值与验证证据的替换事务（目前质量改良仍先用该轮快照筛选，终局再复查）、坏点替代定义的重新开放、将固定 30 轮修理改为可解释的工作队列，以及是否确需候选级 readiness 计数。剩余耗时中坐标候选/理想公式审计也较明显，应继续分别测量。当前并未扩大 Part 集合，文件级来源例外与全量 dry-run 留待相应后续批次。
 
@@ -344,7 +344,7 @@ P0/P1 的基础版本已基本完成；后续可按实际长任务补日志粒�
 - X(9834)/X(9835) 的关系表存在互换冲突；保留第一/第二 Auriga 的正交中心编号，通过正确交点及关于 X(55) 的反射固定。
 - X(7581)/X(7582) 的打印三线坐标与多条原生线一致，旧的关于 X(7601)/X(7602) 的反射结果却偏离它们明确所在的 Euler 线。两点改为经打印坐标独立对照的交点。
 
-六条带来源/理由的审阅种子已加入，原有种子不清理。重建仍为 8,200 条（35 种子 + 8,165 自动），无编号丢失。最终仅 7 条生成行改变：X(7581)、X(7582)、X(8186)、X(8187)、X(8201)、X(9694)、X(9695)。对所有已生成中心的新旧样本坐标进行比较，只有 X(7581)/X(7582) 实际更正位置，其余五条的差异仅为浮点误差级。诊断见 `.cache/triangle-centers/p2-final-geometric-diff.json`；测试保留独立顶点构造，不仅对照生成配方本身。
+六条带来源/理由的审阅种子已加入，原有种子不清理。重建仍为 8,200 条（35 种子 + 8,165 自动），无编号丢失。最终仅 7 条生成行改变：X(7581)、X(7582)、X(8186)、X(8187)、X(8201)、X(9694)、X(9695)。对所有已生成中心的新旧样本坐标进行比较，只有 X(7581)/X(7582) 实际更正位置，其余五条的差异仅为浮点误差级。诊断见 `.cache/triangle-centers/reports/reviews/p2-final-geometric-diff.json`；测试保留独立顶点构造，不仅对照生成配方本身。
 
 ### 验收与性能
 
@@ -373,7 +373,7 @@ P0/P1 的基础版本已基本完成；后续可按实际长任务补日志粒�
 
 首次冷提取约 200 秒完成。但首轮关系选择在运行 286 秒以上后仍未结束，代码定位到每次事务依然 `dict(cached_coordinates)` 复制全图。停止该次旧实现运行，改为 `CoordinateOverlay`：只记录变更/隐藏的坐标，校验期间不改原快照，提交时只写 delta。新增禁止遍历/复制未变坐标的回归，原有数值回滚及独立全图对照保持。
 
-只改数值事务、未改提取规则，确认后复用已完成的 37 个检查点，按原有全部 Part、操作和预算重跑。第一轮关系选择约 28.6 秒完成，第二轮约 50.1 秒；包含坐标审计的完整 dry-run 约 236 秒。该重跑是热提取结果，不应称作完整冷构建或宣称精确加速倍数。日志：`.cache/triangle-centers/p3-overlay-all.jsonl`、`p3-overlay-all.log`；原先中止日志为 `p3-all.log`。
+只改数值事务、未改提取规则，确认后复用已完成的 37 个检查点，按原有全部 Part、操作和预算重跑。第一轮关系选择约 28.6 秒完成，第二轮约 50.1 秒；包含坐标审计的完整 dry-run 约 236 秒。该重跑是热提取结果，不应称作完整冷构建或宣称精确加速倍数。日志：`.cache/triangle-centers/runs/p3/p3-overlay-all.jsonl`、`p3-overlay-all.log`；原先中止日志为 `p3-all.log`。
 
 ### 全量结果（尚未发布）
 
@@ -424,3 +424,9 @@ seeds 的 DOMAIN 元数据与所选/候选引用传播区分复数风险和非�
 读取补丁修复 X(10043)，首坐标内的局部循环函数通用展开恢复 X(14777) 等，X(11667) 以独立组合核对的种子接入。统计特殊圆后先实现严格限定 ABC 的 Brocard 圆反演，新增 K 点/圆心/圆上一点配方，最终全量选用 57 条。
 
 全量恢复 11 点至 70,073，剩余 142，无旧覆盖退出。无候选 58；依赖未闭合 39，另有 6 个已审阅非实根，分类变化不计覆盖。提取缓存 schema 3 与失败报告加入标题/来源提示/标题族；15 点 VU PCC 族及其前言疑似齐次性笔误已列为下一批重点。正式小库 8,206 条，94 项 Python、23 项编译测试及 check/verify 通过。圆频率表、源例判断和后续路线见 [未覆盖分析](triangle-centers-uncovered.md)。
+
+## 19. 目录整理与 VU 第一类闭合（2026-11-02）
+
+撤销临时 K，V 按一/三参数共用；13 个测试文件合并为 3 个，原 94 项保留。缓存 143 个产物无损移入 sources/native/runs/reports/planning/research/experiments 等目录，提取与原生样本路径、文档引用同步更新。
+
+从独立 pedal-circle/circumcevian 几何及已有成员核对 VU 第一类，复用允许双输入距离 d 的 F 配方，恢复 X(38910)–X(38917) 八点。全量 70,081，未覆盖 134，其中无候选 50；没有旧覆盖退出，预算未变。普通公式的 AST 验证继续共用默认缓存键，d 的作用域不外溢到 B。97 项 Python、24 项编译测试、正式库 check/verify 通过。小库仍 8,206 条，未发布全量数据；下一步 VU 第二类、其它标题族与数值审计开销见 [未覆盖分析](triangle-centers-uncovered.md)。

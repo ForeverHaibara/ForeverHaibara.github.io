@@ -1,17 +1,21 @@
-"""Focused tests for ETC text parsing and dependency selection."""
+"""ETC parser/import regressions."""
 
-import unittest
+import cmath
 import math
+import tempfile
+import triangle_center_import as importer
+import triangle_center_import as m
+import unittest
+from compact_topology_cache import pack, ranges, unpack
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-from triangle_center_import import (CACHE, Ideal, Recipe, combo_candidate, shinagawa_candidates, shinagawa_candidate_supported, numeric_combo, direction_candidate_supported, extract_entry, listed_lines,
-                                    coordinate_anchors, line_candidate_supported, numeric_coordinates, numeric_formula,
-                                    numeric_formula_projective, numeric_circum_inverse, numeric_conjugate,
-                                    native_status_rows, read_native_status, read_recipes,
-                                    select_recipes, split_entries, unresolved_components,
-                                    validate_graph, validate_types)
 from triangle_center_coordinates import coordinate_candidates, coordinate_text, evaluate_formula, homogeneous_degree, normalize_formula, side_environment
+from triangle_center_diagnostics import entry_metadata, title_groups
+from triangle_center_domains import complex_dependency_roots
+from triangle_center_import import CACHE, Ideal, Recipe, RecipeCandidates, combo_candidate, coordinate_anchors, direction_candidate_supported, extract_entry, line_candidate_supported, listed_lines, native_status_rows, numeric_circum_inverse, numeric_combo, numeric_conjugate, numeric_coordinates, numeric_formula, numeric_formula_projective, read_native_status, read_recipes, select_recipes, shinagawa_candidate_supported, shinagawa_candidates, split_entries, unresolved_components, validate_graph, validate_types
+from triangle_center_support import extraction_source_fingerprint
+from unittest import TestCase
+from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
@@ -571,5 +575,444 @@ class TriangleCenterImportTest(unittest.TestCase):
         self.assertFalse(line_candidate_supported(good, sample, [(1, 2), (5, 6), (9, 10)]))
 
 
-if __name__ == '__main__':
+class CandidateFamilyTest(TestCase):
+    def test_lazy_extraction_has_the_same_recipes_and_evidence(self):
+        fragment = ('<h3 id="X4000">X(4000) = intersection of X(1)X(2) and X(3)X(4)</h3>'
+                    '<p>X(4000) lies on these lines: 1,2 3,4 5,6 7,8</p>')
+        eager = extract_entry(4000, fragment, 3)
+        lazy = extract_entry(4000, fragment, 3, compact=True)
+        self.assertIsInstance(lazy, RecipeCandidates)
+        self.assertEqual(set(lazy), set(eager))
+        self.assertEqual(len(lazy.explicit), 1)
+        filtered = lazy.filtered(lambda r: r.operation != 'J')
+        self.assertEqual(list(filtered), [])
+
+    def test_valid_explicit_intersection_never_expands_line_pairs(self):
+        explicit = Recipe(4000, 'J', (1, 2, 3, 4), evidence='explicit intersection')
+        pool = RecipeCandidates(4000, [explicit], [(1, 2), (3, 4), (5, 6)])
+        with patch.object(RecipeCandidates, 'inferred', side_effect=AssertionError('unnecessary expansion')):
+            selected = select_recipes({4000: pool}, {}, 6, None)
+        self.assertEqual(selected[4000], explicit)
+
+    def test_unclosed_explicit_definition_falls_back_to_inferred_pair(self):
+        explicit = Recipe(4000, 'M', (9999, 1))
+        pool = RecipeCandidates(4000, [explicit], [(1, 2), (3, 4)])
+        selected = select_recipes({4000: pool}, {}, 6, None)
+        self.assertEqual(selected[4000].operation, 'J')
+        self.assertEqual(selected[4000].references, (1, 2, 3, 4))
+
+    def test_failed_numeric_candidate_does_not_block_next_pair(self):
+        points = {1: (0, 0), 2: (1, 0), 3: (0, 1), 4: (1, 1), 5: (0, -1), 6: (0, 2)}
+        atlas = dict(triangles={'sample': [(0, 0), (6, 0), (1, 4)]},
+                     coordinates={'sample': {str(n): xy for n, xy in points.items()}})
+        # An explicit list, rather than incidence evidence, isolates pair fallback
+        # from the independent third-line consistency requirement.
+        options = [Recipe(4000, 'J', (1, 2, 3, 4)), Recipe(4000, 'J', (1, 2, 5, 6))]
+        selected = select_recipes({4000: options}, {}, 6, None, atlas=atlas)
+        self.assertEqual(selected[4000].references, (1, 2, 5, 6))
+
+    def test_late_third_support_line_reactivates_target(self):
+        pool = RecipeCandidates(4000, [], [(1, 2), (3, 4), (5, 4001)])
+        points = {1: (-1, 0), 2: (1, 0), 3: (0, -1), 4: (0, 1),
+                  5: (2, 2), 6: (0, 0), 7: (2, 2)}
+        atlas = dict(triangles={'sample': [(0, 0), (6, 0), (1, 4)]},
+                     coordinates={'sample': {str(n): xy for n, xy in points.items()}})
+        selected = select_recipes({4000: pool, 4001: [Recipe(4001, 'M', (6, 7))]},
+                                  {}, 6, None, atlas=atlas)
+        self.assertEqual(set(selected), {4000, 4001})
+        self.assertEqual(selected[4000].references, (1, 2, 3, 4))
+
+
+class TopologyEncodingTest(TestCase):
+    def test_range_and_adjacency_roundtrip_with_gaps_and_empty_rows(self):
+        record = dict(entries=[3000, 3001, 3002, 4000], structurally_direct=[3001, 3002],
+                      adjacency={'3001': [4000, 4001, 73269], '3002': [], '4000': [3001]},
+                      source_sha256='sample', alternatives=[3, 0, 2])
+        self.assertEqual(unpack(pack(record)), record)
+        self.assertEqual(ranges([3000, 3001, 3002, 4000]), [[3000, 3002], [4000, 4000]])
+        with self.assertRaises(ValueError):
+            ranges([2, 1])
+
+
+class CoordinateLocalTest(TestCase):
+    def test_local_cyclic_function_calls_in_first_coordinate(self):
+        source = 'Barycentrics (b-c)*f(b,c,a)*f(c,a,b) : : , where f(a,b,c)=a^2+b*c'
+        formula = coordinate_candidates(source)[0][1]
+        self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),
+                               (6-7)*(6**2+7*5)*(7**2+5*6))
+        for bad in [source.replace('f(b,c,a)','f(b,a,c)'),
+                    source.replace('a^2+b*c','f(a,b,c)+a'),
+                    source.replace('a^2+b*c','unknown(a)+b')]:
+            self.assertEqual(coordinate_candidates(bad),[])
+
+    def test_wrapped_two_locals_and_single_uppercase_local(self):
+        env = side_environment(5, 6, 7)
+        for source, expected in [
+            ('Trilinears p+q : :<br>where p=sin(A/2), q=cos((B-C)/2)',
+             5*(math.sin(env['A']/2)+math.cos((env['B']-env['C'])/2))),
+            ('Trilinears a^3+D : :<br>where D=4*S*sqrt(R*(4*R+r))',
+             5*(125+4*env['S']*math.sqrt(env['R']*(4*env['R']+env['r'])))),
+            ('Trilinears p+q : : , where p=sin(A/2), q=cos((B-C)/2) : :',
+             5*(math.sin(env['A']/2)+math.cos((env['B']-env['C'])/2))),
+        ]:
+            candidates = coordinate_candidates(source)
+            self.assertEqual(len(candidates), 1, source)
+            self.assertAlmostEqual(evaluate_formula(candidates[0][1], env), expected)
+
+    def test_group_braces_are_arithmetic_not_sets(self):
+        candidates = coordinate_candidates('Barycentrics {a^2+b*c}*(b+c) : :')
+        self.assertAlmostEqual(evaluate_formula(candidates[0][1], side_environment(5, 6, 7)), 871)
+        self.assertEqual(coordinate_candidates('Barycentrics {a,b,c} : :'), [])
+
+    def test_local_chains_unknown_symbols_and_global_shadowing_rejected(self):
+        for source in ['Barycentrics p+q : : , where p=q+1, q=a',
+                       'Barycentrics a : : , where a=1',
+                       'Barycentrics D+a : : , where D=unknown(3)']:
+            self.assertEqual(coordinate_candidates(source), [], source)
+
+
+class CircleAndLogTest(TestCase):
+    def test_bare_functions_keep_explicit_argument_boundaries(self):
+        for source, expected in [('sin A','sin(A)'),('sin 2A/3','sin(2*A/3)'),
+                                 ('cos B cot B/2','cos(B)*cot(B/2)'),
+                                 ('LOG b - log c','ln(b/c)'),('a*(log b-log c)','a*ln(b/c)'),
+                                 ('ln (c/b)','ln(c/b)'),('sinh A','sinh(A)')]:
+            self.assertEqual(normalize_formula(source),expected,source)
+        for source in ['log bc','log b/c','log b^2','log unknown','log b c']:
+            self.assertIsNone(normalize_formula(source),source)
+        self.assertFalse(homogeneous_degree(normalize_formula('log b'))[0])
+        for expression in ['2*log b-log c', '-log b-log c', 'log b+log c']:
+            self.assertFalse(homogeneous_degree(normalize_formula(expression))[0],expression)
+        self.assertEqual(normalize_formula('-(log b-log c)'),'-ln(b/c)')
+        formula = coordinate_candidates('Barycentrics a^2*(b^4-c^4)/(log b-log c) : :')[0][1]
+        self.assertTrue(homogeneous_degree(formula)[0])
+        self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),
+                               evaluate_formula(formula,side_environment(10,12,14))/64)
+
+    def test_center_parse_finite_domain_and_degenerate_inputs(self):
+        recipes = m.extract_entry(4000, '<h3 id="X4000">X(4000) = CENTER OF THE CIRCLE {X(5),X(6),X(22)}</h3>', 3)
+        self.assertEqual(recipes[0].row(), '4000 O 5 6 22')
+        self.assertEqual(m.numeric_circle_center([(0,0),(4,0),(0,2)]), (2,1))
+        self.assertIsNone(m.numeric_circle_center([(0,0),(1,0),(2,0)]))
+        self.assertIsNone(m.numeric_circle_center([m.Ideal(1,0),(1,0),(0,1)]))
+        with self.assertRaises(ValueError):
+            m.validate_types({4000:m.Recipe(4000,'O',(30,1,2))}, {30})
+        self.assertEqual(m.extract_entry(4000, 'X(4000) = center of circle {X(1),X(2),X(3)} when acute', 3), [])
+
+    def test_log_coordinates_equal_prefix_and_homogeneity(self):
+        result = coordinate_candidates('Barycentrics = a/log(c/b) : b/log(a/c) : c/log(b/a)')
+        self.assertEqual(result[0][1], 'a/ln(c/b)')
+        self.assertTrue(homogeneous_degree(result[0][1])[0])
+        self.assertFalse(homogeneous_degree('ln(a)')[0])
+        self.assertAlmostEqual(evaluate_formula(result[0][1],side_environment(5,6,7)),5/math.log(7/6))
+        self.assertIsNone(evaluate_formula('ln(-1)',{}))
+        self.assertEqual(coordinate_candidates('Barycentrics ln(a,b) : :'), [])
+
+    def test_power_curve_poles_match_tangent_line_reciprocals(self):
+        for exponent in (1,2):
+            sides=(5,6,7)
+            p=[a**exponent for a in sides]
+            derivative=[x*math.log(a) for a,x in zip(sides,p)]
+            line=[p[1]*derivative[2]-p[2]*derivative[1],
+                  p[2]*derivative[0]-p[0]*derivative[2],
+                  p[0]*derivative[1]-p[1]*derivative[0]]
+            actual=[a**exponent/math.log(c/b) for a,b,c in [(5,6,7),(6,7,5),(7,5,6)]]
+            expected=[1/x for x in line]
+            for a,b in zip(actual,expected):
+                self.assertAlmostEqual(a/sum(actual),b/sum(expected))
+
+
+class AbsoluteCoordinatesTest(TestCase):
+    def test_side_extrema_match_absolute_value_identity_under_permutations(self):
+        for a,b,c in [(5,6,7),(7,5,6),(6,7,5),(5,5,6)]:
+            env = side_environment(a,b,c)
+            for source,expected in [('max(b,c)',max(b,c)),('MAX(b,c)',max(b,c)),('min(b,c)',min(b,c)),
+                                    ('|b-c|',abs(b-c)),('abs(b^2-c^2)',abs(b*b-c*c))]:
+                formula = normalize_formula(source)
+                self.assertAlmostEqual(evaluate_formula(formula,env),expected)
+                self.assertEqual(homogeneous_degree(formula),(True,2 if '^2' in source else 1))
+        for source in ['max(a,b,c)','min(a,unknown)','|b-c','||b-c||','abs(a,b)']:
+            self.assertIsNone(normalize_formula(source),source)
+        self.assertFalse(homogeneous_degree('abs(a+b^2)')[0])
+
+    def test_explicit_and_cyclic_coordinates_agree(self):
+        self.assertTrue(coordinate_candidates('Trilinears max(b,c) : max(c,a) : max(a,b)'))
+        self.assertTrue(coordinate_candidates('Barycentrics bc|b-c| : ca|c-a| : ab|a-b| : :'))
+        self.assertEqual(coordinate_candidates('Barycentrics a : b : c : a : :'),[])
+
+
+class SpecialCircleInverseTest(TestCase):
+    def test_circle_inverse_fixed_points_involution_and_degeneracy(self):
+        self.assertEqual(m.numeric_circle_inverse([(4,0),(0,0),(2,0)]),(1,0))
+        self.assertEqual(m.numeric_circle_inverse([(2,0),(0,0),(2,0)]),(2,0))
+        p = (3,4)
+        q = m.numeric_circle_inverse([p,(1,2),(4,2)])
+        self.assertLess(math.dist(p,m.numeric_circle_inverse([q,(1,2),(4,2)])),1e-12)
+        for points in [[(0,0),(0,0),(2,0)],[(3,0),(0,0),(0,0)],
+                       [m.Ideal(1,0),(0,0),(2,0)]]:
+            self.assertIsNone(m.numeric_circle_inverse(points))
+
+    def test_only_unqualified_brocard_definitions_are_admitted(self):
+        for body in ['Brocard-circle-inverse of X(654)','inverse-in-Brocard circle of X(654)']:
+            recipes = m.extract_entry(41158,'X(41158) = '+body,21)
+            self.assertEqual([r.row() for r in recipes],['41158 V 654 182 3'])
+            for suffix in [' wrt excentral triangle',' in the medial triangle',' relative to ABC',' when ABC is acute']:
+                self.assertEqual(m.extract_entry(41158,'X(41158) = '+body+suffix,21),[])
+        with self.assertRaises(ValueError):
+            m.validate_types({41158:m.Recipe(41158,'V',(30,182,3))},{30})
+
+    def test_native_brocard_center_and_inverse_dependency_closure(self):
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
+        records = {41158:m.Recipe(41158,'V',(654,182,3))}
+        native = m.numeric_coordinates({},atlas)
+        values = m.numeric_coordinates(records,atlas)
+        for shape,points in native.items():
+            midpoint = tuple((points[3][i]+points[6][i])/2 for i in (0,1))
+            self.assertLess(math.dist(midpoint,points[182]),1e-10)
+            p = values[shape][41158]
+            self.assertLess(math.dist(m.numeric_circle_inverse([p,points[182],points[3]]),points[654]),1e-8)
+            self.assertLess(abs((p[0]-points[182][0])*(points[654][1]-points[182][1])
+                                -(p[1]-points[182][1])*(points[654][0]-points[182][0])),1e-8)
+
+
+class TitleDiagnosticsTest(TestCase):
+    def test_source_metadata_and_number_normalization(self):
+        value = entry_metadata('<h3 id="X38923">X(38923) = VU 2ND PCC PERSPECTOR OF X(9)</h3><p>Barycentrics pending</p>X(38923) lies on this line: {9,3197}')
+        self.assertEqual(value['title'],'VU 2ND PCC PERSPECTOR OF X(9)')
+        self.assertEqual(value['source_features'],['coordinates','line_description'])
+        entries = [dict(id=38923,title=value['title'],primary='no_parsed_candidate'),
+                   dict(id=38910,title='VU 1ST PCC PERSPECTOR OF X(560)',primary='unclosed_dependency'),
+                   dict(id=4000,title='BROCARD-CIRCLE-INVERSE OF X(9)',primary='no_parsed_candidate')]
+        groups = title_groups(entries)
+        self.assertEqual(len(groups),1)
+        self.assertEqual(groups[0]['ids'],[38910,38923])
+        self.assertEqual(groups[0]['primary_counts'],{'no_parsed_candidate':1,'unclosed_dependency':1})
+        self.assertEqual(title_groups([dict(id=n,title='(name pending)',primary='no_parsed_candidate')
+                                       for n in (4000,4001)]),[])
+
+
+class UncoveredDiagnosticsTest(TestCase):
+    def test_solver_and_report_edits_do_not_invalidate_extraction(self):
+        source = "VALUE = 3\ndef extract_entry(x):\n    return x+1\ndef select_recipes(x):\n    return x\n"
+        original = extraction_source_fingerprint(source)
+        self.assertEqual(original, extraction_source_fingerprint(source.replace('return x\n', 'return x*2\n')))
+        self.assertNotEqual(original, extraction_source_fingerprint(source.replace('return x+1', 'return x+2')))
+        self.assertNotEqual(original, extraction_source_fingerprint(source.replace('VALUE = 3', 'VALUE = 4')))
+        helper = 'def extract_entry(x):\n    return helper(x)\ndef helper(x):\n    return x+1\n'
+        self.assertNotEqual(extraction_source_fingerprint(helper),
+                            extraction_source_fingerprint(helper.replace('return x+1', 'return x+2')))
+
+    def test_candidate_blockers_do_not_collapse_to_unsupported(self):
+        candidates = {
+            4000: [], 4001: [m.Recipe(4001, 'M', (7000, 1))],
+            4002: [m.Recipe(4002, 'M', (30, 1))],
+            4003: [m.Recipe(4003, 'M', (90000, 1))],
+            4004: [m.Recipe(4004, 'G', (5000,))],
+            4005: [m.Recipe(4005, 'B', (), formula='a+b^2')],
+            4006: [m.Recipe(4006, 'B', (), formula='b-c')],
+            4007: [m.Recipe(4007, 'B', (), formula='a')],
+            4008: [m.Recipe(4008, 'M', (66288, 1))], 7000: []}
+        atlas = dict(triangles={'shape': [(0, 0), (6, 0), (1, 4)]}, coordinates={})
+        result = m.uncovered_diagnostics(candidates, {5000: m.Recipe(5000, 'G', (1,))},
+                                        {n: 3 for n in candidates}, atlas, {}, {30},
+                                        {66288: 'source-error'}, (6, None, 1))
+        actual = {row['id']: row['primary'] for row in result['entries']}
+        self.assertEqual(actual, {
+            4000: 'no_parsed_candidate', 4001: 'unclosed_dependency',
+            4002: 'blocked_native', 4003: 'missing_source_dependency',
+            4004: 'conjugate_budget', 4005: 'nonhomogeneous_formula',
+            4006: 'ideal_formula', 4007: 'coordinate_admission_or_variants',
+            4008: 'reviewed_skip_dependency', 7000: 'no_parsed_candidate'})
+        self.assertEqual(result['count'], sum(result['summary'].values()))
+        self.assertEqual(result['skipped'], {66288: 'source-error'})
+
+
+class DomainAnnotationsTest(TestCase):
+    def test_reviewed_seed_metadata_is_not_a_recipe_or_skip(self):
+        with TemporaryDirectory(dir=m.CACHE) as directory:
+            path = Path(directory)/'seeds.txt'
+            path.write_text('4000 DOMAIN conditional_complex # reviewed\n4000 B a\n4001 DOMAIN nonreal\n')
+            skipped, domains = {}, {}
+            recipes = m.read_recipes(path, skipped, domains)
+            self.assertEqual(set(recipes), {4000})
+            self.assertEqual(skipped, {})
+            self.assertEqual(domains, {4000:'conditional_complex',4001:'nonreal'})
+            self.assertEqual(m.read_recipes(path, {}), recipes)
+            # A runtime chunk cannot silently accept metadata as a construction.
+            with self.assertRaises(ValueError):
+                m.read_recipes(path)
+            for rows in ['4000 DOMAIN real', '4000 DOMAIN nonreal\n4000 DOMAIN nonreal',
+                         '4000 SKIP source-error\n4000 DOMAIN nonreal',
+                         '4000 DOMAIN nonreal\n4000 SKIP source-error']:
+                path.write_text(rows)
+                with self.assertRaises(ValueError, msg=rows):
+                    m.read_recipes(path, {}, {})
+
+    def test_cycles_families_and_selected_alternatives_propagate_only_risk(self):
+        class Family:
+            explicit = []
+            lines = [(1,4000),(2,4002)]
+            def __iter__(self):
+                raise AssertionError('must not expand inferred pairs')
+        candidates = {4000:[],4001:[m.Recipe(4001,'M',(4000,4002))],
+                      4002:[m.Recipe(4002,'C',(4001,))],4003:Family(),
+                      4004:[m.Recipe(4004,'C',(4000,))],
+                      4005:[m.Recipe(4005,'C',(4004,))]}
+        chosen = {4004:m.Recipe(4004,'B',(),formula='a')}
+        roots = complex_dependency_roots(candidates,chosen,{4000:'nonreal'})
+        self.assertEqual(dict(roots), {n:{4000} for n in (4000,4001,4002,4003)})
+        # Even an actual dependency is not a theorem about the result's reality.
+        self.assertEqual(((2+3j)+(2-3j))/2, 2)
+
+    def test_diagnostic_separates_reviewed_nonreal_from_unclosed_risk(self):
+        candidates = {4000:[],4001:[m.Recipe(4001,'C',(4000,))]}
+        result = m.uncovered_diagnostics(candidates,{}, {4000:3,4001:3},
+            {'triangles':{}}, {}, set(), {}, (6,None,1), {4000:'nonreal'})
+        a,b = result['entries']
+        self.assertEqual(a['primary'],'reviewed_nonreal_domain')
+        self.assertEqual(a['candidate_primary'],'no_parsed_candidate')
+        self.assertEqual(b['primary'],'unclosed_dependency')
+        self.assertEqual(b['possible_complex_dependencies'],[4000])
+        self.assertEqual(result['count'],2)
+
+    def test_reviewed_etc_roots_keep_conditional_points_eligible(self):
+        domains = {}
+        recipes = m.read_recipes(m.DATA/'seeds.txt',{},domains)
+        self.assertEqual({n:domains[n] for n in range(5000,5004)},
+                         dict.fromkeys(range(5000,5004),'conditional_complex'))
+        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642})
+        self.assertFalse(set(domains) & set(recipes))
+
+    def test_5002_5003_complex_midpoint_is_real_on_both_atlas_shapes(self):
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
+        native = m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        real_cases, complex_cases = 0,0
+        for shape,abc in atlas['triangles'].items():
+            env = m.side_environment(math.dist(abc[1],abc[2]),math.dist(abc[2],abc[0]),math.dist(abc[0],abc[1]))
+            E,F = env['E'],env['F']
+            root = cmath.sqrt(F*(E+F))
+            pair = []
+            for sign in (1,-1):
+                u,v = 3*(E+2*F+sign*2*root),-2*(E+F+sign*root)
+                pair.append(tuple((u*native[shape][2][i]+v*native[shape][4][i])/(u+v) for i in (0,1)))
+            is_complex = any(abs(z.imag)>1e-8 for point in pair for z in point)
+            complex_cases += is_complex
+            real_cases += not is_complex
+            for i in (0,1):
+                midpoint = (pair[0][i]+pair[1][i])/2
+                self.assertLess(abs(midpoint-native[shape][858][i]),1e-8)
+        self.assertGreater(real_cases,0)
+        self.assertGreater(complex_cases,0)
+
+
+class ImportInfrastructureTest(unittest.TestCase):
+
+    def test_seed_skip_is_explicit_and_cannot_conflict(self):
+        with tempfile.TemporaryDirectory(dir=importer.CACHE) as folder:
+            path = Path(folder) / 'seeds.txt'
+            path.write_text('4000 SKIP source-error: conflicting definitions # reviewed\n4001 M 1 2 # source\n')
+            skipped = {}
+            self.assertEqual(set(importer.read_recipes(path, skipped)), {4001})
+            self.assertEqual(skipped, {4000: 'source-error: conflicting definitions'})
+            with self.assertRaises(ValueError):
+                importer.read_recipes(path)  # Runtime chunks cannot contain directives.
+            path.write_text('4000 SKIP reason\n4000 M 1 2\n')
+            with self.assertRaises(ValueError):
+                importer.read_recipes(path, {})
+
+    def test_page_cache_preserves_evidence_and_invalidates_inputs(self):
+        with tempfile.TemporaryDirectory(dir=importer.CACHE) as folder, patch.object(importer, 'CACHE', Path(folder)):
+            page = Path(folder) / 'sources' / 'ETCPart3.html'
+            page.parent.mkdir(parents=True)
+            page.write_text('<h3 id="X4000">X(4000) = midpoint of X(1) and X(2)</h3>'
+                            '<p>X(4000) lies on these lines: 1,2 3,4 5,6</p>')
+            original = importer.extract_entry
+            with patch.object(importer, 'extract_entry', wraps=original) as extract:
+                cold_metadata,warm_metadata = {},{}
+                cold = importer.read_page(3,metadata=cold_metadata)
+                warm = importer.read_page(3,metadata=warm_metadata)
+                self.assertEqual(cold_metadata,warm_metadata)
+                self.assertEqual(cold_metadata[4000]['title'],'midpoint of X(1) and X(2)')
+                self.assertEqual(warm, cold)
+                self.assertEqual(set(warm[1][4000]), set(cold[1][4000]))
+                self.assertEqual(len(list(warm[1][4000].inferred())), 3)
+                self.assertEqual(extract.call_count, 1)
+                importer.read_page(3, {2})
+                self.assertEqual(extract.call_count, 2)
+                for cache in (Path(folder) / 'extracted').glob('*.gz'):
+                    cache.write_bytes(b'broken')
+                self.assertEqual(importer.read_page(3), cold)
+                self.assertEqual(extract.call_count, 3)
+                page.write_text('<h3 id="X4000">X(4000) = midpoint of X(1) and X(3)</h3>')
+                self.assertNotEqual(importer.read_page(3), cold)
+                page.write_text('<h3 id="X4000)">X(4000) = midpoint of X(1) and X(3)</h3>')
+                with self.assertRaisesRegex(ValueError, 'preflight'):
+                    importer.read_page(3)
+
+
+class VuPccTest(TestCase):
+    def test_existing_formula_contexts_share_one_validation_cache_key(self):
+        m.validate_formula.cache_clear()
+        homogeneous_degree.cache_clear()
+        m.validate_formula('a+b')
+        evaluate_formula('a+b',side_environment(5,6,7))
+        homogeneous_degree('a+b')
+        self.assertEqual(m.validate_formula.cache_info().misses,1)
+        self.assertEqual(m.validate_formula.cache_info().hits,2)
+
+    def test_first_pcc_matches_independent_geometry_and_known_members(self):
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
+        native = m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            O = native[shape][3]
+            def second_on_circle(A,direction):
+                den = sum(v*v for v in direction)
+                t = -2*sum(direction[i]*(A[i]-O[i]) for i in (0,1))/den
+                return tuple(A[i]+t*direction[i] for i in (0,1))
+            for source in [1,2,4,6,560,561,1501,1502,1928,2321,2887]:
+                P = native[shape][source]
+                pairs = []
+                for A in abc:
+                    # B1/C1 are the perpendicular feet of P on the adjacent
+                    # sides, hence circle(A,B1,C1) has diameter AP.
+                    M = tuple((A[i]+P[i])/2 for i in (0,1))
+                    d = (-(M[1]-O[1]),M[0]-O[0])
+                    A2 = second_on_circle(A,d)
+                    A4 = second_on_circle(A,tuple(P[i]-A[i] for i in (0,1)))
+                    pairs.append((A2,A4))
+                geometric = m.numeric_intersection([*pairs[0],*pairs[1]])
+                self.assertIsNotNone(geometric)
+                p,d = m.line_data(*pairs[2])
+                self.assertLess(abs(d[0]*(geometric[1]-p[1])-d[1]*(geometric[0]-p[0]))/math.hypot(*d),1e-7)
+                recipe = m.Recipe(100000,'F',(source,3),formula='2*R^2|d^2-R^2')
+                actual = m.numeric_combo(recipe,[P,O],abc)
+                self.assertLess(math.dist(actual,geometric),1e-7)
+                inverse = m.numeric_circum_inverse(P,abc)
+                midpoint = tuple((P[i]+inverse[i])/2 for i in (0,1))
+                self.assertLess(math.dist(actual,m.numeric_circum_inverse(midpoint,abc)),1e-7)
+                known = {1:56,2:1995,4:24,6:1384}.get(source)
+                if known:
+                    self.assertLess(math.dist(actual,native[shape][known]),1e-8)
+
+    def test_first_pcc_parser_scope_and_distance_name_scope(self):
+        recipe = m.extract_entry(38910,'X(38910) = VU 1ST PCC PERSPECTOR OF X(560)',20)[0]
+        self.assertEqual(recipe.row(),'38910 F 560:2*R^2 3:d^2-R^2')
+        for suffix in [' wrt medial triangle',' in excentral triangle',' when ABC is acute']:
+            self.assertEqual(m.extract_entry(38910,'X(38910) = VU 1ST PCC PERSPECTOR OF X(560)'+suffix,20),[])
+        self.assertFalse(homogeneous_degree('d^2-R^2')[0])
+        self.assertEqual(homogeneous_degree('d^2-R^2',True),(True,2))
+        self.assertEqual(coordinate_candidates('Barycentrics d+a : :'),[])
+        with TemporaryDirectory(dir=CACHE) as folder:
+            path = Path(folder)/'recipes.txt'
+            path.write_text(recipe.row(),encoding='utf-8')
+            self.assertEqual(read_recipes(path)[38910].formula,recipe.formula)
+            for row in ['4000 F 1:d^2 2:R^2 3:R^2','4000 B d^2','4000 V 1 2','4000 K 1 2 3']:
+                path.write_text(row,encoding='utf-8')
+                with self.assertRaises(ValueError,msg=row): read_recipes(path)
+            for row in ['4000 V 1','4000 V 1 2 3']:
+                path.write_text(row,encoding='utf-8')
+                self.assertEqual(read_recipes(path)[4000].operation,'V')
+
+
+if __name__ == "__main__":
     unittest.main()

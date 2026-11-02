@@ -39,10 +39,10 @@
 
 71 项 Python 测试、20 项 TriangleCenter 编译测试、四页 check 和 verify 通过。全量新规则冷运行约 386 秒（含提取与完整坐标审计）；这个值不能与此前热提取 236 秒直接当作性能回退比较。单独的未覆盖分类约 0.4 秒。报告和计时：
 
-- `.cache/triangle-centers/uncovered-baseline.json`：原 286 点候选级诊断。
-- `.cache/triangle-centers/uncovered-after.json`：现 223 点，约 68 KB，仅失败条目。
-- `.cache/triangle-centers/uncovered-improvement.json`：恢复的 63 个编号及零新增失败检查。
-- `.cache/triangle-centers/parser-expanded-all.jsonl`：完整阶段指标。
+- `.cache/triangle-centers/reports/uncovered/uncovered-baseline.json`：原 286 点候选级诊断。
+- `.cache/triangle-centers/reports/uncovered/uncovered-after.json`：现 223 点，约 68 KB，仅失败条目。
+- `.cache/triangle-centers/reports/uncovered/uncovered-improvement.json`：恢复的 63 个编号及零新增失败检查。
+- `.cache/triangle-centers/runs/parser/parser-expanded-all.jsonl`：完整阶段指标。
 
 ## 接下来优先处理
 
@@ -77,7 +77,7 @@
 
 唯一退出的 X(11619) 标题明确定义为圆 {X(5),X(6),X(22)} 的中心。独立求垂直平分线交点可得真正圆心，它满足目标线 X(2492)X(2780)；印刷三线式不等于该圆心，也不满足该线。先前线表漏读使这条错误公式通过。本批保留未闭合，并把审阅原因写入 seeds 注释，不用 SKIP 阻止将来通过三点圆心操作接入。此源冲突有独立回归测试；不是为了维持覆盖数字而保留已证实错误的坐标。
 
-最终 B 配方由 4,604 减到 3,703；预计运行时块仍为 71，原始体积从 2,311,837 减到 2,206,866 字节；最大估计展开从 154,752 降为 101,556，深度上限未变。更多关系定义可读后，许多已有点自然改用更短构造，没有逐点追求最优。日志与逐点报告为 `.cache/triangle-centers/pb-all.jsonl`、`uncovered-pb.json`、`pb-recovery-diff.json`。
+最终 B 配方由 4,604 减到 3,703；预计运行时块仍为 71，原始体积从 2,311,837 减到 2,206,866 字节；最大估计展开从 154,752 降为 101,556，深度上限未变。更多关系定义可读后，许多已有点自然改用更短构造，没有逐点追求最优。日志与逐点报告为 `.cache/triangle-centers/runs/pb/pb-all.jsonl`、`uncovered-pb.json`、`pb-recovery-diff.json`。
 
 本批正式小库由 8,200 增至 **8,202**：只加入两个独立核对的锚点，X(9998) 也从坐标短式改为原生点之间的交点。原先 8,200 点在两种样本的坐标/定义状态保持一致。全量约七万个点尚未发布。75 项 Python 测试、21 项编译测试及正式库 check/verify 通过；本批完整冷 dry-run 约 359 秒。没有新增构造/长度/候选限制。
 
@@ -108,7 +108,7 @@ X(40327/40346) 的依赖已闭合，但本批尚未通过后续几何/方向筛�
 - X(11755) 的坏括号/反斜杠属于孤立源错误，加入交点种子；其值与展开前言 U 后、补齐括号的坐标在两个样本吻合。相关源错误测试集中在 `test_source_errors.py`。
 - 修复页外 J/I 种子闭包直接索引本次页面线表的假设。种子仍按依赖、输入类型和几何检查接入；没有页面线表时使用已有的空证据语义，附专门回归。
 
-全量预计 71 块、2,207,695 原始字节，B 3,708、I 1,177、O 4；深度 6，最大估计展开 101,556。完整运行约 339 秒，包含页面提取与坐标审计，不把该值当作单独算法加速结论。日志为 `.cache/triangle-centers/circle-log-all.jsonl`；未覆盖与差分为 `uncovered-circle-log.json`、`circle-log-diff.json`。
+全量预计 71 块、2,207,695 原始字节，B 3,708、I 1,177、O 4；深度 6，最大估计展开 101,556。完整运行约 339 秒，包含页面提取与坐标审计，不把该值当作单独算法加速结论。日志为 `.cache/triangle-centers/runs/circle-log/circle-log-all.jsonl`；未覆盖与差分为 `uncovered-circle-log.json`、`circle-log-diff.json`。
 
 正式小库只增加三个审阅种子至 **8,205** 条；新增第 12 个块用于 X(40300)。X(72481/72891) 改选等价圆心构造，写入前对原 8,202 点逐个比较了两个样本的类型和有限坐标。原始体积 257,869 字节；没有发布全量块。80 项 Python 测试、22 项编译测试和正式库 check/verify 通过。本批没有重新生成 selected.tsv。
 
@@ -151,7 +151,7 @@ X(40327/40346) 的依赖已闭合，但本批尚未通过后续几何/方向筛�
 4. `triangle_center_domains.py` 沿所选配方以及未闭合目标的候选引用传播小根集合。已选配方优先于未选替代；线表读取共享端点，不展开所有线对；循环按 `(root,target)` 去重。结果字段 `possible_complex_dependencies` 只表示可能的复输入风险，不能替代数学证明，也不会删除独立实构造。
 5. 本次 153 个未覆盖条目中有 6 个被标记风险：上述四个焦点和 X(65627/65628)。不能把整个原始候选弱连通分量都判成复点。复数中间计算、共轭消去与一般实域证明仍是后续能力，本批仅在测试中独立使用复数运算。
 
-全量预计 71 块、2,208,227 原始字节，B 3,715、I 1,177；最大深度 6、估计展开 101,556 均未增加，约 338 秒。域传播连同失败诊断共约 0.45 秒。没有降低搜索空间、修改预算或生成 selected.tsv。88 项 Python 测试、22 项编译测试和小库 check/verify 通过。日志/报告为 `.cache/triangle-centers/domain-abs-all.jsonl`、`uncovered-domain-abs.json`、`domain-abs-recovery.json`。
+全量预计 71 块、2,208,227 原始字节，B 3,715、I 1,177；最大深度 6、估计展开 101,556 均未增加，约 338 秒。域传播连同失败诊断共约 0.45 秒。没有降低搜索空间、修改预算或生成 selected.tsv。88 项 Python 测试、22 项编译测试和小库 check/verify 通过。日志/报告为 `.cache/triangle-centers/runs/domain-abs/domain-abs-all.jsonl`、`uncovered-domain-abs.json`、`domain-abs-recovery.json`。
 
 接下来仍优先处理实域的依赖根与明确语法：PB 四点簇的独立几何核对；跨条目循环辅助变量；明确的其它圆反演。复数风险条目单列研究，避免反复把它们当普通缺锚点，也避免丢掉由复中间量得到实结果的可能性。X(40327) 的理想对数方向仍未接入。
 
@@ -199,7 +199,7 @@ X(39641/39642) 正文显式含 i，是 Brocard 内接椭圆虚焦点，已增加
 
 识别仅接受完整、无条件的 `Brocard-circle-inverse of X(n)` 或 `inverse-in-Brocard circle of X(n)`，不接受 wrt、relative to、in ... triangle 等尾部。当前不因中心相同就猜测其它圆，也不把椭圆或未知圆当作普通圆。数值验证包括圆上点不变、反演两次还原、退化/理想输入拒绝、原生 X(182) 与直径中点一致、X(41158) 与圆心/源点共线。全量最终选择 **57 条 K**。
 
-其它圆暂按收益继续审阅：高频 orthocentroidal/polar 等本批前已经全部覆盖，优先评估是否可明显替代长坐标，再核对圆定义、半径和域；Bevan 的两点互相反演且正文提示并非总为实数，单加逆关系不能产生锚点。调查原始摘要保存在 `.cache/triangle-centers/circle-inventory.json`。
+其它圆暂按收益继续审阅：高频 orthocentroidal/polar 等本批前已经全部覆盖，优先评估是否可明显替代长坐标，再核对圆定义、半径和域；Bevan 的两点互相反演且正文提示并非总为实数，单加逆关系不能产生锚点。调查原始摘要保存在 `.cache/triangle-centers/research/circle-inventory.json`。
 
 ### 未覆盖标题与描述提示
 
@@ -216,6 +216,52 @@ X(39641/39642) 正文显式含 i，是 Brocard 内接椭圆虚焦点，已增加
 
 ### 产物与验证
 
-全量预计 71 块、2,210,367 原始字节，B 3,719、I 1,177、K 57；最大深度 6、估计展开 101,556 未变。完整冷提取运行约 357 秒；标题分组连同失败诊断约 0.44 秒。没有收紧候选/深度/长度预算。日志与失败报告：`.cache/triangle-centers/source-families-all.jsonl`、`uncovered-source-families.json`、`source-families-recovery.json`。
+全量预计 71 块、2,210,367 原始字节，B 3,719、I 1,177、K 57；最大深度 6、估计展开 101,556 未变。完整冷提取运行约 357 秒；标题分组连同失败诊断约 0.44 秒。没有收紧候选/深度/长度预算。日志与失败报告：`.cache/triangle-centers/runs/source-families/source-families-all.jsonl`、`uncovered-source-families.json`、`source-families-recovery.json`。
 
 正式小库只增加 X(11667) 审阅种子，**8,205→8,206**，41 条种子、8,165 条自动配方；X(4254) 改用等价 Brocard 圆反演。写入前对原 8,205 点逐个比较了两个样本的类型和有限坐标，均保持一致。12 块、259,171 原始字节。94 项 Python 测试、23 项编译测试、正式库 check/verify 与 diff 空白检查通过；全量块尚未发布，未生成 selected.tsv。
+
+## 2026-11-02 续批：结构精简与 VU 第一类
+
+### 反演、测试与缓存整理
+
+- 反演统一为 `V p`（ABC 外接圆）和 `V p q r`（圆心 X(q)、通过 X(r)），K 不再是合法操作。数据、Python、浏览器编译器与类型/数值检查同步迁移；上文 K 是历史记号。
+- 13 个测试文件合并为 3 个：`test_triangle_center_import.py` 汇总解析、公式、域/标题诊断和导入 IO；`test_selected_graph.py` 包含图与数值事务；`test_source_errors.py` 保留来源审阅。原有 94 项测试全部保留，后续按主题追加到这三个文件。
+- 缓存的 143 个既有产物按用途移动，没有删除。`sources/` 保存原始 HTML，`native/` 保存 atlas，`extracted/` 保存可再建检查点；`runs/<batch>/`、`reports/uncovered/`、`reports/reviews/` 保存运行与差分；`planning/`、`research/`、`experiments/` 分别保留规划、数学调查和旧临时脚本。
+- fetch/read/native 与测试使用新路径，文档中的已有文件引用同步迁移。缓存根 README 和 `reports/cache-migration.json` 提供位置说明；历史日志内部路径、归档临时脚本中的旧路径不当作当前调用接口。
+
+### VU 1st PCC 的统一关系
+
+对前言的 V(P) 展开式，令 P=(p:q:r)，O=X(3)，d=OP，R 为 ABC 外接圆半径。其首坐标可重写为
+
+`2*a²*b²*c²*p*(p+q+r) - a²*(b²+c²-a²)*(a²*q*r+b²*r*p+c²*p*q)`。
+
+利用 O 的重心坐标和 P 对外接圆的幂，可得
+
+`V(P) = O + 2*R²/(d²+R²)*(P-O)`。
+
+这也等于“先对 P 作外接圆反演，取 P 与其反演点的中点，再反演该中点”的结果（这些中间构造均有定义时）。实现使用前一个有限有理式，复用
+
+`F p:2*R^2 3:d^2-R^2`。
+
+为此仅在恰有两个有限输入的 F 系数中定义 d 为两输入距离，量纲为长度。B 和三点以上 F 不接受 d，且不会把它注册成全局坐标符号。运行时绑定两个输入点与距离各一次，避免较长依赖在系数和分子中重复展开。不新增操作字母、虚构中间 ETC 编号或逐成员种子。
+
+通用标题匹配完整的 `VU 1ST PCC PERSPECTOR OF X(n)`，拒绝条件及相对三角形尾部。测试以直径 AP 圆（由两垂足的直角性质得到）和 ABC 外接圆的第二交点独立构造 A₂，再构造 circumcevian 的 A₄；对应连线交点和第三线并发均核对。两个 atlas 样本、11 个输入中心共 22 个实例通过，并与两次反演表达式、四个已有映射 X(1)→X(56)、X(2)→X(1995)、X(4)→X(24)、X(6)→X(1384) 一致。
+
+VU 第二类属于另一变换，未因标题近似而复用本式。其前言 `-8a a^4...` 仍需按独立几何定义审阅，不自动删字符。
+
+### 本批结果与下一步
+
+全量 **70,073→70,081**，未覆盖 **142→134**，新集合是旧集合的严格子集；恢复的正是 X(38910)–X(38917) 八点。no_parsed_candidate **58→50**，其余类别数量不变：unclosed_dependency 39、非实域 6、非齐次 10、坐标准入/变体 10、几何/事务 11、理想公式 3、输入类型 4、共轭预算 1。
+
+全量预计 71 块、2,210,598 字节，B 3,719、F 1,479、V 413（包含三参反演）；没有 K。最大深度 6、估计展开 101,556 不变。正式小库仍为 **8,206** 条，配方只有先前 K→V 的语法迁移，所有旧点的两个样本类型/有限坐标检查通过；没有发布 Part 20 的全量块。
+
+97 项 Python 测试、24 项编译测试、正式库 check/verify 和 diff 空白检查通过。新增编译测试用测试夹具核对 d 的绑定，不为测试新增生产种子。审计中发现可选参数若显式传 False 会为普通公式产生重复 AST 缓存键，已统一普通调用，并以定向缓存命中测试防止回退。完整冷流程记录约 439 秒，期间并行执行了小库核查；它不是受控性能对照，且该计时早于末尾的缓存键修复，不据此声称加速。
+
+现行产物位置：
+
+- `.cache/triangle-centers/runs/vu-first/all.jsonl`、`all.log`：全量阶段与日志。
+- `.cache/triangle-centers/reports/uncovered/uncovered-vu-first.json`：134 个失败条目与标题族。
+- `.cache/triangle-centers/reports/reviews/vu-first-recovery.json`：八点恢复与零新增失败。
+- `.cache/triangle-centers/reports/cache-migration.json`：既有文件迁移清单。
+
+下一批优先 VU 第二类剩余 X(38923)–X(38929)：先从 A₃=BB₂∩CC₂ 与 circumcevian 的独立几何构造推导/核对 T(P)，再决定如何表达，不能只凭删除多余 a 得到新的整族规则。继续跟进 Vietnamese/anticevian、Steiner 顶点/密切圆心及 PB 四点簇。工程上仍应对全量选择与公式审计分别计时；坐标模块的数值求值改动目前还会影响整个模块提取指纹，后续可进一步按实际解析调用图细分，减少纯数值调试导致的重解析。

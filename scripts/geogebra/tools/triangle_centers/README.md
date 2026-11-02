@@ -4,9 +4,27 @@ Run from the repository root:
 
 ```sh
 python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
-python scripts/geogebra/tools/triangle_centers/triangle_center_import.py check --report .cache/triangle-centers/run.jsonl
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py check --report .cache/triangle-centers/runs/current/run.jsonl
 python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_*.py'
 ```
+
+Tests are grouped in three files: `test_triangle_center_import.py` covers parsing,
+formulas, domain/title diagnostics and import IO; `test_selected_graph.py` covers
+graph and numeric transactions; `test_source_errors.py` holds reviewed source
+exceptions. Add related regressions to these files instead of a new file per rule.
+
+The local cache layout is `sources/` (ETC HTML), `native/` (native-atlas.json),
+`extracted/` (disposable checkpoints), `runs/<batch>/` (logs and stage events),
+`reports/uncovered/`, `reports/reviews/`, `planning/`, `research/`, and archived
+`experiments/`. Existing artifacts were moved without deletion; the ignored cache
+README and `reports/cache-migration.json` document the migration. Fetch/read/native
+commands use the new paths. Historical logs retain their original embedded paths.
+
+Circle inversion now uses only `V`: `V p` for the ABC circumcircle, `V p q r`
+for the circle centered at X(q) through X(r). The temporary K opcode is retired.
+Double-point F coefficients may use `d`, their finite input distance; this name is
+scoped to F with exactly two references and is rejected in cyclic B coordinates.
+The client binds input points and d once before expanding those coefficients.
 
 `triangle_center_import.py` handles source preflight, extraction, graph selection,
 and generated recipes. `triangle_center_coordinates.py` owns the checked formula
@@ -19,7 +37,7 @@ and the geometry/type/budget screens still apply. Extraction cache schema 2 stor
 families rather than duplicating each four-reference intersection and evidence.
 
 `compact_topology_cache.py` migrates old diagnostic snapshots in
-`.cache/triangle-centers/planning-topology/`: continuous ID sets become ranges,
+`.cache/triangle-centers/planning/topology/`: continuous ID sets become ranges,
 adjacency keys share one ranged node index, reference lists use delta coding,
 and the payload is gzip-compressed. Every file is decoded and compared before
 the original JSON is removed. `pack`/`unpack` also support diagnostic writers;
@@ -57,7 +75,7 @@ in seeds. `selected.tsv` is retired; build no longer allocates or writes it.
 For full offline analysis without publishing runtime data:
 
 ```sh
-python scripts/geogebra/tools/triangle_centers/triangle_center_import.py dry-run --parts 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 --report .cache/triangle-centers/full.jsonl
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py dry-run --parts 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 --report .cache/triangle-centers/runs/current/full.jsonl
 ```
 
 Coordinate transactions use a small overlay of changed/hidden values, committing
@@ -65,7 +83,7 @@ that delta only after all checks pass. They do not copy the full coordinate map
 per replacement. Full audits still materialize the complete snapshot.
 
 
-Use `--uncovered-report .cache/triangle-centers/uncovered.json` with a build,
+Use `--uncovered-report .cache/triangle-centers/reports/uncovered/current.json` with a build,
 check or dry-run to inspect only unresolved IDs, their source Part, candidate
 blockers and unresolved inputs. This opt-in report is not a duplicate selected
 recipe table. Primary categories summarize possibly overlapping candidate reasons;
@@ -88,7 +106,7 @@ can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
 circle center, a damaged PB entry, and a power-curve tangent pole respectively.
 Out-of-Part J/I seeds close without assuming that their page incidence table
 was loaded; their construction inputs still undergo numeric/type screening.
-The full dry-run now contains 70,073 records and 142 unresolved entries, while
+The full dry-run now contains 70,081 records and 134 unresolved entries, while
 the published small set contains 8,206 records. See the uncovered-analysis doc
 for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.
 
@@ -120,8 +138,14 @@ unknown or noncyclic calls remain rejected. X(10043)'s broken paragraph marker
 has a source-hash-guarded read patch; X(11667)'s squared/prose local definitions
 are expanded only in a reviewed seed, checked against its Euler-line combo.
 
-`K p q r` inverts finite X(p) in the circle centered at X(q) through X(r).
-The first named mapping is the unqualified ABC Brocard circle, `K p 182 3`.
+`V p q r` inverts finite X(p) in the circle centered at X(q) through X(r).
+The first named mapping is the unqualified ABC Brocard circle, `V p 182 3`.
 The full-match rule rejects triangle-relative and conditional suffixes. Other
 circle names are not guessed; inventory findings and priorities are documented
 in the uncovered-analysis report. Runtime uses GeoGebra's circle reflection.
+
+The Vu 1st PCC rule reuses a two-point distance-scoped F combo and restores eight
+Part 20 centers. It is checked against independently constructed pedal/circumcevian
+perspectors and known native members. Vu 2nd PCC remains under source review.
+The latest unresolved report is `reports/uncovered/uncovered-vu-first.json`;
+full stages/logs are under `runs/vu-first/`, relative to the cache root.

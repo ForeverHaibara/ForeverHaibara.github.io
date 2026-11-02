@@ -49,7 +49,7 @@ def auriga_triangles(abc):
 
 class ReviewedSourceConflictTest(TestCase):
     def test_auriga_named_centers_and_grebe_trilinears(self):
-        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
         records = {n: r for path in (m.DATA/'chunks').glob('*.txt') for n, r in m.read_recipes(path).items()}
         records.update(m.read_recipes(m.DATA/'seeds.txt', {}))
         points = m.numeric_coordinates(records, atlas, m.read_native_status(m.DATA/'native-status.txt')[1])
@@ -155,7 +155,7 @@ class ReviewedFileBoundaryErrors(TestCase):
 
     def test_reviewed_snapshots_have_unique_ordered_boundaries(self):
         for part in (1, 6, 28, 29, 31, 34, 35, 36):
-            raw = (m.CACHE/f'ETCPart{part}.html').read_text(encoding='utf-8', errors='replace')
+            raw = (m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8', errors='replace')
             prepared = prepare_source(part, raw)
             self.assertEqual(heading_issues(prepared), [], part)
             entries = dict(m.split_entries(prepared))
@@ -179,10 +179,10 @@ class ReviewedFileBoundaryErrors(TestCase):
 class PBClusterAnchors(TestCase):
     def test_11667_expanded_roots_match_independent_euler_combo(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt',{})
-        raw = (m.CACHE/'ETCPart6.html').read_text(encoding='utf-8',errors='replace')
+        raw = (m.CACHE/'sources'/'ETCPart6.html').read_text(encoding='utf-8',errors='replace')
         text = '\n'.join(m.coordinate_text(dict(m.split_entries(raw))[11667]))
         radicand = m.normalize_formula(re.search(r'where U\^2\s*=\s*(.*), and V',text)[1])
-        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
         native = m.numeric_coordinates({},atlas)
         for shape,abc in atlas['triangles'].items():
             env = m.side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
@@ -195,7 +195,7 @@ class PBClusterAnchors(TestCase):
 
     def test_11755_reviewed_intersection_matches_balanced_printed_coordinate(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt', {})
-        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
         selected = {n: seeds[n] for n in (11753,11755)}
         points = m.numeric_coordinates(selected,atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         formula = m.Recipe(11755,'B',(),formula=(
@@ -206,7 +206,7 @@ class PBClusterAnchors(TestCase):
 
     def test_two_anchors_match_independent_preamble_vertex_construction(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt', {})
-        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
         for abc in atlas['triangles'].values():
             sides = [math.dist(abc[1],abc[2]),math.dist(abc[2],abc[0]),math.dist(abc[0],abc[1])]
             S = m.side_environment(*sides)['S']
@@ -227,18 +227,18 @@ class PBClusterAnchors(TestCase):
 
     def test_user_examples_produce_incidence_candidates(self):
         for part, number in [(6,11872),(21,41156)]:
-            source = (m.CACHE/f'ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')
+            source = (m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')
             fragment = dict(m.split_entries(source))[number]
             self.assertTrue(any(r.operation=='J' for r in m.extract_entry(number,fragment,part)))
 
 
 class CircumcenterSourceConflict(TestCase):
     def test_11619_printed_formula_conflicts_with_named_circle_center(self):
-        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
         points = m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         seed = m.read_recipes(m.DATA/'seeds.txt', {})[11619]
         corrected = m.numeric_coordinates({11619:seed},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
-        fragment = dict(m.split_entries((m.CACHE/'ETCPart6.html').read_text(encoding='utf-8')))[11619]
+        fragment = dict(m.split_entries((m.CACHE/'sources'/'ETCPart6.html').read_text(encoding='utf-8')))[11619]
         formula = next(r for r in m.extract_entry(11619,fragment,6) if r.operation=='B')
         for shape, xy in points.items():
             a,b,c = [xy[n] for n in (5,6,22)]
