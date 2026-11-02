@@ -234,3 +234,9 @@
 14087 B abs((a-b)*(a-c))
 14088 B a^2*abs(b-c)
 14090 B a^2*abs(b^2-c^2)
+
+# User review: generic nonreal Steiner imaginary-focus images under
+# isotomic conjugation followed by complement. Both maps are invertible
+# over the reals on their generic domains; no real-plane drawing required.
+65627 DOMAIN nonreal
+65628 DOMAIN nonreal

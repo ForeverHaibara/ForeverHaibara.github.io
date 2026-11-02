@@ -19,9 +19,22 @@ from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_reflection_opcode_uses_arity_without_accepting_retired_l(self):
+        with TemporaryDirectory(dir=m.CACHE) as directory:
+            path=Path(directory)/'recipes.txt'
+            path.write_text('4000 R 1 2\n4001 R 1 2 3\n')
+            records=m.read_recipes(path)
+            self.assertEqual(records[4000].references,(1,2))
+            self.assertEqual(records[4001].references,(1,2,3))
+            self.assertLess(m.quality(records[4000]),m.quality(records[4001]))
+            self.assertEqual(m.operation_priority(records[4001]),5)
+            for row in ['4000 L 1 2 3','4000 R 1','4000 R 1 2 3 4']:
+                path.write_text(row)
+                with self.assertRaises(ValueError):m.read_recipes(path)
+
     def test_projective_barycentric_powers_and_line_operations(self):
         abc=[(0,0),(3,0),(0,3)]
-        for op,expected in [('P',(2,0)),('L',(2,-3))]:
+        for op,expected in [('P',(2,0)),('R',(2,-3))]:
             recipe=Recipe(4000,op,(1,2,30))
             validate_types({4000:recipe},{30})
             for scale in [1e-7,1,1e7]:
@@ -220,7 +233,7 @@ class TriangleCenterImportTest(unittest.TestCase):
                 'X(4100) = isogonal conjugate of X(10) wrt another triangle</p>')
         recipes = extract_entry(4100, html, 3)
         self.assertEqual({(r.operation, r.references) for r in recipes},
-                         {('G', (7,)), ('T', (8,)), ('L', (9, 1, 2)), ('J', (1, 3, 2, 4))})
+                         {('G', (7,)), ('T', (8,)), ('R', (9, 1, 2)), ('J', (1, 3, 2, 4))})
 
     def test_circumcircle_inverse_relations(self):
         html = ('<h3 id="X4108">X(4108) = INVERSE-IN-CIRCUMCIRCLE OF X(7)</h3>'
@@ -990,6 +1003,18 @@ class UncoveredDiagnosticsTest(TestCase):
 
 
 class DomainAnnotationsTest(TestCase):
+    def test_nonreal_focus_images_have_real_invertible_maps(self):
+        source=[1+2j,2-3j,4+1j]
+        isotomic=lambda p:[1/x for x in p]
+        complement=lambda p:[sum(p)-x for x in p]
+        anticomplement=lambda p:[sum(p)-2*x for x in p]
+        result=complement(isotomic(source))
+        restored=isotomic(anticomplement(result))
+        for p,q in zip(source,restored):self.assertLess(abs(p/source[0]-q/restored[0]),1e-10)
+        self.assertTrue(any(abs((x/result[0]).imag)>1e-8 for x in result))
+        domains={};m.read_recipes(m.DATA/'seeds.txt',{},domains)
+        self.assertEqual({n:domains[n] for n in [65627,65628]},dict.fromkeys([65627,65628],'nonreal'))
+
     def test_51539_square_of_complex_focus_is_generically_nonreal(self):
         # Divide imaginary components by the common nonzero area factor S.
         # This leaves integer polynomial triples on integer-sided witnesses.
@@ -1069,7 +1094,7 @@ class DomainAnnotationsTest(TestCase):
         recipes = m.read_recipes(m.DATA/'seeds.txt',{},domains)
         self.assertEqual({n:domains[n] for n in range(5000,5004)},
                          dict.fromkeys(range(5000,5004),'conditional_complex'))
-        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642,51539,51540})
+        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642,51539,51540,65627,65628})
         self.assertFalse(set(domains) & set(recipes))
 
     def test_5002_5003_complex_midpoint_is_real_on_both_atlas_shapes(self):
@@ -1095,6 +1120,18 @@ class DomainAnnotationsTest(TestCase):
 
 
 class ImportInfrastructureTest(unittest.TestCase):
+    def test_chunk_publication_preserves_unchanged_files_and_removes_only_stale_chunks(self):
+        with TemporaryDirectory(dir=m.CACHE) as directory:
+            folder=Path(directory);(folder/'9.txt').write_text('stale');(folder/'notes.md').write_text('keep')
+            output={'4.txt':'4000 R 1 2 3\n'}
+            m.write_chunks(folder,output)
+            first=(folder/'4.txt').stat().st_mtime_ns
+            m.write_chunks(folder,output)
+            self.assertEqual((folder/'4.txt').stat().st_mtime_ns,first)
+            self.assertEqual((folder/'4.txt').read_text(),output['4.txt'])
+            self.assertFalse((folder/'9.txt').exists());self.assertTrue((folder/'notes.md').exists())
+            self.assertFalse(list(folder.glob('*.tmp')))
+
 
     def test_seed_skip_is_explicit_and_cannot_conflict(self):
         with tempfile.TemporaryDirectory(dir=importer.CACHE) as folder:

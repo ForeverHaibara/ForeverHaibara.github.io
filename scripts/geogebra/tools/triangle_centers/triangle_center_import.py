@@ -73,9 +73,9 @@ VIETNAMESE = re.compile(rf'^VIETNAMESE POINT OF THESE TRIANGLES: (CEVIAN|ANTICEV
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
-PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
+PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
 LINE_LIST = re.compile(r'^(?:X\s*)?[({]\s*(\d+)\s*[)}]?\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this|the)\s*(?:\(parallel\)\s*)?lines?\s*:?\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -175,13 +175,21 @@ def line_data(p: Coordinate, q: Coordinate) -> tuple[tuple[float, float], tuple[
     return base, d
 
 
+def line_reflection(recipe: Recipe) -> bool:
+    return recipe.operation=='R' and len(recipe.references)==3
+
+
+def operation_priority(recipe: Recipe) -> int:
+    return 5 if line_reflection(recipe) else PRIORITY[recipe.operation]
+
+
 def quality(recipe: Recipe) -> tuple[float, int]:
     # An explicitly stated intersection is stronger evidence than choosing
     # two arbitrary pairs from a list of lines that merely pass through X(n).
     incidence_only = int('lies on these lines:' in recipe.evidence.lower())
     if recipe.operation == 'F':
         return (0 if all(not re.search(r'[A-Za-z_]', c) for c in recipe.formula.split('|')) else 3.5), incidence_only
-    return RISK[recipe.operation], incidence_only
+    return (1 if line_reflection(recipe) else RISK[recipe.operation]), incidence_only
 
 
 def combo_candidate(number: int, line: str, part: int) -> Recipe | None:
@@ -499,7 +507,7 @@ def extract_entry(number: int, fragment: str, part: int,
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
                                 (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
-                                (LINE_REFLECTION, 'L'), (ISOGONAL, 'G'), (ISOTOMIC, 'T'),
+                                (LINE_REFLECTION, 'R'), (ISOGONAL, 'G'), (ISOTOMIC, 'T'),
                                 (CIRCUM_INVERSE, 'V'), (CIRCLE_CENTER, 'O')):
             match = pattern.match(body)
             if match and not CONDITIONAL.search(body[match.end():]):
@@ -652,7 +660,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             formula = '|'.join(pair[1] for pair in pairs)
         else:
             refs = (tuple(map(int,fields[2:-1])) if opcode == 'B' else tuple(map(int, fields[2:])))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs) in (1,2)) and not (opcode == 'I' and not refs) and not (opcode == 'V' and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
+        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs) in (1,2)) and not (opcode == 'I' and not refs) and not (opcode in {'R','V'} and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and not formula)
                 or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
@@ -881,7 +889,7 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not ideal[0] and not all(ideal[1:]) if op in {'P','L'} else
+    valid = (not ideal[0] and not all(ideal[1:]) if op=='P' or line_reflection(recipe) else
              not any(ideal) or projective_power(recipe) if op=='B' else
              not any(ideal) if op in {'M', 'R', 'C', 'A', 'I', 'V', 'F', 'O'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
@@ -1141,7 +1149,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                     return None  # Directionless coverage markers are not numeric inputs.
                 d = direction(*values)
                 answer = Ideal(*d) if d is not None and all(not isinstance(v, Ideal) for v in values) and math.hypot(*d) > 1e-9 else None
-            elif op in {'M', 'R'}:
+            elif op == 'M' or op == 'R' and len(values)==2:
                 p, q = values
                 if isinstance(p, Ideal) or isinstance(q, Ideal):
                     return None
@@ -1152,7 +1160,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                     return None
                 total = (sum(v[0] for v in abc), sum(v[1] for v in abc))
                 answer = ((total[0] - p[0]) / 2, (total[1] - p[1]) / 2) if op == 'C' else (total[0]-2*p[0], total[1]-2*p[1])
-            elif op in {'P', 'L'}:
+            elif op == 'P' or line_reflection(recipe):
                 p, q, r = values
                 line = line_data(q,r)
                 if isinstance(p,Ideal) or line is None:
@@ -1426,7 +1434,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 conjugates = int(recipe.operation in {'G', 'T'}) + max(
                     (nonlinear.get(ref, 0) for ref in recipe.references), default=0)
                 if d <= max_depth and (max_length is None or size <= max_length) and conjugates <= max_conjugates:
-                    ranked.append(((*quality(recipe), d, size, PRIORITY[recipe.operation], recipe.references), recipe))
+                    ranked.append(((*quality(recipe), d, size, operation_priority(recipe), recipe.references), recipe))
             ranked.sort(key=lambda item: item[0])
             return ranked
         if isinstance(options, RecipeCandidates):
@@ -1579,7 +1587,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         cheaper_options = (options.explicit if isinstance(options, RecipeCandidates)
                            and quality(current) <= (2, 1) else options)
         alternatives = sorted((recipe for recipe in cheaper_options if quality(recipe) < quality(current)),
-                              key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
+                              key=lambda recipe: (*quality(recipe), operation_priority(recipe), recipe.references))
         for recipe in alternatives:
             if attempt(recipe):
                 break
@@ -1607,7 +1615,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
 
     def choices(number):
         return sorted([seeds[number]] if number in seeds else candidates.get(number, []),
-                      key=lambda recipe: (*quality(recipe), PRIORITY[recipe.operation], recipe.references))
+                      key=lambda recipe: (*quality(recipe), operation_priority(recipe), recipe.references))
 
     if geometry:
         repair.extend(sorted(n for n in selected if not geometry.valid(n)))
@@ -1689,6 +1697,29 @@ def chunks(records: dict[int, Recipe]) -> dict[str, str]:
         grouped[recipe.number // 1000].append(recipe)
     return {f'{part}.txt': '\n'.join(recipe.row() for recipe in sorted(items, key=lambda item: item.number)) + '\n'
             for part, items in grouped.items()}
+
+
+@stage
+def write_chunks(chunk_dir: Path, output: dict[str,str]) -> None:
+    """Publish validated output; do not rewrite unchanged chunks."""
+    chunk_dir.mkdir(parents=True,exist_ok=True)
+    written=unchanged=written_bytes=0
+    for name,content in output.items():
+        path=chunk_dir/name
+        if path.exists() and path.read_text(encoding='utf-8')==content:
+            unchanged+=1
+            continue
+        temporary=path.with_suffix('.txt.tmp')
+        temporary.write_text(content,encoding='utf-8',newline='\n')
+        temporary.replace(path)
+        written+=1
+        written_bytes+=len(content.encode('utf-8'))
+    removed=0
+    for path in chunk_dir.glob('*.txt'):
+        if path.name not in output:
+            path.unlink()
+            removed+=1
+    report('chunks-written',written=written,unchanged=unchanged,removed=removed,bytes=written_bytes)
 
 
 def fetch(parts: list[int]) -> None:
@@ -1799,8 +1830,8 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
-    parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBO',
+    parser.add_argument('--parts', type=int, nargs='*', default=list(range(1,38)))
+    parser.add_argument('--auto-operations', default='MRCAPIVJGTFBO',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)
@@ -1992,12 +2023,7 @@ def main() -> None:
     print(f'Operations: {dict(sorted(Counter(recipe.operation for recipe in selected.values()).items()))}')
     print(f'Chunks: {len(output)}, {sum(len(value.encode()) for value in output.values()):,} bytes')
     if args.action == 'build':
-        chunk_dir.mkdir(parents=True, exist_ok=True)
-        for name, content in output.items():
-            (chunk_dir / name).write_text(content, encoding='utf-8', newline='\n')
-        for path in chunk_dir.glob('*.txt'):
-            if path.name not in output:
-                path.unlink()
+        write_chunks(chunk_dir,output)
     elif args.action == 'dry-run':
         existing = {n: r for path in chunk_dir.glob('*.txt') for n, r in read_recipes(path).items()}
         depth, length = validate_graph(selected)

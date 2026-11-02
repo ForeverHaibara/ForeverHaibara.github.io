@@ -1,8 +1,9 @@
 # ETC TriangleCenter 工具
 
-从仓库根运行。脚本位于本目录，默认 Part 集合为 `3 4 5 37`；全量分析用 `--parts 1 2 ... 37` 明确列出全部编号。`dry-run` 执行选择及检查但不写正式 chunks；`build` 会写入。
+从仓库根运行。脚本位于本目录，默认读取全部 Part 1–37。`build` 完成选择和检查后写入正式全量 chunks；`check` 重算并比对同一全量库。`dry-run` 保留为可选诊断入口，不再维护独立的小实验库。
 
 ```sh
+python scripts/geogebra/tools/triangle_centers/triangle_center_import.py build --report .cache/triangle-centers/runs/current/build.jsonl
 python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
 python scripts/geogebra/tools/triangle_centers/triangle_center_import.py check --report .cache/triangle-centers/runs/current/check.jsonl
 python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_*.py'
@@ -19,7 +20,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `C p` | 补点 | 相对 ABC，重心为位似中心，比例 -1/2 |
 | `A p` | 反补点 | 相对 ABC，比例 -2 |
 | `P p q r` | X(p) 在直线 X(q)X(r) 上的正交投影 | p 有限；q/r 定义的线至多一个有已知方向的理想输入 |
-| `L p q r` | X(p) 关于直线 X(q)X(r) 的反射 | p 有限；q/r 定义的线至多一个有已知方向的理想输入 |
+| `R p q r` | X(p) 关于直线 X(q)X(r) 的反射 | p 有限；q/r 定义的线至多一个有已知方向的理想输入 |
 | `I p q` | 沿有限直线 X(p)X(q) 方向的理想点 | p、q 有限且不重合；可供支持理想输入的操作引用 |
 | `I` | 理想点已确认，方向未知或当前不可用 | 状态覆盖；不能作为其它构造的输入，不伪造有限坐标 |
 | `J p q r t` | 直线 X(p)X(q) 与 X(r)X(t) 的交点 | 每条线至多一个有方向理想输入；平行线不会作为有限 J 准入 |
@@ -60,10 +61,10 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `audit` | 源页标题与边界预检 | 不做配方选择；文件级歧义须先解决 |
 | `native` | 从原生 atlas 推导/更新理想方向表 | 写 native-status；弱或冲突方向不冒认 |
 | `build` / `check` | 生成并写 chunks / 重算并比对已提交 chunks | 都做源预检、图选择和数值检查；check 不写数据 |
-| `dry-run` | 全流程选择、检查与摘要比较 | 不写正式 chunks；扩大 Part 的首选入口 |
+| `dry-run` | 全流程选择、检查与摘要比较 | 不写正式 chunks；可选诊断入口 |
 | `verify` | 检查现有 chunks 的图、类型、位置及排除状态 | 不重新解析 ETC 或重建选择 |
-| `--parts n ...` | 明确指定源 Part | 默认 3、4、5、37；依赖图会随输入集合改变 |
-| `--auto-operations MRCAPLIVJGTFBO` | 允许自动提取的操作 | 已审阅 seeds 独立保留 |
+| `--parts n ...` | 明确指定源 Part | 默认 1–37；依赖图会随输入集合改变 |
+| `--auto-operations MRCAPIVJGTFBO` | 允许自动提取的操作 | 已审阅 seeds 独立保留 |
 | `--max-depth` / `--max-length` / `--max-conjugates` | 深度 / 估计展开长度 / 共轭层数预算 | 默认 6 / 不限制 / 1；不能靠缩小预算代替效率改进 |
 | `--max-coordinate-anchors-per-component` | 可选的每未闭合分量坐标锚点上限 | 默认不限制；0 禁用该类锚点 |
 | `--report path.jsonl` | 分阶段、缓存、闭包与心跳事件 | 每次运行带 run ID；长阶段约每 5 秒输出心跳 |
@@ -119,3 +120,5 @@ Steiner 长轴规则从形状矩阵和曲率独立推导，复用重心与实焦
 坐标锚点会在初始选择后对尚未闭合的小集合重试：早期线端点定义可能已改善，不能永久沿用早期拒绝结论。每次试选仍使用完整候选池和全部图/几何约束；只提交严格增加覆盖且不丢当前旧覆盖的结果，直至静止，不使用固定轮数。显式每分量锚点上限按初始分量保留预算，0 仍禁用此机制；`late-coordinate-anchors` 事件记录提议、增加和丢失编号，拒绝的试选不替换旧快照。
 
 PB 用户复核已扩大为全部 36 个透视中心的独立几何审计；星号组通过直径圆条件确定 U 也随 S 重算。现有 32 个已选位置均正确，仅为四个根增加 seeds。12025/32584 按原始几何核验记 SKIP，而不是猜测同次式或悄悄重定向到 11/115。51539/51540 经直接射影实性检验记 nonreal，没有按依赖传播结论。
+
+构建在所有检查通过后发布已在内存中分好的块：逐文件比较，内容未变则不写；有变化则写临时文件后替换，并清理过期块。替换是逐文件原子的，整批发布期间应避免同时启动另一个构建或读取混合版本。`chunks-written` 报告写入/未变/删除文件数和写入字节数，`write_chunks` 阶段报告耗时。

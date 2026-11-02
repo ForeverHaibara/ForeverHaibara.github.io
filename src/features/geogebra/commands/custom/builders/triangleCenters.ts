@@ -3,7 +3,7 @@ import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string } | { kind: 'unknown-ideal' };
 const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -15,7 +15,7 @@ const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();
 const loading = new Map<number, Promise<void>>();
 const size = (operation: Recipe['operation']) => operation === 'B' ? 0
-  : operation === 'J' ? 4 : ['P', 'L', 'O'].includes(operation) ? 3
+  : operation === 'J' ? 4 : ['P', 'O'].includes(operation) ? 3
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   x: 'y', y: 'z', z: 'x',
@@ -46,8 +46,8 @@ const loadChunk = async (id: number): Promise<void> => {
       const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0]))
         : opcode === 'B' ? referenceText.slice(0, -1).map(Number) : referenceText.map(Number);
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
-        || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(operation === 'V' && references.length === 3) && !(operation === 'B' && [1, 2].includes(references.length)))
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
+        || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(['R', 'V'].includes(operation) && references.length === 3) && !(operation === 'B' && [1, 2].includes(references.length)))
         || (opcode === 'B' && !formula)
         || (opcode === 'B' && formula !== undefined && (![1, 2, 3].includes(referenceText.length) || !validFormula(formula, false, references.length)))
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
@@ -189,9 +189,8 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       }
       if (recipe.operation === 'I') return values.length ? { kind: 'ideal', from: requirePoint(values[0]), to: requirePoint(values[1]) } : { kind: 'unknown-ideal' };
       if (recipe.operation === 'M') return point(`Midpoint(${requirePoint(values[0])},${requirePoint(values[1])})`);
-      if (recipe.operation === 'R') return point(`Reflect(${requirePoint(values[0])},${requirePoint(values[1])})`);
+      if (recipe.operation === 'R') return point(`Reflect(${requirePoint(values[0])},${values.length === 2 ? requirePoint(values[1]) : line(values[1], values[2])})`);
       if (recipe.operation === 'P') return point(`ClosestPoint(${line(values[1], values[2])},${requirePoint(values[0])})`);
-      if (recipe.operation === 'L') return point(`Reflect(${requirePoint(values[0])},${line(values[1], values[2])})`);
       if (recipe.operation === 'O') return point(`Center(Circle(${values.map(requirePoint).join(',')}))`);
       if (recipe.operation === 'V') return point(`Reflect(${requirePoint(values[0])},${values.length === 3
         ? `Circle(${requirePoint(values[1])},${requirePoint(values[2])})` : `Circle(${vertices.join(',')})`})`);

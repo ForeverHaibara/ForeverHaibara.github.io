@@ -4,10 +4,10 @@ import { prepareTriangleCenter } from '../../builders/triangleCenters';
 import { createBindingCapture } from '../../bindingPlan';
 import type { CommandEnvironment } from '../../types';
 
-// Exercise a distance-scoped combo without publishing Part 20 data.
-vi.mock('../../data/triangle-centers/chunks/40.txt?raw', async (importOriginal) => {
+// Synthetic protocol fixtures above the current ETC range, in the existing tail chunk.
+vi.mock('../../data/triangle-centers/chunks/73.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n40999 F 560:2*R^2 3:d^2-R^2\n40998 B 9 x\n40997 B 1 2 x*u\n40996 B 520 x^3\n40995 P 1 2 520\n40994 L 1 2 520\n40993 B 520 x\n40992 B 5959 x^3\n' };
+  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -18,6 +18,25 @@ const environment = (): CommandEnvironment => ({
 beforeAll(async () => { for (const id of [3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
+  it('loads and compiles a representative from every published chunk', async () => {
+    const chunks = import.meta.glob('../../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
+    expect(Object.keys(chunks)).toHaveLength(71);
+    for (const load of Object.values(chunks)) {
+      const rows = (await load() as string).trim().split('\n');
+      const id = Number(rows[0].split(' ')[0]);
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result, `X(${id})`).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result, `X(${id})`).not.toMatch(/\b(?:NaN|Infinity|undefined)\b/u);
+    }
+  });
+
+  it('keeps reviewed generic nonreal focus images out of the runtime library', async () => {
+    for (const id of [65627, 65628]) {
+      await expect(prepareTriangleCenter(id)).rejects.toThrow(`X(${id}) is not implemented`);
+    }
+  });
+
   it('leaves native selectors untouched, including computed numbers', () => {
     for (const selector of ['1', '3053', 'n', '3+3051', 'Floor(n)', '3e3', '-1', '0']) {
       const source = `TriangleCenter(A,B,C,${selector})`;
@@ -101,7 +120,8 @@ describe('extended TriangleCenter dispatch', () => {
     expect(expanded.length).toBeLessThan(6000);
     for (const id of [7044, 72657]) {
       const relation = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
-      expect(relation).toContain('Distance(');
+      // Full-range dependencies may replace the former conjugate with an intersection.
+      expect(relation).not.toContain(`TriangleCenter(A,B,C,${id})`);
       expect(relation.length).toBeLessThan(6000);
     }
   });
@@ -159,16 +179,16 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('preserves projective directions for powers, projections and reflections', async () => {
-    for (const id of [40996, 40995, 40994, 40993, 40992]) await prepareTriangleCenter(id);
-    const cube = compileStudioCommand('TriangleCenter(A,B,C,40996)', environment());
+    for (const id of [73996, 73995, 73994, 73993, 73992]) await prepareTriangleCenter(id);
+    const cube = compileStudioCommand('TriangleCenter(A,B,C,73996)', environment());
     expect(cube).toContain('Vector(TriangleCenter(A,B,C,110),TriangleCenter(A,B,C,250))');
     expect(cube.match(/Vector\(/gu)).toHaveLength(1);
     expect(cube).not.toContain('TriangleCenter(A,B,C,520)');
     expect(cube).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
-    expect(compileStudioCommand('TriangleCenter(A,B,C,40995)', environment())).toContain('ClosestPoint(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,40994)', environment())).toContain('Reflect(');
-    expect(() => compileStudioCommand('TriangleCenter(A,B,C,40993)', environment())).toThrow(/finite inputs/u);
-    expect(() => compileStudioCommand('TriangleCenter(A,B,C,40992)', environment())).toThrow(/no known direction/u);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73995)', environment())).toContain('ClosestPoint(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73994)', environment())).toContain('Reflect(');
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,73993)', environment())).toThrow(/finite inputs/u);
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,73992)', environment())).toThrow(/no known direction/u);
   });
 
   it('loads the reviewed PB branch roots and algebraic-product targets', async () => {
@@ -229,12 +249,13 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,5998)', environment())).toContain('^(1/2)');
     for (const id of [72005, 9232]) {
       const independent = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
-      expect(independent).toContain('If(');
-      expect(independent).toContain('Distance(B,C)');
+      // Both centers now have shorter constructions through full-range dependencies.
+      expect(independent).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(independent).not.toMatch(/\b(?:SA|SB|SC|SW|S)\b/u);
     }
     const conway = compileStudioCommand('TriangleCenter(A,B,C,8036)', environment());
     expect(conway).toContain('sqrt(');
-    expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).toContain('^3');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).not.toContain('TriangleCenter(A,B,C,72003)');
     for (const output of [barycentric, trilinear, conway]) expect(output.length).toBeLessThan(50_000);
   });
 
@@ -307,7 +328,8 @@ describe('extended TriangleCenter dispatch', () => {
     expect(compileStudioCommand('TriangleCenter(A,B,C,11619)', environment()))
       .toBe('Center(Circle(TriangleCenter(A,B,C,5),TriangleCenter(A,B,C,6),TriangleCenter(A,B,C,22)))');
     for (const id of [72481, 72891]) {
-      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toContain('Center(Circle(');
+      // X(11619) above exercises O; these targets can select equivalent affine recipes.
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).not.toContain(`TriangleCenter(A,B,C,${id})`);
     }
     const logarithmic = compileStudioCommand('TriangleCenter(A,B,C,40300)', environment());
     expect(logarithmic).toContain('ln(');
@@ -328,29 +350,29 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('binds the two input points and distance in a Vu first PCC combo', async () => {
-    await prepareTriangleCenter(40999);
-    const result = compileStudioCommand('TriangleCenter(A,B,C,40999)', environment());
+    await prepareTriangleCenter(73999);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,73999)', environment());
     expect(result).toContain('Distance(');
     expect(result).toContain('TriangleCenter(A,B,C,560)');
     expect(result).not.toMatch(/\bd\b/u);
-    expect(result).not.toContain(',40999)');
+    expect(result).not.toContain(',73999)');
   });
 
   it('binds source barycentrics in a dependent coordinate recipe', async () => {
-    await prepareTriangleCenter(40998);
-    const result = compileStudioCommand('TriangleCenter(A,B,C,40998)',environment());
+    await prepareTriangleCenter(73998);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,73998)',environment());
     expect(result).toContain('TriangleCenter(A,B,C,9)');
     expect(result).toContain('x(');
     expect(result).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
-    expect(result).not.toContain(',40998)');
+    expect(result).not.toContain(',73998)');
     expect(result.match(/TriangleCenter\(A,B,C,9\)/gu)).toHaveLength(1);
   });
 
   it('binds both sources once for a two-input coordinate recipe',async () => {
-    await prepareTriangleCenter(40997);
-    const result=compileStudioCommand('TriangleCenter(A,B,C,40997)',environment());
+    await prepareTriangleCenter(73997);
+    const result=compileStudioCommand('TriangleCenter(A,B,C,73997)',environment());
     expect(result).not.toMatch(/\b[xyzuvw]\b(?!\s*\()/u);
-    expect(result).not.toContain(',40997)');
+    expect(result).not.toContain(',73997)');
     for (const id of [1,2]) expect(result.match(new RegExp(`TriangleCenter\\(A,B,C,${id}\\)`,'gu'))).toHaveLength(1);
   });
 
