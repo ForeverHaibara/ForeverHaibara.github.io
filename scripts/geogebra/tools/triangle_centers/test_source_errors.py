@@ -1,5 +1,6 @@
 """Independent constructions for source conflicts exposed by fresh snapshots."""
 import math
+import re
 from unittest import TestCase
 
 import triangle_center_import as m
@@ -153,11 +154,15 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
     def test_reviewed_snapshots_have_unique_ordered_boundaries(self):
-        for part in (1, 28, 29, 31, 34, 35, 36):
+        for part in (1, 6, 28, 29, 31, 34, 35, 36):
             raw = (m.CACHE/f'ETCPart{part}.html').read_text(encoding='utf-8', errors='replace')
             prepared = prepare_source(part, raw)
             self.assertEqual(heading_issues(prepared), [], part)
             entries = dict(m.split_entries(prepared))
+            if part == 6:
+                recipes = m.extract_entry(10043,entries[10043],6)
+                self.assertTrue(any(r.operation=='B' for r in recipes))
+                self.assertTrue(any(r.operation=='J' for r in recipes))
             if part == 28:
                 self.assertEqual(len(entries), 2000)
                 self.assertIn(54357, entries)
@@ -172,6 +177,22 @@ class ReviewedFileBoundaryErrors(TestCase):
 
 
 class PBClusterAnchors(TestCase):
+    def test_11667_expanded_roots_match_independent_euler_combo(self):
+        seeds = m.read_recipes(m.DATA/'seeds.txt',{})
+        raw = (m.CACHE/'ETCPart6.html').read_text(encoding='utf-8',errors='replace')
+        text = '\n'.join(m.coordinate_text(dict(m.split_entries(raw))[11667]))
+        radicand = m.normalize_formula(re.search(r'where U\^2\s*=\s*(.*), and V',text)[1])
+        atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')
+        native = m.numeric_coordinates({},atlas)
+        for shape,abc in atlas['triangles'].items():
+            env = m.side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
+            U,V,W = [math.sqrt(m.evaluate_formula(m.rotate_formula(radicand,i),env)) for i in range(3)]
+            a,SA,SB,SC,S = [env[key] for key in ('a','SA','SB','SC','S')]
+            u = 3*(64*a*a*SA**3*SB*SC+(U+V)*(U+W))
+            v = -2*(64*S*S*SA**2*SB*SC+(U+V)*(U+W))
+            combo = tuple((u*native[shape][2][i]+v*native[shape][3][i])/(u+v) for i in (0,1))
+            self.assertLess(math.dist(combo,m.numeric_formula(seeds[11667],abc)),1e-8)
+
     def test_11755_reviewed_intersection_matches_balanced_printed_coordinate(self):
         seeds = m.read_recipes(m.DATA/'seeds.txt', {})
         atlas = m.read_native_atlas(m.CACHE/'native-atlas.json')

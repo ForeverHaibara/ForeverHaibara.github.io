@@ -5,6 +5,16 @@ from triangle_center_coordinates import coordinate_candidates, evaluate_formula,
 
 
 class CoordinateLocalTest(TestCase):
+    def test_local_cyclic_function_calls_in_first_coordinate(self):
+        source = 'Barycentrics (b-c)*f(b,c,a)*f(c,a,b) : : , where f(a,b,c)=a^2+b*c'
+        formula = coordinate_candidates(source)[0][1]
+        self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),
+                               (6-7)*(6**2+7*5)*(7**2+5*6))
+        for bad in [source.replace('f(b,c,a)','f(b,a,c)'),
+                    source.replace('a^2+b*c','f(a,b,c)+a'),
+                    source.replace('a^2+b*c','unknown(a)+b')]:
+            self.assertEqual(coordinate_candidates(bad),[])
+
     def test_wrapped_two_locals_and_single_uppercase_local(self):
         env = side_environment(5, 6, 7)
         for source, expected in [

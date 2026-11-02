@@ -62,7 +62,7 @@ class DomainAnnotationsTest(TestCase):
         recipes = m.read_recipes(m.DATA/'seeds.txt',{},domains)
         self.assertEqual({n:domains[n] for n in range(5000,5004)},
                          dict.fromkeys(range(5000,5004),'conditional_complex'))
-        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165})
+        self.assertEqual({n for n,v in domains.items() if v=='nonreal'}, {39160,39161,39164,39165,39641,39642})
         self.assertFalse(set(domains) & set(recipes))
 
     def test_5002_5003_complex_midpoint_is_real_on_both_atlas_shapes(self):

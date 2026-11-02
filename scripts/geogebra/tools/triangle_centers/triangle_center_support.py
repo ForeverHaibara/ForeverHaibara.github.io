@@ -103,6 +103,9 @@ def parser_fingerprint():
     digest.update(extraction_source_fingerprint((folder/'triangle_center_import.py').read_text(encoding='utf-8')).encode())
     for name in ('triangle_center_coordinates.py', 'triangle_center_sources.py'):
         digest.update(ast.dump(ast.parse((folder/name).read_text(encoding='utf-8')), include_attributes=False).encode())
+    # Source hints affect cached metadata; report-only title grouping does not.
+    from triangle_center_diagnostics import entry_metadata
+    digest.update(ast.dump(ast.parse(inspect.getsource(entry_metadata)),include_attributes=False).encode())
     digest.update(ast.dump(ast.parse(inspect.getsource(heading_issues)), include_attributes=False).encode())
     return digest.digest()
 

@@ -26,6 +26,7 @@ from triangle_center_support import stage, report
 from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
 from triangle_center_sources import prepare_source
 from triangle_center_domains import DOMAIN_KINDS, complex_dependency_roots
+from triangle_center_diagnostics import entry_metadata, title_groups
 
 from bs4 import BeautifulSoup
 from triangle_center_coordinates import (coordinate_candidates, coordinate_text, normalize_formula, evaluate_formula, homogeneous_degree,
@@ -52,12 +53,14 @@ ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
 ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
 CIRCLE_CENTER = re.compile(rf'^center of (?:the )?circle\s*\{{\s*{POINT}\s*,\s*{POINT}\s*,\s*{POINT}\s*\}}', re.I)
+BROCARD_INVERSE = re.compile(rf'^(?:brocard-circle-inverse|inverse-in-brocard circle) of {POINT}[\s.,;]*$', re.I)
 CONDITIONAL = re.compile(r'\b(?:if|when|provided|assuming|unless|only for|for acute|for obtuse|wrt|with respect to|relative to)\b', re.I)
 INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)?'
                                  r'(?:infinite point|infinity point|ideal point|point at infinity)\b', re.I)
-ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
+ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3, 'K': 3}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
-RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
+RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1, 'K': 1}
+PRIORITY['K'] = 7
 LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this)\s*(?:\(parallel\)\s*)?lines?\s*:\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
@@ -421,6 +424,9 @@ def extract_entry(number: int, fragment: str, part: int,
         if not relation or int(relation.group(1)) != number:
             continue
         body = relation.group(2)
+        if match := BROCARD_INVERSE.fullmatch(body):
+            # ETC X(182): center of the Brocard circle, diameter X(3)X(6).
+            found[('K', (int(match[1]),182,3))] = line
         for pattern, opcode in ((MIDPOINT, 'M'), (REFLECTION, 'R'), (COMPLEMENT, 'C'),
                                 (ANTICOMPLEMENT, 'A'), (INTERSECTION, 'J'),
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
@@ -449,7 +455,8 @@ def extract_entry(number: int, fragment: str, part: int,
 
 @stage
 def read_page(part: int, excluded: set[int] | None = None,
-              coordinate_lines: dict[int, list[tuple[int, int]]] | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
+              coordinate_lines: dict[int, list[tuple[int, int]]] | None = None,
+              metadata: dict | None = None) -> tuple[list[int], dict[int, list[Recipe]]]:
     path = CACHE / f'ETCPart{part}.html'
     source = prepare_source(part, path.read_text(encoding='utf-8', errors='replace'))
     issues = support.heading_issues(source)
@@ -457,7 +464,7 @@ def read_page(part: int, excluded: set[int] | None = None,
         raise ValueError(f'Part {part} source preflight failed: ' + '; '.join(issues))
     cache_path = CACHE / 'extracted' / f'{support.cache_key(source, excluded or set(), part)}.json.gz'
     cached = support.read_cache(cache_path) if support.CACHE_ENABLED else None
-    if isinstance(cached, dict) and cached.get('schema') == 2:
+    if isinstance(cached, dict) and cached.get('schema') == 3:
         try:
             def restore(number, value):
                 explicit = [Recipe(row[0], row[1], tuple(row[2]), *row[3:]) for row in value['recipes']]
@@ -465,22 +472,27 @@ def read_page(part: int, excluded: set[int] | None = None,
                         if 'lines' in value else explicit)
             restored = {int(n): restore(n, value) for n, value in cached['candidates'].items()}
             restored_lines = {int(n): [tuple(pair) for pair in pairs] for n, pairs in cached['lines'].items()}
+            restored_metadata = {int(n): value for n,value in cached['metadata'].items()}
             entries = cached['entries']
         except (KeyError, TypeError, ValueError):
             pass
         else:
             if coordinate_lines is not None:
                 coordinate_lines.update(restored_lines)
+            if metadata is not None:
+                metadata.update(restored_metadata)
             report('cache-hit', part=part, entries=len(entries))
             return entries, restored
     report('cache-miss', part=part)
     entries: list[int] = []
     candidates: dict[int, list[Recipe]] = {}
     page_lines: dict[int, list[tuple[int, int]]] = {}
+    page_metadata = {}
     for number, fragment in split_entries(source):
         if number in candidates:
             raise ValueError(f'Duplicate X({number}) heading in {path}')
         entries.append(number)
+        page_metadata[number] = entry_metadata(fragment)
         candidates[number] = (extract_entry(number, fragment, part, excluded, compact=True)
                               if number > NATIVE_MAX else [])
         if any(r.operation == 'B' or 'Shinagawa coefficients' in r.evidence
@@ -495,10 +507,12 @@ def read_page(part: int, excluded: set[int] | None = None,
             if isinstance(options, RecipeCandidates):
                 value['lines'] = options.lines
             return value
-        support.write_cache(cache_path, dict(schema=2, entries=entries,
+        support.write_cache(cache_path, dict(schema=3, entries=entries,metadata=page_metadata,
             candidates={n: compact_value(options) for n, options in candidates.items()}, lines=page_lines))
     if coordinate_lines is not None:
         coordinate_lines.update(page_lines)
+    if metadata is not None:
+        metadata.update(page_metadata)
     return entries, candidates
 
 
@@ -704,7 +718,7 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         return 150 + 18 * len(recipe.formula)
     if recipe.operation == 'F':
         return 600 + 18 * len(recipe.formula) + sum(children)
-    return (95 if recipe.operation == 'V' else 24) + sum(children)
+    return (95 if recipe.operation in {'V','K'} else 24) + sum(children)
 
 
 def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int, int]]:
@@ -748,7 +762,7 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
     ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
              for ref in recipe.references]
     op = recipe.operation
-    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O'} else
+    valid = (not any(ideal) if op in {'M', 'R', 'C', 'A', 'P', 'L', 'I', 'V', 'F', 'O', 'K'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
         raise ValueError(f'Invalid ideal-point input in X({recipe.number}) {op}')
@@ -823,6 +837,18 @@ def numeric_circle_center(points):
     result = (a[0]+(uu*v[1]-vv*u[1])/determinant,
               a[1]+(u[0]*vv-v[0]*uu)/determinant)
     return result if all(math.isfinite(x) for x in result) else None
+
+
+def numeric_circle_inverse(points: list[Coordinate]) -> Coordinate | None:
+    if any(isinstance(p, Ideal) for p in points):
+        return None
+    p,center,through = points
+    radius_squared = sum((through[i]-center[i])**2 for i in (0,1))
+    squared = sum((p[i]-center[i])**2 for i in (0,1))
+    if squared == 0 or radius_squared == 0:
+        return None
+    result = tuple(center[i]+radius_squared*(p[i]-center[i])/squared for i in (0,1))
+    return result if all(math.isfinite(v) for v in result) else None
 
 
 def numeric_circum_inverse(p: Coordinate, abc: list[tuple[float, float]]) -> Coordinate | None:
@@ -969,6 +995,8 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
                 answer = numeric_circle_center(values)
             elif op == 'V':
                 answer = numeric_circum_inverse(values[0], abc)
+            elif op == 'K':
+                answer = numeric_circle_inverse(values)
             else:
                 answer = numeric_conjugate(values[0], abc, op == 'G')
             if answer is not None and all(math.isfinite(value) for value in
@@ -1051,6 +1079,10 @@ def conjugate_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[in
 
 def inversion_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]],
                                   atlas: dict) -> bool:
+    if recipe.operation == 'K':
+        return all(all(ref in points for ref in recipe.references)
+                   and numeric_circle_inverse([points[ref] for ref in recipe.references]) is not None
+                   for points in coordinates.values())
     return all((source := points.get(recipe.references[0])) is not None
                and numeric_circum_inverse(source, atlas['triangles'][shape]) is not None
                for shape, points in coordinates.items())
@@ -1283,7 +1315,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation in {'G', 'T'} and not conjugate_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
-                if coordinates and recipe.operation == 'V' and not inversion_candidate_supported(
+                if coordinates and recipe.operation in {'V','K'} and not inversion_candidate_supported(
                         recipe, coordinates, atlas):
                     continue
                 if coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, coordinates, atlas):
@@ -1328,7 +1360,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             return direction_candidate_supported(recipe, coordinates, incidence_lines.get(recipe.number, []))
         if op in {'G', 'T'}:
             return conjugate_candidate_supported(recipe, coordinates, atlas)
-        if op == 'V':
+        if op in {'V','K'}:
             return inversion_candidate_supported(recipe, coordinates, atlas)
         if op == 'F':
             return combo_candidate_supported(recipe, coordinates, atlas)
@@ -1517,12 +1549,13 @@ def ideal_coordinate_formulas(eligible, atlas):
 
 
 @stage
-def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked, skipped, limits, domains=None):
+def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked, skipped, limits, domains=None, metadata=None):
     """Candidate-level blockers; primary buckets are summaries, not impossibility proofs."""
     depth, length = validate_graph(records)
     nonlinear = conjugate_levels(records)
     entries = []
     domains = domains or {}
+    metadata = metadata or {}
     complex_roots = complex_dependency_roots(candidates, records, domains) if domains else {}
     priority = ('coordinate_admission_or_variants', 'geometry_or_transaction', 'depth_budget',
                 'conjugate_budget', 'length_budget', 'input_type', 'ideal_formula',
@@ -1571,20 +1604,21 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
         primary = next((why for why in priority if why in reasons), 'no_parsed_candidate')
         entry = dict(id=number, part=parts[number], primary=primary,
                      candidate_blockers=dict(reasons), unresolved_references=sorted(references), formulas=formulas)
+        entry.update(metadata.get(number,dict(title='',source_features=[])))
         if domains.get(number) == 'nonreal':
             entry.update(primary='reviewed_nonreal_domain', candidate_primary=primary)
         if number in complex_roots:
             entry['possible_complex_dependencies'] = sorted(complex_roots[number])
         entries.append(entry)
     return dict(count=len(entries), summary=dict(Counter(row['primary'] for row in entries)),
-                skipped=skipped, domains=domains, entries=entries)
+                skipped=skipped, domains=domains, entries=entries, title_groups=title_groups(entries))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('fetch', 'native', 'build', 'check', 'verify', 'audit', 'dry-run'))
     parser.add_argument('--parts', type=int, nargs='*', default=[3, 4, 5, 37])
-    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBO',
+    parser.add_argument('--auto-operations', default='MRCAPLIVJGTFBOK',
                         help='Operations allowed from text extraction; existing seeds are always kept')
     parser.add_argument('--max-coordinate-anchors-per-component', type=int, default=None)
     parser.add_argument('--max-depth', type=int, default=6)
@@ -1660,8 +1694,9 @@ def main() -> None:
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
     source_parts = {}
+    metadata = {}
     for part in args.parts:
-        entries, candidates = read_page(part, blocked_native | deferred_targets, coordinate_lines)
+        entries, candidates = read_page(part, blocked_native | deferred_targets, coordinate_lines,metadata)
         entry_count += len(entries)
         source_parts.update({number: part for number in entries})
         for number, options in candidates.items():
@@ -1716,7 +1751,7 @@ def main() -> None:
     validate_types(selected, set(native_directions))
     if args.uncovered_report:
         diagnostic = uncovered_diagnostics(all_candidates, selected, source_parts, atlas,
-            native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates), domains)
+            native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates), domains,metadata)
         args.uncovered_report.parent.mkdir(parents=True, exist_ok=True)
         args.uncovered_report.write_text(json.dumps(diagnostic,ensure_ascii=False,indent=2),encoding='utf-8')
         report('uncovered', count=diagnostic['count'], summary=diagnostic['summary'])

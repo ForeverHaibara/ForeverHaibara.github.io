@@ -29,8 +29,11 @@ class ImportInfrastructureTest(unittest.TestCase):
                             '<p>X(4000) lies on these lines: 1,2 3,4 5,6</p>')
             original = importer.extract_entry
             with patch.object(importer, 'extract_entry', wraps=original) as extract:
-                cold = importer.read_page(3)
-                warm = importer.read_page(3)
+                cold_metadata,warm_metadata = {},{}
+                cold = importer.read_page(3,metadata=cold_metadata)
+                warm = importer.read_page(3,metadata=warm_metadata)
+                self.assertEqual(cold_metadata,warm_metadata)
+                self.assertEqual(cold_metadata[4000]['title'],'midpoint of X(1) and X(2)')
                 self.assertEqual(warm, cold)
                 self.assertEqual(set(warm[1][4000]), set(cold[1][4000]))
                 self.assertEqual(len(list(warm[1][4000].inferred())), 3)

@@ -6,13 +6,19 @@ from triangle_center_support import report
 SNAPSHOTS = {28: '9dc382cda2bd1a13568ea43375936ebdfa4f4caed9dec8b6cf26da668406c371', 29: '46f081b5c09cb2aac0523e00b312c67c96ec5a3cb2b849b28bf75c4447472da9', 34: '164f0de41e204ce098f84b627165791398770042052a30f802f8c5210175f322', 36: 'c1175b21df78ea2989247161219bd34c426866d1345178b0780f583922f1c5c4', 1: '374c222535fe737a57f52da99fdde3cec6ba01d78b1d7ad84b7588e95e8d88cf', 31: '61167d9047a440ad539a0d0335d4fb8e97334cc0418e874d686015e8d3201d91', 35: '0d59a729dbb3120d4f4057fad34333b3475236f943995855c497ade6c257ad06'}
 
 
+SNAPSHOTS[6] = '191b455a813a7112fbf47c8ab551173208d5e50db3e0aee056d96d47fb04ec2d'
+
+
 def prepare_source(part, source):
     if part not in SNAPSHOTS:
         return source
     digest = hashlib.sha256(source.encode()).hexdigest()
     if digest != SNAPSHOTS[part]:
         raise ValueError(f'Part {part} source changed: review boundary patches before import')
-    if part in (1, 31, 35):
+    if part == 6:
+        # X(10043)'s literal broken tag joins its incidence list to q=cos(...).
+        source = source.replace('p&gt;X(10043) lies on these lines:', '</p><p>X(10043) lies on these lines:')
+    elif part in (1, 31, 35):
         number = {1: 164, 31: 60349, 35: 68618}[part]
         source = source.replace(f'<h3 id="X{number}">X({number} =',
                                 f'<h3 id="X{number}">X({number}) =')

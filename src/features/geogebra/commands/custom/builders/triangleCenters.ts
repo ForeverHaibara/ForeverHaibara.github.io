@@ -3,7 +3,7 @@ import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
+type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'L' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O' | 'K'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string } | { kind: 'unknown-ideal' };
 const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -15,7 +15,7 @@ const recipes = new Map<number, Recipe>();
 const loaded = new Set<number>();
 const loading = new Map<number, Promise<void>>();
 const size = (operation: Recipe['operation']) => operation === 'B' ? 0
-  : operation === 'J' ? 4 : operation === 'P' || operation === 'L' || operation === 'O' ? 3
+  : operation === 'J' ? 4 : ['P', 'L', 'O', 'K'].includes(operation) ? 3
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
   sa: 'sb', sb: 'sc', sc: 'sa', SA: 'SB', SB: 'SC', SC: 'SA' };
@@ -41,7 +41,7 @@ const loadChunk = async (id: number): Promise<void> => {
       const formula = opcode === 'B' ? referenceText[0] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
       const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0])) : formula ? [] : referenceText.map(Number);
       if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
-        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
+        || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'L', 'G', 'T', 'V', 'B', 'F', 'O', 'K'].includes(opcode)
         || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1])) : references.length !== size(operation) && !(operation === 'I' && references.length === 0))
         || (opcode === 'B' && !formula)
         || (opcode === 'B' && formula !== undefined && (referenceText.length !== 1 || !validFormula(formula)))
@@ -165,6 +165,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       if (recipe.operation === 'L') return point(`Reflect(${requirePoint(values[0])},${line(values[1], values[2])})`);
       if (recipe.operation === 'O') return point(`Center(Circle(${values.map(requirePoint).join(',')}))`);
       if (recipe.operation === 'V') return point(`Reflect(${requirePoint(values[0])},Circle(${vertices.join(',')}))`);
+      if (recipe.operation === 'K') return point(`Reflect(${requirePoint(values[0])},Circle(${requirePoint(values[1])},${requirePoint(values[2])}))`);
       if (recipe.operation === 'G' || recipe.operation === 'T') return point(values[0].kind === 'ideal'
         ? idealConjugate(values[0], recipe.operation === 'G')
         : bind([requirePoint(values[0])], allocate, ([source]) => conjugate(recipe.operation === 'G')(

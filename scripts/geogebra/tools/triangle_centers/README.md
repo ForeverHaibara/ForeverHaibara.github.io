@@ -88,8 +88,8 @@ can have a leading equals sign. Reviewed anchors X(11619/11755/40300) restore a
 circle center, a damaged PB entry, and a power-curve tangent pole respectively.
 Out-of-Part J/I seeds close without assuming that their page incidence table
 was loaded; their construction inputs still undergo numeric/type screening.
-The full dry-run now contains 70,062 records and 153 unresolved entries, while
-the published small set contains 8,205 records. See the uncovered-analysis doc
+The full dry-run now contains 70,073 records and 142 unresolved entries, while
+the published small set contains 8,206 records. See the uncovered-analysis doc
 for remaining log syntax, PB conflicts, and imaginary-focus dependency roots.
 
 `triangle_center_domains.py` propagates reviewed complex-domain root sets for
@@ -106,3 +106,22 @@ is rewritten on the arithmetic AST, before dimensional checking. Absolute values
 retain scaling degree; side min/max and side-difference bars use checked `abs`
 arithmetic. Tests cover argument ambiguity, scaling, cycle propagation, alternative
 recipes, and the real midpoint of the complex X(5002)/X(5003) pair.
+
+Extraction cache schema 3 includes each source heading and compact description
+hints, reused on warm reads. Unresolved JSON includes `title`, `source_features`
+and `title_groups`; grouping normalizes center IDs and ordinals, then optionally
+merges similar titles with shared opening words. These are triage suggestions,
+never parsing rules or evidence transferred between entries. Only unresolved
+entries and their groups appear in that report, without a selected recipe table.
+
+One explicit local cyclic function may occur inside a first-coordinate expression,
+for example `(b-c)*f(b,c,a)*f(c,a,b) : : , where f(a,b,c)=...`. Recursive,
+unknown or noncyclic calls remain rejected. X(10043)'s broken paragraph marker
+has a source-hash-guarded read patch; X(11667)'s squared/prose local definitions
+are expanded only in a reviewed seed, checked against its Euler-line combo.
+
+`K p q r` inverts finite X(p) in the circle centered at X(q) through X(r).
+The first named mapping is the unqualified ABC Brocard circle, `K p 182 3`.
+The full-match rule rejects triangle-relative and conditional suffixes. Other
+circle names are not guessed; inventory findings and priorities are documented
+in the uncovered-analysis report. Runtime uses GeoGebra's circle reflection.

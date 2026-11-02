@@ -262,4 +262,16 @@ describe('extended TriangleCenter dispatch', () => {
     expect(logarithmic).not.toContain(',40300)');
   });
 
+  it('loads reviewed cyclic roots and the Brocard inverse dependency graph', async () => {
+    for (const id of [11667, 4254]) await prepareTriangleCenter(id);
+    const roots = compileStudioCommand('TriangleCenter(A,B,C,11667)', environment());
+    expect(roots).toContain('sqrt(');
+    expect(roots).not.toMatch(/\b[UVW]\b/u);
+    const inverse = compileStudioCommand('TriangleCenter(A,B,C,4254)', environment());
+    expect(inverse).toContain('Reflect(');
+    expect(inverse).toContain('Circle(TriangleCenter(A,B,C,182),TriangleCenter(A,B,C,3))');
+    expect(inverse).not.toContain(',4254)');
+    expect(inverse).not.toContain(',5120)');
+  });
+
 });

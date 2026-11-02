@@ -316,6 +316,7 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
                 break
         text = re.sub(r'\s+\([^()]*,\s*(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}\)\s*$', '', text, flags=re.I)
         text = ATTRIBUTION.sub('', text)
+        text = expand_cyclic_coordinate_calls(text)
         if re.search(r':\s*:.*\bwhere\b', text, re.I):
             text = re.sub(r'\s*:\s*:\s*$', '', text)
         local = re.search(r',\s*where\s+([A-Za-z])\s*=\s*([^,]+)(?:,\s*([A-Za-z])\s*=\s*([^,]+))?\s*$', text)
@@ -382,6 +383,26 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
                     if barycentric:
                         found.append(('B', barycentric, line))
     return list(dict.fromkeys(found))
+
+
+def expand_cyclic_coordinate_calls(text: str) -> str:
+    """Expand one explicit local function in a coordinate expression, not prose."""
+    where = WHERE.search(text)
+    if not where or CYCLIC.search(text[:where.start()]):
+        return text
+    head = text[:where.start()].rstrip()
+    if not re.search(r':\s*:\s*,\s*$', head):
+        return text
+    formula = normalize_formula(text[where.end():].strip())
+    if formula is None:
+        return text
+    base = where.groups()[1:]
+    rotations = [base, (base[1],base[2],base[0]), (base[2],base[0],base[1])]
+    calls = re.compile(r'\b' + re.escape(where[1]) + r'\s*\(\s*([abcABC])\s*,\s*([abcABC])\s*,\s*([abcABC])\s*\)')
+    matches = list(calls.finditer(head))
+    if not matches or any(match.groups() not in rotations for match in matches):
+        return text
+    return calls.sub(lambda match: '(' + rotate_formula(formula,rotations.index(match.groups())) + ')', head[:-1])
 
 
 @lru_cache(maxsize=8192)
