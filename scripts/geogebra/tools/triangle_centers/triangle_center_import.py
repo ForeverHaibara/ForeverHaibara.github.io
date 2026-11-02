@@ -74,7 +74,7 @@ INFINITE_DEFINITION = re.compile(r'\bX\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(?:the\s+)
 ARITY = {'M': 2, 'R': 2, 'J': 4, 'I': 2, 'C': 1, 'A': 1, 'P': 3, 'L': 3, 'G': 1, 'T': 1, 'V': 1, 'F': -1, 'B': 0, 'O': 3}
 PRIORITY = {'M': 0, 'R': 1, 'C': 2, 'A': 3, 'P': 4, 'L': 5, 'I': 6, 'V': 7, 'J': 8, 'G': 9, 'T': 10, 'F': 11, 'B': 12, 'O': 7}
 RISK = {'M': 0, 'R': 0, 'C': 0, 'A': 0, 'I': 0, 'P': 1, 'L': 1, 'V': 1, 'J': 2, 'G': 3, 'T': 3, 'F': 3, 'B': 4, 'O': 1}
-LINE_LIST = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this)\s*(?:\(parallel\)\s*)?lines?\s*:\s*(.*)$', re.I)
+LINE_LIST = re.compile(r'^(?:X\s*)?[({]\s*(\d+)\s*[)}]?\s*(?:=\s*)?lies(?: on)?\b.*\b(?:these|this|the)\s*(?:\(parallel\)\s*)?lines?\s*:?\s*(.*)$', re.I)
 SINGLE_LINE = re.compile(r'^(?:X\s*)?\(\s*(\d+)\s*\)\s+lies on this line\s*:\s*[\{\(]?\s*(\d+)\s*,\s*(\d+)', re.I)
 LINE_PAIR = re.compile(r'\s*[,;]?\s*[\{\(]*\s*(\d+)\s*[,\.]\s*(\d+)\s*[\}\)]*')
 BROKEN_LINE_TOKEN = re.compile(r'\s*[,;]?\s*\d{5,}(?=\s|$)')
@@ -359,6 +359,12 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
         heading = LINE_LIST.match(line)
         if not heading or int(heading.group(1)) != number:
             continue
+        symbolic = re.fullmatch(rf'\s*{POINT}\s*{POINT}[.;]?\s*', heading[2], re.I)
+        if symbolic:
+            a,b = map(int,symbolic.groups())
+            if a>0 and b>0 and a!=b and a not in excluded and b not in excluded:
+                pairs.add(tuple(sorted((a,b))))
+            continue
 
         # Stop at the next line-list heading.
         tail_lines = [heading.group(2)]
@@ -405,9 +411,28 @@ def coordinate_incidence_lines(number: int, lines: list[str]) -> list[tuple[int,
     return sorted(set(pairs))
 
 
+def infinity_intersection_lines(number: int, lines: list[str]) -> list[tuple[int,int]]:
+    """The other line in an explicit intersection with X(30)X(511)."""
+    result = []
+    for line in lines:
+        relation = RELATION.match(line)
+        if not relation or int(relation[1]) != number:
+            continue
+        body = relation[2].rstrip(' .;')
+        match = SYMBOLIC_INTERSECTION.fullmatch(body) or INTERSECTION.fullmatch(body)
+        if match:
+            refs = tuple(map(int,match.groups()))
+            first,second = tuple(sorted(refs[:2])),tuple(sorted(refs[2:]))
+            if (30,511) in (first,second) and first!=second:
+                other = second if first==(30,511) else first
+                if other[0]>0 and other[0]!=other[1] and number not in other:
+                    result.append(other)
+    return result
+
+
 def is_infinite_entry(number: int, lines: list[str]) -> bool:
     # ETC uses both “these lines” lists and “this line” for the line at infinity.
-    if (30, 511) in coordinate_incidence_lines(number, lines):
+    if (30, 511) in coordinate_incidence_lines(number, lines) or infinity_intersection_lines(number,lines):
         return True
     for line in lines:
         heading = LINE_LIST.match(line)
@@ -447,8 +472,9 @@ def extract_entry(number: int, fragment: str, part: int,
     lines = relation_lines(fragment)
     if is_infinite_entry(number, lines):
         found[('I', ())] = f'X({number}) is ideal; no usable direction selected'
-        for first, second in listed_lines(number, lines, excluded, limit=None):
-            if (first, second) != (30, 511):
+        for first, second in [*listed_lines(number, lines, excluded, limit=None),
+                              *infinity_intersection_lines(number,lines)]:
+            if (first, second) != (30, 511) and not set((first,second)) & (excluded or set()):
                 found[('I', (first, second))] = f'X({number}) is the ideal point in direction X({first})X({second})'
         return [Recipe(number, opcode, refs, part, evidence) for (opcode, refs), evidence in sorted(found.items())
                 if all(reference != number for reference in refs)]
@@ -1687,9 +1713,14 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
                 'conjugate_budget', 'length_budget', 'input_type', 'ideal_formula',
                 'nonhomogeneous_formula', 'unclosed_dependency', 'missing_source_dependency',
                 'reviewed_skip_dependency', 'blocked_native')
+    resolved_nonreal = [dict(id=n,part=parts[n],reason='reviewed_nonreal_domain',
+                            title=metadata.get(n,{}).get('title',''))
+                        for n in sorted(candidates) if n>NATIVE_MAX and domains.get(n)=='nonreal']
     for number in sorted(set(candidates)-set(records)):
         if number <= NATIVE_MAX:
             continue
+        if domains.get(number) == 'nonreal':
+            continue  # Reviewed real-plane non-drawability is a resolved status.
         reasons = Counter()
         references = set()
         formulas = []
@@ -1731,13 +1762,12 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
         entry = dict(id=number, part=parts[number], primary=primary,
                      candidate_blockers=dict(reasons), unresolved_references=sorted(references), formulas=formulas)
         entry.update(metadata.get(number,dict(title='',source_features=[])))
-        if domains.get(number) == 'nonreal':
-            entry.update(primary='reviewed_nonreal_domain', candidate_primary=primary)
         if number in complex_roots:
             entry['possible_complex_dependencies'] = sorted(complex_roots[number])
         entries.append(entry)
     return dict(count=len(entries), summary=dict(Counter(row['primary'] for row in entries)),
-                skipped=skipped, domains=domains, entries=entries, title_groups=title_groups(entries))
+                skipped=skipped, domains=domains, resolved_nonreal=resolved_nonreal,
+                entries=entries, title_groups=title_groups(entries))
 
 
 def main() -> None:
@@ -1793,6 +1823,9 @@ def main() -> None:
     all_seeds = read_recipes(DATA / 'seeds.txt', skipped, domains)
     if domains:
         report('reviewed-domains', counts=dict(Counter(domains.values())))
+    nonreal_targets = {n for n,kind in domains.items() if kind=='nonreal'}
+    if set(all_seeds) & nonreal_targets:
+        raise ValueError('A reviewed nonreal center cannot have a real-plane recipe')
     deferred_targets = set(skipped)
     if args.action == 'verify':
         records: dict[int, Recipe] = {}
@@ -1805,9 +1838,9 @@ def main() -> None:
         validate_types(records, set(native_directions))
         if any(ref in blocked_native for recipe in records.values() for ref in recipe.references):
             raise ValueError('Generated recipe references an unavailable native center')
-        if set(records) & deferred_targets or any(ref in deferred_targets for recipe in records.values()
+        if set(records) & (deferred_targets | nonreal_targets) or any(ref in deferred_targets | nonreal_targets for recipe in records.values()
                                                    for ref in recipe.references):
-            raise ValueError('Generated recipe includes a deferred center')
+            raise ValueError('Generated recipe includes or references a skipped/nonreal center')
         print(f'Valid: {len(records)} recipes, max depth {max(depth.values())}, max estimated length {max(length.values())}')
         return
     if set(args.auto_operations) - set(ARITY):
@@ -1817,7 +1850,7 @@ def main() -> None:
     if set(ideal_markers) & deferred_targets:
         raise ValueError('A reviewed ideal marker is marked deferred')
     seeds = {number: recipe for number, recipe in all_seeds.items() if number not in ideal_markers}
-    selection_exclusions = deferred_targets | set(ideal_markers)
+    selection_exclusions = deferred_targets | nonreal_targets | set(ideal_markers)
     all_candidates: dict[int, list[Recipe]] = {}
     coordinate_lines: dict[int, list[tuple[int, int]]] = {}
     entry_count = 0
@@ -1874,7 +1907,7 @@ def main() -> None:
     # Append only after selection and numeric screening have completed.
     if 'I' in args.auto_operations:
         for number, options in all_candidates.items():
-            if number > NATIVE_MAX and number not in selected and number not in deferred_targets:
+            if number > NATIVE_MAX and number not in selected and number not in selection_exclusions:
                 marker = next((r for r in options if r.operation == 'I' and not r.references), None)
                 if marker:
                     selected[number] = marker
@@ -1888,7 +1921,8 @@ def main() -> None:
             native_directions, blocked_native, skipped, (args.max_depth,args.max_length,args.max_conjugates), domains,metadata)
         args.uncovered_report.parent.mkdir(parents=True, exist_ok=True)
         args.uncovered_report.write_text(json.dumps(diagnostic,ensure_ascii=False,indent=2),encoding='utf-8')
-        report('uncovered', count=diagnostic['count'], summary=diagnostic['summary'])
+        report('uncovered', count=diagnostic['count'], summary=diagnostic['summary'],
+               resolved_nonreal=len(diagnostic['resolved_nonreal']))
     output = chunks(selected)
     generated = len(selected) - len(all_seeds)
     print(f'Selected {len(selected)} recipes ({generated} automatic), from {entry_count} entries')

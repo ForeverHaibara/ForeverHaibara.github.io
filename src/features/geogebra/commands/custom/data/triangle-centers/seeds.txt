@@ -136,3 +136,36 @@
 # The parsed coordinates are real on a near-equilateral independent sample.
 11065 DOMAIN conditional_complex
 11066 DOMAIN conditional_complex
+
+# Reviewed ideal formulas: the cyclic barycentric sum is identically zero,
+# with nonzero direction witnesses. Retain the printed finite direction lines
+# below; the independent formula direction agrees on both atlas triangles.
+# 14988: its two defining finite lines are parallel (not a finite J result).
+14988 I 1 1399
+# 20403: no usable incidence direction is stated. Bare I is status only.
+20403 I
+# The following line lists have the wrong target IDs (46193, 537, 6249).
+# Do not teach the general parser to transfer another target's line list.
+46183 I 38 76
+53806 I 3 2378
+62503 I 108 1214
+
+# X(7065): the newly readable "the line {219,6862}" conflicts with the
+# printed coordinates. The named extra-triangle of Brisse transform X(1363)
+# independently gives these coordinates: start with X(107), use the Brisse
+# map a^4/((b+c-a)*u^2), then negate each side for the three extraversions
+# and intersect the corresponding vertex lines. Retain the verified formula;
+# do not suppress all "the line" descriptions to hide this source conflict.
+7065 B a^4*(b+c-a)*(b^2-c^2)^2*(b^2+c^2-a^2)^4
+
+# X(32072): centroid computed from the Lucas inner triangle's trilinear
+# vertex matrix independently agrees with the printed coordinates. The
+# newly readable line {356,8496} conflicts with both. Matrix reference:
+# https://mathworld.wolfram.com/LucasInnerTriangle.html (Moses, Jan. 13, 2005).
+32072 B (SB+SC)*(260*(3*SA+2*SW)*S^2+260*SA*SW^2+S*(1351*S^2+901*SA^2-900*SB*SC+150*SW^2))
+
+# X(39038): independently fit the conic through A,B,C,X(162),X(2167).
+# Its center matches the printed coordinates; line {2549,24185} conflicts.
+# For conic U*yz+V*zx+W*xy=0, center=(U*(V+W-U):...). U,V,W are the
+# cross product of the two rows (yz,zx,xy) at the finite input points.
+39038 B 162 2167 x*u*(z*v-y*w)*(y*v*(x*w-z*u)+z*w*(y*u-x*v)-x*u*(z*v-y*w))

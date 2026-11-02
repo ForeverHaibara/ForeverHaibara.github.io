@@ -151,6 +151,92 @@ class ReviewedSourceConflictTest(TestCase):
 
 
 class OtherReviewedSourceErrors(TestCase):
+    def test_32072_lucas_inner_vertex_matrix_centroid(self):
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[32072]
+        for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(2,-3),(10,-1),(3,4)]]:
+            env=m.side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
+            sides=[env[k] for k in ('a','b','c')];conway=[env[k] for k in ('SA','SB','SC')]
+            # MathWorld's trilinear vertex matrix, converted row by row to
+            # barycentrics, then ordinary Cartesian centroid (not a raw sum).
+            vertices=[weighted_point([sides[j]**2*(4*conway[j]+(3 if i==j else 2)*env['S'])
+                                      for j in range(3)],abc) for i in range(3)]
+            centroid=tuple(sum(p[i] for p in vertices)/3 for i in (0,1))
+            self.assertLess(math.dist(m.numeric_formula(recipe,abc),centroid),1e-9)
+
+    def test_39038_five_point_cartesian_conic_center(self):
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[39038]
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        points=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for shape,abc in atlas['triangles'].items():
+            inputs=[points[shape][ref] for ref in recipe.references]
+            rows=[[x*x,x*y,y*y,x,y,1.] for x,y in [*abc,*inputs]]
+            pivots=[]
+            for col in range(6):
+                start=len(pivots)
+                if start==5: break
+                k=max(range(start,5),key=lambda k:abs(rows[k][col]))
+                if abs(rows[k][col])<1e-10: continue
+                rows[start],rows[k]=rows[k],rows[start]
+                divisor=rows[start][col];rows[start]=[v/divisor for v in rows[start]]
+                for k in range(5):
+                    if k!=start:
+                        factor=rows[k][col];rows[k]=[v-factor*w for v,w in zip(rows[k],rows[start])]
+                pivots.append(col)
+            self.assertEqual(len(pivots),5)
+            free=next(i for i in range(6) if i not in pivots)
+            coeff=[0.]*6;coeff[free]=1.
+            for i,col in enumerate(pivots): coeff[col]=-rows[i][free]
+            A,B,C,D,E,_=coeff;det=4*A*C-B*B
+            self.assertLess(det,0)  # The named conic really is a hyperbola.
+            center=((B*E-2*C*D)/det,(B*D-2*A*E)/det)
+            actual=m.numeric_transform_formula(recipe,inputs,abc)
+            self.assertLess(math.dist(actual,center),1e-8)
+
+    def test_7065_named_extra_triangle_confirms_retained_coordinate(self):
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[7065]
+        for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(2,-3),(10,-1),(3,4)]]:
+            sides=[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)]
+            extra=[]
+            for k in range(3):
+                values=[-side if i==k else side for i,side in enumerate(sides)]
+                weights=[]
+                for i in range(3):
+                    a,b,c=[values[(i+j)%3] for j in range(3)]
+                    # X(107) has barycentric u=1/((b²-c²)(b²+c²-a²)²).
+                    # Brisse transform, then the kth side extraversion.
+                    u=1/((b*b-c*c)*(b*b+c*c-a*a)**2)
+                    weights.append(a**4/((b+c-a)*u*u))
+                extra.append(weighted_point(weights,abc))
+            point=m.numeric_intersection([abc[0],extra[0],abc[1],extra[1]])
+            self.assertLess(abs(cross(sub(point,abc[2]),sub(extra[2],abc[2]))),1e-8)
+            self.assertLess(math.dist(m.numeric_formula(recipe,abc),point),1e-8)
+
+    def test_reviewed_ideal_formulas_and_available_directions(self):
+        numbers = {14988:8,19923:10,20403:11,30207:16,40327:21,46183:24,
+                   53806:27,54028:28,54029:28,62503:32,70832:36,70855:36}
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        directions=m.read_native_status(m.DATA/'native-status.txt')[1]
+        points=m.numeric_coordinates({},atlas,directions)
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        pages={part:dict(m.split_entries(m.prepare_source(part,
+            (m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8')))) for part in set(numbers.values())}
+        for n,part in numbers.items():
+            fragment=pages[part][n]
+            formulas=m.coordinate_candidates(fragment)
+            self.assertTrue(formulas,n)
+            for _,formula,_ in formulas:
+                for shape,abc in atlas['triangles'].items():
+                    ideal=m.numeric_formula_projective(Recipe(n,'B',(),formula=formula),abc)
+                    self.assertIsInstance(ideal,Ideal,(n,formula,shape))
+                    if n in seeds and seeds[n].references:
+                        p,q=[points[shape][ref] for ref in seeds[n].references]
+                        d=sub(q,p)
+                        self.assertLess(abs(cross(d,(ideal.dx,ideal.dy)))/(math.hypot(*d)*math.hypot(ideal.dx,ideal.dy)),1e-7)
+            if n in (70832,70855):
+                recipes=m.extract_entry(n,fragment,part)
+                expected=(244,1365) if n==70832 else (1,46403)
+                self.assertIn(('I',expected),[(r.operation,r.references) for r in recipes])
+
     def test_steiner_major_vertices_and_curvature_centers(self):
         source = (m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8')
         entries = dict(m.split_entries(source))

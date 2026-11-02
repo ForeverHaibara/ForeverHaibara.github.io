@@ -19,6 +19,28 @@ from unittest.mock import patch
 
 
 class TriangleCenterImportTest(unittest.TestCase):
+    def test_infinity_line_heading_variants_keep_target_identity(self):
+        for heading in ['X{4000) lies on these lines: {30,511}, {1,2}',
+                        'X(4000 lies on these lines: {30,511}, {1,2}',
+                        'X(4000) lies on the line {30,511}',
+                        'X(4000) lies on this line: X(30)X(511)']:
+            recipes = extract_entry(4000,f'<p>{heading}</p>',3)
+            self.assertTrue(any(r.operation=='I' for r in recipes),heading)
+            self.assertFalse(any(r.operation=='I' for r in extract_entry(4001,f'<p>{heading}</p>',3)))
+        self.assertIn((1,2),[r.references for r in extract_entry(4000,
+            '<p>X{4000) lies on these lines: {30,511}, {1,2}</p>',3)])
+
+    def test_infinity_intersection_title_supplies_direction_in_both_orders(self):
+        for body in ['X(1)X(46403)∩X(30)X(511)',
+                     'X(511)X(30)∩X(46403)X(1)',
+                     'intersection of lines X(1)X(46403) and X(30)X(511)']:
+            recipes=extract_entry(70855,f'<h3>X(70855) = {body}</h3>',36)
+            self.assertIn(('I',(1,46403)),[(r.operation,r.references) for r in recipes])
+            self.assertNotIn('J',[r.operation for r in recipes])
+        for suffix in [' wrt the excentral triangle',' if ABC is acute',' in the excentral triangle']:
+            recipes=extract_entry(70855,f'<h3>X(70855) = X(1)X(46403)∩X(30)X(511){suffix}</h3>',36)
+            self.assertFalse(any(r.operation=='I' for r in recipes))
+
     def test_open_block_boundary_and_missing_on_in_line_heading(self):
         fragment = ('<h3 id="X4000">X(4000) = CENTER</h3>'
                     'Barycentrics a^3+D : :<br>where D=4*S*sqrt(R*(4*R+r))'
@@ -875,6 +897,20 @@ class UncoveredDiagnosticsTest(TestCase):
 
 
 class DomainAnnotationsTest(TestCase):
+    def test_verify_excludes_reviewed_nonreal_but_keeps_conditional_domains(self):
+        import sys
+        with TemporaryDirectory(dir=m.CACHE) as directory:
+            data=Path(directory);(data/'chunks').mkdir()
+            (data/'native-status.txt').write_text('')
+            (data/'chunks/4.txt').write_text('4000 B a\n')
+            with patch.object(m,'DATA',data),patch.object(sys,'argv',['importer','verify']):
+                (data/'seeds.txt').write_text('4000 DOMAIN nonreal\n')
+                with self.assertRaisesRegex(ValueError,'skipped/nonreal'): m.main()
+                (data/'seeds.txt').write_text('4000 DOMAIN conditional_complex\n')
+                m.main()
+                (data/'seeds.txt').write_text('4000 DOMAIN nonreal\n4000 B a\n')
+                with self.assertRaisesRegex(ValueError,'cannot have a real-plane recipe'): m.main()
+
     def test_reviewed_seed_metadata_is_not_a_recipe_or_skip(self):
         with TemporaryDirectory(dir=m.CACHE) as directory:
             path = Path(directory)/'seeds.txt'
@@ -915,12 +951,12 @@ class DomainAnnotationsTest(TestCase):
         candidates = {4000:[],4001:[m.Recipe(4001,'C',(4000,))]}
         result = m.uncovered_diagnostics(candidates,{}, {4000:3,4001:3},
             {'triangles':{}}, {}, set(), {}, (6,None,1), {4000:'nonreal'})
-        a,b = result['entries']
-        self.assertEqual(a['primary'],'reviewed_nonreal_domain')
-        self.assertEqual(a['candidate_primary'],'no_parsed_candidate')
+        b, = result['entries']
+        self.assertEqual(result['resolved_nonreal'],[dict(id=4000,part=3,reason='reviewed_nonreal_domain',title='')])
         self.assertEqual(b['primary'],'unclosed_dependency')
         self.assertEqual(b['possible_complex_dependencies'],[4000])
-        self.assertEqual(result['count'],2)
+        self.assertEqual(result['count'],1)
+        self.assertNotIn('reviewed_nonreal_domain',result['summary'])
 
     def test_reviewed_etc_roots_keep_conditional_points_eligible(self):
         domains = {}

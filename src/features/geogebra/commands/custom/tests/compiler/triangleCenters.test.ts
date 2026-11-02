@@ -128,9 +128,23 @@ describe('extended TriangleCenter dispatch', () => {
   });
 
   it('keeps centers identified by a single infinity line undefined', async () => {
-    for (const id of [5959, 6364, 6365, 9043]) {
+    for (const id of [5959, 6364, 6365, 9043, 20403]) {
       await prepareTriangleCenter(id);
       expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
+    }
+  });
+
+  it('loads independently reviewed coordinates despite conflicting source lines', async () => {
+    for (const id of [7065, 32072, 39038]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW|S|u|v|w)\b/u);
+      if (id === 39038) {
+        for (const source of [162, 2167]) {
+          expect(result.match(new RegExp(`TriangleCenter\\(A,B,C,${source}\\)`, 'gu'))).toHaveLength(1);
+        }
+      }
     }
   });
 
