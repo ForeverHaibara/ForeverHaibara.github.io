@@ -202,7 +202,7 @@ class ReviewedSourceConflictTest(TestCase):
 class OtherReviewedSourceErrors(TestCase):
     def test_4201_9858_primary_definitions_overrule_false_complement_relations(self):
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
-        native=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        native=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         seeds=m.read_recipes(m.DATA/'seeds.txt',{})
         formulas={}
         for part,ns in [(3,[4201]),(5,[9858]),(7,[13740]),(11,[20012])]:
@@ -288,7 +288,7 @@ class OtherReviewedSourceErrors(TestCase):
         records.update(m.read_recipes(m.DATA/'seeds.txt',{}))
         closure={}
         def visit(n):
-            if n<=m.NATIVE_MAX or n in closure:return
+            if not m.requires_recipe(n) or n in closure:return
             closure[n]=records[n]
             for ref in records[n].references:visit(ref)
         for n in targets:visit(n)
@@ -378,7 +378,7 @@ class OtherReviewedSourceErrors(TestCase):
     def test_39038_five_point_cartesian_conic_center(self):
         recipe=m.read_recipes(m.DATA/'seeds.txt',{})[39038]
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
-        points=m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        points=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         for shape,abc in atlas['triangles'].items():
             inputs=[points[shape][ref] for ref in recipe.references]
             rows=[[x*x,x*y,y*y,x,y,1.] for x,y in [*abc,*inputs]]
@@ -428,7 +428,7 @@ class OtherReviewedSourceErrors(TestCase):
                    53806:27,54028:28,54029:28,62503:32,70832:36,70855:36}
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
         directions=m.read_native_status(m.DATA/'native-status.txt')[1]
-        points=m.numeric_coordinates({},atlas,directions)
+        points=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas,directions)
         seeds=m.read_recipes(m.DATA/'seeds.txt',{})
         pages={part:dict(m.split_entries(m.prepare_source(part,
             (m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8')))) for part in set(numbers.values())}
@@ -622,7 +622,7 @@ class PBClusterAnchors(TestCase):
         self.assertEqual((seed.operation,seed.references),('I',()))
 
     def test_declared_oh_clusters_obey_independent_euler_relations(self):
-        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas)
         formulas={}
         for part,numbers in [(10,[18871]),(20,[38001,38002])]:
             es=dict(m.split_entries((m.CACHE/'sources'/f'ETCPart{part}.html').read_text(encoding='utf-8')))
@@ -705,7 +705,7 @@ class PBClusterAnchors(TestCase):
             formula=m.coordinate_candidates(es[n])[0][1]
             self.assertFalse(m.homogeneous_degree(formula)[0])
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
-        native=m.numeric_coordinates({},atlas)
+        native=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas)
         for shape,abc in atlas['triangles'].items():
             a,b,c=[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)]
             u,v,w=b*b-c*c,c*c-a*a,a*a-b*b
@@ -740,7 +740,7 @@ class PBClusterAnchors(TestCase):
             self.assertGreater(abs(cross(sub(feet[0],q),d))/math.hypot(*d),1e-3)
 
     def test_reviewed_vijay_and_vu_bc_errors_agree_with_independent_geometry(self):
-        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates({},atlas)
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json');native=m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas)
         source=(m.CACHE/'sources/ETCPart20.html').read_text(encoding='utf-8',errors='replace')
         entries=dict(m.split_entries(source));seeds=m.read_recipes(m.DATA/'seeds.txt',{})
         for n in [38493,38494,38538,38546,38547,38549,38550]:
@@ -779,7 +779,7 @@ class PBClusterAnchors(TestCase):
         corrected = polynomial(printed.replace('8a a^4','8*a^4'))
         m.validate_transform_formula(corrected)
         atlas = m.read_native_atlas(m.CACHE/'native/native-atlas.json')
-        native = m.numeric_coordinates({},atlas)
+        native = m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas)
         for shape,abc in atlas['triangles'].items():
             p = native[shape][9]
             a = m.numeric_transform_formula(m.Recipe(4000,'B',(9,),formula=corrected),p,abc)
@@ -792,7 +792,7 @@ class PBClusterAnchors(TestCase):
         text = '\n'.join(m.coordinate_text(dict(m.split_entries(raw))[11667]))
         radicand = m.normalize_formula(re.search(r'where U\^2\s*=\s*(.*), and V',text)[1])
         atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
-        native = m.numeric_coordinates({},atlas)
+        native = m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas)
         for shape,abc in atlas['triangles'].items():
             env = m.side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
             U,V,W = [math.sqrt(m.evaluate_formula(m.rotate_formula(radicand,i),env)) for i in range(3)]
@@ -844,7 +844,7 @@ class PBClusterAnchors(TestCase):
 class CircumcenterSourceConflict(TestCase):
     def test_11619_printed_formula_conflicts_with_named_circle_center(self):
         atlas = m.read_native_atlas(m.CACHE/'native'/'native-atlas.json')
-        points = m.numeric_coordinates({},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        points = m.numeric_coordinates(m.read_recipes(m.NATIVE_PATCH_PATH),atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         seed = m.read_recipes(m.DATA/'seeds.txt', {})[11619]
         corrected = m.numeric_coordinates({11619:seed},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
         fragment = dict(m.split_entries((m.CACHE/'sources'/'ETCPart6.html').read_text(encoding='utf-8')))[11619]
@@ -983,4 +983,68 @@ class RemainingCoordinateReview(TestCase):
         self.assertEqual(seeds[3067].formula,'a^2/(A*(B-C))')
         for n in [10228,11811,13301,31957,36721,36731,38439,51777,65951,72483,72513]:
             self.assertTrue(m.homogeneous_degree(seeds[n].formula)[0],n)
-        self.assertTrue(all(n not in seeds for n in [5373,5394,5626,40139,15276]))
+        self.assertTrue(all(n not in seeds for n in [5373,5394,5626,40139]))
+
+
+class NativePatchReview(TestCase):
+    def test_all_native_repairs_match_signed_6913_reference_distances(self):
+        expected={369:3.226427108490245,459:1.8571771799622385,1071:7.896654233888623,
+                  1285:.10296691685647652,1908:1.2802359760886326,1913:.7225047024565878,
+                  1939:.7993252177184844,2923:-5.853795909608209,2924:7.2931191813607,
+                  2925:19.011461735073297,2926:53.48469040713851,
+                  2927:-23.522547806981656,2928:-7.067034997766579,3020:2.8569360841651337}
+        patches=m.read_recipes(m.NATIVE_PATCH_PATH)
+        self.assertEqual(set(patches),set(expected))
+        a,b,c=6,9,13
+        ax=(a*a+c*c-b*b)/(2*a)
+        abc=[(ax,math.sqrt(c*c-ax*ax)),(0,0),(a,0)]
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart1.html').read_text(encoding='utf-8',errors='replace')))
+        native={str(n):m.numeric_formula(Recipe(n,'B',(),formula=m.coordinate_candidates(entries[n])[0][1]),abc) for n in [1,4,7,84]}
+        native.update({str(n):(1e8,-1e8) for n in patches})
+        atlas=dict(triangles={'6913':abc},coordinates={'6913':native})
+        points=m.numeric_coordinates(patches,atlas)['6913']
+        for n,reference in expected.items():
+            with self.subTest(number=n):
+                self.assertLess(abs(points[n][1]-reference),1e-6*max(1,abs(reference)))
+        # Missing overrides cannot silently read poisoned native atlas values.
+        self.assertFalse(set(patches)&m.numeric_coordinates({},atlas)['6913'].keys())
+
+    def test_repaired_native_inputs_propagate_and_missing_patch_fails_closed(self):
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        patches=m.read_recipes(m.NATIVE_PATCH_PATH)
+        records={**patches,10202:Recipe(10202,'M',(1071,5927)),5927:Recipe(5927,'C',(1,))}
+        points=m.numeric_coordinates(records,atlas)
+        for shape,ps in points.items():
+            midpoint=tuple((ps[1071][k]+ps[5927][k])/2 for k in (0,1))
+            self.assertEqual(ps[10202],midpoint)
+            self.assertNotEqual(ps[1071],tuple(atlas['coordinates'][shape]['1071']))
+        self.assertEqual(m.validate_graph(records)[0][10202],2)
+        with self.assertRaisesRegex(ValueError,'Missing'):
+            m.validate_graph({4000:Recipe(4000,'M',(1071,1))})
+        with self.assertRaisesRegex(ValueError,'Missing recipe'):
+            m.validate_recipe_inputs(Recipe(4000,'M',(1071,1)),{},set())
+
+    def test_1071_repair_restores_10202_and_both_26842_incidences(self):
+        records={n:r for path in (m.DATA/'chunks').glob('*.txt') for n,r in m.read_recipes(path).items()}
+        needed={10202,26842,6894,6840};pending=list(needed)
+        while pending:
+            n=pending.pop()
+            for ref in records[n].references if n in records else ():
+                if m.requires_recipe(ref) and ref not in needed:needed.add(ref);pending.append(ref)
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        points=m.numeric_coordinates({n:records[n] for n in needed if n in records},atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart6.html').read_text(encoding='utf-8',errors='replace')))
+        coordinate=Recipe(10202,'B',(),formula=m.coordinate_candidates(entries[10202])[0][1])
+        for shape,abc in atlas['triangles'].items():
+            ps=points[shape]
+            self.assertLess(math.dist(ps[10202],m.numeric_formula(coordinate,abc)),1e-8)
+            for pair in [(1071,6894),(6840,10202)]:
+                base,d=m.line_data(*[ps[n] for n in pair])
+                self.assertLess(abs(cross(sub(ps[26842],base),d))/math.hypot(*d),1e-8)
+
+    def test_15276_user_verified_coefficient_is_only_a_seed_correction(self):
+        seed=m.read_recipes(m.DATA/'seeds.txt',{})[15276]
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart8.html').read_text(encoding='utf-8',errors='replace')))
+        self.assertIn('fd12',entries[15276])
+        self.assertEqual(seed.formula,m.coordinate_candidates(entries[15276].replace('fd12','12'))[0][1])
+        self.assertTrue(m.homogeneous_degree(seed.formula)[0])

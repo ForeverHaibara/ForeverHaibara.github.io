@@ -100,6 +100,10 @@ def extraction_source_fingerprint(source, roots=None):
 def parser_fingerprint():
     folder = Path(__file__).parent
     digest = hashlib.sha256(b'extraction-cache-v3')
+    patch_path = Path(__file__).resolve().parents[4]/'src/features/geogebra/commands/custom/data/triangle-centers/native-patches.txt'
+    patch_ids = sorted(int(row.split()[0]) for row in patch_path.read_text(encoding='utf-8').splitlines()
+                       if row.strip() and not row.lstrip().startswith('#'))
+    digest.update(json.dumps(patch_ids).encode())
     digest.update(extraction_source_fingerprint((folder/'triangle_center_import.py').read_text(encoding='utf-8')).encode())
     digest.update(extraction_source_fingerprint((folder/'triangle_center_coordinates.py').read_text(encoding='utf-8'),
                   roots=('coordinate_candidates','coordinate_text','normalize_formula','validate_formula')).encode())

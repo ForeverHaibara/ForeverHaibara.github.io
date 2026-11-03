@@ -1,4 +1,5 @@
 # Native centers undefined on at least one screened triangle.
+# Raw engine observations; accuracy/availability overrides live in native-patches.txt.
 # id = unavailable; id p q = ideal direction along finite X(p)X(q).
 # A=(0,0), B=(6,0), C=(1,4) or C=(-1,2); 2026-10-31.
 # Refresh the unavailable set from the GeoGebra native screen, then run:

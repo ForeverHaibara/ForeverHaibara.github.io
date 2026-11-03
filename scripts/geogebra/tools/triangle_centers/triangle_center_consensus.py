@@ -41,7 +41,7 @@ def coordinate_snapshot(records,atlas,directions,cache_dir):
     """Cache numeric positions only, never votes, decisions or graph selection."""
     if cache_dir is None:return m.numeric_coordinates(records,atlas,directions)
     digest=hashlib.sha256('\n'.join(records[n].row() for n in sorted(records)).encode())
-    digest.update(json.dumps([atlas,directions],sort_keys=True).encode())
+    digest.update(json.dumps([atlas,directions,sorted(m.NATIVE_PATCH_IDS)],sort_keys=True).encode())
     digest.update(m.support.extraction_source_fingerprint(Path(m.__file__).read_text(encoding='utf-8'),
                                                         roots=('numeric_coordinates',)).encode())
     digest.update(Path(m.__file__).with_name('triangle_center_coordinates.py').read_bytes())
@@ -218,7 +218,7 @@ class Review:
         self._ancestors={};self._source_views={}
 
     def ancestors(self,n):
-        if n<=m.NATIVE_MAX or n not in self.records:return frozenset()
+        if not m.requires_recipe(n) or n not in self.records:return frozenset()
         if n not in self._ancestors:
             self._ancestors[n]=frozenset({n}).union(*(self.ancestors(ref) for ref in self.records[n].references))
         return self._ancestors[n]
@@ -259,7 +259,7 @@ class Review:
             seen.add(recipe.row())
             upstream=self.upstream(recipe.references)
             if n in upstream:ignored['circular_relation']+=1;continue
-            if any(ref>m.NATIVE_MAX and ref not in self.records for ref in recipe.references):ignored['unclosed_relation']+=1;continue
+            if any(m.requires_recipe(ref) and ref not in self.records for ref in recipe.references):ignored['unclosed_relation']+=1;continue
             # Line-pair intersections are already represented by their two
             # incidences, not an extra independent vote for the same text.
             duplicate_intersection=(recipe.operation=='J' and all(tuple(sorted(pair)) in lines
@@ -341,7 +341,7 @@ class Review:
         reported as conflicts, never silently overriding reviewed decisions.
         """
         graph=m.SelectedGraph(self.records,m.NATIVE_MAX,m.estimated_recipe_length,(6,None,1),
-            lambda r,rs:m.validate_recipe_inputs(r,rs,set(self.directions)))
+            lambda r,rs:m.validate_recipe_inputs(r,rs,set(self.directions)),native_overrides=m.NATIVE_PATCH_IDS)
         updates=[];rounds=[];initial=None;blocked={}
         while True:
             rows=[self.audit(n) for n in sorted(ids)]
@@ -441,6 +441,7 @@ def main():
     args=parser.parse_args()
     records={n:r for p in (m.DATA/'chunks').glob('*.txt') for n,r in m.read_recipes(p).items()}
     skipped={};domains={};seeds=m.read_recipes(m.DATA/'seeds.txt',skipped,domains)
+    seeds.update(m.read_recipes(m.NATIVE_PATCH_PATH))
     ids=set(args.ids)
     for path in args.from_report:
         data=json.loads(path.read_text(encoding='utf-8'))
@@ -453,8 +454,8 @@ def main():
         while pending:
             n=pending.pop()
             for ref in records[n].references if n in records else ():
-                if ref>m.NATIVE_MAX and ref not in ids:ids.add(ref);pending.append(ref)
-    ids={n for n in ids if n>m.NATIVE_MAX and n not in skipped and domains.get(n)!='nonreal'}
+                if m.requires_recipe(ref) and ref not in ids:ids.add(ref);pending.append(ref)
+    ids={n for n in ids if m.requires_recipe(n) and n not in skipped and domains.get(n)!='nonreal'}
     fragments={};parts={}
     for part in range(1,38):
         source=m.prepare_source(part,(m.CACHE/f'sources/ETCPart{part}.html').read_text(encoding='utf-8',errors='replace'))

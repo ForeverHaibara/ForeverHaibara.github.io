@@ -12,10 +12,32 @@ from unittest.mock import patch
 def state(records, depth=6, length=None, conjugates=1, ideal=()):
     return SelectedGraph(records, m.NATIVE_MAX, m.estimated_recipe_length,
                          (depth, length, conjugates),
-                         lambda recipe, overlay: m.validate_recipe_inputs(recipe, overlay, set(ideal)))
+                         lambda recipe, overlay: m.validate_recipe_inputs(recipe, overlay, set(ideal)),native_overrides=m.NATIVE_PATCH_IDS)
 
 
 class SelectedGraphTest(TestCase):
+    def test_native_patch_is_a_node_with_metrics_and_reverse_dependents(self):
+        records={1071:m.Recipe(1071,'J',(1,84,4,7)),4000:m.Recipe(4000,'M',(1071,2))}
+        graph=state(records)
+        self.assertEqual(graph.metrics[1071][0],1)
+        self.assertEqual(graph.metrics[4000][0],2)
+        self.assertEqual(graph.descendants({1071}),{1071,4000})
+        before=dict(records)
+        self.assertFalse(graph.replace(m.Recipe(1071,'C',(4000,))))
+        self.assertEqual(records,before)
+        with self.assertRaisesRegex(ValueError,'Missing'):
+            state({4000:m.Recipe(4000,'M',(1071,2))})
+        with self.assertRaisesRegex(ValueError,'Cyclic'):
+            m.validate_graph({1071:m.Recipe(1071,'C',(4000,)),4000:records[4000]})
+
+
+    def test_patch_type_overrules_stale_native_status(self):
+        records={459:m.Recipe(459,'B',(),formula='a')}
+        m.validate_recipe_inputs(m.Recipe(4000,'M',(459,1)),records,{459})
+        records[459]=m.Recipe(459,'I',(1,2))
+        with self.assertRaisesRegex(ValueError,'Invalid ideal'):
+            m.validate_recipe_inputs(m.Recipe(4000,'M',(459,1)),records,set())
+
     def test_cycle_missing_and_descendant_budget_fail_atomically(self):
         records = {4000: m.Recipe(4000, 'M', (1, 2)),
                    4001: m.Recipe(4001, 'M', (4000, 3)),

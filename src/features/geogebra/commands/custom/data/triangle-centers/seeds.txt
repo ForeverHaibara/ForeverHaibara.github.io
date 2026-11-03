@@ -17,6 +17,7 @@
 # agree; the printed reflections in X(7601)/X(7602) leave the Euler line.
 7581 J 4 6 371 376
 7582 J 4 6 371 631
+# Some seeds below are initially used for testing this file
 3054 M 590 615
 3056 R 1469 1
 3057 J 1 3 10 11
@@ -342,7 +343,7 @@
 
 # Remaining-coordinate review (2026-11-03).
 # Deferred, NOT SKIP: 5373 / 5394 / 5626 / 40139 need implicit solvers.
-# 15276 is awaiting user review of the corrupt fd12 coefficient; do not guess.
+# 15276 fd12 coefficient corrected to 12 by user geometric review (2026-11-03).
 
 # Exposed angles AB/AC are products A*B/A*C; expand explicitly.
 3067 B a^2/(A*(B-C))
@@ -405,3 +406,6 @@
 # Remove common 16*S^14; reduce a^2 by its symmetric cubic; use F=SW-E.
 # This preserves the point and avoids cancellation after X72513 becomes available.
 72514 B -4*S^2*(1071*F^7+4854*F^6*SW-47316*F^5*S^2+5057*F^5*SW^2-56428*F^4*S^2*SW-3020*F^4*SW^3+3584*F^3*S^4-23944*F^3*S^2*SW^2-5503*F^3*SW^4-3072*F^2*S^4*SW-3224*F^2*S^2*SW^3-2186*F^2*SW^5-512*F*S^4*SW^2-100*F*S^2*SW^4-273*F*SW^6-60*S^2*SW^5)+a^4*(-1323*F^7-4662*F^6*SW+217368*F^5*S^2+8835*F^5*SW^2+264600*F^4*S^2*SW+42348*F^4*SW^3-17472*F^3*S^4+119152*F^3*S^2*SW^2+38475*F^3*SW^4+14528*F^2*S^4*SW+19760*F^2*S^2*SW^3+13098*F^2*SW^5+2880*F*S^4*SW^2+1400*F*S^2*SW^4+1533*F*SW^6+64*S^4*SW^3+312*S^2*SW^5)+a^2*(1323*F^7*SW-9720*F^6*S^2+4662*F^6*SW^2-234000*F^5*S^2*SW-8835*F^5*SW^3-19440*F^4*S^4-271560*F^4*S^2*SW^2-42348*F^4*SW^4+3648*F^3*S^4*SW-118880*F^3*S^2*SW^3-38475*F^3*SW^5-14624*F^2*S^4*SW^2-19464*F^2*S^2*SW^4-13098*F^2*SW^6-2240*F*S^4*SW^3-1424*F*S^2*SW^5-1533*F*SW^7-112*S^4*SW^4-312*S^2*SW^6)
+
+# User verified X15276 from its geometric definition: fd12 is 12.
+15276 B a^2*(-a^2+b^2+c^2)*(a^6-2*(b+c)*a^5-(b-c)^2*a^4+2*(b+2*c)*(2*b+c)*(b+c)*a^3-(b^2-12*b*c+c^2)*(b+c)^2*a^2-2*(b^3+c^3)*(b+c)^2*a+(b^2+c^2)*(b^2-6*b*c+c^2)*(b+c)^2)

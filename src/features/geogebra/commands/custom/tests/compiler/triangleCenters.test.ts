@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Synthetic protocol fixtures above the current ETC range, in the existing tail chunk.
 vi.mock('../../data/triangle-centers/chunks/73.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n' };
+  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n73990 M 1071 1\n73989 G 6004\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -15,9 +15,29 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [73989, 73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
+  it('prefers repaired native literals and repairs their downstream inputs', async () => {
+    for (const id of [369,459,1071,1285,1908,1913,1939,2923,2924,2925,2926,2927,2928,3020,15276,73990]) {
+      await prepareTriangleCenter(id);
+      const source = `TriangleCenter(A,B,C,${id})`;
+      expect(containsStudioCall(source)).toBe(true);
+      expect(extendedTriangleCenterIds(source, environment())).toEqual([id]);
+      expect(compileStudioCommand(source, environment())).not.toContain(source);
+    }
+    const fixed = 'Intersect(Line(TriangleCenter(A,B,C,1),TriangleCenter(A,B,C,84)),Line(TriangleCenter(A,B,C,4),TriangleCenter(A,B,C,7)))';
+    for (const selector of ['1071', '(1071)', '+1071', '1071.0', '1.071e3']) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${selector})`, environment())).toBe(fixed);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73990)', environment())).toBe(`Midpoint(${fixed},TriangleCenter(A,B,C,1))`);
+    for (const selector of ['1000+71', 'n', '1070', '3053']) {
+      const source = `TriangleCenter(A,B,C,${selector})`;
+      expect(containsStudioCall(source)).toBe(false);
+      expect(compileStudioCommand(source, environment())).toBe(source);
+    }
+  });
+
   it('compiles remaining-coordinate repairs with all roots and locals bound', async () => {
     for (const id of [3067, 10228, 11811, 13301, 23032, 23033, 23034, 26653, 26842, 31664, 31665,
       31957, 36721, 36731, 38439, 40303, 45306, 45307, 47752, 47753, 51777, 65951, 72483, 72513,
@@ -50,7 +70,7 @@ describe('extended TriangleCenter dispatch', () => {
 
   it('loads and compiles a representative from every published chunk', async () => {
     const chunks = import.meta.glob('../../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
-    expect(Object.keys(chunks)).toHaveLength(71);
+    expect(Object.keys(chunks)).toHaveLength(74);
     for (const load of Object.values(chunks)) {
       const rows = (await load() as string).trim().split('\n');
       const id = Number(rows[0].split(' ')[0]);
@@ -178,7 +198,8 @@ describe('extended TriangleCenter dispatch', () => {
     const intersection = compileStudioCommand('TriangleCenter(A,B,C,3058)', environment());
     expect(intersection).toContain('Line(TriangleCenter(A,B,C,1),Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3)))');
     expect(intersection).toContain('Intersect(');
-    const conjugate = compileStudioCommand('TriangleCenter(A,B,C,6012)', environment());
+    // Protocol fixture: the real X6012 is free to choose a shorter intersection.
+    const conjugate = compileStudioCommand('TriangleCenter(A,B,C,73989)', environment());
     expect(conjugate).toContain('Vector(TriangleCenter(A,B,C,659),TriangleCenter(A,B,C,1734))');
     expect(conjugate).toContain('Distance(');
     for (const id of [3221, 5957, 6004, 72060]) {

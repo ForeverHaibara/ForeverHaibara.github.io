@@ -37,6 +37,17 @@ ROOT = Path(__file__).resolve().parents[4]
 DATA = ROOT / 'src/features/geogebra/commands/custom/data/triangle-centers'
 CACHE = ROOT / '.cache/triangle-centers'
 NATIVE_MAX = 3053
+NATIVE_PATCH_PATH = DATA / 'native-patches.txt'
+NATIVE_PATCH_IDS = frozenset(int(row.split()[0]) for row in NATIVE_PATCH_PATH.read_text(encoding='utf-8').splitlines()
+                             if row.strip() and not row.lstrip().startswith('#'))
+if any(not 1 <= number <= NATIVE_MAX for number in NATIVE_PATCH_IDS):
+    raise ValueError('Native patch IDs must be between 1 and 3053')
+
+
+def requires_recipe(number: int) -> bool:
+    """Patched native IDs are graph nodes, never implicit native leaves."""
+    return number > NATIVE_MAX or number in NATIVE_PATCH_IDS
+
 HEADING = re.compile(r'<h3\b[^>]*\bid\s*=\s*["\']X(\d+)["\'][^>]*>', re.I)
 POINT = r'X\s*\(\s*(\d+)\s*\)'
 PAIR = re.compile(r'[({]\s*(\d+)\s*,\s*(\d+)\s*[)}]')
@@ -413,7 +424,7 @@ def listed_lines(number: int, lines: list[str], excluded: set[int] | None = None
     ordered = sorted(
         pairs,
         key=lambda pair: (
-            sum(ref > NATIVE_MAX for ref in pair),
+            sum(requires_recipe(ref) for ref in pair),
             max(pair),
             sum(pair),
         ),
@@ -712,7 +723,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             formula = '|'.join(pair[1] for pair in pairs)
         else:
             refs = (tuple(map(int,fields[2:-1])) if opcode == 'B' else tuple(map(int, fields[2:])))
-        if (number <= NATIVE_MAX or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs) in (1,2)) and not (opcode == 'I' and not refs) and not (opcode in {'R','V'} and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
+        if (not requires_recipe(number) or number < 1 or opcode not in ARITY or (len(refs) != ARITY[opcode] and not (opcode=='B' and len(refs) in (1,2)) and not (opcode == 'I' and not refs) and not (opcode in {'R','V'} and len(refs)==3) and not (opcode == 'F' and 2 <= len(refs) <= 6))
                 or any(reference <= 0 or reference == number for reference in refs) or number in records
                 or (opcode == 'B' and not formula)
                 or (opcode == 'F' and (len(set(refs)) != len(refs) or any(not f for f in formula.split('|'))))):
@@ -774,7 +785,7 @@ def unresolved_components(candidates: dict[int, list[Recipe]], baseline: dict[in
                           excluded: set[int] | None = None
                           ) -> dict[int, int]:
     """Weak components of unresolved extended centers, ignoring shared native anchors."""
-    pending = {number for number in candidates if number > NATIVE_MAX and number not in baseline
+    pending = {number for number in candidates if requires_recipe(number) and number not in baseline
                and number not in (excluded or set())}
     parent = {number: number for number in pending}
 
@@ -904,7 +915,7 @@ def validate_graph(records: dict[int, Recipe]) -> tuple[dict[int, int], dict[int
     visiting: set[int] = set()
 
     def visit(number: int) -> tuple[int, int]:
-        if number <= NATIVE_MAX:
+        if not requires_recipe(number):
             return 0, 27
         if number in visiting:
             raise ValueError(f'Cyclic triangle center recipe through X({number})')
@@ -933,12 +944,14 @@ def validate_types(records: dict[int, Recipe], native_ideal: set[int]) -> None:
 
 
 def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_ideal: set[int]) -> None:
+    if any(requires_recipe(ref) and ref not in records for ref in recipe.references):
+        raise ValueError(f'Missing recipe input in X({recipe.number})')
     if recipe.operation == 'B' and recipe.references:
         validate_transform_formula(recipe.formula,len(recipe.references))
-    if any(ref > NATIVE_MAX and records[ref].operation == 'I' and not records[ref].references
+    if any(requires_recipe(ref) and records[ref].operation == 'I' and not records[ref].references
            for ref in recipe.references):
         raise ValueError(f'Unknown ideal direction used in X({recipe.number}) {recipe.operation}')
-    ideal = [ref in native_ideal or ref > NATIVE_MAX and records[ref].operation == 'I'
+    ideal = [records[ref].operation == 'I' if requires_recipe(ref) else ref in native_ideal
              for ref in recipe.references]
     op = recipe.operation
     valid = (not ideal[0] and not all(ideal[1:]) if op=='P' or line_reflection(recipe) else
@@ -953,7 +966,7 @@ def conjugate_levels(records: dict[int, Recipe]) -> dict[int, int]:
     levels: dict[int, int] = {}
 
     def visit(number: int) -> int:
-        if number <= NATIVE_MAX:
+        if not requires_recipe(number):
             return 0
         if number not in levels:
             recipe = records[number]
@@ -1154,11 +1167,13 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
     for shape, native in atlas['coordinates'].items():
         points: dict[int, Coordinate] = (CoordinateOverlay(cached[shape], dirty or ()) if overlay and cached is not None else
                                           dict(cached[shape]) if cached is not None else
-                                          {int(number): tuple(xy) for number, xy in native.items()})
+                                          {int(number): tuple(xy) for number, xy in native.items() if int(number) not in NATIVE_PATCH_IDS})
         if not overlay:
             for number in dirty or ():
                 points.pop(number, None)
         for number, (a, b) in ((native_directions or {}).items() if cached is None else ()):
+            if number in NATIVE_PATCH_IDS:
+                continue
             if a in points and b in points and not isinstance(points[a], Ideal) and not isinstance(points[b], Ideal):
                 d = direction(points[a], points[b])
                 if d is not None and math.hypot(*d) > 1e-9:
@@ -1179,7 +1194,7 @@ def numeric_coordinates(records: dict[int, Recipe], atlas: dict,
         def evaluate_point(number: int) -> Coordinate | None:
             if number in points:
                 return points[number]
-            if number <= NATIVE_MAX or number not in records or number in visiting:
+            if not requires_recipe(number) or number not in records or number in visiting:
                 return None
             visiting.add(number)
             recipe = records[number]
@@ -1406,7 +1421,7 @@ def derive_native_directions(atlas: dict, blocked_native: set[int]) -> tuple[dic
                 raise ValueError(f'ETC calls native X({number}) ideal, but the native screen reports finite')
             eligible: list[tuple[tuple[int, int], list[tuple[float, float]]]] = []
             for pair in listed_lines(number, lines, limit=None):
-                if any(ref in blocked_native or ref > NATIVE_MAX for ref in pair):
+                if any(ref in blocked_native or requires_recipe(ref) for ref in pair):
                     continue
                 samples: list[tuple[float, float]] = []
                 for points in atlas['coordinates'].values():
@@ -1457,17 +1472,17 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     # A reviewed seed may depend on another extended center. Admit it only
     # after its references have closed, just like automatically parsed recipes.
     selected = {number: recipe for number, recipe in seeds.items()
-                if all(reference <= NATIVE_MAX for reference in recipe.references)}
+                if all(not requires_recipe(reference) for reference in recipe.references)}
     native_directions = native_directions or {}
     native_ideal = set(native_directions)
-    blocked_native = (blocked_native or set()) - set(native_directions)
+    blocked_native = (blocked_native or set()) - set(native_directions) - NATIVE_PATCH_IDS
     deferred_targets = deferred_targets or set()
     if set(seeds) & deferred_targets:
         raise ValueError('A reviewed seed is marked deferred')
     if any(ref in blocked_native for recipe in seeds.values() for ref in recipe.references):
         raise ValueError('A reviewed seed references an unavailable native center')
     validate_graph(selected)
-    pending = {number for number in set(candidates) | set(seeds) if number > NATIVE_MAX
+    pending = {number for number in set(candidates) | set(seeds) if requires_recipe(number)
                and number not in selected and number not in deferred_targets}
     incidence_lines: dict[int, list[tuple[int, int]]] = {}
     for number, options in candidates.items():
@@ -1488,7 +1503,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             ranked = []
             for recipe in recipes:
                 if any(ref in blocked_native or ref in deferred_targets
-                       or ref > NATIVE_MAX and ref not in selected for ref in recipe.references):
+                       or requires_recipe(ref) and ref not in selected for ref in recipe.references):
                     continue
                 d = 1 + max((depth.get(ref, 0) for ref in recipe.references), default=0)
                 size = estimated_recipe_length(recipe, [length.get(ref, 27) for ref in recipe.references])
@@ -1519,7 +1534,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             refs.update(ref for pair in options.lines for ref in pair)
         refs.update(ref for pair in incidence_lines.get(number, []) for ref in pair)
         for ref in refs:
-            if ref > NATIVE_MAX:
+            if requires_recipe(ref):
                 watchers[ref].add(number)
     frontier = set(pending)
     coordinate_snapshot = None
@@ -1541,7 +1556,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             for key, recipe in ranked_options(
                     [seeds[number]] if number in seeds else candidates.get(number, []), depth, length, nonlinear):
                 if any(ref in blocked_native or ref in deferred_targets
-                       or ref > NATIVE_MAX and ref not in selected
+                       or requires_recipe(ref) and ref not in selected
                        for ref in recipe.references):
                     continue
                 try:
@@ -1594,7 +1609,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
     # definition. Reconsider it after the reachable graph has closed.
     graph = SelectedGraph(selected, NATIVE_MAX, estimated_recipe_length,
                           (max_depth, max_length, max_conjugates),
-                          lambda recipe, records: validate_recipe_inputs(recipe, records, native_ideal))
+                          lambda recipe, records: validate_recipe_inputs(recipe, records, native_ideal), native_overrides=NATIVE_PATCH_IDS)
     def supported(recipe, coordinates):
         if not atlas:
             return True
@@ -1632,7 +1647,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
 
     def attempt(recipe):
         if any(ref in blocked_native or ref in deferred_targets
-               or ref > NATIVE_MAX and ref not in selected for ref in recipe.references):
+               or requires_recipe(ref) and ref not in selected for ref in recipe.references):
             return False
         try:
             validate_recipe_inputs(recipe, selected, native_ideal)
@@ -1844,14 +1859,14 @@ def uncovered_diagnostics(candidates, records, parts, atlas, directions, blocked
         formulas = []
         for recipe in candidates[number]:
             refs = recipe.references
-            references.update(ref for ref in refs if ref > NATIVE_MAX and ref not in records)
+            references.update(ref for ref in refs if requires_recipe(ref) and ref not in records)
             if any(ref in skipped for ref in refs):
                 why = 'reviewed_skip_dependency'
             elif any(ref in blocked for ref in refs):
                 why = 'blocked_native'
-            elif any(ref > NATIVE_MAX and ref not in records and ref not in candidates for ref in refs):
+            elif any(requires_recipe(ref) and ref not in records and ref not in candidates for ref in refs):
                 why = 'missing_source_dependency'
-            elif any(ref > NATIVE_MAX and ref not in records for ref in refs):
+            elif any(requires_recipe(ref) and ref not in records for ref in refs):
                 why = 'unclosed_dependency'
             else:
                 try:
@@ -1936,10 +1951,16 @@ def main() -> None:
                                                 encoding='utf-8', newline='\n')
         print(f'Native ideal directions: {len(directions)}; omitted conflicting IDs: {weak}')
         return
-    blocked_native -= set(native_directions)
+    if any(n not in NATIVE_PATCH_IDS and set(pair) & NATIVE_PATCH_IDS for n,pair in native_directions.items()):
+        raise ValueError('Regenerate native directions or add explicit patches for directions using repaired inputs')
+    blocked_native -= set(native_directions) | NATIVE_PATCH_IDS
     skipped: dict[int, str] = {}
     domains: dict[int, str] = {}
     all_seeds = read_recipes(DATA / 'seeds.txt', skipped, domains)
+    native_patches = read_recipes(NATIVE_PATCH_PATH)
+    if set(native_patches) != NATIVE_PATCH_IDS or set(all_seeds) & NATIVE_PATCH_IDS:
+        raise ValueError('Native patch inventory conflicts with reviewed seeds')
+    all_seeds.update(native_patches)
     if domains:
         report('reviewed-domains', counts=dict(Counter(domains.values())))
     nonreal_targets = {n for n,kind in domains.items() if kind=='nonreal'}
@@ -1953,6 +1974,8 @@ def main() -> None:
                 if number in records or number // 1000 != int(path.stem):
                     raise ValueError(f'Duplicate or misplaced X({number}) in {path}')
                 records[number] = recipe
+        if any(n not in records or records[n].row()!=r.row() for n,r in native_patches.items()):
+            raise ValueError('Generated native patch recipes are missing or stale')
         depth, length = validate_graph(records)
         validate_types(records, set(native_directions))
         if any(ref in blocked_native for recipe in records.values() for ref in recipe.references):
@@ -2063,7 +2086,7 @@ def main() -> None:
     # Append only after selection and numeric screening have completed.
     if 'I' in args.auto_operations:
         for number, options in all_candidates.items():
-            if number > NATIVE_MAX and number not in selected and number not in selection_exclusions:
+            if requires_recipe(number) and number not in selected and number not in selection_exclusions:
                 marker = next((r for r in options if r.operation == 'I' and not r.references), None)
                 if marker:
                     selected[number] = marker

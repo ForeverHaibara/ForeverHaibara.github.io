@@ -44,9 +44,10 @@ class CoordinateOverlay(MutableMapping):
 
 
 class SelectedGraph:
-    def __init__(self, records, native_max, estimate, limits, validate=None):
+    def __init__(self, records, native_max, estimate, limits, validate=None, *, native_overrides=()):
         self.records = records
         self.native_max = native_max
+        self.native_overrides = frozenset(native_overrides)
         self.estimate = estimate
         self.limits = limits
         self.validate = validate
@@ -76,7 +77,7 @@ class SelectedGraph:
         result, visiting = {}, set()
 
         def visit(number):
-            if number <= self.native_max:
+            if number <= self.native_max and number not in self.native_overrides and number not in records:
                 return 0, 27, 0
             if number in visiting:
                 raise ValueError(f'Cyclic triangle center recipe through X({number})')

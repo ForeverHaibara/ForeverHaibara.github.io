@@ -588,3 +588,12 @@ Vietnamese 前言表将 (2,4) 写到 39192、把 (2,5) 写成 29192，并重复 
 122 seeds、70,076自动记录，71块/2,209,684字节；纯B3600、有输入B148；有方向I1128、裸I65；深度6、最大估计展开105,990。首轮全量冷构建约391秒，其中完整辅助ideal清单约125秒；修正72514后的缓存构建约89秒，重用同一候选池的辅助清单，其余图/类型/数值检查照常。最终发布1文件约0.041秒。170项Python、165项前端/代数、TypeScript、Vite与最终verify通过。
 
 最终报告 reports/uncovered/remaining-coordinates.json、reports/reviews/remaining-final-comparison.json（保留原始双精度及高精度说明）、remaining-ideal-direction.json；运行日志 runs/remaining-coordinates/。35项逐组说明及暂缓理由见source-review中的“剩余坐标条目专项处理”。
+
+
+## 原生补丁与15276人工复核（2026-11-03）
+
+正式库70,213条：123条扩展seeds、14条原生补丁、70,076自动记录；74块/2,211,199字节。扩展未覆盖5→4，仅5373/5394/5626/40139；15276按用户核验fd12→12纳入。13个原生准确性差异全部修复，另外支持369；368/370/1144仍保留原生未支持记录、暂缓隐式选根，单独列示而非冒充已覆盖。
+
+没有旧覆盖退出。旧选中DAG受影响后继50个；41个旧扩展位置由不符源坐标变为相符，无新增失配。10202及26842两条可疑线都随1071修复恢复，撤销旧线表错误怀疑。目标及上游92项复查无新建议或种子冲突。具体原生配方、6–9–13数值、分派/图政策及暂缓原因见source-review的“原生准确性与可用性补丁”。
+
+176 Python、166前端/代数、类型、打包及verify通过；最大深度6、估计展开105,990。日志runs/native-patches/，最终诊断reports/uncovered/native-patches.json，变更前快照与全量差分、批量复核分别为reports/reviews/native-patch-baseline.json.gz、native-patch-comparison.json、native-patch-consensus.json。

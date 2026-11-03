@@ -1183,13 +1183,13 @@ class UncoveredDiagnosticsTest(TestCase):
         for limit,expected in [(None,{4000,4001,4002}),(1,{4000,4002})]:
             with TemporaryDirectory(dir=m.CACHE) as directory:
                 data=Path(directory);(data/'chunks').mkdir()
-                for name in ['seeds.txt','native-status.txt','coordinate-priority.txt']:(data/name).write_text('')
+                for name in ['seeds.txt','native-status.txt','coordinate-priority.txt','native-patches.txt']:(data/name).write_text('')
                 captured={};original=m.chunks
                 def capture(records):
                     captured.update(records);return original(records)
                 argv=['importer','dry-run','--parts','1','--skip-ideal-audit']
                 if limit is not None:argv+=['--max-coordinate-anchors-per-component',str(limit)]
-                with patch.object(m,'DATA',data),patch.object(m,'read_page',side_effect=page),patch.object(m,'read_native_atlas',return_value=atlas),patch.object(m,'chunks',side_effect=capture),patch.object(sys,'argv',argv):
+                with patch.object(m,'DATA',data),patch.object(m,'NATIVE_PATCH_PATH',data/'native-patches.txt'),patch.object(m,'NATIVE_PATCH_IDS',frozenset()),patch.object(m,'read_page',side_effect=page),patch.object(m,'read_native_atlas',return_value=atlas),patch.object(m,'chunks',side_effect=capture),patch.object(sys,'argv',argv):
                     m.main()
                 self.assertEqual(set(captured),expected)
 
@@ -1274,8 +1274,9 @@ class DomainAnnotationsTest(TestCase):
         with TemporaryDirectory(dir=m.CACHE) as directory:
             data=Path(directory);(data/'chunks').mkdir()
             (data/'native-status.txt').write_text('')
+            (data/'native-patches.txt').write_text('')
             (data/'chunks/4.txt').write_text('4000 B a\n')
-            with patch.object(m,'DATA',data),patch.object(sys,'argv',['importer','verify']):
+            with patch.object(m,'DATA',data),patch.object(m,'NATIVE_PATCH_PATH',data/'native-patches.txt'),patch.object(m,'NATIVE_PATCH_IDS',frozenset()),patch.object(sys,'argv',['importer','verify']):
                 (data/'seeds.txt').write_text('4000 DOMAIN nonreal\n')
                 with self.assertRaisesRegex(ValueError,'skipped/nonreal'): m.main()
                 (data/'seeds.txt').write_text('4000 DOMAIN conditional_complex\n')

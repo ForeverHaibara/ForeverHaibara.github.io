@@ -11,7 +11,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 
 ## A. 语法与入口
 
-配方行的完整形式是 `n 操作 参数...`。下表省略共同前缀 `n`；`p/q/r/t` 表示中心编号，`f/wi` 表示经检查的标量公式。扩展编号须大于 3053，引用须为正且不能引用自身。原生点的可用性、有限/理想类型、依赖闭合、预算和数值检查仍适用。
+配方行的完整形式是 `n 操作 参数...`。下表省略共同前缀 `n`；`p/q/r/t` 表示中心编号，`f/wi` 表示经检查的标量公式。扩展编号须大于3053；1–3053中仅native-patches.txt明确登记的编号允许作为补丁配方。引用须为正且不能引用自身。原生点的可用性、有限/理想类型、依赖闭合、预算和数值检查仍适用。
 
 | 语法 / 入口 | 含义 | 约束 / 所在文件 |
 | --- | --- | --- |
@@ -34,6 +34,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `B f` | 循环重心坐标 `f(a,b,c):f(b,c,a):f(c,a,b)` | 纯坐标公式，须满足齐次性；有限锚点与理想状态分开处理 |
 | `B p f` | 使用 X(p) 重心坐标的循环变换 | 仅此作用域增加 `x,y,z`，随循环一起替换；仅 x²/x³ 模板可接收有方向理想输入，其余须有限 |
 | `B p q f` | 使用两个输入重心坐标的循环变换 | 第一输入 `x,y,z`，第二输入 `u,v,w`；两个输入分别检查射影缩放齐次性 |
+| `native-patches.txt` 中 `n 操作 参数...` | 原生修复的权威清单，复用全部配方语法 | 手动审阅，不从Part1–3自动提取；前端读取同一清单判断字面量分派，build生成对应chunks；普通未登记原生编号不能写入配方 |
 | `n DOMAIN nonreal` | 已审阅、一般位置下非实的点 | seeds 元数据，不生成实平面配方；列入 `resolved_nonreal`，不计未覆盖 |
 | `n DOMAIN conditional_complex` | 在不同三角形域上可能为实或复 | seeds 元数据；保留实域构造资格，不等同 SKIP 或永久非实 |
 | `n SKIP 原因文字` | 明确排除已审阅的目标 | seeds；常用原因前缀 `source-error:`。与该点配方、DOMAIN 不得冲突 |
@@ -99,6 +100,7 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | 审阅 `no_finite_candidate` / `missing_source` | 没有全部样本有限可比的候选 / 缺少源条目 | 区别于非实证明、未实现语法及缺页；不自动写 DOMAIN 或 SKIP |
 | 审阅 `application_blocked` | 数值多数建议未通过图/数值准入 | 分别报告循环、缺依赖、深度/长度/共轭预算、输入类型、新数值失败、数值类型变化等原因 |
 | 审阅 `applied_in_memory` / `pending_geometry` | 内存暂定修改及仍待独立几何核验的点 | 正式数据通过 seeds + build 发布；几何待办另见批量审阅文档 |
+| 原生补丁缺失 / 与seeds冲突 / 生成配方过期 | 构建或verify的硬错误，不是uncovered分类 | 不允许回退原生；清单改动后重新build。原生方向若引用补丁节点，须重建方向或显式登记方向配方 |
 | `no_parsed_candidate` | 本次源输入未提取到候选；并非数学不可构造的结论 | 检查描述、标题、局部定义及源笔误；补通用规则或审阅 seed |
 | `unclosed_dependency` | 候选引用了本次有源条目、尚未选中的扩展点 | 查依赖簇、锚点及另一种构造；不能简单按编号先后判断 |
 | `missing_source_dependency` | 所需扩展编号不在本次候选集合，也未由配方提供 | 扩大 Part 或检查缺页/边界；区别于已有源但未闭合 |
@@ -159,4 +161,9 @@ python scripts/geogebra/tools/triangle_centers/triangle_center_consensus.py --fr
 ```
 
 
-此前可解析证据相容、仅文字几何未独立核验的13项已按用户要求结束复核，不再作为待办。隐式求解类5373/5394/5626/40139保留未覆盖状态、推迟到最后；15276的fd12等待用户复核。它们在seeds中仅作注释，不用SKIP隐藏未完成工作。少量格式损坏、隐式循环变量或多局部函数直接用已说明来源的seeds处理，避免为个例增加解析语言。
+此前可解析证据相容、仅文字几何未独立核验的13项已按用户要求结束复核，不再作为待办。隐式求解类5373/5394/5626/40139保留未覆盖状态、推迟到最后；15276的fd12已由用户核验为12并加入seeds。四个暂缓点在seeds中仅作注释，不用SKIP隐藏未完成工作。少量格式损坏、隐式循环变量或多局部函数直接用已说明来源的seeds处理，避免为个例增加解析语言。
+
+
+原生准确性补丁与native-status的缺失/理想状态分开：保留原始引擎观测，数值求值先屏蔽清单中的旧atlas值，再计算补丁。requires_recipe统一依赖闭合、深度、长度、共轭预算和类型；SelectedGraph以native_overrides声明必须存在的节点，missing/cycle不能因编号小而跳过。补丁类型优先于原生状态。当前方向锚点不引用补丁；后续清单若改变这个条件，会拒绝构建，要求重新生成方向或登记显式节点。提取缓存计入补丁编号集，位置缓存同时计入实际配方和编号集。
+
+前端仅将字面量扩展号或登记原生号送入同一配方构建器，括号/小数/科学计数法的整数等价字面量也适用；动态表达式仍由GeoGebra处理。下游prepare/render同样走补丁，不仅顶层命令替换。native-patches.txt为手动输入，修改后须build；verify会检查每条生成补丁与清单完全一致。已补13个准确性差异及369；368/370/1144保留原生未支持记录并暂缓隐式选根，不计作已修复。

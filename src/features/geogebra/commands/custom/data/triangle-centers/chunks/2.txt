@@ -1,0 +1,6 @@
+2923 B a^2*(-a^3/(c*csc(B+(pi/3))+b*csc(C+(pi/3)))+b^3/(a*csc(C+(pi/3))+c*csc(A+(pi/3)))+c^3/(b*csc(A+(pi/3))+a*csc(B+(pi/3))))
+2924 B a^2*(-a^3/(c*csc(B+(-pi/3))+b*csc(C+(-pi/3)))+b^3/(a*csc(C+(-pi/3))+c*csc(A+(-pi/3)))+c^3/(b*csc(A+(-pi/3))+a*csc(B+(-pi/3))))
+2925 B a^2*(-a^3/(c*sin(B+(pi/3))+b*sin(C+(pi/3)))+b^3/(a*sin(C+(pi/3))+c*sin(A+(pi/3)))+c^3/(b*sin(A+(pi/3))+a*sin(B+(pi/3))))
+2926 B a^2*(-a^3/(c*sin(B+(-pi/3))+b*sin(C+(-pi/3)))+b^3/(a*sin(C+(-pi/3))+c*sin(A+(-pi/3)))+c^3/(b*sin(A+(-pi/3))+a*sin(B+(-pi/3))))
+2927 B a^2*(-a^3/(c*csc(B+(pi/6))+b*csc(C+(pi/6)))+b^3/(a*csc(C+(pi/6))+c*csc(A+(pi/6)))+c^3/(b*csc(A+(pi/6))+a*csc(B+(pi/6))))
+2928 B a^2*(-a^3/(c*csc(B+(-pi/6))+b*csc(C+(-pi/6)))+b^3/(a*csc(C+(-pi/6))+c*csc(A+(-pi/6)))+c^3/(b*csc(A+(-pi/6))+a*csc(B+(-pi/6))))

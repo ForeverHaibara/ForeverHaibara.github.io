@@ -1,0 +1,2 @@
+369 B (2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))^2+2*(b-c)*(2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))+6*b*c+8*a*(b+c)+5*(-a^2+b^2+c^2)
+459 B SB*SC/(S^2-2*SB*SC)

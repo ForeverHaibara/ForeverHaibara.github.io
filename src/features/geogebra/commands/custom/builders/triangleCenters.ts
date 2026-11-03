@@ -2,6 +2,15 @@ import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
 import { bind } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
+import nativePatchSource from '../data/triangle-centers/native-patches.txt?raw';
+
+const nativePatchIds = new Set(nativePatchSource.split(/\r?\n/u)
+  .filter((row) => row.trim() && !row.trim().startsWith('#'))
+  .map((row) => Number(row.trim().split(/\s+/u)[0])));
+if ([...nativePatchIds].some((id) => !Number.isSafeInteger(id) || id < 1 || id > 3053)) {
+  throw new Error('Invalid native TriangleCenter patch inventory.');
+}
+export const requiresTriangleCenterRecipe = (id: number): boolean => id > 3053 || nativePatchIds.has(id);
 
 type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string } | { kind: 'unknown-ideal' };
@@ -45,7 +54,7 @@ const loadChunk = async (id: number): Promise<void> => {
       const formula = opcode === 'B' ? referenceText[referenceText.length - 1] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
       const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0]))
         : opcode === 'B' ? referenceText.slice(0, -1).map(Number) : referenceText.map(Number);
-      if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || number <= 3053
+      if (!Number.isSafeInteger(number) || Math.floor(number / 1000) !== chunk || !requiresTriangleCenterRecipe(number)
         || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
         || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(['R', 'V'].includes(operation) && references.length === 3) && !(operation === 'B' && [1, 2].includes(references.length)))
         || (opcode === 'B' && !formula)
@@ -61,9 +70,9 @@ const loadChunk = async (id: number): Promise<void> => {
   return promise;
 };
 
-/** Load just the selected recipe and its transitive non-native dependencies. */
+/** Load the selected recipe and every dependency, including patched native IDs. */
 export const prepareTriangleCenter = async (id: number, visiting = new Set<number>()): Promise<void> => {
-  if (id <= 3053) return;
+  if (!requiresTriangleCenterRecipe(id)) return;
   await loadChunk(id);
   const recipe = recipes.get(id);
   if (!recipe) throw new Error(`Triangle center X(${id}) is not implemented.`);
@@ -75,7 +84,7 @@ export const prepareTriangleCenter = async (id: number, visiting = new Set<numbe
 
 export const triangleCenter: ExpressionBuilder = (args, allocate) => {
   const id = Number(args[3].literal);
-  if (!Number.isSafeInteger(id) || id <= 3053) throw new Error('Extended TriangleCenter requires an integer literal above 3053.');
+  if (!Number.isSafeInteger(id) || !requiresTriangleCenterRecipe(id)) throw new Error('Custom TriangleCenter requires an extended or patched native integer literal.');
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   const visiting = new Set<number>();
   const point = (expression: string): CenterValue => ({ kind: 'point', expression });
@@ -151,7 +160,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
     }, sources.map((source) => source.kind === 'ideal' ? 'vector' : 'point'));
   };
   const render = (number: number): CenterValue => {
-    if (number <= 3053) {
+    if (!requiresTriangleCenterRecipe(number)) {
       const direction = nativeDirections.get(number);
       if (direction) return { kind: 'ideal', from: requirePoint(render(direction[0])), to: requirePoint(render(direction[1])) };
       return point(`TriangleCenter(${vertices.join(',')},${number})`);

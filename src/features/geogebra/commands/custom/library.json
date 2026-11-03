@@ -5,7 +5,7 @@
   "tools": [
     {
       "name": "TriangleCenter",
-      "description": "A numbered ETC triangle center. Native GeoGebra handles its supported IDs and nonliteral number inputs; reviewed higher literal IDs use site recipes.",
+      "description": "A numbered ETC triangle center. Literal patched native IDs and higher IDs use reviewed site recipes; other selectors use GeoGebra.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "point", "builder": "triangleCenter"}
       ]

@@ -1,3 +1,4 @@
+import { requiresTriangleCenterRecipe } from './builders/triangleCenters';
 import { GEOGEBRA_COMMAND_NAMES } from '../completion/geogebraCommandNames';
 import { outerCalls, splitTopLevel } from './commandSyntax';
 import { createBindingCapture, type CompiledBindingPlan } from './bindingPlan';
@@ -30,12 +31,12 @@ const stripParens = (value: string): string => {
   return result;
 };
 
-/** The native command retains every selector except higher numeric literals representing integer IDs. */
+/** Literal extended and patched native IDs use recipes; expressions retain native dispatch. */
 const extendedTriangleCenterId = (source: string): number | undefined => {
   const literal = stripParens(source);
   if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu.test(literal)) return undefined;
   const id = Number(literal);
-  return Number.isSafeInteger(id) && id > 3053 ? id : undefined;
+  return Number.isSafeInteger(id) && requiresTriangleCenterRecipe(id) ? id : undefined;
 };
 
 /** Recognize only unambiguous types; never create probe objects or sample numeric values. */

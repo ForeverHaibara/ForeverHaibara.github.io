@@ -1,0 +1,5 @@
+1071 J 1 84 4 7
+1285 B (3*a^2+b^2-c^2)*(3*a^2-b^2+c^2)
+1908 B a*(a^2*(b^3+c^3)+2*a*b*c*(a^2+b*c))
+1913 B a^3*(2*a^3*b*c+a*b^4+a*c^4+b^2*c^2*(b+c))
+1939 B a*((a*cos(B)+b*cos(C)+c*cos(A))*cos(C)+(a*cos(C)+b*cos(A)+c*cos(B))*cos(B))
