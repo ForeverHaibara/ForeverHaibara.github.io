@@ -599,3 +599,14 @@ NATIVE_MAX仅保留原始范围语义，requires_recipe判定显式补丁节点�
 缓存：矩阵按家族/实际边长复用，数值输入缓存4096→16384以容纳两形状数千映射；提取指纹包含语法及模板编号集，位置缓存还包含实际数据与实现。首次冷提取全量约372秒，最终热缓存全量约163秒（两次选择约60/66秒，锚点约20秒）；不能将压缩当成构建提速，本轮增加的候选与证据筛选也有成本。最终发布4块约0.071秒。185 Python、167前端/代数、类型、Vite、verify通过。前端检查包括命名模板与理想输入编译，<50个内部命名绑定、匿名表达式<12000字符；没有宣称重新实测GeoGebra引擎。
 
 日志runs/collineations/；测量与回归在reports/reviews/collineation-{scope,precheck,comparison,size}.json及baseline.json.gz。下一步若继续压缩，先按实际剩余长公式测量其它固定框架/三角形的收益，再选择支持；不追求覆盖全部189种标题组合，也不为本轮差异重启已关闭的几何核验。
+
+
+## 34. 修复Gemini模板浏览器卡死（2026-11-04）
+
+用户实测发现卡死；本轮用真实GeoGebra 5.4.920.0、生产executeCommandPipeline复现X29919，页面读取及关闭一度超时。上一轮只约束输出字符数与辅助对象数，手动capture.lower(eligible=true)没有证明生产compileStudioPlan实际会使用命名后端；triangleCenter当时不在资格表，High仍输出多层匿名Zip。短表达式不等于低原生依赖构建成本。
+
+前端改为三个原生数值矩阵列表：归一化M、Invert(M)、输出重心列。H=M·diag(Invert(M)·1)与原adj版本仅差公共det因子，射影像一致；保留归一化行列式、逆矩阵行和相对于该行L1范数的框架检查及有限输出检查。常见直接输入的匿名绑定从9层减至6层，矩阵各分量不再作为大量Zip局部变量逐层传递。Low/Medium无需命名对象也能执行；High为四参数TriangleCenter的点输入开放现有几何辅助后端，沿用隐藏、回滚与保存机制，不强迫用户切换模式。
+
+既有triangleCenters.test.ts添加矩阵列表结构和实际compileStudioPlan资格回归，不再只测试手工打开capture。既有浏览器centers脚本增加suite=collineations：12个点覆盖多个Gemini模板及下游J；参考为压缩前坐标，检查急角/钝角、拖动、保存重开、右角sec可去极点、平坦三角形无定义及恢复。Low与High均通过，High确实产生126个隐藏辅助对象、Low为0。最后一轮Low单点65–165毫秒（X29919约113毫秒），High36–160毫秒；12点共同更新Low486–518毫秒、High12–15毫秒。计时是本机测试结果，不保证其它设备或任意依赖链同样耗时。
+
+Medium另以25969/29919/24526抽检同一组坐标、直角/退化恢复、拖动与重开，也通过且无命名辅助对象。全部580项Vitest（60文件）、TypeScript与Vite打包通过。纯前端求值修改，不改维护表/配方或搜索预算，无需ETC全量重建。运行记录runs/collineation-runtime/browser-results.json及对应测试/类型/打包日志。复现入口/scripts/geogebra/browser/verification.html?page=centers&suite=collineations，追加mode=high检查实际命名路径。

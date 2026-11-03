@@ -237,6 +237,7 @@ const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   cuspidalCubic: (args) => [4, 5, 6, 7].includes(args.length),
 };
 const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  triangleCenter: (args) => args.length === 4 && args.slice(0, 3).every((type) => type === 'point') && args[3] === 'number',
   qlMiquelCircle: (args) => args.length === 4 && args.every((type) => type === 'point'),
   commonTangents: (args) => [3, 4].includes(args.length) && args[0] === 'circle'
     && args[1] === 'circle' && args.slice(2).every((type) => type === 'number'),

@@ -176,3 +176,8 @@ python scripts/geogebra/tools/triangle_centers/triangle_center_consensus.py --fr
 Gemini射影模板使用111条共享顶点数据，不逐点复制大公式。若三顶点列组成M，计算H=M·diag(adj(M)·(1,1,1))，再求H·X；这保证第四个点X(2)也正确对应，不能用普通仿射映射替代。各列先独立归一化，允许运行时有方向理想输入；退化框架、第四点落在三顶点边上或输出理想值不冒认为有限点。独立sec项通过整列齐次缩放清除可去极点。
 
 选择时完整坐标证据与可选构造池分别传递：即使关系闭合阶段不选择纯坐标，已解析坐标仍会否决冲突的命名映射；数值事务重新检查受影响后继。失败时保留原有构造备选，运行时不附带另一份大坐标作动态fallback。提取缓存包含语法及目录编号集，位置缓存还包含实际共享顶点和求值实现。现阶段只支持上述X(2)框架，后续按实际压缩收益扩展。
+
+
+浏览器运行时注意（2026-11-04）：命名模板短不代表GeoGebra依赖图建立便宜。逐标量的多层单元素Zip曾使X29919绘制卡死；前端现将归一化M、Invert(M)及输出重心列保留为三个原生数值矩阵列表，以M·diag(Invert(M)·1)计算同一射影映射，保留行相对误差、行列式与有限输出检查。默认Low和Medium无需创建命名辅助对象即可执行；High通过真实compileStudioPlan资格检查，允许点/向量和矩阵数值列表按既有隐藏辅助对象生命周期保存。不要用手动capture.lower(eligible=true)代替生产路径或原生引擎回归。
+
+复现与回归入口：`/scripts/geogebra/browser/verification.html?page=centers&suite=collineations`，可附`mode=high`或`mode=medium`、`ids=29919`。同一既有测试脚本保存12点的压缩前坐标参考，检查两样本坐标、拖动、保存重开、直角图表、退化恢复；日志及实测摘要位于runs/collineation-runtime。运行时修复不改共享表、seeds或chunks，无需重新做ETC全量选择。

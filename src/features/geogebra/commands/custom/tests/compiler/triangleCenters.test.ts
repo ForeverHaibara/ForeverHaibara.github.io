@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { compileStudioCommand, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
+import { compileStudioCommand, compileStudioPlan, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
 import { prepareTriangleCenter } from '../../builders/triangleCenters';
 import { createBindingCapture } from '../../bindingPlan';
 import type { CommandEnvironment } from '../../types';
@@ -28,10 +28,18 @@ describe('extended TriangleCenter dispatch', () => {
       expect(result.length).toBeLessThan(12_000);
       const capture = { ...createBindingCapture(true), selected: [] };
       const token = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment(), undefined, capture);
-      const plan = capture.lower(token, '0123456789abcdef', true, new Set(['number', 'point', 'vector'] as const));
+      const plan = capture.lower(token, '0123456789abcdef', true, new Set(['number', 'numberList', 'point', 'vector'] as const));
       expect(plan.materialized).toBe(true);
       expect(plan.helpers.length).toBeLessThan(50);
       expect(plan.output + plan.helpers.map((helper) => helper.expression).join('')).not.toMatch(/@g\d/u);
+      expect(result).toContain('Invert(');
+      expect((result.match(/Element\(Zip\(/gu) ?? []).length).toBeLessThanOrEqual(6);
+      expect(plan.helpers.filter((helper) => helper.kind === 'numberList')).toHaveLength(3);
+      // Exercise the production eligibility path, not just capture.lower(true).
+      const high = compileStudioPlan(`out=TriangleCenter(A,B,C,${id})`, environment(), '0123456789abcdef', 'high');
+      expect(high.materialized).toBe(true);
+      expect(high.output).not.toContain('Zip(');
+      expect(compileStudioPlan(`out=TriangleCenter(A,B,C,${id})`, environment(), '0123456789abcdef').materialized).toBe(false);
     }
     expect(compileStudioCommand('TriangleCenter(A,B,C,73987)', environment()))
       .toContain('Vector(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3))');

@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
-import { bind, cross, add, mul } from '../algebra/homogeneous';
+import { bind, add, matrix, transpose } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 import nativePatchSource from '../data/triangle-centers/native-patches.txt?raw';
 import geminiSource from '../data/triangle-centers/gemini-triangles.txt?raw';
@@ -170,25 +170,26 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
             for (let j = 0; j < turn; j++) rotated = rotation[rotated] ?? rotated;
             return sides[rotated] ? `(${sides[rotated]})` : rotated;
           })));
-        return bind(columns.flat(), allocate, (raw) => {
-          const cols = [raw.slice(0, 3), raw.slice(3, 6), raw.slice(6, 9)];
-          return bind(cols.map((col) => add(col.map((v) => `abs(${v})`))), allocate, (norms) =>
-            bind(cols.flatMap((col, j) => col.map((v) => `((${v})/(${norms[j]}))`)), allocate, (normalized) => {
-              const M = [normalized.slice(0, 3), normalized.slice(3, 6), normalized.slice(6, 9)];
-              return bind(M.flatMap((_, j) => cross(M[(j + 1) % 3], M[(j + 2) % 3])), allocate, (cofactors) => {
-                const adj = [cofactors.slice(0, 3), cofactors.slice(3, 6), cofactors.slice(6, 9)];
-                return bind([...adj.map(add), add(M[0].map((v, i) => mul(v, adj[0][i])))], allocate, (frame) => {
-                  const guard = [`abs(${frame[3]})>1e-12`, ...frame.slice(0, 3).map((v, i) =>
-                    `abs(${v})>1e-12*${add(adj[i].map((q) => `abs(${q})`))}`)].join('&&');
-                  const weights = [0, 1, 2].map((i) => add(M.map((col, j) => mul(col[i], frame[j], bound[['x', 'y', 'z'][j]]))));
-                  return bind(weights, allocate, ([u, v, w]) => {
-                    const sum = `((${u})+(${v})+(${w}))`;
-                    return `If(${guard}&&${sum}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${sum})`;
-                  }, 'number');
-                }, 'number');
-              }, 'number');
-            }, 'number'), 'number');
-        }, 'number');
+        // Keep matrices as native numeric lists. Scalar-by-scalar singleton
+        // Zips make GeoGebra's anonymous dependency construction explode even
+        // when the printed expression is short (notably in Low mode).
+        const normalized = columns.map((col) => {
+          const norm = add(col.map((v) => `abs(${v})`));
+          return col.map((v) => `((${v})/${norm})`);
+        });
+        return bind([matrix(transpose(normalized))], allocate, ([M]) =>
+          bind([`Invert(${M})`], allocate, ([inverse]) => {
+            const rows = [1, 2, 3].map((i) => [1, 2, 3].map((j) => `Element(${inverse},${i},${j})`));
+            const d = rows.map(add);
+            const guard = [`abs(Determinant(${M}))>1e-12`, ...d.map((v, i) =>
+              `abs(${v})>1e-12*${add(rows[i].map((q) => `abs(${q})`))}`)].join('&&');
+            const input = matrix(d.map((v, i) => [`(${v})*(${bound[['x', 'y', 'z'][i]]})`]));
+            return bind([`(${M})*${input}`], allocate, ([weights]) => {
+              const [u, v, w] = [1, 2, 3].map((i) => `Element(${weights},${i},1)`);
+              const sum = `((${u})+(${v})+(${w}))`;
+              return `If(${guard}&&${sum}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${sum})`;
+            }, 'numberList');
+          }, 'numberList'), 'numberList');
       }
       const weights = [cyclic(0), cyclic(1), cyclic(2)];
       return bind(weights, allocate, ([u, v, w]) => {
