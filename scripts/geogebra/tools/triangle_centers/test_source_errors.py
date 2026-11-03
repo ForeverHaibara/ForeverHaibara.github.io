@@ -1048,3 +1048,21 @@ class NativePatchReview(TestCase):
         self.assertIn('fd12',entries[15276])
         self.assertEqual(seed.formula,m.coordinate_candidates(entries[15276].replace('fd12','12'))[0][1])
         self.assertTrue(m.homogeneous_degree(seed.formula)[0])
+
+
+class GeminiSourceCoordinates(TestCase):
+    def test_25962_gemini37_circumcenter_image_matches_printed_coordinates(self):
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart13.html').read_text(encoding='utf-8',errors='replace')))
+        candidates=m.extract_entry(25962,entries[25962],13,compact=True).explicit
+        self.assertIn('25962 B 3 @g37',[r.row() for r in candidates])
+        printed=Recipe(25962,'B',(),formula=m.coordinate_candidates(entries[25962])[0][1])
+        mapping=Recipe(25962,'B',(3,),formula='@g37')
+        triangles=[[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)]]
+        for a,b,c in [(6,9,13),(13,14,15)]:
+            x=(a*a+c*c-b*b)/(2*a)
+            triangles.append([(x,math.sqrt(c*c-x*x)),(0,0),(a,0)])
+        for abc in triangles:
+            O=m.numeric_circle_center(abc)
+            expected=m.numeric_formula(printed,abc)
+            actual=m.numeric_transform_formula(mapping,O,abc)
+            self.assertLess(math.dist(actual,expected),1e-8*max(1,math.hypot(*expected)))

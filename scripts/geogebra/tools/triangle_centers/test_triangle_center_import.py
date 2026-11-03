@@ -1598,5 +1598,111 @@ class VuPccTest(TestCase):
                 self.assertEqual(read_recipes(path)[4000].operation,'V')
 
 
+class GeminiCollineationTest(TestCase):
+    def test_converted_vertex_catalog_and_checked_in_data_are_reproducible(self):
+        from triangle_center_collineations import CATALOG, catalog, convert, read_catalog
+        self.assertEqual(set(catalog()),set(range(1,112)))
+        self.assertEqual(catalog()[37],('1','cos(A)','cos(A)'))
+        self.assertEqual(catalog()[111],('-3','1','1'))
+        with TemporaryDirectory(dir=m.CACHE) as folder:
+            path=Path(folder)/'vertices.txt'
+            convert(m.CACHE/'gemini-triangle.html',path)
+            self.assertEqual(path.read_bytes(),CATALOG.read_bytes())
+            for bad in ['37 1|1|1\n37 1|1|1','1 a|b^2|c','1 x|1|1']:
+                path.write_text(bad)
+                with self.assertRaises(ValueError):read_catalog(path)
+
+    def test_complete_collineation_grammar_and_fallback(self):
+        from triangle_center_collineations import parse_gemini_collineation
+        body="(A,B,C,X(2); A',B',C',X(2)) COLLINEATION IMAGE OF X(3), WHERE A'B'C' = GEMINI TRIANGLE 37"
+        self.assertEqual(parse_gemini_collineation(body),(3,'@g37'))
+        self.assertEqual(parse_gemini_collineation(body.replace("'",'′')),(3,'@g37'))
+        for bad in [body.replace('X(2)','X(1)',1),body.replace('TRIANGLE 37','TRIANGLE 112'),
+                    body.replace("A',B',C'","A'',B'',C''"),body+' in another triangle',
+                    body.replace('GEMINI TRIANGLE 37','CEVIAN TRIANGLE OF X(6)')]:
+            self.assertIsNone(parse_gemini_collineation(bad))
+            candidates=m.extract_entry(4000,'X(4000) = '+bad+'<br>Barycentrics a^2 : :',14,compact=True)
+            self.assertTrue(any(r.operation=='B' and not r.references for r in candidates.explicit))
+            self.assertFalse(any(r.formula.startswith('@') for r in candidates.explicit))
+        candidates=m.extract_entry(4000,'X(4000) = '+body,14,compact=True)
+        self.assertEqual([r.row() for r in candidates.explicit],['4000 B 3 @g37'])
+
+    def test_frame_satisfies_four_images_and_independent_column_scalings(self):
+        from triangle_center_collineations import frame_matrix
+        columns=[(2,-1,3),(1,4,-2),(3,2,5)]
+        matrix=frame_matrix(columns);self.assertIsNotNone(matrix)
+        def apply(M,p):return [sum(row[i]*p[i] for i in range(3)) for row in M]
+        def norm(p):return [v/sum(p) for v in p]
+        for i in range(3):
+            self.assertLess(math.dist(norm(apply(matrix,[int(i==j) for j in range(3)])),norm(columns[i])),1e-12)
+        self.assertLess(math.dist(norm(apply(matrix,[1,1,1])),[1/3]*3),1e-12)
+        scaled=frame_matrix([tuple(v*k for v in col) for col,k in zip(columns,[1e6,-7,.001])])
+        for point in [(1,2,3),(-3,1,4),(1,-1,0)]:
+            self.assertLess(math.dist(norm(apply(matrix,point)),norm(apply(scaled,point))),1e-11)
+        # A linear combination remains on the line joining its two sources.
+        u=apply(matrix,[1,2,3]);v=apply(matrix,[2,-3,1]);w=apply(matrix,[7,0,11])
+        determinant=u[0]*(v[1]*w[2]-v[2]*w[1])-u[1]*(v[0]*w[2]-v[2]*w[0])+u[2]*(v[0]*w[1]-v[1]*w[0])
+        self.assertLess(abs(determinant),1e-12)
+
+    def test_secant_pole_is_cleared_projectively_in_maintained_data(self):
+        from triangle_center_collineations import catalog, clear_isolated_secant
+        self.assertEqual(clear_isolated_secant(('sec(A)','1','1')),catalog()[37])
+        self.assertEqual(clear_isolated_secant(('-sec(A)','1','1')),catalog()[38])
+        # This triangle has a right B angle; no sec(B) division enters the map.
+        abc=[(0,3),(0,0),(4,0)]
+        mapping=Recipe(4000,'B',(1,),formula='@g37')
+        self.assertIsNotNone(m.numeric_transform_formula(mapping,abc[1],abc))
+
+    def test_degenerate_frames_are_not_silently_extended(self):
+        from triangle_center_collineations import frame_matrix
+        for columns in [[(1,0,0),(0,1,0),(1,1,0)],[(1,0,0),(0,1,0),(1,1,1)],
+                        [(0,0,0),(0,1,0),(0,0,1)],[(math.inf,0,0),(0,1,0),(0,0,1)]]:
+            self.assertIsNone(frame_matrix(columns))
+
+    def test_gemini_vertex_rotation_centroid_and_ideal_input(self):
+        from triangle_center_collineations import catalog
+        abc=[(0,0),(6,0),(1,4)]
+        env=side_environment(*[math.dist(abc[(i+1)%3],abc[(i+2)%3]) for i in range(3)])
+        recipe=Recipe(4000,'B',(1,),formula='@g37')
+        for gid in [3,37,63,97]:
+            for turn in range(3):
+                weights=[evaluate_formula(m.rotate_formula(f,turn),env) for f in catalog()[gid]]
+                # Local B,C,A / C,A,B frames evaluated directly in the world plane.
+                expected=tuple(sum(weights[j]*abc[(j+turn)%3][k] for j in range(3))/sum(weights) for k in (0,1))
+                self.assertLess(math.dist(m.numeric_transform_formula(Recipe(4000,'B',(1,),formula=f'@g{gid}'),abc[turn],abc),expected),1e-10)
+        G=tuple(sum(p[k] for p in abc)/3 for k in (0,1))
+        self.assertLess(math.dist(m.numeric_transform_formula(recipe,G,abc),G),1e-10)
+        self.assertIsNotNone(m.numeric_transform_formula(recipe,Ideal(1,2),abc))
+        m.validate_recipe_inputs(Recipe(4000,'B',(30,),formula='@g37'),{}, {30})
+        with self.assertRaises(ValueError):m.validate_recipe_inputs(Recipe(4000,'B',(4001,),formula='@g37'),{4001:Recipe(4001,'I',())},set())
+
+    def test_coordinate_conflicts_reject_map_without_removing_fallback(self):
+        abc=[(0,0),(6,0),(1,4)]
+        G=tuple(sum(p[k] for p in abc)/3 for k in (0,1))
+        atlas=dict(triangles={'t':abc},coordinates={'t':{'1':G}})
+        mapping=Recipe(4000,'B',(1,),formula='@g37');fallback=Recipe(4000,'B',(),formula='a^2')
+        coordinates=m.numeric_coordinates({},atlas)
+        self.assertTrue(m.transform_candidate_supported(mapping,coordinates,atlas,[]))
+        self.assertFalse(m.transform_candidate_supported(mapping,coordinates,atlas,[fallback]))
+        selected=m.select_recipes({4000:[mapping,fallback]}, {},6,None,1,atlas=atlas)
+        self.assertEqual(selected[4000].row(),fallback.row())
+        # Relation-only selection must still consult coordinates omitted from
+        # the construction pool, before a conflicting map can seed its cluster.
+        self.assertNotIn(4000,m.select_recipes({4000:[mapping]}, {},6,None,1,
+                         atlas=atlas,coordinate_evidence={4000:[mapping,fallback]}))
+        self.assertLess(m.quality(Recipe(4000,'J',(1,2,3,4))),m.quality(mapping))
+        self.assertLess(m.quality(mapping),m.quality(fallback))
+        self.assertGreater(m.estimated_recipe_length(mapping,[27]),1000)
+
+    def test_named_map_recipe_roundtrip_and_invalid_arities(self):
+        with TemporaryDirectory(dir=m.CACHE) as folder:
+            path=Path(folder)/'recipes.txt'
+            path.write_text('4000 B 3 @g37')
+            self.assertEqual(m.read_recipes(path)[4000].row(),'4000 B 3 @g37')
+            for bad in ['4000 B @g37','4000 B 1 2 @g37','4000 B 1 @g112','4000 B 1 @g0','4000 B 1 @g037']:
+                path.write_text(bad)
+                with self.assertRaises(ValueError):m.read_recipes(path)
+
+
 if __name__ == "__main__":
     unittest.main()

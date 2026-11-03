@@ -1,7 +1,8 @@
 """Read-only, dependency-aware property consensus for a requested ETC cohort.
 
 Proposals are numerical evidence, not proofs or automatic source corrections.
-They must pass the normal build before publication. No new recipe syntax.
+They must pass the normal build before publication. Shared map references use
+the importer's normal recipe grammar.
 """
 from __future__ import annotations
 
@@ -45,6 +46,8 @@ def coordinate_snapshot(records,atlas,directions,cache_dir):
     digest.update(m.support.extraction_source_fingerprint(Path(m.__file__).read_text(encoding='utf-8'),
                                                         roots=('numeric_coordinates',)).encode())
     digest.update(Path(m.__file__).with_name('triangle_center_coordinates.py').read_bytes())
+    digest.update(Path(m.__file__).with_name('triangle_center_collineations.py').read_bytes())
+    digest.update((m.DATA/'gemini-triangles.txt').read_bytes())
     key=digest.hexdigest();path=cache_dir/f'{key}.json.gz'
     cached=m.support.read_cache(path)
     if isinstance(cached,dict) and cached.get('schema')==1 and cached.get('key')==key:

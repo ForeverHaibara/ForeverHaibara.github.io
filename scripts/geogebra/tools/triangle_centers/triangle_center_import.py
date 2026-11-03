@@ -26,6 +26,7 @@ from triangle_center_support import stage, report
 from triangle_center_graph import SelectedGraph, NumericTransactions, CoordinateOverlay
 from triangle_center_sources import prepare_source
 from triangle_center_domains import DOMAIN_KINDS, complex_dependency_roots
+from triangle_center_collineations import map_id as gemini_map_id, parse_gemini_collineation, map_weights as gemini_map_weights, catalog as gemini_catalog
 from triangle_center_diagnostics import entry_metadata, title_groups, intersection_title_hints
 
 from bs4 import BeautifulSoup
@@ -209,6 +210,8 @@ def quality(recipe: Recipe) -> tuple[float, int]:
     # An explicitly stated intersection is stronger evidence than choosing
     # two arbitrary pairs from a list of lines that merely pass through X(n).
     incidence_only = int('lies on these lines:' in recipe.evidence.lower())
+    if recipe.operation == 'B' and recipe.references and gemini_map_id(recipe.formula) is not None:
+        return 3.75, incidence_only  # Retain cheap geometric recipes; prefer a shared map over pure coordinates.
     if recipe.operation == 'F':
         return (0 if all(not re.search(r'[A-Za-z_]', c) for c in recipe.formula.split('|')) else 3.5), incidence_only
     return (1 if line_reflection(recipe) else RISK[recipe.operation]), incidence_only
@@ -587,6 +590,8 @@ def extract_entry(number: int, fragment: str, part: int,
         relation = RELATION.match(line)
         if relation and int(relation[1]) == number:
             recipes.extend(ceva_cross_candidates(number,relation[2],part))
+            if (collineation := parse_gemini_collineation(relation[2])) and collineation[0] != number:
+                recipes.append(Recipe(number,'B',(collineation[0],),part,line,collineation[1]))
             if match := BARYCENTRIC_POWER.fullmatch(relation[2]):
                 source=int(match[2])
                 if source>0 and source!=number:
@@ -730,7 +735,7 @@ def read_recipes(path: Path, skipped: dict[int, str] | None = None,
             raise ValueError(f'Invalid or duplicate recipe in {path}: {row}')
         if formula:
             for scalar in formula.split('|'):
-                if opcode=='B' and refs:
+                if opcode=='B' and (refs or scalar.startswith('@')):
                     validate_transform_formula(scalar,len(refs))
                 elif opcode=='F' and len(refs)==2 and 'd' in scalar:
                     validate_formula(scalar,True)
@@ -903,6 +908,8 @@ def estimated_recipe_length(recipe: Recipe, children: list[int]) -> int:
         # area expressions, so a long coordinate source is not repeated.
         return 1100 + children[0]
     if recipe.operation == 'B':
+        if (gemini := gemini_map_id(recipe.formula)) is not None:
+            return 6000 + 54*sum(map(len,gemini_catalog()[gemini])) + sum(children)
         return 150 + 18 * len(recipe.formula) + sum(children)
     if recipe.operation == 'F':
         return 600 + 18 * len(recipe.formula) + sum(children)
@@ -955,7 +962,7 @@ def validate_recipe_inputs(recipe: Recipe, records: dict[int, Recipe], native_id
              for ref in recipe.references]
     op = recipe.operation
     valid = (not ideal[0] and not all(ideal[1:]) if op=='P' or line_reflection(recipe) else
-             not any(ideal) or projective_power(recipe) if op=='B' else
+             not any(ideal) or projective_input_supported(recipe) if op=='B' else
              not any(ideal) if op in {'M', 'R', 'C', 'A', 'I', 'V', 'F', 'O'} else
              not (ideal[0] and ideal[1] or ideal[2] and ideal[3]) if op == 'J' else True)
     if not valid:
@@ -1072,6 +1079,12 @@ def numeric_formula_projective(recipe: Recipe, abc: list[tuple[float, float]]) -
 
 @lru_cache(maxsize=8192)
 def validate_transform_formula(formula: str, source_count: int = 1) -> None:
+    if formula.startswith('@'):
+        if gemini_map_id(formula) is None:
+            raise ValueError('Unknown collineation template')
+        if source_count != 1:
+            raise ValueError('Gemini collineations require one source point')
+        return
     validate_formula(formula,source_coordinates=source_count)
     if not all(homogeneous_degree(formula,source_coordinates=source_count,source_scale=scale)[0]
                for scale in range(source_count+1)):
@@ -1082,14 +1095,20 @@ def projective_power(recipe: Recipe) -> bool:
     return recipe.operation=='B' and len(recipe.references)==1 and recipe.formula in {'x^2','x^3'}
 
 
+def projective_input_supported(recipe: Recipe) -> bool:
+    return projective_power(recipe) or (recipe.operation=='B' and len(recipe.references)==1
+                                      and gemini_map_id(recipe.formula) is not None)
+
+
 def numeric_transform_formula(recipe: Recipe, source: Coordinate, abc) -> tuple[float,float] | None:
     sources = [source] if len(recipe.references)==1 else source
-    if any(isinstance(p,Ideal) for p in sources) and not projective_power(recipe):
+    if any(isinstance(p,Ideal) for p in sources) and not projective_input_supported(recipe):
         return None
     return _transform_sample(recipe.formula,tuple(p if isinstance(p,Ideal) else tuple(p) for p in sources),tuple(tuple(p) for p in abc))
 
 
-@lru_cache(maxsize=4096)
+# Thousands of shared map/input pairs across both shapes must fit without LRU thrashing.
+@lru_cache(maxsize=16384)
 def _transform_sample(formula, sources, abc):
     validate_transform_formula(formula,len(sources))
     if formula in {'x^2-y*z','2*x^2+y^2+z^2-x*y-2*y*z-x*z'}:
@@ -1110,7 +1129,11 @@ def _transform_sample(formula, sources, abc):
             weights.append(source.dx*(b[1]-c[1])-source.dy*(b[0]-c[0]) if isinstance(source,Ideal)
                            else (b[0]-source[0])*(c[1]-source[1])-(b[1]-source[1])*(c[0]-source[0]))
         env.update(zip(names,weights))
-    result = weighted_coordinate([evaluate_formula(rotate_formula(formula,j),env) for j in range(3)],abc)
+    if (gemini := gemini_map_id(formula)) is not None:
+        weights = gemini_map_weights(gemini,[env[name] for name in ('x','y','z')],(env['a'],env['b'],env['c']))
+        result = weighted_coordinate(weights,abc) if weights is not None else None
+    else:
+        result = weighted_coordinate([evaluate_formula(rotate_formula(formula,j),env) for j in range(3)],abc)
     return result if isinstance(result,tuple) else None
 
 
@@ -1369,6 +1392,25 @@ def combo_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, C
     return valid > 0
 
 
+def transform_candidate_supported(recipe, coordinates, atlas, alternatives):
+    if not combo_candidate_supported(recipe,coordinates,atlas):
+        return False
+    if gemini_map_id(recipe.formula) is None:
+        return True
+    # A compact title is not permission to displace contradictory coordinates.
+    # Keep every original candidate; compare only independent pure-coordinate
+    # evidence that can actually be evaluated, never another map of this input.
+    options=alternatives.explicit if isinstance(alternatives,RecipeCandidates) else alternatives
+    formulas=[r for r in options if r.operation=='B' and not r.references]
+    for shape,abc in atlas['triangles'].items():
+        expected=[p for r in formulas if isinstance(p:=numeric_formula(r,abc),tuple)]
+        source=coordinates[shape].get(recipe.references[0])
+        actual=numeric_transform_formula(recipe,source,abc) if source is not None else None
+        if expected and (actual is None or not any(math.dist(actual,p)<=1e-7*max(1,math.hypot(*actual),math.hypot(*p)) for p in expected)):
+            return False
+    return True
+
+
 def shinagawa_candidate_supported(recipe: Recipe, coordinates: dict[str, dict[int, Coordinate]], atlas: dict,
                                   alternatives: list[Recipe], lines: list[tuple[int, int]]) -> bool:
     if not combo_candidate_supported(recipe, coordinates, atlas):
@@ -1468,12 +1510,15 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                    blocked_native: set[int] | None = None,
                    deferred_targets: set[int] | None = None, atlas: dict | None = None,
                    native_directions: dict[int, tuple[int, int]] | None = None,
-                   require_seeds: bool = True) -> dict[int, Recipe]:
+                   require_seeds: bool = True, coordinate_evidence: dict | None = None) -> dict[int, Recipe]:
     # A reviewed seed may depend on another extended center. Admit it only
     # after its references have closed, just like automatically parsed recipes.
     selected = {number: recipe for number, recipe in seeds.items()
                 if all(not requires_recipe(reference) for reference in recipe.references)}
     native_directions = native_directions or {}
+    # Selection pools deliberately omit most pure coordinates. Evidence must
+    # survive that optimization, including during relation-only closure.
+    coordinate_evidence = candidates if coordinate_evidence is None else coordinate_evidence
     native_ideal = set(native_directions)
     blocked_native = (blocked_native or set()) - set(native_directions) - NATIVE_PATCH_IDS
     deferred_targets = deferred_targets or set()
@@ -1579,7 +1624,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
                 if coordinates and recipe.operation == 'F' and not combo_candidate_supported(recipe, coordinates, atlas):
                     continue
                 if atlas and recipe.operation == 'B':
-                    if not (combo_candidate_supported(recipe,coordinates,atlas) if recipe.references
+                    if not (transform_candidate_supported(recipe,coordinates,atlas,coordinate_evidence.get(recipe.number,[])) if recipe.references
                             else formula_candidate_supported(recipe, atlas)):
                         continue
                 possible.append((key, recipe))
@@ -1625,7 +1670,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
         if op == 'F':
             return combo_candidate_supported(recipe, coordinates, atlas)
         if op == 'B':
-            return (combo_candidate_supported(recipe,coordinates,atlas) if recipe.references
+            return (transform_candidate_supported(recipe,coordinates,atlas,coordinate_evidence.get(recipe.number,[])) if recipe.references
                     else formula_candidate_supported(recipe, atlas))
         return True
 
@@ -1637,7 +1682,7 @@ def select_recipes(candidates: dict[int, list[Recipe]], seeds: dict[int, Recipe]
             return False
         # Preserve the final-screen contract: conditional non-incidence results
         # need a valid sample; J/I must also retain their incidence evidence.
-        return supported(recipe, coordinates) if recipe.operation in {'J', 'I'} else True
+        return supported(recipe, coordinates) if recipe.operation in {'J', 'I'} or gemini_map_id(recipe.formula) is not None else True
 
     geometry = (NumericTransactions(graph,
                 lambda records, cached, dirty: numeric_coordinates(records, atlas, native_directions,
@@ -2015,7 +2060,8 @@ def main() -> None:
                               and 'shinagawa coefficients' not in recipe.evidence.lower())
                      for number, options in eligible.items()}
     baseline = select_recipes(relation_only, seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, selection_exclusions, atlas, native_directions, require_seeds=False)
+                              blocked_native, selection_exclusions, atlas, native_directions, require_seeds=False,
+                              coordinate_evidence=eligible)
     reference_coordinates = numeric_coordinates(baseline, atlas, native_directions)
     accepted_shinagawa = rejected_shinagawa = 0
     for number, options in eligible.items():
@@ -2044,7 +2090,7 @@ def main() -> None:
     selected = select_recipes({number: options + ([anchors[number]] if number in anchors else [])
                                for number, options in relation_only.items()},
                               seeds, args.max_depth, args.max_length, args.max_conjugates,
-                              blocked_native, selection_exclusions, atlas, native_directions)
+                              blocked_native, selection_exclusions, atlas, native_directions, coordinate_evidence=eligible)
     # A formula rejected against the early relation-only snapshot can agree
     # once other coordinate anchors have corrected/closed its line endpoints.
     # Re-screen only the residual graph; retain the complete candidate search
@@ -2075,7 +2121,7 @@ def main() -> None:
         trial = select_recipes({n:options+([proposed[n]] if n in proposed else [])
                                 for n,options in relation_only.items()},seeds,
                                args.max_depth,args.max_length,args.max_conjugates,
-                               blocked_native,selection_exclusions,atlas,native_directions)
+                               blocked_native,selection_exclusions,atlas,native_directions,coordinate_evidence=eligible)
         lost = set(selected)-set(trial)
         added = set(trial)-set(selected)
         report('late-coordinate-anchors',proposed=sorted(extra),added=sorted(added),lost=sorted(lost))

@@ -597,3 +597,10 @@ Vietnamese 前言表将 (2,4) 写到 39192、把 (2,5) 写成 29192，并重复 
 没有旧覆盖退出。旧选中DAG受影响后继50个；41个旧扩展位置由不符源坐标变为相符，无新增失配。10202及26842两条可疑线都随1071修复恢复，撤销旧线表错误怀疑。目标及上游92项复查无新建议或种子冲突。具体原生配方、6–9–13数值、分派/图政策及暂缓原因见source-review的“原生准确性与可用性补丁”。
 
 176 Python、166前端/代数、类型、打包及verify通过；最大深度6、估计展开105,990。日志runs/native-patches/，最终诊断reports/uncovered/native-patches.json，变更前快照与全量差分、批量复核分别为reports/reviews/native-patch-baseline.json.gz、native-patch-comparison.json、native-patch-consensus.json。
+
+
+## Gemini射影像压缩（2026-11-04）
+
+本轮改善存储而非降低未覆盖数：仍70,213条、4个扩展暂缓目标5373/5394/5626/40139，原生368/370/1144仍单独暂缓。1434个命名B配方共用95个Gemini模板；维护表保存111个三角形顶点，自动构造不读取统计JSON。chunks共1,958,618字节，比上轮少11.42%；27–29三块合计减少75.61%。其它框架及冲突标题保留旧候选。
+
+最终两样本全库比较无位置、类型、定义性变化，无旧覆盖退出。27项标题/坐标预检差异见source-review，不新增几何复核要求。185 Python、167前端/代数、TypeScript、Vite与verify通过；详细范围、公式与构建耗时见scaling-plan第33节，报告reports/reviews/collineation-comparison.json及collineation-size.json，日志runs/collineations/。

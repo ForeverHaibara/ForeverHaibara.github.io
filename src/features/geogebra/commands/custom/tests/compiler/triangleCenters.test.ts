@@ -7,7 +7,7 @@ import type { CommandEnvironment } from '../../types';
 // Synthetic protocol fixtures above the current ETC range, in the existing tail chunk.
 vi.mock('../../data/triangle-centers/chunks/73.txt?raw', async (importOriginal) => {
   const original = await importOriginal<{ default: string }>();
-  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n73990 M 1071 1\n73989 G 6004\n' };
+  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n73990 M 1071 1\n73989 G 6004\n73988 B 3 @g37\n73987 B 30 @g37\n73986 B 3 @g3\n73985 B 3 @g97\n' };
 });
 
 const environment = (): CommandEnvironment => ({
@@ -15,9 +15,28 @@ const environment = (): CommandEnvironment => ({
   macros: new Set(),
 });
 
-beforeAll(async () => { for (const id of [73989, 73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
+beforeAll(async () => { for (const id of [73985, 73986, 73987, 73988, 73989, 73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
+  it('expands shared Gemini projectivities with bound matrices and frame guards', () => {
+    for (const id of [73985, 73986, 73987, 73988]) {
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toMatch(/@g\d/u);
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).toContain('>1e-12');
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW)\b/u);
+      expect(result.length).toBeLessThan(12_000);
+      const capture = { ...createBindingCapture(true), selected: [] };
+      const token = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment(), undefined, capture);
+      const plan = capture.lower(token, '0123456789abcdef', true, new Set(['number', 'point', 'vector'] as const));
+      expect(plan.materialized).toBe(true);
+      expect(plan.helpers.length).toBeLessThan(50);
+      expect(plan.output + plan.helpers.map((helper) => helper.expression).join('')).not.toMatch(/@g\d/u);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73987)', environment()))
+      .toContain('Vector(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3))');
+  });
+
   it('prefers repaired native literals and repairs their downstream inputs', async () => {
     for (const id of [369,459,1071,1285,1908,1913,1939,2923,2924,2925,2926,2927,2928,3020,15276,73990]) {
       await prepareTriangleCenter(id);

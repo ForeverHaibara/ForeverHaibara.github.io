@@ -32,8 +32,12 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `F p:w1 q:w2 ...` | 加权有限点组合，结果为 Σwi·X(i)/Σwi | 2–6 个互异输入；权重同量纲，权重和非零；公式不含空白 |
 | 双输入 F 中的 `d` | 两个输入点之间的距离 | 仅 F 恰有两个输入时可用；边长量纲；运行时只绑定一次输入与距离 |
 | `B f` | 循环重心坐标 `f(a,b,c):f(b,c,a):f(c,a,b)` | 纯坐标公式，须满足齐次性；有限锚点与理想状态分开处理 |
-| `B p f` | 使用 X(p) 重心坐标的循环变换 | 仅此作用域增加 `x,y,z`，随循环一起替换；仅 x²/x³ 模板可接收有方向理想输入，其余须有限 |
+| `B p f` | 使用 X(p) 重心坐标的循环变换 | 仅此作用域增加 `x,y,z`，随循环一起替换；x²/x³ 及下述命名射影模板可接收有方向理想输入，其余须有限 |
 | `B p q f` | 使用两个输入重心坐标的循环变换 | 第一输入 `x,y,z`，第二输入 `u,v,w`；两个输入分别检查射影缩放齐次性 |
+| `B p @gk` | X(p) 在 `(A,B,C,X(2); A′,B′,C′,X(2))` 下到 Gemini triangle k 的射影像 | 共用B；k须在gemini-triangles.txt登记，恰好一个有限或有方向理想输入；裸I禁止 |
+| `gemini-triangles.txt` 的 `k u\|v\|w` | Gemini第k号三角形A顶点重心坐标，另两顶点循环生成 | 维护数据，Python与前端共读；分量须齐次同量纲 |
+| `triangle_center_collineations.py convert --source 文件` | 从下载的Gemini定义页生成维护表 | 显式维护操作；build不读定义HTML或统计JSON |
+| ETC上述四点框架 `COLLINEATION IMAGE OF X(p), WHERE A′B′C′ = GEMINI TRIANGLE k` | 严格完整标题匹配，提取命名B候选 | 其它框架、锚点、三角形、双撇或未知限定仍用原有备选 |
 | `native-patches.txt` 中 `n 操作 参数...` | 原生修复的权威清单，复用全部配方语法 | 手动审阅，不从Part1–3自动提取；前端读取同一清单判断字面量分派，build生成对应chunks；普通未登记原生编号不能写入配方 |
 | `n DOMAIN nonreal` | 已审阅、一般位置下非实的点 | seeds 元数据，不生成实平面配方；列入 `resolved_nonreal`，不计未覆盖 |
 | `n DOMAIN conditional_complex` | 在不同三角形域上可能为实或复 | seeds 元数据；保留实域构造资格，不等同 SKIP 或永久非实 |
@@ -167,3 +171,8 @@ python scripts/geogebra/tools/triangle_centers/triangle_center_consensus.py --fr
 原生准确性补丁与native-status的缺失/理想状态分开：保留原始引擎观测，数值求值先屏蔽清单中的旧atlas值，再计算补丁。requires_recipe统一依赖闭合、深度、长度、共轭预算和类型；SelectedGraph以native_overrides声明必须存在的节点，missing/cycle不能因编号小而跳过。补丁类型优先于原生状态。当前方向锚点不引用补丁；后续清单若改变这个条件，会拒绝构建，要求重新生成方向或登记显式节点。提取缓存计入补丁编号集，位置缓存同时计入实际配方和编号集。
 
 前端仅将字面量扩展号或登记原生号送入同一配方构建器，括号/小数/科学计数法的整数等价字面量也适用；动态表达式仍由GeoGebra处理。下游prepare/render同样走补丁，不仅顶层命令替换。native-patches.txt为手动输入，修改后须build；verify会检查每条生成补丁与清单完全一致。已补13个准确性差异及369；368/370/1144保留原生未支持记录并暂缓隐式选根，不计作已修复。
+
+
+Gemini射影模板使用111条共享顶点数据，不逐点复制大公式。若三顶点列组成M，计算H=M·diag(adj(M)·(1,1,1))，再求H·X；这保证第四个点X(2)也正确对应，不能用普通仿射映射替代。各列先独立归一化，允许运行时有方向理想输入；退化框架、第四点落在三顶点边上或输出理想值不冒认为有限点。独立sec项通过整列齐次缩放清除可去极点。
+
+选择时完整坐标证据与可选构造池分别传递：即使关系闭合阶段不选择纯坐标，已解析坐标仍会否决冲突的命名映射；数值事务重新检查受影响后继。失败时保留原有构造备选，运行时不附带另一份大坐标作动态fallback。提取缓存包含语法及目录编号集，位置缓存还包含实际共享顶点和求值实现。现阶段只支持上述X(2)框架，后续按实际压缩收益扩展。

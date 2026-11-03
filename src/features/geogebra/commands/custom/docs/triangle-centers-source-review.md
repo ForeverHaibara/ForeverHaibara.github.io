@@ -370,3 +370,12 @@ seeds仅为上述四个隐式求解点加注释，原始源与uncovered状态不
 176 Python、166前端/代数测试、TypeScript、Vite及最终verify通过。这里的原生数学核验使用用户参考表、源公式和两个离线atlas形状，前端验证为编译与依赖加载测试，不冒称另做了新版本引擎的全体原生实测。
 
 报告：`reports/reviews/native-patch-baseline.json.gz`（变更前独立快照及配方hash）、`native-patch-comparison.json`、`native-patch-consensus.json`、`reports/uncovered/native-patches.json`；日志`runs/native-patches/`。原始输入`research/native-6913-results.json`、`ETC6913Table.html`、`reports/geogebra-etc-source-excerpts.html`均保留。
+
+
+## Gemini标题与坐标的相容性保留（2026-11-04）
+
+新增重心固定Gemini射影候选后，对4237个匹配标题与旧库两样本预检：4210相符，27项存在差异。集中为Gemini21的25395–25400、Gemini36的25953、Gemini41的26181–26199、Gemini86的28820。差异可能来自标题、Gemini表、坐标或输入上游；本轮不裁决，不更改seeds，也不请用户逐个补做几何证明。
+
+处理原则是保留源坐标、线表和全部旧候选，完整可解析坐标证据在关系闭合与替换事务中都可否决冲突命名模板。曾在实验中因关系池未带坐标证据而使25个点偏移，已通过独立证据参数修正并加回归。最终27项均保留原位置，全库70213条在两个atlas样本上无位置、类型、定义性变化；未退出旧覆盖。这个结果表示保守压缩成功，不表示上述标题或表已经被数学证伪。
+
+X25962提取到候选25962 B 3 @g37（最终仍优先较便宜的J 2 3 63 1329），并在急角、钝角、6–9–13和13–14–15三角形对照打印坐标。框架映射另有独立测试：三顶点、第四点重心、列的独立射影缩放、共线保持、退化及有方向理想输入。报告reports/reviews/collineation-precheck.json、collineation-comparison.json；实际构造不读取这些审阅缓存或用户统计文件。

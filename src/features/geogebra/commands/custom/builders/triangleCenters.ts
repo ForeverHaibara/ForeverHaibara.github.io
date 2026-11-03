@@ -1,8 +1,9 @@
 import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
-import { bind } from '../algebra/homogeneous';
+import { bind, cross, add, mul } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 import nativePatchSource from '../data/triangle-centers/native-patches.txt?raw';
+import geminiSource from '../data/triangle-centers/gemini-triangles.txt?raw';
 
 const nativePatchIds = new Set(nativePatchSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -37,6 +38,24 @@ const validFormula = (formula: string, pairDistance = false, sourceCoordinates =
     || sourceCoordinates > 0 && ['x', 'y', 'z'].includes(name)
     || sourceCoordinates === 2 && ['u', 'v', 'w'].includes(name));
 
+// Maintained vertex data, not a cache of selected center constructions.
+const geminiTriangles = new Map<number, string[]>();
+for (const line of geminiSource.split(/\r?\n/u)) {
+  const row = line.split('#')[0].trim();
+  if (!row) continue;
+  const [idText, formulas] = row.split(/\s+/u);
+  const id = Number(idText);
+  const vertex = formulas?.split('|') ?? [];
+  if (!Number.isSafeInteger(id) || id < 1 || geminiTriangles.has(id) || vertex.length !== 3
+    || !vertex.every((formula) => validFormula(formula))) throw new Error(`Invalid Gemini vertex: ${row}`);
+  geminiTriangles.set(id, vertex);
+}
+const geminiId = (formula: string): number | undefined => {
+  const match = /^@g([1-9]\d*)$/u.exec(formula);
+  const id = match ? Number(match[1]) : undefined;
+  return id !== undefined && geminiTriangles.has(id) ? id : undefined;
+};
+
 const loadChunk = async (id: number): Promise<void> => {
   const chunk = Math.floor(id / 1000);
   if (loaded.has(chunk)) return;
@@ -58,7 +77,7 @@ const loadChunk = async (id: number): Promise<void> => {
         || parsed.has(number) || recipes.has(number) || !['M', 'R', 'J', 'I', 'C', 'A', 'P', 'G', 'T', 'V', 'B', 'F', 'O'].includes(opcode)
         || (operation === 'F' ? references.length < 2 || references.length > 6 || new Set(references).size !== references.length || pairs.some((pair) => pair.length !== 2 || !pair[1] || !validFormula(pair[1], references.length === 2)) : references.length !== size(operation) && !(operation === 'I' && references.length === 0) && !(['R', 'V'].includes(operation) && references.length === 3) && !(operation === 'B' && [1, 2].includes(references.length)))
         || (opcode === 'B' && !formula)
-        || (opcode === 'B' && formula !== undefined && (![1, 2, 3].includes(referenceText.length) || !validFormula(formula, false, references.length)))
+        || (opcode === 'B' && formula !== undefined && (![1, 2, 3].includes(referenceText.length) || !(geminiId(formula) !== undefined ? references.length === 1 : validFormula(formula, false, references.length))))
         || references.some((reference) => !Number.isSafeInteger(reference) || reference < 1 || reference === number))
         throw new Error(`Invalid triangle center recipe: ${row}`);
       parsed.set(number, { operation, references, formula });
@@ -142,6 +161,35 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
         for (let i = 0; i < turn; i++) rotated = rotation[rotated] ?? rotated;
         return variables[rotated] ? `(${variables[rotated]})` : rotated;
       });
+      const gemini = geminiId(formula);
+      if (gemini !== undefined) {
+        const vertex = geminiTriangles.get(gemini)!;
+        const columns = [0, 1, 2].map((turn) => [0, 1, 2].map((i) =>
+          vertex[(i - turn + 3) % 3].replace(/[A-Za-z_]+/gu, (name) => {
+            let rotated = name;
+            for (let j = 0; j < turn; j++) rotated = rotation[rotated] ?? rotated;
+            return sides[rotated] ? `(${sides[rotated]})` : rotated;
+          })));
+        return bind(columns.flat(), allocate, (raw) => {
+          const cols = [raw.slice(0, 3), raw.slice(3, 6), raw.slice(6, 9)];
+          return bind(cols.map((col) => add(col.map((v) => `abs(${v})`))), allocate, (norms) =>
+            bind(cols.flatMap((col, j) => col.map((v) => `((${v})/(${norms[j]}))`)), allocate, (normalized) => {
+              const M = [normalized.slice(0, 3), normalized.slice(3, 6), normalized.slice(6, 9)];
+              return bind(M.flatMap((_, j) => cross(M[(j + 1) % 3], M[(j + 2) % 3])), allocate, (cofactors) => {
+                const adj = [cofactors.slice(0, 3), cofactors.slice(3, 6), cofactors.slice(6, 9)];
+                return bind([...adj.map(add), add(M[0].map((v, i) => mul(v, adj[0][i])))], allocate, (frame) => {
+                  const guard = [`abs(${frame[3]})>1e-12`, ...frame.slice(0, 3).map((v, i) =>
+                    `abs(${v})>1e-12*${add(adj[i].map((q) => `abs(${q})`))}`)].join('&&');
+                  const weights = [0, 1, 2].map((i) => add(M.map((col, j) => mul(col[i], frame[j], bound[['x', 'y', 'z'][j]]))));
+                  return bind(weights, allocate, ([u, v, w]) => {
+                    const sum = `((${u})+(${v})+(${w}))`;
+                    return `If(${guard}&&${sum}!=0,((${u})*(${A})+(${v})*(${B})+(${w})*(${C}))/${sum})`;
+                  }, 'number');
+                }, 'number');
+              }, 'number');
+            }, 'number'), 'number');
+        }, 'number');
+      }
       const weights = [cyclic(0), cyclic(1), cyclic(2)];
       return bind(weights, allocate, ([u, v, w]) => {
         const total = `((${u})+(${v})+(${w}))`;
@@ -173,7 +221,7 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
       const values = recipe.references.map(render);
       if (values.some((value) => value.kind === 'unknown-ideal')) throw new Error('The ideal triangle center has no known direction.');
       if (recipe.operation === 'B') {
-        if (values.some((value) => value.kind === 'ideal') && !(values.length === 1 && ['x^2', 'x^3'].includes(recipe.formula!))) {
+        if (values.some((value) => value.kind === 'ideal') && !(values.length === 1 && (['x^2', 'x^3'].includes(recipe.formula!) || geminiId(recipe.formula!) !== undefined))) {
           throw new Error('This coordinate transform requires finite inputs.');
         }
         return point(coordinatePoint(recipe.formula!, values));

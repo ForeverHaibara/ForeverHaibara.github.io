@@ -108,6 +108,10 @@ def parser_fingerprint():
     digest.update(extraction_source_fingerprint((folder/'triangle_center_coordinates.py').read_text(encoding='utf-8'),
                   roots=('coordinate_candidates','coordinate_text','normalize_formula','validate_formula')).encode())
     digest.update(ast.dump(ast.parse((folder/'triangle_center_sources.py').read_text(encoding='utf-8')),include_attributes=False).encode())
+    from triangle_center_collineations import catalog
+    digest.update(json.dumps(sorted(catalog())).encode())
+    digest.update(extraction_source_fingerprint((folder/'triangle_center_collineations.py').read_text(encoding='utf-8'),
+                  roots=('parse_gemini_collineation','map_id')).encode())
     # Source hints affect cached metadata; report-only title grouping does not.
     from triangle_center_diagnostics import entry_metadata
     digest.update(ast.dump(ast.parse(inspect.getsource(entry_metadata)),include_attributes=False).encode())
