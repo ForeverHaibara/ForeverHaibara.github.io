@@ -1,20 +1,13 @@
-"""Reviewed file-boundary patches, guarded by exact source snapshot hashes."""
+"""Apply reviewed corrections when their erroneous source content is present."""
 import hashlib
 import re
 from triangle_center_support import report
 
-SNAPSHOTS = {28: '9dc382cda2bd1a13568ea43375936ebdfa4f4caed9dec8b6cf26da668406c371', 29: '46f081b5c09cb2aac0523e00b312c67c96ec5a3cb2b849b28bf75c4447472da9', 34: '164f0de41e204ce098f84b627165791398770042052a30f802f8c5210175f322', 36: 'c1175b21df78ea2989247161219bd34c426866d1345178b0780f583922f1c5c4', 1: '374c222535fe737a57f52da99fdde3cec6ba01d78b1d7ad84b7588e95e8d88cf', 31: '61167d9047a440ad539a0d0335d4fb8e97334cc0418e874d686015e8d3201d91', 35: '0d59a729dbb3120d4f4057fad34333b3475236f943995855c497ade6c257ad06'}
-
-
-SNAPSHOTS[6] = '191b455a813a7112fbf47c8ab551173208d5e50db3e0aee056d96d47fb04ec2d'
-
-
 def prepare_source(part, source):
-    if part not in SNAPSHOTS:
+    if part not in (1, 6, 28, 29, 31, 34, 35, 36):
         return source
     digest = hashlib.sha256(source.encode()).hexdigest()
-    if digest != SNAPSHOTS[part]:
-        raise ValueError(f'Part {part} source changed: review boundary patches before import')
+    quarantined = []
     if part == 6:
         # X(10043)'s literal broken tag joins its incidence list to q=cos(...).
         source = source.replace('p&gt;X(10043) lies on these lines:', '</p><p>X(10043) lies on these lines:')
@@ -27,9 +20,12 @@ def prepare_source(part, source):
         headings = list(re.finditer(r'<h3\b[^>]*\bid="X(\d+)"[^>]*>', source, re.I))
         copies = [(h.start(), headings[j+1].start() if j+1<len(headings) else len(source))
                   for j,h in enumerate(headings) if h[1] == '54980']
-        if len(copies) != 2 or re.sub(r'\s+', '', source[slice(*copies[0])]) != re.sub(r'\s+', '', source[slice(*copies[1])]):
-            raise ValueError('Reviewed X(54980) duplicate no longer identical')
-        source = source[:copies[0][0]] + source[copies[0][1]:]
+        if len(copies) > 1:
+            fragments = [re.sub(r'\s+', '', source[slice(*copy)]) for copy in copies]
+            if len(set(fragments)) != 1:
+                raise ValueError('X(54980) duplicate entries differ; review before import')
+            for start, end in reversed(copies[:-1]):
+                source = source[:start] + source[end:]
     elif part == 29:
         source = source.replace('<h3 id="X57621">X(57622)', '<h3 id="X57621">X(57621)')
     elif part == 34:
@@ -37,11 +33,14 @@ def prepare_source(part, source):
         # Two different entries claim the same ID. Isolate BOTH complete
         # fragments, preserving every following boundary; never guess a new ID.
         headings = list(re.finditer(r'<h3\b[^>]*\bid="X(\d+)"[^>]*>', source, re.I))
-        for j in reversed(range(len(headings))):
+        duplicates = [j for j, heading in enumerate(headings) if heading[1] == '66288']
+        if len(duplicates) > 1:
+            quarantined = [66288]
+        for j in reversed(duplicates if quarantined else []):
             if headings[j][1] == '66288':
                 end = headings[j+1].start() if j+1<len(headings) else len(source)
                 source = source[:headings[j].start()] + source[end:]
     elif part == 36:
         source = source.replace('<h3 id="X71412">X(714112)', '<h3 id="X71412">X(71412)')
-    report('source-patch', part=part, source_sha256=digest, quarantined=[66288] if part == 34 else [])
+    report('source-patch', part=part, source_sha256=digest, quarantined=quarantined)
     return source

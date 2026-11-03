@@ -606,9 +606,43 @@ class ReviewedFileBoundaryErrors(TestCase):
                 self.assertNotIn(66288, entries)
                 self.assertIn(67713, entries)
                 self.assertNotIn('X(67713)', entries[67712])
-            with self.assertRaisesRegex(ValueError, 'source changed'):
-                prepare_source(part, raw+'<!-- changed source -->')
+            self.assertEqual(prepare_source(part, raw+'<!-- changed source -->'),
+                             prepared+'<!-- changed source -->')
 
+
+
+class SourcePatchContentTests(TestCase):
+    def test_literal_repairs_and_already_fixed_sources(self):
+        cases = [
+            (1, '<h3 id="X164">X(164 =', '<h3 id="X164">X(164) ='),
+            (6, 'p&gt;X(10043) lies on these lines:', '</p><p>X(10043) lies on these lines:'),
+            (28, 'id="X54357)"', 'id="X54357"'),
+            (29, '<h3 id="X57621">X(57622)', '<h3 id="X57621">X(57621)'),
+            (31, '<h3 id="X60349">X(60349 =', '<h3 id="X60349">X(60349) ='),
+            (34, 'id="X67713 "', 'id="X67713"'),
+            (35, '<h3 id="X68618">X(68618 =', '<h3 id="X68618">X(68618) ='),
+            (36, '<h3 id="X71412">X(714112)', '<h3 id="X71412">X(71412)'),
+        ]
+        for part, broken, fixed in cases:
+            with self.subTest(part=part):
+                self.assertEqual(prepare_source(part, 'changed '+broken), 'changed '+fixed)
+                self.assertEqual(prepare_source(part, fixed), fixed)
+
+    def test_duplicate_entries(self):
+        entry = '<h3 id="X54980">X(54980)</h3><p>same</p>'
+        end = '<h3 id="X54981">next</h3>'
+        self.assertEqual(prepare_source(28, entry+entry+end), entry+end)
+        self.assertEqual(prepare_source(28, entry+end), entry+end)
+        with self.assertRaisesRegex(ValueError, 'duplicate entries differ'):
+            prepare_source(28, entry+entry.replace('same', 'different')+end)
+
+    def test_ambiguous_entries_are_quarantined_only_when_duplicated(self):
+        first = '<h3 id="X66288">first</h3>'
+        second = '<h3 id="X66288">second</h3>'
+        end = '<h3 id="X66289">next</h3>'
+        self.assertEqual(prepare_source(34, first+second+end), end)
+        self.assertEqual(prepare_source(34, first+end), first+end)
+        self.assertEqual(prepare_source(34, end), end)
 
 class PBClusterAnchors(TestCase):
     def test_64802_coordinate_sum_is_identically_zero(self):
