@@ -60,6 +60,12 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `native-status.txt` 中 `n` / `lo-hi` | 不可用原生编号或连续范围 | 原生数据维护输入；不是扩展配方 |
 | `native-status.txt` 中 `n p q` | 原生理想点的有限方向 | p/q 为其方向所依据的原生有限点 |
 | `coordinate-priority.txt` 中 `n` | 优先保留该点自动解析的坐标锚点 | 每行一个扩展编号，可注释；不复制坐标公式 |
+| `triangle_center_consensus.py --ids n ...` | 对指定中心及其解析性质作批量多数审阅 | 读取当前正式 chunks 和缓存 Part 1–37；只读 seeds/chunks，输出建议，不新增配方字母 |
+| 审阅 `--from-report path.json` | 合并报告 entries/checks/intersection_title_hints 中的编号 | 可重复指定；与 --ids 取并集 |
+| 审阅 `--upstream` | 增加当前选中 DAG 的扩展上游 | 无截断深度；性质中来自目标自身下游的证据不投票 |
+| 审阅 `--settle` | 仅在内存中分轮修复独立根节点并重新投票 | 沿用深度6、长度不限、共轭1预算及类型检查，不引入新的样本无定义/类型变化；已有种子和本轮锁定值不自动覆盖 |
+| 审阅 `--report path.json` / `--markdown path.md` | 输出详细票据与可读建议 | 含输入/代码摘要、来源降重、未定义/循环忽略项、线对搜索与构造统计 |
+| 审阅 `--no-coordinate-cache` | 绕过仅保存数值位置的缓存 | 默认 review-cache/coordinates；配方、atlas、原生方向或数值实现改变即失效，投票和选择每次重算 |
 | `fetch` | 手动下载指定 ETC 页 | 唯一需要网络的普通数据入口；不自动同步 |
 | `audit` | 源页标题与边界预检 | 不做配方选择；文件级歧义须先解决 |
 | `native` | 从原生 atlas 推导/更新理想方向表 | 写 native-status；弱或冲突方向不冒认 |
@@ -77,13 +83,20 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 
 裸 I 只记录已证实的理想状态。自动候选中若存在可闭合且通过数值校验的有限方向线，优先选用带参数的 I；显式裸 I seed 则维持审阅指定的状态。单凭两个样本的重心坐标和接近零不足以自动下结论；本批额外理想点的坐标和已作精确恒等式审阅。已知非实根也不能从“两个样本均无定义”获得坐标锚点。
 
-## B. uncovered 诊断代码
+## B. uncovered 与批量审阅诊断代码
 
 `entries` 只收集尚待解决的目标，`count` 与 `summary` 只统计这些条目。一个点可有多个候选、每个候选各有阻塞原因；`primary` 按当前诊断优先级选一个摘要原因，并不表示其它原因不存在。`formulas[].blocker` 与 `candidate_blockers` 使用同一套候选原因。
 
 | 代码 / 字段 | 含义与判断范围 | 后续处理方向 |
 | --- | --- | --- |
 | `intersection_title_hints` | 报告顶层的结构性审阅提示，包含已覆盖点；标题线与保留的线族共享端点但另一端编号不同 | 不计入 count/primary，不自动纠正编号或判源错误；结合坐标、多条独立入射及端点定义复核。使用现有保留线族，非穷尽全页线表审计 |
+| 审阅 `confirmed` / `consistent_weak` | 当前点与最优候选相符；前者满足多数/独立权重/差距要求，后者证据尚弱 | 数值相容，不等于独立几何证明；不因弱证据擅自改点 |
+| 审阅 `proposal` | 有严格多数，支持权重至少2，且比次选或未枚举上界至少多1 | 建议须经正式构建；优先改根节点，重新投票后再判断下游 |
+| 审阅 `ambiguous` | 没有达到全部采纳条件 | decision_reason 区分无严格多数、独立权重不足、差距不足 |
+| 审阅 `reviewed_seed_conflict` | 多数与 seeds 或本轮内存锁定的点冲突 | 保留冲突供复核，不自动覆盖；该名字不表示已经做过文字几何证明 |
+| 审阅 `no_finite_candidate` / `missing_source` | 没有全部样本有限可比的候选 / 缺少源条目 | 区别于非实证明、未实现语法及缺页；不自动写 DOMAIN 或 SKIP |
+| 审阅 `application_blocked` | 数值多数建议未通过图/数值准入 | 分别报告循环、缺依赖、深度/长度/共轭预算、输入类型、新数值失败、数值类型变化等原因 |
+| 审阅 `applied_in_memory` / `pending_geometry` | 内存暂定修改及仍待独立几何核验的点 | 正式数据通过 seeds + build 发布；几何待办另见批量审阅文档 |
 | `no_parsed_candidate` | 本次源输入未提取到候选；并非数学不可构造的结论 | 检查描述、标题、局部定义及源笔误；补通用规则或审阅 seed |
 | `unclosed_dependency` | 候选引用了本次有源条目、尚未选中的扩展点 | 查依赖簇、锚点及另一种构造；不能简单按编号先后判断 |
 | `missing_source_dependency` | 所需扩展编号不在本次候选集合，也未由配方提供 | 扩大 Part 或检查缺页/边界；区别于已有源但未闭合 |
@@ -130,3 +143,9 @@ PB 用户复核已扩大为全部 36 个透视中心的独立几何审计；星�
 个别条目的错误关系不在 Python 中维护排除表：保留原始源文本，人工确认正确定义后写入 seeds，错误理由写入源复核文档。14821 已由其审阅种子固定；其 6–9–13 近共线只是一个特例的证据，不作为一般筛查或自动判错依据。
 
 明确交点与线表推断交点均接受额外入射检查：有足够线表时，额外的非平行线可以提供支持。明确交点若没有额外支持，且至少两条不同几何线明确反对，则拒绝该候选；一条坏线、同一直线的重复端点对、未闭合端点或全部平行的证据不单独否决明确交点。这是数值一致性筛选，不裁决哪段源文字错误。已确认的个别例外仍用 seeds 固定。
+
+批量审阅的完整说明及待核验清单见 [triangle-centers-consensus-review.md](../../../../src/features/geogebra/commands/custom/docs/triangle-centers-consensus-review.md)。同一直线、同输入证据和共享扩展上游会降重；相同坐标变体不重复计票。先评已有候选，能用保守支配界决定时跳过剩余线对，否则完整枚举；共享端点也参与。位置确定后找一个简洁构造即可，不求最优路径。坐标缓存只保存位置，不冻结选择；该缓存目录可独立清理后重算。
+
+```sh
+python scripts/geogebra/tools/triangle_centers/triangle_center_consensus.py --from-report .cache/triangle-centers/reports/uncovered/uncovered-consensus.json --upstream --settle --report .cache/triangle-centers/reports/reviews/consensus-next.json --markdown .cache/triangle-centers/reports/reviews/consensus-next.md
+```

@@ -5,6 +5,7 @@ import math
 import tempfile
 import triangle_center_import as importer
 import triangle_center_import as m
+import triangle_center_consensus as consensus
 import unittest
 from compact_topology_cache import pack, ranges, unpack
 from pathlib import Path
@@ -775,6 +776,103 @@ class CandidateFamilyTest(TestCase):
         self.assertEqual(set(selected),{4000,4001})
         self.assertNotEqual(selected[4000].references,explicit.references)
         self.assertLess(math.dist(numeric_coordinates(selected,atlas)['sample'][4000],(-2,-1)),1e-8)
+
+
+class ConsensusReviewTest(TestCase):
+    def fixture(self, extra=None):
+        points={1:(-1,0),2:(1,0),3:(0,2),4:(4,2),5:(2,0),6:(2,4),7:(0,0),8:(4,4),9:(1,2),10:(3,2)}
+        atlas=dict(triangles={'sample':[(0,0),(6,0),(0,6)]},
+                   coordinates={'sample':{str(n):p for n,p in points.items()}})
+        records={4000:Recipe(4000,'M',(1,2)),**(extra or {})}
+        return records,atlas
+
+    def test_consensus_deduplicates_geometry_and_can_certify_without_pairs(self):
+        records,atlas=self.fixture()
+        fragment='<h3>X(4000) = PERSPECTOR OF THESE TRIANGLES: TEST</h3>Barycentrics 1 : :<p>X(4000) lies on these lines: {3,4}, {5,6}, {7,8}, {9,10}</p>'
+        row=consensus.Review(records,atlas,{}, {4000:fragment}).audit(4000)
+        self.assertEqual(row['status'],'proposal')
+        self.assertTrue(row['pending_geometry'])
+        self.assertEqual(row['ignored']['duplicate_line'],1)
+        self.assertEqual(row['metrics']['total_vote_weight'],4)
+        self.assertTrue(row['metrics']['dominance_bound'])
+        self.assertEqual(row['metrics']['examined_pairs'],0)
+        self.assertEqual(row['samples']['sample'],(2,2))
+        protected=consensus.Review(records,atlas,{}, {4000:fragment},{4000}).audit(4000)
+        self.assertEqual(protected['status'],'reviewed_seed_conflict')
+
+    def test_consensus_ignores_circular_downstream_evidence(self):
+        records,atlas=self.fixture({4001:Recipe(4001,'M',(4000,8))})
+        fragment='<h3>X(4000) = TEST</h3><p>X(4000) lies on these lines: {3,4001}</p><p>X(4000) = complement of X(4001)</p>'
+        row=consensus.Review(records,atlas,{}, {4000:fragment}).audit(4000)
+        self.assertEqual(row['ignored']['circular_line'],1)
+        self.assertEqual(row['ignored']['circular_relation'],1)
+        self.assertEqual(row['evidence_count'],0)
+        self.assertNotEqual(row['status'],'proposal')
+
+    def test_shared_upstream_and_coordinate_variants_cannot_multiply_votes(self):
+        properties=[dict(kind='line',upstream={4001}),dict(kind='M',upstream={4001,4002}),
+                    dict(kind='line',upstream={4003}),dict(kind='coordinate',upstream=set()),
+                    dict(kind='coordinate',upstream=set())]
+        self.assertEqual(consensus.dependency_weights(properties),[.5,.5,1,.5,.5])
+
+    def test_settle_repairs_roots_then_revotes_without_pinning_descendants(self):
+        records,atlas=self.fixture({4001:Recipe(4001,'R',(4000,2))})
+        atlas['coordinates']['sample'].update({str(n):p for n,p in {
+            11:(-1,-2),12:(1,-2),13:(0,-3),14:(0,-1),15:(-1,-3),16:(1,-1)}.items()})
+        fragments={4000:'<h3>X(4000) = PERSPECTOR TEST</h3>Barycentrics 1 : :<p>X(4000) lies on these lines: {3,4}, {5,6}, {7,8}</p>',
+                   4001:'<h3>X(4001) = REFLECTION OF X(4000) IN X(2)</h3><p>X(4001) lies on these lines: {11,12}, {13,14}, {15,16}</p><p>X(4001) = reflection of X(4000) in X(2)</p>'}
+        review=consensus.Review(records,atlas,{},fragments)
+        rows,result=review.settle({4000,4001})
+        self.assertEqual([x['id'] for x in result['applied_in_memory']],[4000])
+        self.assertEqual(result['rounds'][0]['proposals'],2)
+        self.assertEqual(records[4001].row(),'4001 R 4000 2')
+        self.assertEqual(review.coordinates['sample'][4001],(0,-2))
+        self.assertTrue(all(r['status']=='confirmed' for r in rows))
+        self.assertEqual([r['id'] for r in result['pending_geometry']],[4000])
+
+    def test_review_coordinate_cache_is_keyed_by_actual_recipes_and_preserves_ideals(self):
+        records,atlas=self.fixture({4001:Recipe(4001,'I',(3,4))})
+        with TemporaryDirectory(dir=m.CACHE) as folder:
+            path=Path(folder)
+            first=consensus.coordinate_snapshot(records,atlas,{},path)
+            with patch.object(m,'numeric_coordinates',side_effect=AssertionError('unexpected recomputation')):
+                second=consensus.coordinate_snapshot(records,atlas,{},path)
+            self.assertEqual(first,second)
+            self.assertIsInstance(second['sample'][4001],Ideal)
+            changed={**records,4000:Recipe(4000,'R',(1,2))}
+            self.assertNotEqual(consensus.coordinate_snapshot(changed,atlas,{},path)['sample'][4000],first['sample'][4000])
+            self.assertEqual(len(list(path.glob('*.json.gz'))),2)
+
+    def test_line_pair_fallback_is_exhaustive_when_no_dominance_bound(self):
+        lines=[((0,0),(1,0)),((0,1),(1,2)),((0,3),(1,2)),((2,1),(0,5))]
+        properties=[]
+        for i,(p,q) in enumerate(lines):
+            properties.append(dict(kind='line',refs=(2*i+1,2*i+2),upstream=set(),
+                values={'sample':m.line_data(p,q)},endpoints={'sample':(p,q)}))
+        groups,weights,metrics=consensus.choose(properties,[],{'sample':6},4000)
+        self.assertEqual(metrics['examined_pairs'],6)
+        self.assertFalse(metrics['dominance_bound'])
+        self.assertEqual(sum(weights),4)
+        self.assertTrue(groups)
+
+    def test_shared_line_endpoints_are_valid_alias_candidates_not_a_search_cutoff(self):
+        points={1:(2,2),2:(0,2),3:(2,0),4:(0,0)}
+        properties=[dict(kind='line',refs=(1,j),upstream=set(),
+                        values={'sample':m.line_data(points[1],points[j])},
+                        endpoints={'sample':(points[1],points[j])}) for j in (2,3,4)]
+        groups,weights,metrics=consensus.choose(properties,[],{'sample':6},4000)
+        self.assertEqual(groups[0]['points']['sample'],(2,2))
+        self.assertEqual(groups[0]['recipes'][0].row(),'4000 M 1 1')
+        self.assertEqual(groups[0]['score'],3)
+
+    def test_consensus_graph_rejection_reasons_distinguish_budget_cycle_and_type(self):
+        records={4000:Recipe(4000,'M',(1,2)),4001:Recipe(4001,'M',(3,4))}
+        graph=m.SelectedGraph(records,m.NATIVE_MAX,m.estimated_recipe_length,(1,None,1))
+        self.assertEqual(consensus.admission_reason(graph,Recipe(4000,'M',(4001,1)),set()),'depth_budget')
+        self.assertEqual(consensus.admission_reason(graph,Recipe(4000,'M',(30,1)),{30}),'input_type')
+        self.assertEqual(consensus.admission_reason(graph,Recipe(4000,'M',(99999,1)),set()),'missing_dependency')
+        graph=m.SelectedGraph({4000:records[4000],4001:Recipe(4001,'M',(4000,1))},m.NATIVE_MAX,m.estimated_recipe_length,(6,None,1))
+        self.assertEqual(consensus.admission_reason(graph,Recipe(4000,'M',(4001,1)),set()),'cyclic_dependency')
 
 
 class TopologyEncodingTest(TestCase):

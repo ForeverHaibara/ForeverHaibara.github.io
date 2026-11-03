@@ -284,3 +284,34 @@
 # 72941: corrected X(3)X(15111) intersection matches its coordinates and
 # 31 listed lines; leave the separate 15366 dependency question open.
 72941 J 3 15111 26 476
+
+# Batch property consensus, 2026-11-03. Provisional choices based on weighted
+# independent properties, not blanket claims of source-error or geometric proof.
+# Only roots are pinned: six downstream discrepancies resolve without more seeds.
+# Evidence / pending geometry: triangle-centers-consensus-review.md.
+# X(21910): support 4/5; runner bound 2.
+21910 J 154 511 523 4885
+# X(25408): support 6.75/7; runner bound 1.5.
+25408 R 24651 13415
+# X(31608): support 10/11; runner bound 3.5.
+31608 M 3 14867
+# X(34367): support 2.5/3; runner bound 1.5.
+34367 J 2 249 14559 24975
+# X(38941): support 40/41; runner bound 3.
+38941 J 1 7 2 514
+# X(72140): support 18.5/20; runner bound 3.5.
+72140 J 75 244 514 661
+# X(72141): support 22/23; runner bound 3.
+72141 J 2 668 10 63508
+# X(72147): support 34/36; runner bound 4.
+72147 J 1 2229 2 668
+# X(72150): support 34/37; runner bound 5.
+72150 J 2 668 6 43
+# X(72152): support 34/35; runner bound 3.
+72152 J 1 7275 2 668
+# X(72160): support 144.6/150; runner bound 8.528.
+72160 J 1 312 2 3996
+# X(72780): support 22/23; runner bound 4.433.
+72780 A 14027
+# X(72968): support 54.5/59; runner bound 15.
+72968 J 1 901 244 513
