@@ -43,12 +43,12 @@ PAIR = re.compile(r'[({]\s*(\d+)\s*,\s*(\d+)\s*[)}]')
 RELATION = re.compile(r'^X\s*\(\s*(\d+)\s*\)\s*(?:=|is)\s*(.+)$', re.I)
 MIDPOINT = re.compile(rf'^midpoint (?:of|between) {POINT}\s+and\s+{POINT}', re.I)
 REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+{POINT}', re.I)
-COMPLEMENT = re.compile(rf'^complement of {POINT}', re.I)
-ANTICOMPLEMENT = re.compile(rf'^anticomplement of {POINT}', re.I)
+COMPLEMENT = re.compile(rf'^complement(?: of)? {POINT}', re.I)
+ANTICOMPLEMENT = re.compile(rf'^anticomplement(?: of)? {POINT}', re.I)
 INTERSECTION = re.compile(rf'^intersection of (?:lines? )?{POINT}\s*{POINT}\s+and\s+{POINT}\s*{POINT}', re.I)
 SYMBOLIC_INTERSECTION = re.compile(rf'^{POINT}\s*{POINT}\s*∩\s*{POINT}\s*{POINT}', re.I)
 PROJECTION = re.compile(rf'^orthogonal projection of {POINT}\s+on\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
-LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?line\s+{POINT}\s*{POINT}', re.I)
+LINE_REFLECTION = re.compile(rf'^reflection of {POINT}\s+in\s+(?:the\s+)?(?:line\s+)?{POINT}\s*{POINT}', re.I)
 ISOGONAL = re.compile(rf'^isogonal conjugate of {POINT}', re.I)
 ISOTOMIC = re.compile(rf'^isotomic conjugate of {POINT}', re.I)
 CIRCUM_INVERSE = re.compile(rf'^(?:inverse-in-circumcircle|circumcircle-inverse) of {POINT}', re.I)
@@ -509,6 +509,28 @@ def ceva_cross_candidates(number: int, body: str, part: int):
             for kind,refs in definitions if all(ref>0 and ref!=number for ref in refs)]
 
 
+def complete_relation_body(body: str) -> str:
+    """Normalize terminal typography without discarding mathematical tails."""
+    # These are explicit contributor credits, not point/triangle operators.
+    body=re.split(r'\s+\((?:Randy Hutson|Peter Moses|Clark Kimberling|C[eé]sar Lozada)\s*,',body,flags=re.I)[0]
+    body=body.rstrip(' .;,\\')
+    while body and body[-1] in ')}' and body.count(body[-1])>body.count({')':'(','}':'{'}[body[-1]]):
+        body=body[:-1].rstrip(' .;,\\')
+    return body
+
+
+def equivalent_pair_relations(body: str):
+    """Require the complete pair table, including its scope and trailing text."""
+    match=re.fullmatch(r'(.+?)\s+for these\s*[({]\s*i\s*,\s*j\s*[)}]\s*:\s*(.+)',body,re.I)
+    if not match or not re.fullmatch(r'(?:\s*[,;]?\s*[({]\s*\d+\s*,\s*\d+\s*[)}])+[\s.;]*',match[2]):
+        return []
+    prefix=match[1].lower()
+    if prefix=='midpoint of x(i) and x(j)' or MIDPOINT.fullmatch(match[1]):op='M'
+    elif prefix in {'reflection of x(i) in x(j)','reflection of x(i) and x(j)'} or REFLECTION.fullmatch(match[1]):op='R'
+    else:return []
+    return [(op,tuple(map(int,pair))) for pair in PAIR.findall(match[2])]
+
+
 def extract_entry(number: int, fragment: str, part: int,
                   excluded: set[int] | None = None, *, compact: bool = False):
     found: dict[tuple[str, tuple[int, ...]], str] = {}
@@ -529,7 +551,7 @@ def extract_entry(number: int, fragment: str, part: int,
         relation = RELATION.match(line)
         if not relation or int(relation.group(1)) != number:
             continue
-        body = relation.group(2)
+        body = complete_relation_body(relation.group(2))
         if (match := VU_FIRST.fullmatch(body)) and int(match[1]) not in (3,number) and number != 3:
             # Vu first PCC: O + 2R^2(P-O)/(OP^2+R^2). d is scoped to this
             # two-point affine combo, never a free cyclic-coordinate variable.
@@ -542,15 +564,11 @@ def extract_entry(number: int, fragment: str, part: int,
                                 (SYMBOLIC_INTERSECTION, 'J'), (PROJECTION, 'P'),
                                 (LINE_REFLECTION, 'R'), (ISOGONAL, 'G'), (ISOTOMIC, 'T'),
                                 (CIRCUM_INVERSE, 'V'), (CIRCLE_CENTER, 'O')):
-            match = pattern.match(body)
-            if match and not CONDITIONAL.search(body[match.end():]):
+            match = pattern.fullmatch(body)
+            if match:
                 found[(opcode, tuple(map(int, match.groups())))] = line
         # ETC also gives sets of equivalent midpoint/reflection constructions.
-        for prefix, opcode in (('midpoint of X(i) and X(j) for these', 'M'),
-                               ('reflection of X(i) in X(j) for these', 'R'),
-                               ('reflection of X(i) and X(j) for these', 'R')):
-            if body.lower().startswith(prefix.lower()):
-                found.update({(opcode, tuple(map(int, pair))): line for pair in PAIR.findall(body)})
+        found.update({(opcode,refs):line for opcode,refs in equivalent_pair_relations(body)})
     recipes = [Recipe(number, opcode, refs, part, found[(opcode, refs)],
                       '2*R^2|d^2-R^2' if opcode=='F' else '') for opcode, refs in sorted(found)
                if all(reference > 0 and reference != number for reference in refs)]

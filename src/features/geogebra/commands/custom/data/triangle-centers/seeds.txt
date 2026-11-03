@@ -315,3 +315,27 @@
 72780 A 14027
 # X(72968): support 54.5/59; runner bound 15.
 72968 J 1 901 244 513
+
+# User review: Hyacinthos 27607/29607 confirm 15497 and 48; ETC titles
+# transcribed 14597 and 46. See source-review documentation for provenance.
+18131 J 226 15497 1445 15487
+34419 J 3 3648 48 16553
+# User verified Q004 / Euclid 19 coordinates. Keep the false incidences
+# in source text; do not use them to displace these reviewed definitions.
+34307 B (a^2-a*b+b^2-c^2)*(a^2-b^2-a*c+c^2)*(a^3+a^2*b-a*b^2-b^3+a^2*c+a*b*c+b^2*c-a*c^2+b*c^2-c^3)*(a^8+a^7*b-4*a^6*b^2-3*a^5*b^3+6*a^4*b^4+3*a^3*b^5-4*a^2*b^6-a*b^7+b^8+a^7*c-3*a^6*b*c+a^5*b^2*c+3*a^4*b^3*c-3*a^3*b^4*c-a^2*b^5*c+a*b^6*c+b^7*c-4*a^6*c^2+a^5*b*c^2+a^4*b^2*c^2+a^3*b^3*c^2+a^2*b^4*c^2+3*a*b^5*c^2-2*b^6*c^2-3*a^5*c^3+3*a^4*b*c^3+a^3*b^2*c^3-a^2*b^3*c^3-3*a*b^4*c^3-b^5*c^3+6*a^4*c^4-3*a^3*b*c^4+a^2*b^2*c^4-3*a*b^3*c^4+2*b^4*c^4+3*a^3*c^5-a^2*b*c^5+3*a*b^2*c^5-b^3*c^5-4*a^2*c^6+a*b*c^6-2*b^2*c^6-a*c^7+b*c^7+c^8)
+34575 B (35*a^6+27*a^4*b^2-15*a^2*b^4-7*b^6+27*a^4*c^2-3*a^2*b^2*c^2-21*b^4*c^2-15*a^2*c^4-21*b^2*c^4-7*c^6)*(a^6+9*a^4*b^2+9*a^2*b^4+b^6+a^4*c^2+17*a^2*b^2*c^2+b^4*c^2-a^2*c^4-b^2*c^4-c^6)*(a^6+a^4*b^2-a^2*b^4-b^6+9*a^4*c^2+17*a^2*b^2*c^2-b^4*c^2+9*a^2*c^4+b^2*c^4+c^6)
+# User verified 20211 coordinates and {2,77}/{145,515}; 515 is ideal.
+# A(22654) and the reciprocal C(20211) claim are both false. Pin both
+# compatible positions so breaking the old dependency cycle cannot enable
+# the cheaper but false inverse relation at the other endpoint.
+20211 J 2 77 145 515
+22654 J 1 159 3 10
+# User verified: the 14838 title transcribed 1557 instead of 1577;
+# the body statement and incidence list agree with C(1577).
+14838 C 1577
+
+# Follow-up majority review: 8430 support 13/14; 38513 support 24/26.
+# Fix roots only; 67420/67634 should recover without additional seeds.
+# 38513 printed coordinates agree; its textual triangle definition is pending.
+8430 J 112 250 6 512
+38513 R 944 1 3

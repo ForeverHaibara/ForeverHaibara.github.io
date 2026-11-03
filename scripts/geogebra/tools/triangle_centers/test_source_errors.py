@@ -862,3 +862,37 @@ class CircumcenterSourceConflict(TestCase):
             p,d = m.line_data(xy[2492],xy[2780])
             self.assertLess(abs(cross(sub(center,p),d))/math.hypot(*d),1e-8)
             self.assertGreater(math.dist(center,m.numeric_formula(formula,atlas['triangles'][shape])),1e-3)
+
+
+class ReviewedUpstreamCorrections(TestCase):
+    def test_reviewed_seeds_and_40619_native_alternative_match_coordinates(self):
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        ids={18131:10,34419:18,34307:18,34575:18,20211:11,22654:12,14838:8,40619:21,8430:5,38513:20}
+        fragments={}
+        for n,part in ids.items():
+            entries=dict(m.split_entries((m.CACHE/f'sources/ETCPart{part}.html').read_text(encoding='utf-8',errors='replace')))
+            fragments[n]=entries[n]
+        records={n:r for path in (m.DATA/'chunks').glob('*.txt') for n,r in m.read_recipes(path).items()}
+        records.update(seeds)
+        records[40619]=Recipe(40619,'J',(11,693,100,2481))
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        points=m.numeric_coordinates(records,atlas,m.read_native_status(m.DATA/'native-status.txt')[1])
+        for n in ids:
+            formulas=m.coordinate_candidates(fragments[n])
+            self.assertTrue(formulas)
+            for shape,abc in atlas['triangles'].items():
+                printed=m.numeric_formula(Recipe(n,'B',(),formula=formulas[0][1]),abc)
+                with self.subTest(number=n,shape=shape):
+                    self.assertLess(math.dist(points[shape][n],printed),1e-7*max(1,math.hypot(*printed)))
+        parsed=list(m.extract_entry(40619,fragments[40619],21))
+        self.assertNotIn(('C',(19,)),[(r.operation,r.references) for r in parsed])
+        self.assertTrue(any(r.operation=='J' for r in parsed))
+
+    def test_32472_is_ideal_and_keeps_a_usable_direction(self):
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart17.html').read_text(encoding='utf-8',errors='replace')))
+        recipes=m.extract_entry(32472,entries[32472],17)
+        self.assertIn('32472 I 4 2489',[r.row() for r in recipes])
+        formula=m.coordinate_candidates(entries[32472])[0][1]
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        for abc in atlas['triangles'].values():
+            self.assertIsInstance(m.numeric_formula_projective(Recipe(32472,'B',(),formula=formula),abc),Ideal)

@@ -564,3 +564,14 @@ Vietnamese 前言表将 (2,4) 写到 39192、把 (2,5) 写成 29192，并重复 
 新增可复用批量审阅工具，不改配方语法。来源降重、排除循环证据、保守支配界及正常图/类型/预算验证避免重复算票和盲目枚举；位置缓存只加速数值计算，投票每次重做。93条种子、70,069条自动记录，71块/2,204,630字节。158项Python、105项前端/代数测试、类型检查、打包、完整正式重建及verify通过。
 
 [批量审阅清单](triangle-centers-consensus-review.md) 给出13个采用的根节点、12个仍待独立核验的几何定义与完整坐标、9个未决点。完整JSON票据和差分在缓存 reports/reviews/consensus-*.json，运行日志 runs/consensus/。本轮只有一次缓存命中的正式全量重建。
+
+
+## 人工复核与完整关系解析的最终结果（2026-11-03）
+
+正式库 **70,168 条 / 未覆盖 35**，六个新增恢复点为 34307、34575、34863、40473、40497、55092；没有旧覆盖退出。剩余分类：no_parsed_candidate 26、unclosed_dependency 8、input_type 1，已解决非实根 10。40619 最终为 `J 11 693 100 2481`，没有引入复合语法。
+
+相对本轮开始，444 条配方改变，69 个旧点的两样本位置改变，全部由不符打印坐标变为符合；没有新增坐标失配、可定义性或有限/理想类型变化。8430/38513 两个根修正后，67420/67634 自然恢复；32472 保留原有 I 4 2489，全部 28 条可比较线表方向相符，{30,511} 不参与仿射方向比较。目标及上游共 27 点复查：22 confirmed、4 consistent_weak、1 confirmed_ideal，无新建议或种子冲突。
+
+102 条种子、70,066 条自动记录，71 块 / 2,205,534 字节；最大深度 6，最大估计展开 105,990。因完整关系解析改变缓存指纹，首轮冷提取及构建约 327 秒；补充两根后缓存构建约 124 秒，最后发布 5 文件约 0.063 秒。辅助 ideal-formula 清单复用，本轮图/类型/数值/入射审计均正常执行。162 项 Python、164 项前端/代数测试、TypeScript、Vite 与最终 verify 通过。
+
+日志 runs/expression-review/；最终诊断 reports/uncovered/expression-review.json；全量差分 reports/reviews/expression-final-comparison.json；目标及上游复查 expression-final-consensus.json；前缀审计 prefix-tail-before.json / prefix-tail-after.json；补充根票据 expression-followup.json。几何独立核验待办共 13 项，见 triangle-centers-consensus-review.md。

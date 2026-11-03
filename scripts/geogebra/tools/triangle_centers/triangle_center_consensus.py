@@ -237,6 +237,8 @@ class Review:
     def audit(self,n):
         fragment=self.fragments.get(n)
         if fragment is None:return dict(id=n,status='missing_source')
+        if n in self.records and self.records[n].operation=='I':
+            return self.audit_ideal(n)
         properties=[];initial=[];ignored=Counter()
         current={s:self.coordinates[s].get(n) for s in self.shapes}
         if all(finite(p) for p in current.values()):initial.append((current,self.records.get(n)))
@@ -304,6 +306,31 @@ class Review:
                    opposing=[dict(kind=p['kind'],label=p['label'],weight=w) for p,w,yes in zip(properties,weights,winner['matches']) if not yes])
         row['pending_geometry']=pending_geometry(n,row['title'])
         return row
+
+    def audit_ideal(self,n):
+        """Incidence at infinity is a direction test, not a distant finite point."""
+        lines,_,metadata=self.source_view(n)
+        vectors={s:self.coordinates[s].get(n) for s in self.shapes}
+        base=dict(id=n,**metadata,current=self.records[n].row(),
+                  source_is_ideal=m.is_infinite_entry(n,m.relation_lines(self.fragments[n])))
+        if not all(isinstance(p,m.Ideal) for p in vectors.values()):
+            return dict(base,status='ideal_direction_unavailable')
+        supported=[];opposing=[];ignored=Counter()
+        for refs in lines:
+            if n in self.upstream(refs):ignored['circular_line']+=1;continue
+            endpoints={s:[self.coordinates[s].get(ref) for ref in refs] for s in self.shapes}
+            if any(any(p is None for p in ps) for ps in endpoints.values()):ignored['unavailable_line']+=1;continue
+            affine={s:m.line_data(*ps) for s,ps in endpoints.items()}
+            if any(line is None for line in affine.values()):ignored['non_affine_or_degenerate_line']+=1;continue
+            agrees=all(abs(line[1][0]*vectors[s].dy-line[1][1]*vectors[s].dx)
+                       <= TOLERANCE*math.hypot(*line[1])*math.hypot(vectors[s].dx,vectors[s].dy)
+                       for s,line in affine.items())
+            (supported if agrees else opposing).append(refs)
+        status=('confirmed_ideal' if supported and not opposing else
+                'ideal_direction_outliers' if supported else
+                'ideal_direction_conflict' if opposing else 'ideal_direction_unavailable')
+        return dict(base,status=status,direction_support=len(supported),direction_compared=len(supported)+len(opposing),
+                    opposing_lines=opposing,ignored=dict(ignored))
 
     @m.stage
     def settle(self,ids):
@@ -392,6 +419,12 @@ def write_markdown(rows,path,updates=(),pending=None):
             recipe=r.get('proposed') or ''
             if len(recipe)>150:recipe=recipe.split()[1]+'（完整公式见 JSON）'
             text+=f"| {r['id']} | {r['title'].replace('|','/')} | `{recipe}` | {r.get('score',0):.3g}/{r['metrics']['total_vote_weight']:.3g} | {r.get('runner_score',0):.3g} |\n"
+        text+='\n'
+    ideals=[r for r in rows if r['status'].startswith('ideal_direction_')]
+    if ideals:
+        text+='## 理想方向待核验\n\n| 点 | 状态 | 支持/可比较线 | 反对线 |\n| --- | --- | --- | --- |\n'
+        for r in ideals:
+            text+=f"| {r['id']} | {r['status']} | {r.get('direction_support',0)}/{r.get('direction_compared',0)} | {r.get('opposing_lines',[])} |\n"
         text+='\n'
     path.parent.mkdir(parents=True,exist_ok=True);path.write_text(text,encoding='utf-8')
 

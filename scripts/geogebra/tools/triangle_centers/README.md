@@ -110,12 +110,18 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | `ideal_formula` | 纯 B 的样本结果含理想值且没有有限样本，不能当有限 B 准入 | 精确检验循环坐标和及非零性；确认后用 I，尽量保留方向。此代码本身不是恒等式证明 |
 | `coordinate_admission_or_variants` | 公式通过上述粗筛，但未作为有限锚点选入；可能涉及入射核验、变体或锚点准入 | 检查具体候选、数值样本、线表及替代定义；不可笼统解释为语法错误 |
 | `geometry_or_transaction` | 输入和静态预算可用，但几何筛选或替换事务未通过/未选入 | 核查退化、入射冲突及后继影响；此分类不宣称更精确的失败根因 |
+| `confirmed_ideal` | 当前理想方向与所有可比较线表一致 | 保留带方向 I；不进入有限点投票 |
+| `ideal_direction_outliers` | 理想方向有支持也有反对线 | 审阅反对线及端点上游 |
+| `ideal_direction_conflict` | 可比较线全部反对当前方向 | 核验方向定义及端点 |
+| `ideal_direction_unavailable` | 无可比较方向或仅有裸 I | 不改成有限候选；两理想点连线不提供仿射方向证据 |
 | `reviewed_nonreal_domain` | **已解决状态**：已审阅的一般位置非实根 | 位于 `resolved_nonreal[].reason`，不在 entries/count/summary，不生成实平面绘图配方 |
 | `possible_complex_dependencies` | **风险字段**：所选依赖或候选依赖可能涉及复数域根 | 不等于结果非实；复共轭抵消、独立实构造与条件实域须分别判断 |
 | `skipped` | seeds 中明确 SKIP 的编号及原始原因文字 | 已排除的目标不计 entries/count；依赖它的其它点仍可标 reviewed_skip_dependency |
 | `domains` / `resolved_nonreal` | 域注记原表 / 本次范围内已处理的非实目标 | 用于审计状态去向；DOMAIN 不增加运行时配方数量 |
 
 解析异常、源标题重复、配方环、非法 seeds 或最终数值审计失败会直接使命令失败；这些硬错误不能通过生成一份 uncovered 报告来掩盖。已审阅非实根只排除根本身，不把“非实”结论沿引用传播；例如 X(5002)/X(5003) 在某些域为复点，其平均值仍可能为实点。
+
+关系解析要求消费完整表达式。终止标点、已知署名和多余的末尾闭括号可规范化；参考三角形、复合共轭、条件及未知数学后缀不能被截掉。未实现的复合表达式整体不生成简单前缀构造，可用线表、坐标或 seeds 的已有定义替代。`reflection of X(p) in X(q)X(r)` 使用原有三参数 R；`complement X(p)` 与 `complement of X(p)` 等价。
 
 ## 工程与审阅说明
 

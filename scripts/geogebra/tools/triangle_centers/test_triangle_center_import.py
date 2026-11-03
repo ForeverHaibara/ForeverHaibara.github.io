@@ -277,6 +277,28 @@ class TriangleCenterImportTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_types({4000: Recipe(4000, 'I', (1, 2)), 4001: Recipe(4001, 'F', (4000, 2), formula='1|1')}, set())
 
+    def test_relations_consume_the_complete_point_expression(self):
+        for expression in [
+            'complement of X(19)-isoconjugate of X(22160)',
+            'anticomplement of X(101)-of-orthocentroidal-triangle',
+            'midpoint of X(5) and X(5)-of-circumsymmedial-triangle',
+            'isogonal conjugate of X(3)X(3054) intersect X(6)X(1657)',
+            'isotomic conjugate of X(4)-Ceva conjugate of X(5)',
+            'complement of X(8010)?',
+            'reflection of X(i) in X(j) for these (i,j): (1,2) wrt another triangle',
+        ]:
+            with self.subTest(expression=expression):
+                self.assertEqual(list(extract_entry(4000, 'X(4000) = '+expression, 3)), [])
+        for expression, expected in [
+            ('reflection of X(100) in X(1)X(2)', '4000 R 100 1 2'),
+            ('reflection of X(100) in X(1)', '4000 R 100 1'),
+            ('complement X(1577)', '4000 C 1577'),
+            ('midpoint of X(3) and X(4))', '4000 M 3 4'),
+            ('reflection of X(6) in X(7) for these {i,j}: {6,7}', '4000 R 6 7'),
+        ]:
+            with self.subTest(expression=expression):
+                self.assertEqual([r.row() for r in extract_entry(4000, 'X(4000) = '+expression, 3)], [expected])
+
     def test_heading_and_equivalent_pair_lists(self):
         html = ('<h3 id="X4000">X(4000) = MIDPOINT OF X(1) AND X(2)</h3>'
                 '<p>X(4000) = reflection of X(i) in X(j) for these (i,j): '
@@ -785,6 +807,17 @@ class ConsensusReviewTest(TestCase):
                    coordinates={'sample':{str(n):p for n,p in points.items()}})
         records={4000:Recipe(4000,'M',(1,2)),**(extra or {})}
         return records,atlas
+
+    def test_ideal_review_compares_directions_without_finite_voting(self):
+        records,atlas=self.fixture({4000:Recipe(4000,'I',(1,2))})
+        fragment='<h3>X(4000) = IDEAL POINT</h3><p>X(4000) lies on these lines: {1,2}, {3,4}</p>'
+        row=consensus.Review(records,atlas,{}, {4000:fragment}).audit(4000)
+        self.assertEqual(row['status'],'confirmed_ideal')
+        self.assertEqual(row['direction_support'],2)
+        fragment+='<p>X(4000) lies on this line: {5,6}</p>'
+        row=consensus.Review(records,atlas,{}, {4000:fragment}).audit(4000)
+        self.assertEqual(row['status'],'ideal_direction_outliers')
+        self.assertEqual(row['opposing_lines'],[(5,6)])
 
     def test_consensus_deduplicates_geometry_and_can_certify_without_pairs(self):
         records,atlas=self.fixture()
