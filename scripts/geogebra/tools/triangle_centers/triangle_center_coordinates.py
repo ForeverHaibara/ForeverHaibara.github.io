@@ -68,8 +68,11 @@ def normalize_formula(raw: str) -> str | None:
         raw = re.sub(r'(?<![A-Za-z])([abcS])(\d+)(?=[abc]|\b)', r'\1^\2', raw)
     raw = re.sub(r'([Ss])_([ABCabc])(?![a-z_])', lambda m: m.group(1) + m.group(2).upper()
                  if m.group(1) == 'S' else m.group(1) + m.group(2).lower(), raw)
+    # Euler's ABC length |OH|; expand before token validation, never expose a new runtime symbol.
+    raw = re.sub(r'\bOH\b', '(sqrt(abs(9*R^2-2*SW)))', raw)
     raw = normalize_bare_functions(raw)
-    raw = re.sub(r'\b([abcABC])\s+(?=(?:sin|cos|tan|cot|sec|csc)\b)', r'\1*', raw)
+    symbols = '|'.join(sorted(VARIABLES, key=lambda name: (-len(name), name)))
+    raw = re.sub(r'\b(' + symbols + r')\s+(?=(?:' + '|'.join(sorted(FUNCTIONS)) + r')\s*\()', r'\1*', raw)
     raw = re.sub(r'\s+', '', raw)
     if not raw:
         return None
@@ -310,7 +313,7 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
             elif (not CYCLIC.search(text) and re.search(r'[fght]\s*\(\s*[aA]\s*,\s*[bB]\s*,\s*[cC]\s*\)', text)
                     and re.match(r'^\s*(?::|[fght]\s*\()', next_line, re.I)):
                 text += ' ' + next_line
-            elif re.search(r':\s*:', text) and re.match(r'^where\s+[A-Za-z]\s*=', next_line, re.I):
+            elif re.search(r':\s*:', text) and re.match(r'^where\s+[A-Za-z](?:\d+)?(?:\s*\^\s*(?:2|\(2\)))?\s*=', next_line, re.I):
                 text += (' ' if text.rstrip().endswith(',') else ', ') + next_line
             elif CYCLIC.search(text) and not WHERE.search(text) and next_line.lower().startswith('where '):
                 text += ' ' + next_line
@@ -334,6 +337,9 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
         text = expand_cyclic_coordinate_calls(text)
         if re.search(r':\s*:.*\bwhere\b', text, re.I):
             text = re.sub(r'\s*:\s*:\s*$', '', text)
+        text = expand_squared_locals(text)
+        if text is None:
+            continue
         text = expand_scalar_locals(text)
         if text is None:
             continue
@@ -389,6 +395,45 @@ def coordinate_candidates(fragment: str, text_lines: list[str] | None = None) ->
                     if barycentric:
                         found.append(('B', barycentric, line))
     return list(dict.fromkeys(found))
+
+
+def expand_squared_locals(text: str) -> str | None:
+    """Expand an acyclic explicit root-definition graph, using nonnegative roots.
+
+    Only squared declarations enable this grammar; ordinary local declarations
+    keep their existing independent/cyclic rules. No abs of a radicand is added.
+    """
+    local=re.search(r'(?:,\s*)?\bwhere\s+(?=[A-Za-z](?:\d+)?\s*\^\s*(?:2|\(2\))\s*=)',text,re.I)
+    if not local:return text
+    prefix=text[:local.start()].rstrip(' ,')
+    definition=re.sub(r'^,?\s*where\s+','',text[local.start():],flags=re.I)
+    trailing=bool(re.search(r':\s*:\s*$',definition))
+    definition=re.sub(r'\s*:\s*:\s*$','',definition).strip().removesuffix('.')
+    pairs=re.split(r'\s*,\s*|\s+and\s+(?=[A-Za-z](?:\d+)?\s*(?:\^|=))',definition)
+    definitions={}
+    for pair in pairs:
+        match=re.fullmatch(r'([A-Za-z](?:\d+)?)\s*(\^\s*(?:2|\(2\)))?\s*=\s*(.+)',pair)
+        if not match or match[1] in definitions or match[1] in VARIABLES|FUNCTIONS|{'OH'}:
+            return None
+        definitions[match[1]]=(match[3],bool(match[2]))
+    resolved={};active=set()
+    def resolve(name):
+        if name in resolved:return resolved[name]
+        if name in active:raise ValueError('Cyclic local roots')
+        active.add(name)
+        raw,squared=definitions[name]
+        raw=re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b',
+                   lambda hit:'('+resolve(hit[0])+')' if hit[0] in definitions else hit[0],raw)
+        formula=normalize_formula('sqrt('+raw+')' if squared else raw)
+        if formula is None:raise ValueError('Invalid local root')
+        active.remove(name);resolved[name]=formula
+        return formula
+    try:
+        for name in definitions:resolve(name)
+    except (ValueError,RecursionError):return None
+    if trailing and ':' not in prefix:prefix+=' : :'
+    return re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b',
+                  lambda hit:'('+resolved[hit[0]]+')' if hit[0] in resolved else hit[0],prefix)
 
 
 def normalize_scalar_definition(value: str) -> str | None:

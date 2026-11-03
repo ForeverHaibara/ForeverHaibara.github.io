@@ -51,6 +51,8 @@ python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_
 | ETC `X(p)-Ceva conjugate of X(q)` / `X(p)-cross conjugate of X(q)` | 复用 `B p q f`；与本站 `CevaConjugate(ABC,X,P)`、`CrossConjugate(ABC,X,P)` 的参数顺序一致 | 两个有限输入；p/q 不可交换 |
 | 上述四类的 `for these (i,j): ...` | 多行等价参数表，逐对提取同一种变换 | 必须完整读完参数表；拒绝损坏参数及 wrt/in/条件后缀，不改变原参数顺序 |
 | ETC `barycentric square/cube of X(p)` | 逐重心坐标平方/立方，复用单输入 B | 有方向理想输入从方向向量计算齐次重心坐标；裸 I 禁止作输入，非有限结果不冒认有限点 |
+| ETC `OH` | ABC 的长度 ∣OH∣，按 Euler 恒等式展开为 `sqrt(abs(9*R^2-2*SW))` | 原式对真实三角形非负，abs 仅保护消去误差；不新增运行时符号，不猜测未定义的 J |
+| ETC `where T^2=..., T1^2=..., T2^2=...` | 完整局部声明的无环依赖图，可前向引用；取非负平方根 | 拒绝环、重复绑定、全局变量遮蔽、未知后缀和其它幂次；局部根式不加 abs，负被开方量仍无实定义 |
 | ETC `where J=\|OH\|/R` | 显式局部声明按 Euler 长度恒等式展开 | 不把 J 或 OH 添加为未绑定全局变量；不会据另一条目的约定猜本条 J |
 | ETC `where p=..., q=..., t=...` | 最多三个独立局部标量，可换行 | 不允许全局名称遮蔽、未定义引用、局部定义链 |
 | ETC `where x:y:z=...` / `where x=..., y and z are defined cyclically` | 明确声明的局部循环三元组 | 须验证循环等价；不由单独 x 定义猜测 y/z |
@@ -155,3 +157,6 @@ PB 用户复核已扩大为全部 36 个透视中心的独立几何审计；星�
 ```sh
 python scripts/geogebra/tools/triangle_centers/triangle_center_consensus.py --from-report .cache/triangle-centers/reports/uncovered/uncovered-consensus.json --upstream --settle --report .cache/triangle-centers/reports/reviews/consensus-next.json --markdown .cache/triangle-centers/reports/reviews/consensus-next.md
 ```
+
+
+此前可解析证据相容、仅文字几何未独立核验的13项已按用户要求结束复核，不再作为待办。隐式求解类5373/5394/5626/40139保留未覆盖状态、推迟到最后；15276的fd12等待用户复核。它们在seeds中仅作注释，不用SKIP隐藏未完成工作。少量格式损坏、隐式循环变量或多局部函数直接用已说明来源的seeds处理，避免为个例增加解析语言。

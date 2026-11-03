@@ -288,7 +288,7 @@
 # Batch property consensus, 2026-11-03. Provisional choices based on weighted
 # independent properties, not blanket claims of source-error or geometric proof.
 # Only roots are pinned: six downstream discrepancies resolve without more seeds.
-# Evidence / pending geometry: triangle-centers-consensus-review.md.
+# Evidence: triangle-centers-consensus-review.md; geometric follow-up closed by user decision.
 # X(21910): support 4/5; runner bound 2.
 21910 J 154 511 523 4885
 # X(25408): support 6.75/7; runner bound 1.5.
@@ -336,6 +336,72 @@
 
 # Follow-up majority review: 8430 support 13/14; 38513 support 24/26.
 # Fix roots only; 67420/67634 should recover without additional seeds.
-# 38513 printed coordinates agree; its textual triangle definition is pending.
+# 38513 coordinates agree; geometric follow-up closed by user decision.
 8430 J 112 250 6 512
 38513 R 944 1 3
+
+# Remaining-coordinate review (2026-11-03).
+# Deferred, NOT SKIP: 5373 / 5394 / 5626 / 40139 need implicit solvers.
+# 15276 is awaiting user review of the corrupt fd12 coefficient; do not guess.
+
+# Exposed angles AB/AC are products A*B/A*C; expand explicitly.
+3067 B a^2/(A*(B-C))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+10228 B a^2*(a^26-8*a^24*(b^2+c^2)+28*a^22*(b^2+c^2)^2-6*a^20*(9*b^6+28*b^4*c^2+28*b^2*c^4+9*c^6)+a^18*(53*b^8+277*b^6*c^2+406*b^4*c^4+277*b^2*c^6+53*c^8)+a^16*(6*b^10-273*b^8*c^2-499*b^6*c^4-499*b^4*c^6-273*b^2*c^8+6*c^10)+a^14*(-96*b^12+184*b^10*c^2+307*b^8*c^4+386*b^6*c^6+307*b^4*c^8+184*b^2*c^10-96*c^12)+2*a^12*(66*b^14-56*b^12*c^2-9*b^10*c^4-38*b^8*c^6-38*b^6*c^8-9*b^4*c^10-56*b^2*c^12+66*c^14)-a^10*(69*b^16+6*b^14*c^2+97*b^12*c^4+43*b^10*c^6+5*b^8*c^8+43*b^6*c^10+97*b^4*c^12+6*b^2*c^14+69*c^16)-a^8*(28*b^18-238*b^16*c^2+176*b^14*c^4-11*b^12*c^6+63*b^10*c^8+63*b^8*c^10-11*b^6*c^12+176*b^4*c^14-238*b^2*c^16+28*c^18)+a^6*(b^2-c^2)^2*(68*b^16-256*b^14*c^2+89*b^12*c^4+65*b^10*c^6+97*b^8*c^8+65*b^6*c^10+89*b^4*c^12-256*b^2*c^14+68*c^16)-a^4*(b^2-c^2)^4*(46*b^14-120*b^12*c^2+26*b^10*c^4+73*b^8*c^6+73*b^6*c^8+26*b^4*c^10-120*b^2*c^12+46*c^14)+a^2*(b^2-c^2)^6*(15*b^12-29*b^10*c^2+16*b^8*c^4+32*b^6*c^6+16*b^4*c^8-29*b^2*c^10+15*c^12)-(b^2-c^2)^8*(2*b^10-3*b^8*c^2+5*b^6*c^4+5*b^4*c^6-3*b^2*c^8+2*c^10))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+11811 B a^2*(a^10-5*a^8*b^2+9*a^6*b^4-7*a^4*b^6+2*a^2*b^8-5*a^8*c^2+9*a^6*b^2*c^2+a^4*b^4*c^2-6*a^2*b^6*c^2+b^8*c^2+9*a^6*c^4+a^4*b^2*c^4+2*a^2*b^4*c^4-b^6*c^4-7*a^4*c^6-6*a^2*b^2*c^6-b^4*c^6+2*a^2*c^8+b^2*c^8)
+
+# Inline this entry's three local F/G/H functions, including G(a,c,b); F remains the global Conway symbol elsewhere.
+13301 B a*(((b-c)*(-a+b+c)*(a^4-4*(b+c)*a^3+3*(b^2-b*c+c^2)*a^2+b*c*(b+c)^2))*sin(A/2)+((a-b+c)*((3*b-2*c)*a^4-(4*b^2+3*b*c-3*c^2)*a^3+(b^3+c^3-b*c*(4*b-7*c))*a^2+(b^3-3*c^3+b*c*(b-c))*c*a+c*(b-c)*(2*b^3+b*c^2-c^3)))*sin(B/2)-((a-c+b)*((3*c-2*b)*a^4-(4*c^2+3*c*b-3*b^2)*a^3+(c^3+b^3-c*b*(4*c-7*b))*a^2+(c^3-3*b^3+c*b*(c-b))*b*a+b*(c-b)*(2*c^3+c*b^2-b^3)))*sin(C/2)+(-4*S^2*(b-c)*(2*a-b-c)))
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23032 B b*c*(3*(c*(sec(B/3))+b*(sec(C/3)))*a+4*sqrt(3)*S+6*a^2)*(sec(A/3))+6*a^2*b*c*(sec(B/3))*(sec(C/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec(B/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec(C/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23033 B b*c*(3*(c*(sec((B-2*pi)/3))+b*(sec((C-2*pi)/3)))*a+4*sqrt(3)*S+6*a^2)*(sec((A-2*pi)/3))+6*a^2*b*c*(sec((B-2*pi)/3))*(sec((C-2*pi)/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec((B-2*pi)/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec((C-2*pi)/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23034 B b*c*(3*(c*(sec((B-4*pi)/3))+b*(sec((C-4*pi)/3)))*a+4*sqrt(3)*S+6*a^2)*(sec((A-4*pi)/3))+6*a^2*b*c*(sec((B-4*pi)/3))*(sec((C-4*pi)/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec((B-4*pi)/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec((C-4*pi)/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Misplaced incidence table: intersect {1,2} and {9,20248}.
+26653 J 1 2 9 20248
+
+# Misplaced incidence table: intersect {2,7} and {149,354}.
+26842 J 2 7 149 354
+
+# Inline this entry's three local F/G/H functions, including G(a,c,b); F remains the global Conway symbol elsewhere.
+31957 B (-2*(2*a^2+7*(b+c)*a+(b+c)^2)*S+(-a+b+c)*(a^3-(b+c)*a^2-3*(b+c)^2*a-(b^2-c^2)*(b-c)))*sin(A/2)+(2*a*((a-3*b-3*c)*S-(a-b+c)*(3*a^2+(5*b+6*c)*a+(b+c)*(2*b+c))))*sin(B/2)+(2*a*((a-3*c-3*b)*S-(a-c+b)*(3*a^2+(5*c+6*b)*a+(c+b)*(2*c+b))))*sin(C/2)+(-2*a*(7*a+3*b+3*c)*S-(b+c)*(a+b-c)*(-a+b+c)*(a-b+c))
+
+# Remove unrelated parameter prefix before semicolon; body incidence uses wrong self number 38721/38731. Do not alter source.
+36721 B a^6-4*a^5*b+2*a^4*b^2+2*a^3*b^3-a^2*b^4+2*a*b^5-2*b^6-4*a^5*c-4*a^4*b*c+2*a^3*b^2*c+2*a^2*b^3*c+2*a*b^4*c+2*b^5*c+2*a^4*c^2+2*a^3*b*c^2+6*a^2*b^2*c^2-4*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+2*a^2*b*c^3-4*a*b^2*c^3-4*b^3*c^3-a^2*c^4+2*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5-2*c^6
+
+# Remove unrelated parameter prefix before semicolon; body incidence uses wrong self number 38721/38731. Do not alter source.
+36731 B a^5+3*a^4*b-a^3*b^2-a^2*b^3-2*b^5+3*a^4*c-2*a^3*b*c+a^2*b^2*c-2*a*b^3*c-a^3*c^2+a^2*b*c^2+4*a*b^2*c^2+2*b^3*c^2-a^2*c^3-2*a*b*c^3+2*b^2*c^3-2*c^5
+
+# Remove one surplus terminal right parenthesis in printed denominator.
+38439 B 1/(13*a^8+46*a^4*b^2*c^2-26*a^6*(b^2+c^2)-(b^2-c^2)^2*(13*b^4+24*b^2*c^2+13*c^4)+a^2*(26*b^6-22*b^4*c^2-22*b^2*c^4+26*c^6))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+51777 B a^2*(a^4+b^4+c^4-2*a^2*(b^2+c^2))/(a^16-5*a^14*(b^2+c^2)-(b^2-c^2)^4*(b^4+c^4)^2-a^4*(b^4-c^4)^2*(2*b^4-b^2*c^2+2*c^4)+a^12*(10*b^4+13*b^2*c^2+10*c^4)-a^10*(11*b^6+13*b^4*c^2+13*b^2*c^4+11*c^6)+a^8*(8*b^8+6*b^6*c^2+4*b^4*c^4+6*b^2*c^6+8*c^8)+a^6*(-3*b^10+b^8*c^2-2*b^6*c^4-2*b^4*c^6+b^2*c^8-3*c^10)+a^2*(b^2-c^2)^2*(3*b^10-b^8*c^2+2*b^6*c^4+2*b^4*c^6-b^2*c^8+3*c^10))
+
+# Inline the unique cyclic[...] local triple. This is X65951.
+65951 B (a*(a-b-c)-(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2)))))*(a^2-a*b-2*a*c-b*c+c^2-(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2)))))*(a^2-2*a*b+b^2-a*c-b*c-(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2)))))*(b*(a+b-c)*c*(a-b+c)*(a^5-3*a^4*b+3*a^2*b^3+a*b^4-2*b^5-3*a^4*c-4*a^3*b*c-3*a^2*b^2*c+4*a*b^3*c+6*b^4*c-3*a^2*b*c^2-10*a*b^2*c^2-4*b^3*c^2+3*a^2*c^3+4*a*b*c^3-4*b^2*c^3+a*c^4+6*b*c^4-2*c^5)-b*(a+b-c)*c*(a-b+c)*(2*a^3+a^2*b-a*b^2-2*b^3+a^2*c+2*a*b*c+2*b^2*c-a*c^2+2*b*c^2-2*c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))+(a+b-c)*c*(a^5-2*a^4*b-2*a^3*b^2+5*a^2*b^3-a*b^4-b^5-2*a^4*c-2*a^3*b*c-5*a^2*b^2*c+6*a*b^3*c+3*b^4*c-a^2*b*c^2-8*a*b^2*c^2-2*b^3*c^2+a^2*c^3+2*a*b*c^3-2*b^2*c^3+a*c^4+3*b*c^4-c^5)*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))-(a+b-c)*c*(a^3+2*a^2*b-2*a*b^2-b^3+2*a*b*c+b^2*c+b*c^2-c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))+b*(a-b+c)*(a^5-2*a^4*b+a^2*b^3+a*b^4-b^5-2*a^4*c-2*a^3*b*c-a^2*b^2*c+2*a*b^3*c+3*b^4*c-2*a^3*c^2-5*a^2*b*c^2-8*a*b^2*c^2-2*b^3*c^2+5*a^2*c^3+6*a*b*c^3-2*b^2*c^3-a*c^4+3*b*c^4-c^5)*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))-b*(a-b+c)*(a^3-b^3+2*a^2*c+2*a*b*c+b^2*c-2*a*c^2+b*c^2-c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))+a*(a^4-a^3*b-2*a^2*b^2+3*a*b^3-b^4-a^3*c-3*a*b^2*c+4*b^3*c-2*a^2*c^2-3*a*b*c^2-6*b^2*c^2+3*a*c^3+4*b*c^3-c^4)*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))-a*(a*b-b^2+a*c+2*b*c-c^2)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2)))))
+
+# Use the printed second closed form; balance its surplus opening parenthesis and expand symmetric s1/s2/s3. Hyperbolic functions already supported.
+72483 B a*(b+c)-2*(((a+b+c)+2*sqrt(6*(b*c+c*a+a*b)-(a+b+c)^2)*sinh(asinh(((a+b+c)^3-9*(a+b+c)*(b*c+c*a+a*b)+54*(a*b*c))/(6*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3))/6)*(a-(((a+b+c)+2*sqrt(6*(b*c+c*a+a*b)-(a+b+c)^2)*sinh(asinh(((a+b+c)^3-9*(a+b+c)*(b*c+c*a+a*b)+54*(a*b*c))/(6*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3))/6))
+
+# Printed cyclic coordinate has no Barycentrics label; preserve as an individual seed.
+72513 B ((b^2+c^2)*a^10-(3*b^4+5*b^2*c^2+3*c^4)*a^8+2*((b^2+c^2)^2-b^2*c^2)*(b^2+c^2)*a^6+((b^2+c^2)^2-b^2*c^2)*(2*b^4-b^2*c^2+2*c^4)*a^4-(b^4-c^4)*(b^2-c^2)*(3*b^4+2*b^2*c^2+3*c^4)*a^2+(b^4-c^4)^2*(b^2-c^2)^2)*(a^20-(2*b^2+5*c^2)*a^18-(3*b^2-8*c^2)*(b^2+c^2)*a^16+(8*b^4+9*b^2*c^2-5*c^4)*b^2*a^14+(2*b^8-14*c^8-(7*b^4-2*b^2*c^2-16*c^4)*b^2*c^2)*a^12-(12*b^10-14*c^10+(2*b^6+39*c^6-2*(b-2*c)*(b+2*c)*b^2*c^2)*b^2*c^2)*a^10+2*(b^10+16*c^10-(b^6+14*c^6+(7*b^2+4*c^2)*b^2*c^2)*b^2*c^2)*b^2*a^8+(b^2-c^2)*(8*b^12+8*c^12+(b^8+3*c^8+(3*b^4-5*b^2*c^2-32*c^4)*b^2*c^2)*b^2*c^2)*a^6-(b^2-c^2)^3*(3*b^10+5*c^10-(11*b^4+22*b^2*c^2+5*c^4)*b^2*c^4)*a^4-(b^2-c^2)^5*(2*b^8-c^8+(5*b^4+10*b^2*c^2+4*c^4)*b^2*c^2)*a^2+(b^4-c^4)^2*(b^2-c^2)^5*b^2)*(a^20-(5*b^2+2*c^2)*a^18+(8*b^2-3*c^2)*(b^2+c^2)*a^16-(5*b^4-9*b^2*c^2-8*c^4)*c^2*a^14-(14*b^8-2*c^8-(16*b^4+2*b^2*c^2-7*c^4)*b^2*c^2)*a^12+(14*b^10-12*c^10-(39*b^6+2*c^6+2*(2*b-c)*(2*b+c)*b^2*c^2)*b^2*c^2)*a^10+2*(16*b^10+c^10-(14*b^6+c^6+(4*b^2+7*c^2)*b^2*c^2)*b^2*c^2)*c^2*a^8-(b^2-c^2)*(8*b^12+8*c^12+(3*b^8+c^8-(32*b^4+5*b^2*c^2-3*c^4)*b^2*c^2)*b^2*c^2)*a^6+(5*b^10+3*c^10-(5*b^4+22*b^2*c^2+11*c^4)*b^4*c^2)*(b^2-c^2)^3*a^4-(b^2-c^2)^5*(b^8-2*c^8-(4*b^4+10*b^2*c^2+5*c^4)*b^2*c^2)*a^2-(b^4-c^4)^2*(b^2-c^2)^5*c^2)
+
+# Use first component of a comma-separated full cyclic triple followed by redundant : :. Positive local square roots; partner follows existing reflection.
+72698 B 2*S^2*(SA*SB+SA*SC-2*SB*SC)*SW-2*(SA*SB+SA*SC-2*SB*SC)*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))+a*b*c*S^2*(sqrt(a^2*b^2*c^2+4*SA*SB*SC-4*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))))
+
+# Use first component of a comma-separated full cyclic triple followed by redundant : :. Positive local square roots; partner follows existing reflection.
+72700 B -2*(SA*SB+SA*SC-2*SB*SC)*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))-S^2*(2*SA*SB*SW+2*SA*SC*SW-4*SB*SC*SW+a*b*c*(sqrt(a^2*b^2*c^2+4*SA*SB*SC+4*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC))))))
+
+# X72514: exact invariant-basis reduction of the printed degree-46 polynomial.
+# Remove common 16*S^14; reduce a^2 by its symmetric cubic; use F=SW-E.
+# This preserves the point and avoids cancellation after X72513 becomes available.
+72514 B -4*S^2*(1071*F^7+4854*F^6*SW-47316*F^5*S^2+5057*F^5*SW^2-56428*F^4*S^2*SW-3020*F^4*SW^3+3584*F^3*S^4-23944*F^3*S^2*SW^2-5503*F^3*SW^4-3072*F^2*S^4*SW-3224*F^2*S^2*SW^3-2186*F^2*SW^5-512*F*S^4*SW^2-100*F*S^2*SW^4-273*F*SW^6-60*S^2*SW^5)+a^4*(-1323*F^7-4662*F^6*SW+217368*F^5*S^2+8835*F^5*SW^2+264600*F^4*S^2*SW+42348*F^4*SW^3-17472*F^3*S^4+119152*F^3*S^2*SW^2+38475*F^3*SW^4+14528*F^2*S^4*SW+19760*F^2*S^2*SW^3+13098*F^2*SW^5+2880*F*S^4*SW^2+1400*F*S^2*SW^4+1533*F*SW^6+64*S^4*SW^3+312*S^2*SW^5)+a^2*(1323*F^7*SW-9720*F^6*S^2+4662*F^6*SW^2-234000*F^5*S^2*SW-8835*F^5*SW^3-19440*F^4*S^4-271560*F^4*S^2*SW^2-42348*F^4*SW^4+3648*F^3*S^4*SW-118880*F^3*S^2*SW^3-38475*F^3*SW^5-14624*F^2*S^4*SW^2-19464*F^2*S^2*SW^4-13098*F^2*SW^6-2240*F*S^4*SW^3-1424*F*S^2*SW^5-1533*F*SW^7-112*S^4*SW^4-312*S^2*SW^6)

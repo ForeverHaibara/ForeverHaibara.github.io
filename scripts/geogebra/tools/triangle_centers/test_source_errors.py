@@ -896,3 +896,91 @@ class ReviewedUpstreamCorrections(TestCase):
         atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
         for abc in atlas['triangles'].values():
             self.assertIsInstance(m.numeric_formula_projective(Recipe(32472,'B',(),formula=formula),abc),Ideal)
+
+
+class RemainingCoordinateReview(TestCase):
+    def test_morley_locals_are_expanded_cyclically_without_binding_xyz(self):
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart12.html').read_text(encoding='utf-8',errors='replace')))
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        abc=[(0,0),(6,0),(1,4)]
+        env=m.side_environment(*[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)])
+        for n,shift in [(23032,0),(23033,2*math.pi),(23034,4*math.pi)]:
+            first=next(l for l in m.coordinate_text(entries[n]) if l.startswith('Barycentrics')).removeprefix('Barycentrics').split(':')[0].strip()
+            xyz={name:1/math.cos((env[angle]-shift)/3) for name,angle in zip('xyz','ABC')}
+            weights=[m.evaluate_formula(m.rotate_formula(first,j),dict(env,**xyz)) for j in range(3)]
+            self.assertLess(math.dist(m.numeric_formula(seeds[n],abc),weighted_point(weights,abc)),1e-8)
+
+    def test_comma_triple_root_seeds_and_reflection_partners(self):
+        from triangle_center_coordinates import expand_squared_locals
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart37.html').read_text(encoding='utf-8',errors='replace')))
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        atlas=m.read_native_atlas(m.CACHE/'native/native-atlas.json')
+        for n in [72698,72699,72700,72701]:
+            line=next(l for l in m.coordinate_text(entries[n]) if l.startswith('Barycentrics'))
+            prefix,definitions=line.removeprefix('Barycentrics').split('where')
+            parts=prefix.split(':')[0].split(',')
+            for shape,abc in atlas['triangles'].items():
+                env=m.side_environment(*[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)])
+                weights=[]
+                for part in parts:
+                    expanded=expand_squared_locals(part+' : : where '+definitions).split(':')[0]
+                    weights.append(m.evaluate_formula(m.normalize_formula(expanded),env))
+                source=seeds[n if n%2==0 else n-1]
+                point=m.numeric_formula(source,abc)
+                if any(w is None for w in weights):
+                    self.assertIsNone(point)
+                else:
+                    if n%2:
+                        G=tuple(sum(p[k] for p in abc)/3 for k in (0,1))
+                        point=tuple(2*G[k]-point[k] for k in (0,1))
+                    self.assertLess(math.dist(point,weighted_point(weights,abc)),1e-8)
+
+    def test_hungerbuhler_closed_form_uses_the_equal_cevian_segment_root(self):
+        recipe=m.read_recipes(m.DATA/'seeds.txt',{})[72483]
+        for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)],[(0,0),(6,0),(3,math.sqrt(27))]]:
+            a,b,c=[math.dist(abc[(j+1)%3],abc[(j+2)%3]) for j in range(3)]
+            # Concurrent cevians with BD=CE=AF=x satisfy Ceva:
+            # x^3=(a-x)(b-x)(c-x). This reference uses no hyperbolic formula.
+            lo,hi=0,min(a,b,c)
+            for _ in range(80):
+                x=(lo+hi)/2
+                if x**3>(a-x)*(b-x)*(c-x):hi=x
+                else:lo=x
+            x=(lo+hi)/2
+            expected=weighted_point([a*(b+c)-2*x*(a-x),b*(c+a)-2*x*(b-x),c*(a+b)-2*x*(c-x)],abc)
+            self.assertLess(math.dist(m.numeric_formula(recipe,abc),expected),1e-8)
+
+    def test_72514_invariant_reduction_is_exact_and_numerically_stable(self):
+        from fractions import Fraction
+        from decimal import Decimal, localcontext
+        entries=dict(m.split_entries((m.CACHE/'sources/ETCPart37.html').read_text(encoding='utf-8',errors='replace')))
+        printed=m.coordinate_candidates(entries[72514])[0][1]
+        seed=m.read_recipes(m.DATA/'seeds.txt',{})[72514]
+        # Exact rational witnesses verify the removed common factor 16*S^14.
+        reduced=re.sub(r'\bS\^(\d+)',lambda h:'H^'+str(int(h[1])//2),seed.formula)
+        for a,b,c in [(5,6,7),(6,9,13),(13,14,15),(4,5,8)]:
+            a,b,c=map(Fraction,(a,b,c));W=(a*a+b*b+c*c)/2
+            H=(2*(a*a*b*b+b*b*c*c+c*c*a*a)-a**4-b**4-c**4)/4
+            E=a*a*b*b*c*c/H
+            env=dict(a=a,b=b,c=c,SW=W,E=E,F=W-E,H=H)
+            for j in range(3):
+                old=eval(m.rotate_formula(printed,j).replace('^','**'),{'__builtins__':{}},env)
+                new=eval(m.rotate_formula(reduced,j).replace('^','**'),{'__builtins__':{}},env)
+                self.assertEqual(old,16*H**7*new)
+        # Compare double evaluation to a 90-digit source-polynomial reference.
+        with localcontext() as ctx:
+            ctx.prec=90
+            for abc in [[(0,0),(6,0),(1,4)],[(0,0),(6,0),(-1,2)]]:
+                env=dict(zip('abc',[Decimal(sum((abc[(j+1)%3][k]-abc[(j+2)%3][k])**2 for k in range(2))).sqrt() for j in range(3)]))
+                weights=[eval(m.rotate_formula(printed,j).replace('^','**'),{'__builtins__':{}},env) for j in range(3)]
+                reference=tuple(float(sum(weights[j]*abc[j][k] for j in range(3))/sum(weights)) for k in range(2))
+                self.assertLess(math.dist(m.numeric_formula(seed,abc),reference)/max(1,math.hypot(*reference)),1e-9)
+
+    def test_isolated_source_repairs_and_deferred_cases_are_explicit(self):
+        seeds=m.read_recipes(m.DATA/'seeds.txt',{})
+        self.assertEqual(seeds[26653].row(),'26653 J 1 2 9 20248')
+        self.assertEqual(seeds[26842].row(),'26842 J 2 7 149 354')
+        self.assertEqual(seeds[3067].formula,'a^2/(A*(B-C))')
+        for n in [10228,11811,13301,31957,36721,36731,38439,51777,65951,72483,72513]:
+            self.assertTrue(m.homogeneous_degree(seeds[n].formula)[0],n)
+        self.assertTrue(all(n not in seeds for n in [5373,5394,5626,40139,15276]))

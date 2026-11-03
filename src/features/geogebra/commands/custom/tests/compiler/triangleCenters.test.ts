@@ -18,6 +18,20 @@ const environment = (): CommandEnvironment => ({
 beforeAll(async () => { for (const id of [73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
 
 describe('extended TriangleCenter dispatch', () => {
+  it('compiles remaining-coordinate repairs with all roots and locals bound', async () => {
+    for (const id of [3067, 10228, 11811, 13301, 23032, 23033, 23034, 26653, 26842, 31664, 31665,
+      31957, 36721, 36731, 38439, 40303, 45306, 45307, 47752, 47753, 51777, 65951, 72483, 72513,
+      72698, 72699, 72700, 72701, 72934, 72935]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:OH|SA|SB|SC|SW|T[12]?)\b/u);
+    }
+    const hungerbuhler = compileStudioCommand('TriangleCenter(A,B,C,72483)', environment());
+    expect(hungerbuhler).toContain('asinh(');
+    expect(hungerbuhler).toContain('sinh(');
+  });
+
   it('uses the reviewed repairs and the cancelled Danneels coordinates', async () => {
     for (const id of [7742, 8037, 40822, 48720, 72796]) await prepareTriangleCenter(id);
     expect(compileStudioCommand('TriangleCenter(A,B,C,7742)', environment()))

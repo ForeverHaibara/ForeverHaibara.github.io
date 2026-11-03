@@ -575,3 +575,16 @@ Vietnamese 前言表将 (2,4) 写到 39192、把 (2,5) 写成 29192，并重复 
 102 条种子、70,066 条自动记录，71 块 / 2,205,534 字节；最大深度 6，最大估计展开 105,990。因完整关系解析改变缓存指纹，首轮冷提取及构建约 327 秒；补充两根后缓存构建约 124 秒，最后发布 5 文件约 0.063 秒。辅助 ideal-formula 清单复用，本轮图/类型/数值/入射审计均正常执行。162 项 Python、164 项前端/代数测试、TypeScript、Vite 与最终 verify 通过。
 
 日志 runs/expression-review/；最终诊断 reports/uncovered/expression-review.json；全量差分 reports/reviews/expression-final-comparison.json；目标及上游复查 expression-final-consensus.json；前缀审计 prefix-tail-before.json / prefix-tail-after.json；补充根票据 expression-followup.json。几何独立核验待办共 13 项，见 triangle-centers-consensus-review.md。
+
+
+## 剩余坐标专项处理的最终结果（2026-11-03）
+
+正式库 **70,198 条 / 未覆盖5**，本轮恢复30个目标，没有旧覆盖退出。五项均为no_parsed_candidate：5373/5394/5626/40139推迟隐式求解，15276等待用户复核fd12。它们保留未完成状态，没有用SKIP从统计中隐藏。此前十三项仅剩几何核验的复核按用户决定结束，不再作为待办。
+
+通用修正为明确平方局部定义的无环依赖展开、标准ABC长度OH、函数前已知符号的乘法边界；个例增加20条seeds（含72514的稳定等价式），不为缺标签、错括号、错编号、多局部函数及隐含循环变量建立专用解析语言。65397由裸I获得方向I 13301 47695，复核为confirmed_ideal。26842的{1071,6894}为打印端点下仍不符的入射；另一条{6840,10202}暴露当前10202 M 1071 5927的上游问题，留待下一批多数性质审阅。
+
+相对本轮开始，37个旧配方改变；普通数值对照仅记录65397由无方向变为有方向，以及72514钝角样本位置变化。72514的原始双精度源式会产生假失配，报告保留该原始结果，并另列90位Decimal复核；新式两样本相对误差约4.2×10^-13/1.2×10^-12，无未解释新增坐标失配。公共因子消去以Fraction精确样本和对称不变量推导核验，没有降低筛选阈值。
+
+122 seeds、70,076自动记录，71块/2,209,684字节；纯B3600、有输入B148；有方向I1128、裸I65；深度6、最大估计展开105,990。首轮全量冷构建约391秒，其中完整辅助ideal清单约125秒；修正72514后的缓存构建约89秒，重用同一候选池的辅助清单，其余图/类型/数值检查照常。最终发布1文件约0.041秒。170项Python、165项前端/代数、TypeScript、Vite与最终verify通过。
+
+最终报告 reports/uncovered/remaining-coordinates.json、reports/reviews/remaining-final-comparison.json（保留原始双精度及高精度说明）、remaining-ideal-direction.json；运行日志 runs/remaining-coordinates/。35项逐组说明及暂缓理由见source-review中的“剩余坐标条目专项处理”。

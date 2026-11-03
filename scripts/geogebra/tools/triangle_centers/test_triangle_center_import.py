@@ -932,6 +932,33 @@ class CoordinateLocalTest(TestCase):
             self.assertTrue(any(p is not None for p in states))
             self.assertEqual(domains[n],'conditional_complex')
 
+    def test_squared_local_graphs_expand_complete_acyclic_definitions(self):
+        for declaration in ['T^2=a^2, T1^2=T*b', 'T1^(2)=T*b, T^(2)=a^2']:
+            formula=coordinate_candidates('Barycentrics a+T+T1 : :<br>where '+declaration)[0][1]
+            self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),10+math.sqrt(30))
+            self.assertTrue(homogeneous_degree(formula)[0])
+        # An unused valid declaration does not add its radicand to the coordinate.
+        formula=coordinate_candidates('Barycentrics T : : where T^2=a^2, T1^2=-b^2')[0][1]
+        self.assertAlmostEqual(evaluate_formula(formula,side_environment(5,6,7)),5)
+        formula=coordinate_candidates('Barycentrics T : : where T^2=-a^2')[0][1]
+        self.assertIsNone(evaluate_formula(formula,side_environment(5,6,7)))
+
+    def test_squared_local_graphs_reject_cycles_collisions_and_unknown_tails(self):
+        for declaration in ['T^2=T1,T1^2=T', 'T^2=T', 'T^2=a,T^2=b',
+                            'S^2=a', 'T^2=missing', 'T^2=a if ABC is acute',
+                            'T^3=a', 'T^2=a, T1^2=unknown(b)', 'T^2=a, b^2=c']:
+            with self.subTest(declaration=declaration):
+                self.assertEqual(coordinate_candidates('Barycentrics T : : where '+declaration),[])
+
+    def test_oh_length_and_function_product_boundaries(self):
+        oh=normalize_formula('OH')
+        for a,b,c in [(5,6,7),(6,9,13),(6,6,6)]:
+            env=side_environment(a,b,c)
+            self.assertAlmostEqual(evaluate_formula(oh,env)**2,max(0,9*env['R']**2-a*a-b*b-c*c),places=10)
+            self.assertAlmostEqual(evaluate_formula(normalize_formula('c log(a/c) + b log(a/b)'),env),
+                                   c*math.log(a/c)+b*math.log(a/b))
+        self.assertIsNone(normalize_formula('coefficient log(a/c)'))
+
     def test_three_independent_and_explicit_cyclic_scalar_definitions(self):
         env=side_environment(5,6,7)
         for source in ['Barycentrics x+y+z : : , where x=cos(A/2), y=cos(B/2), z=cos(C/2)',
