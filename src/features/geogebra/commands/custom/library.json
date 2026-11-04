@@ -18,6 +18,14 @@
       ]
     },
     {
+      "name": "GeminiTriangle",
+      "description": "Numbered Gemini triangle; optionally select vertex 1, 2 or 3.",
+      "overloads": [
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"id","type":"catalogId"}], "returns":"point", "builder":"geminiTriangle"},
+        {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"id","type":"catalogId"},{"name":"i","type":"number"}], "returns":"point", "builder":"geminiTriangle"}
+      ]
+    },
+    {
       "name": "Intersect",
       "description": "Four points intersect the infinite lines AB and CD. All other signatures use the native Intersect command.",
       "overloads": [
@@ -1241,3 +1249,4 @@
     }
   ]
 }
+

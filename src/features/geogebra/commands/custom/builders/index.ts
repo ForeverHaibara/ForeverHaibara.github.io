@@ -9,7 +9,7 @@ import { CONIC_BUILDERS } from './conics';
 import { QUADRANGLE_BUILDERS } from './quadrangle';
 import { QUADRILATERAL_BUILDERS } from './quadrilateral';
 import { gibertCurve } from './relatedCurves';
-import { triangleCenter } from './triangleCenters';
+import { triangleCenter, geminiTriangle } from './triangleCenters';
 import { conjugate } from './conjugates';
 
 const brocard: ExpressionBuilder = (args, allocate) => {
@@ -133,6 +133,7 @@ export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
   brocard, anticevian, trilinearPolar, trilinearPole,
   ...TRIANGLE_BUILDERS, ...CUBIC_BUILDERS, pivotal: pivotalIsogonalCubic, ...ISOCUBIC_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
-  gibertCurve, triangleCenter,
+  gibertCurve, triangleCenter, geminiTriangle,
 };
+
 

@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 import { conjugate } from './conjugates';
-import { bind, add, matrix, transpose } from '../algebra/homogeneous';
+import { bind, add, matrix, transpose, barycentricPoint, independentOutputs } from '../algebra/homogeneous';
 import nativeStatusSource from '../data/triangle-centers/native-status.txt?raw';
 import nativePatchSource from '../data/triangle-centers/native-patches.txt?raw';
 import geminiSource from '../data/triangle-centers/gemini-triangles.txt?raw';
@@ -277,3 +277,23 @@ export const loadTriangleCenterCatalogue = async () => {
     nativeDirections: nativeDirections as ReadonlyMap<number, readonly [number, number]>,
     geminiTriangles: geminiTriangles as ReadonlyMap<number, readonly string[]> };
 };
+
+export const geminiTriangle: ExpressionBuilder = (args) => {
+  const literal = args[3].literal ?? '';
+  if (!/^[1-9]\d*$/u.test(literal) || !Number.isSafeInteger(Number(literal)))
+    throw new Error('GeminiTriangle ID must be a positive integer literal.');
+  const formula = geminiTriangles.get(Number(literal));
+  if (!formula) throw new Error(`GeminiTriangle ${literal} is not in the catalogue.`);
+  const vertices = args.slice(0, 3).map(arg => arg.expression);
+  const sides = vertices.map((_, i) => `Distance(${vertices[(i + 1) % 3]},${vertices[(i + 2) % 3]})`);
+  const outputs = [0, 1, 2].map(i => {
+    const local = [0, 1, 2].map(j => sides[(i + j) % 3]);
+    const cosA = `((${local[1]})^2+(${local[2]})^2-(${local[0]})^2)/(2*(${local[1]})*(${local[2]}))`;
+    const weights = formula.map(value => value.replace(/cos\(A\)/gu, 'COSINE').replace(/\b[abc]\b/gu, name => `(${local['abc'.indexOf(name)]})`).replace(/COSINE/gu, `(${cosA})`));
+    const ordered = [0, 1, 2].map(j => weights[(j - i + 3) % 3]);
+    return barycentricPoint(vertices, ordered);
+  });
+  return independentOutputs(outputs, args[4]?.expression);
+};
+
+
