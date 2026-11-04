@@ -57,7 +57,7 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
     f.objects["d'"] = line('conic');
     f.emit('add', "d'");
     await vi.advanceTimersByTimeAsync(1000);
-    expect(f.objects["d'"]).toMatchObject({ label: false, size: 3, color: '#475569' });
+    expect(f.objects["d'"]).toMatchObject({ label: false, size: 3, color: DEFAULT_GGB_PREFERENCES.conicColor });
     expect(f.callApi.mock.calls.some(([method]) => ['setPerspective', 'setRounding', 'refreshViews', 'setRepaintingActive'].includes(method))).toBe(false);
     expect(f.errors).not.toHaveBeenCalled();
     f.controller.dispose();
@@ -144,9 +144,32 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
     expect(f.callApi).toHaveBeenCalledWith('setGridVisible', [1, false]);
     expect(f.callApi).toHaveBeenCalledWith('setRounding', ['5d']);
     expect(f.objects.A).toMatchObject({ label: true, size: 5, color: '#2563eb' });
-    for (const key of ['c', 'f', 'curve']) expect(f.objects[key]).toMatchObject({ label: false, size: 3, color: '#475569' });
+    expect(f.objects.c).toMatchObject({ label: false, size: 3, color: DEFAULT_GGB_PREFERENCES.conicColor });
+    for (const key of ['f', 'curve']) expect(f.objects[key]).toMatchObject({ label: false, size: 3, color: '#475569' });
     expect(f.objects.text).toEqual(line('text'));
     f.controller.dispose();
+  });
+
+  it('styles shape types independently and preserves individual color and angle label edits', async () => {
+    const f = fixture({ c: { ...line('point'), storedType: 'conic', strokeOpacity: 1 }, implicit: line('implicitpoly'), polygon: line('polygon'), angle: line('angle'), ordinary: line() });
+    await f.controller.loadDocument(async () => undefined);
+    expect(f.objects.c.color).toBe(DEFAULT_GGB_PREFERENCES.conicColor);
+    expect(f.objects.implicit.color).toBe(DEFAULT_GGB_PREFERENCES.implicitCurveColor);
+    expect(f.objects.polygon.color).toBe(DEFAULT_GGB_PREFERENCES.polygonColor);
+    expect(f.objects.angle).toMatchObject({ color: DEFAULT_GGB_PREFERENCES.angleColor, label: true });
+    await f.controller.editObjects(['angle'], { color: '#123456', label: false });
+    await f.controller.update({ ...DEFAULT_GGB_PREFERENCES, angleColor: '#abcdef', polygonColor: '#112233' });
+    expect(f.objects.angle).toMatchObject({ color: '#123456', label: false });
+    expect(f.objects.polygon.color).toBe('#112233');
+    expect(f.objects.ordinary.color).toBe(DEFAULT_GGB_PREFERENCES.lineColor);
+    await f.controller.applyToAll();
+    expect(f.objects.angle).toMatchObject({ color: '#abcdef', label: true });
+    f.controller.dispose();
+  });
+
+  it('migrates missing shape colors from the selected palette', () => {
+    expect(normalizePreferences({ palette: 'forest' })).toMatchObject({ conicColor: '#047857', implicitCurveColor: '#7c3aed', angleLabels: true });
+    expect(normalizePreferences({ palette: 'forest', conicColor: '#123456', angleLabels: false })).toMatchObject({ conicColor: '#123456', angleLabels: false });
   });
 
   it('preserves each individually edited property while updating managed properties', async () => {

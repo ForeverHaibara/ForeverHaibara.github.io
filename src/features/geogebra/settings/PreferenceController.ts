@@ -6,7 +6,7 @@ import { isInternalHelperName } from '../commands/custom/internalHelpers';
 
 const VIEW_KEYS = ['algebra', 'cas', 'spreadsheet', 'graphics2', 'graphics3d'] as const;
 const VIEW_CODES = ['A', 'C', 'S', 'D', 'T'];
-const OBJECT_KEYS = ['pointLabels', 'lineLabels', 'pointSize', 'pointColor', 'constrainedPointColor', 'dependentPointColor', 'pointColorMode', 'lineThickness', 'lineColor', 'stylePolicy'] as const;
+const OBJECT_KEYS = ['pointLabels', 'lineLabels', 'angleLabels', 'pointSize', 'pointColor', 'constrainedPointColor', 'dependentPointColor', 'pointColorMode', 'lineThickness', 'lineColor', 'conicColor', 'implicitCurveColor', 'angleColor', 'polygonColor', 'stylePolicy'] as const;
 const same = (a: unknown, b: unknown) => typeof a === 'string' && typeof b === 'string' ? a.toLowerCase() === b.toLowerCase() : a === b;
 
 /** Document defaults and per-property ownership, independent of the style UI. */
@@ -289,7 +289,12 @@ export class PreferenceController {
     // Extended styles have no global preference. Their original per-object
     // appearance is the reset baseline, including styles imported from files.
     for (const key of STYLE_KEYS) if (baseline[key] !== undefined) desired[key] = baseline[key] as never;
-    if (point || line) Object.assign(desired, { label: point ? p.pointLabels : p.lineLabels, size: point ? p.pointSize : p.lineThickness, color: point ? pointColor : p.lineColor });
+    const storedType = (info.xml.match(/<element\b[^>]*\btype=["']([^"']+)["']/)?.[1] ?? info.type).replace(/^geo/i, '').replace(/[\s_-]/g, '').toLowerCase();
+    const angle = /^angle(?:3d)?$/.test(storedType);
+    const color = /^(?:conic|conicpart|circle|ellipse|hyperbola|parabola|intersectinglines|parallellines|doubleline|emptyset)(?:3d)?$/.test(storedType) ? p.conicColor
+      : /^(?:implicitpoly|implicitcurve)(?:3d)?$/.test(storedType) ? p.implicitCurveColor
+      : angle ? p.angleColor : /^polygon(?:3d)?$/.test(storedType) ? p.polygonColor : p.lineColor;
+    if (point || line) Object.assign(desired, { label: point ? p.pointLabels : angle ? p.angleLabels : p.lineLabels, size: point ? p.pointSize : p.lineThickness, color: point ? pointColor : color });
     if (force) delete baseline.overrides;
     for (const key of STYLE_KEYS) {
       if (this.disposed) return;

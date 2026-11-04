@@ -3,6 +3,7 @@ export interface GgbPreferences {
   grid: boolean;
   pointLabels: boolean;
   lineLabels: boolean;
+  angleLabels: boolean;
   algebra: boolean;
   cas: boolean;
   spreadsheet: boolean;
@@ -17,6 +18,10 @@ export interface GgbPreferences {
   pointColorMode: 'by-role' | 'uniform';
   lineThickness: number;
   lineColor: string;
+  conicColor: string;
+  implicitCurveColor: string;
+  angleColor: string;
+  polygonColor: string;
   palette: string;
   stylePolicy: 'preserve' | 'override';
 }

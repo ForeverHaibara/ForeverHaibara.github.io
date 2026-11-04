@@ -12,6 +12,10 @@ export function normalizePreferences(value: unknown): GgbPreferences {
     result.constrainedPointColor = palette.constrained;
     result.dependentPointColor = palette.dependent;
     result.pointColorMode = palette.mode;
+    result.conicColor = palette.conic;
+    result.implicitCurveColor = palette.implicitCurve;
+    result.angleColor = palette.angle;
+    result.polygonColor = palette.polygon;
   }
   for (const key of Object.keys(result) as Array<keyof GgbPreferences>) {
     if (typeof result[key] === 'boolean' && typeof source[key] === 'boolean') {
@@ -22,7 +26,7 @@ export function normalizePreferences(value: unknown): GgbPreferences {
     const n = source[key];
     if (typeof n === 'number' && Number.isFinite(n)) result[key] = Math.min(max, Math.max(min, Math.round(n)));
   }
-  for (const key of ['pointColor', 'constrainedPointColor', 'dependentPointColor', 'lineColor'] as const) {
+  for (const key of ['pointColor', 'constrainedPointColor', 'dependentPointColor', 'lineColor', 'conicColor', 'implicitCurveColor', 'angleColor', 'polygonColor'] as const) {
     if (typeof source[key] === 'string' && /^#[\da-f]{6}$/i.test(source[key])) result[key] = source[key].toLowerCase();
   }
   if (typeof source.palette === 'string') result.palette = source.palette;
