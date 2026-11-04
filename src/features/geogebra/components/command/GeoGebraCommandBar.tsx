@@ -1,5 +1,6 @@
 import React, { useId, useMemo, useRef, useState } from 'react';
-import { formatApiResult, parseApiCall } from '../../commands/apiConsoleParser';
+import { formatApiResult } from '../../commands/apiConsoleParser';
+import { advancedCommands } from '../../commands/advancedCommands';
 import { CommandHistory } from '../../commands/commandHistory';
 import { executeCommandPipeline } from '../../commands/commandPipeline';
 import type { ApiConsoleResult, CommandResult, GeoGebraEngine } from '../../types';
@@ -48,14 +49,13 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
 
     if (input.trimStart().startsWith('!')) {
       try {
-        const call = parseApiCall(input);
-        const result = await engine.callApi(call.method, call.args);
+        const result = await advancedCommands.execute(engine, input);
         setApiResult({ input, output: formatApiResult(result) });
         onResult({ success: true, command: input, labels: [], timestamp: Date.now() });
         setValue('');
       } catch (error) {
-        setApiResult({ input, error: error instanceof Error ? error.message : 'API call failed.' });
-        onResult({ success: false, command: input, labels: [], error: error instanceof Error ? error.message : 'API call failed.', timestamp: Date.now() });
+        setApiResult({ input, error: error instanceof Error ? error.message : 'Special command failed.' });
+        onResult({ success: false, command: input, labels: [], error: error instanceof Error ? error.message : 'Special command failed.', timestamp: Date.now() });
         spelling.check(input);
       } finally {
         setBusy(false);
@@ -136,7 +136,7 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
           aria-controls={completion.state ? completion.listId : undefined}
           aria-activedescendant={completion.state ? `${completion.listId}-${completion.state.activeIndex}` : undefined}
           aria-describedby={helpId}
-          placeholder="Enter a command or !API call…"
+          placeholder="Enter a command or !special command…"
           rows={1}
           className="ggb-command-textarea"
           data-testid="geogebra-command-input"

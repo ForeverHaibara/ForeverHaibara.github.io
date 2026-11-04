@@ -3,6 +3,7 @@ import { CompletionRegistry } from './completionRegistry';
 import { GEOGEBRA_COMMAND_NAMES } from './geogebraCommandNames';
 import { COMMAND_HELP } from './commandHelp';
 import { studioToolLibrary, toolSignature } from '../custom/toolLibrary';
+import { advancedCommands } from '../advancedCommands';
 
 /** Shared by all studio command bars. Extensions can also inject their own registry. */
 export const studioCompletionRegistry = new CompletionRegistry();
@@ -19,6 +20,9 @@ studioCompletionRegistry.registerCommands('geogebra-api', API_METHODS.map((label
   kind: 'api',
   description: 'GeoGebra JavaScript API',
 })), 'api');
+
+studioCompletionRegistry.register({ id: 'studio-advanced', provide: (context) => context.mode === 'api'
+  ? advancedCommands.list().map(({ name, description, signatures }) => ({ label: name, kind: 'api' as const, description, signatures, priority: 10 })) : [] });
 
 studioCompletionRegistry.registerCommands('studio-geometry', studioToolLibrary.tools.map((tool) => ({
   label: tool.name,

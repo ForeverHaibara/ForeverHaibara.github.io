@@ -13,7 +13,7 @@ if ([...nativePatchIds].some((id) => !Number.isSafeInteger(id) || id < 1 || id >
 }
 export const requiresTriangleCenterRecipe = (id: number): boolean => id > 3053 || nativePatchIds.has(id);
 
-type Recipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
+export type TriangleCenterRecipe = { operation: 'M' | 'R' | 'J' | 'I' | 'C' | 'A' | 'P' | 'G' | 'T' | 'V' | 'B' | 'F' | 'O'; references: number[]; formula?: string };
 type CenterValue = { kind: 'point'; expression: string } | { kind: 'ideal'; from: string; to: string } | { kind: 'unknown-ideal' };
 const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.split(/\r?\n/u)
   .filter((row) => row.trim() && !row.trim().startsWith('#'))
@@ -21,10 +21,10 @@ const nativeDirections = new Map<number, [number, number]>(nativeStatusSource.sp
   .filter((fields) => fields.length === 3)
   .map(([id, from, to]) => [id, [from, to]]));
 const chunkImports = import.meta.glob<string>('../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
-const recipes = new Map<number, Recipe>();
+const recipes = new Map<number, TriangleCenterRecipe>();
 const loaded = new Set<number>();
 const loading = new Map<number, Promise<void>>();
-const size = (operation: Recipe['operation']) => operation === 'B' ? 0
+const size = (operation: TriangleCenterRecipe['operation']) => operation === 'B' ? 0
   : operation === 'J' ? 4 : ['P', 'O'].includes(operation) ? 3
   : ['C', 'A', 'G', 'T', 'V'].includes(operation) ? 1 : 2;
 const rotation: Record<string, string> = { a: 'b', b: 'c', c: 'a', A: 'B', B: 'C', C: 'A',
@@ -64,11 +64,11 @@ const loadChunk = async (id: number): Promise<void> => {
   const load = chunkImports[`../data/triangle-centers/chunks/${chunk}.txt`];
   if (!load) throw new Error(`Triangle center X(${id}) is not implemented.`);
   const promise = load().then((source) => {
-    const parsed = new Map<number, Recipe>();
+    const parsed = new Map<number, TriangleCenterRecipe>();
     for (const row of source.trim().split(/\r?\n/u)) {
       const [idText, opcode, ...referenceText] = row.trim().split(/\s+/u);
       const number = Number(idText);
-      const operation = opcode as Recipe['operation'];
+      const operation = opcode as TriangleCenterRecipe['operation'];
       const pairs = opcode === 'F' ? referenceText.map((text) => text.split(':')) : [];
       const formula = opcode === 'B' ? referenceText[referenceText.length - 1] : opcode === 'F' ? pairs.map((pair) => pair[1]).join('|') : undefined;
       const references = opcode === 'F' ? pairs.map((pair) => Number(pair[0]))
@@ -268,4 +268,12 @@ export const triangleCenter: ExpressionBuilder = (args, allocate) => {
   // GeoGebra has no drawable point at infinity. Keep its direction in the
   // recursive value so dependent finite constructions can still use it.
   return result.kind === 'point' ? result.expression : `If(false,${vertices[0]})`;
+};
+
+/** Shared catalogue for snapshot analysis; keeps parsing and patch membership authoritative. */
+export const loadTriangleCenterCatalogue = async () => {
+  await Promise.all(Object.keys(chunkImports).map((path) => loadChunk(Number(path.match(/(\d+)\.txt$/u)![1]) * 1000)));
+  return { recipes: recipes as ReadonlyMap<number, TriangleCenterRecipe>,
+    nativeDirections: nativeDirections as ReadonlyMap<number, readonly [number, number]>,
+    geminiTriangles: geminiTriangles as ReadonlyMap<number, readonly string[]> };
 };

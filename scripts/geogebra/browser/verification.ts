@@ -4,6 +4,7 @@ const description = document.querySelector<HTMLElement>('#description')!;
 const show = (selector: string) => { document.querySelector<HTMLElement>(selector)!.hidden = false; };
 const hide = (selector: string) => { document.querySelector<HTMLElement>(selector)!.hidden = true; };
 const modes: Record<string, { title: string; description?: string; load: () => Promise<unknown> }> = {
+  nearest: { title: 'Nearest TriangleCenter verification', load: () => import('./geogebra-nearest-center-smoke') },
   smoke: { title: 'GeoGebra custom command verification', description: 'Disposable real-engine construction. Site macros are never installed; the final check imports a user-tool fixture.', load: () => import('./geogebra-smoke') },
   curve: { title: 'Curve optimization verification', load: () => import('./geogebra-curve-optimization-smoke') },
   gibert: { title: 'GibertCurve native verification', description: 'Disposable production-pipeline checks. ID and mode are selected by URL.', load: () => import('./geogebra-gibert-smoke') },
@@ -11,7 +12,7 @@ const modes: Record<string, { title: string; description?: string; load: () => P
   'center-anchors': { title: 'TriangleCenter native-reference screen', description: 'Screen all 3053 native ETC IDs on acute and obtuse triangles.', load: () => import('./geogebra-triangle-center-anchors') },
   structured: { title: 'Structured Gibert curve verification', load: () => import('./geogebra-gibert-structured-smoke') },
   batch: { title: 'Gibert precision batch', load: () => import('./geogebra-gibert-batch') },
-  qlcu1: { title: 'QLCu1 timing comparison', description: 'Disposable native construction; production QLCu1 stays unchanged. Fixed 800×480 view, algebra panel closed. Timings exclude site compilation and applet/module loading.', load: () => import('./geogebra-qlcu1-benchmark') },
+  qlcu1: { title: 'QLCu1 timing comparison', description: 'Disposable native construction; production QLCu1 stays unchanged. Fixed 800脳480 view, algebra panel closed. Timings exclude site compilation and applet/module loading.', load: () => import('./geogebra-qlcu1-benchmark') },
   probe: { title: 'Related curves planning probe', description: 'Disposable Q012 / Q039 experiment; no production command is registered.', load: () => import('./geogebra-related-curves-probe') },
 };
 const mode = modes[page];
