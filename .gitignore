@@ -25,3 +25,6 @@ dist-ssr
 *.sln
 *.sw?
 __pycache__/
+
+# Manually downloaded ETC source pages for offline recipe extraction
+.cache/triangle-centers/

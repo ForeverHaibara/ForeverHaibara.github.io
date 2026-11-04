@@ -1,3 +1,4 @@
+import { requiresTriangleCenterRecipe } from './builders/triangleCenters';
 import { GEOGEBRA_COMMAND_NAMES } from '../completion/geogebraCommandNames';
 import { outerCalls, splitTopLevel } from './commandSyntax';
 import { createBindingCapture, type CompiledBindingPlan } from './bindingPlan';
@@ -30,6 +31,14 @@ const stripParens = (value: string): string => {
   return result;
 };
 
+/** Literal extended and patched native IDs use recipes; expressions retain native dispatch. */
+const extendedTriangleCenterId = (source: string): number | undefined => {
+  const literal = stripParens(source);
+  if (!/^\+?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/iu.test(literal)) return undefined;
+  const id = Number(literal);
+  return Number.isSafeInteger(id) && requiresTriangleCenterRecipe(id) ? id : undefined;
+};
+
 /** Recognize only unambiguous types; never create probe objects or sample numeric values. */
 const literalType = (expression: string, environment: CommandEnvironment): GeometryType => {
   const source = expression.trim();
@@ -59,13 +68,31 @@ const literalType = (expression: string, environment: CommandEnvironment): Geome
 
 export const containsStudioCall = (source: string, depth = 0): boolean => {
   if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
-  return outerCalls(source).some((call) => !call.declaration && (studioTools.has(call.name.toLowerCase()) || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
+  return outerCalls(source).some((call) => !call.declaration && (
+    (call.name.toLowerCase() === 'trianglecenter'
+      ? call.args.length === 4 && extendedTriangleCenterId(call.args[3]) !== undefined
+      : studioTools.has(call.name.toLowerCase()))
+    || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
+};
+
+/** Collect only calls owned by the site; file tools retain priority. */
+export const extendedTriangleCenterIds = (source: string, environment: CommandEnvironment, depth = 0): number[] => {
+  if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
+  return outerCalls(source).flatMap((call) => {
+    if (call.declaration) return [];
+    const key = call.name.toLowerCase();
+    const id = key === 'trianglecenter' && call.args.length === 4
+      && !environment.macros.has(key) && !environment.objects.has(call.name)
+      ? extendedTriangleCenterId(call.args[3]) : undefined;
+    return [...(id === undefined ? [] : [id]), ...call.args.flatMap((arg) => extendedTriangleCenterIds(arg, environment, depth + 1))];
+  });
 };
 
 type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }>; requiresNamed?: boolean };
 
 export const compileStudioCommand = (source: string, environment: CommandEnvironment,
   tools: ReadonlyMap<string, ToolDefinition> = studioTools, capture?: Capture): string => {
+  const allowLongTriangleCenter = extendedTriangleCenterIds(source, environment).length > 0;
   const occupied = new Set([...source.matchAll(/[\p{L}_][\p{L}\p{N}_']*/gu)].map((match) => match[0]));
   for (const name of environment.objects.keys()) occupied.add(name);
   for (const tool of tools.values()) for (const overload of tool.overloads) {
@@ -115,8 +142,10 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       let result: TypedExpression = { expression: native, type: nativeReturns[key] ?? 'unknown' };
       const fileDefined = scope.macros.has(key) || scope.objects.has(call.name);
       if (fileDefined) result.type = scope.macroTypes?.get(key) ?? (scope.objects.get(call.name) === 'function' ? 'number' : 'unknown');
-      const tool = tools.get(key);
+      const tool = key === 'trianglecenter' && (call.args.length !== 4 || extendedTriangleCenterId(call.args[3]) === undefined)
+        ? undefined : tools.get(key);
       if (tool && !fileDefined) {
+        if (key === 'trianglecenter') args[3].literal = String(extendedTriangleCenterId(call.args[3]));
         const overload = selectOverload(tool, args);
         if (overload) {
           if (overload.requiresNamed) {
@@ -145,7 +174,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
               const compiled = compile(body, definitionScope, depth + 1);
               compiled.expression = compiled.expression.replace(/"(?:\\.|[^"\\])*"|(?:\/\/|#)[^\n]*|[\p{L}_][\p{L}\p{N}_']*/gu,
                 (token) => replacements.has(token) ? `(${replacements.get(token)})` : token);
-              if (compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+              if (!allowLongTriangleCenter && compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
               return compiled;
             });
           } finally { dependencies.pop(); }
@@ -180,7 +209,7 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
     expression += input.slice(cursor);
     typeSource += input.slice(cursor);
     if (entireType === 'unknown') entireType = literalType(typeSource, typeScope);
-    if (expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
+    if (!allowLongTriangleCenter && expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
     const literalSource = stripParens(input);
     const literal = scope.literals?.get(literalSource)
       ?? (/^(?:0|[1-9]\d*|"(?:\\.|[^"\\])*")$/u.test(literalSource) ? literalSource : undefined);
@@ -208,6 +237,7 @@ const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
   cuspidalCubic: (args) => [4, 5, 6, 7].includes(args.length),
 };
 const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  triangleCenter: (args) => args.length === 4 && args.slice(0, 3).every((type) => type === 'point') && args[3] === 'number',
   qlMiquelCircle: (args) => args.length === 4 && args.every((type) => type === 'point'),
   commonTangents: (args) => [3, 4].includes(args.length) && args[0] === 'circle'
     && args[1] === 'circle' && args.slice(2).every((type) => type === 'number'),
@@ -223,7 +253,7 @@ const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 
 /** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
 export const compileStudioPlan = (source: string, environment: CommandEnvironment,
   groupId: string, mode: 'medium' | 'high' = 'medium'): CompiledBindingPlan => {
-  const capture: Capture = { ...createBindingCapture(), selected: [] };
+  const capture: Capture = { ...createBindingCapture(extendedTriangleCenterIds(source, environment).length > 0), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
   const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder]

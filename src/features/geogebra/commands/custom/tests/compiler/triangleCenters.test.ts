@@ -1,0 +1,477 @@
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { compileStudioCommand, compileStudioPlan, containsStudioCall, extendedTriangleCenterIds } from '../../commandCompiler';
+import { prepareTriangleCenter } from '../../builders/triangleCenters';
+import { createBindingCapture } from '../../bindingPlan';
+import type { CommandEnvironment } from '../../types';
+
+// Synthetic protocol fixtures above the current ETC range, in the existing tail chunk.
+vi.mock('../../data/triangle-centers/chunks/73.txt?raw', async (importOriginal) => {
+  const original = await importOriginal<{ default: string }>();
+  return { default: original.default.trimEnd() + '\n73999 F 560:2*R^2 3:d^2-R^2\n73998 B 9 x\n73997 B 1 2 x*u\n73996 B 520 x^3\n73995 P 1 2 520\n73994 R 1 2 520\n73993 B 520 x\n73992 B 5959 x^3\n73991 B a^2*(SA+sqrt(SB^2+S^2)+SW)\n73990 M 1071 1\n73989 G 6004\n73988 B 3 @g37\n73987 B 30 @g37\n73986 B 3 @g3\n73985 B 3 @g97\n' };
+});
+
+const environment = (): CommandEnvironment => ({
+  objects: new Map([['A', 'point'], ['B', 'point'], ['C', 'point'], ['n', 'number']]),
+  macros: new Set(),
+});
+
+beforeAll(async () => { for (const id of [73985, 73986, 73987, 73988, 73989, 73991, 3054, 3056, 3058, 3060, 3061, 3064, 3070, 3071, 3078, 3081, 3094, 3095, 3097, 3098, 3100, 3109, 3110, 3114, 3134, 3154, 3162, 3221, 3234, 3283, 3371, 3385, 3396, 3357, 3455, 3856, 3933, 4174, 4180, 4181, 4182, 5091, 5305, 5600, 5957, 5998, 6004, 6012, 7044, 72060, 73007, 72478, 72657, 73001, 72003, 72005, 8036, 9043, 9232, 9464]) await prepareTriangleCenter(id); });
+
+describe('extended TriangleCenter dispatch', () => {
+  it('expands shared Gemini projectivities with bound matrices and frame guards', () => {
+    for (const id of [73985, 73986, 73987, 73988]) {
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toMatch(/@g\d/u);
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).toContain('>1e-12');
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW)\b/u);
+      expect(result.length).toBeLessThan(12_000);
+      const capture = { ...createBindingCapture(true), selected: [] };
+      const token = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment(), undefined, capture);
+      const plan = capture.lower(token, '0123456789abcdef', true, new Set(['number', 'numberList', 'point', 'vector'] as const));
+      expect(plan.materialized).toBe(true);
+      expect(plan.helpers.length).toBeLessThan(50);
+      expect(plan.output + plan.helpers.map((helper) => helper.expression).join('')).not.toMatch(/@g\d/u);
+      expect(result).toContain('Invert(');
+      expect((result.match(/Element\(Zip\(/gu) ?? []).length).toBeLessThanOrEqual(6);
+      expect(plan.helpers.filter((helper) => helper.kind === 'numberList')).toHaveLength(3);
+      // Exercise the production eligibility path, not just capture.lower(true).
+      const high = compileStudioPlan(`out=TriangleCenter(A,B,C,${id})`, environment(), '0123456789abcdef', 'high');
+      expect(high.materialized).toBe(true);
+      expect(high.output).not.toContain('Zip(');
+      expect(compileStudioPlan(`out=TriangleCenter(A,B,C,${id})`, environment(), '0123456789abcdef').materialized).toBe(false);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73987)', environment()))
+      .toContain('Vector(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3))');
+  });
+
+  it('prefers repaired native literals and repairs their downstream inputs', async () => {
+    for (const id of [369,459,1071,1285,1908,1913,1939,2923,2924,2925,2926,2927,2928,3020,15276,73990]) {
+      await prepareTriangleCenter(id);
+      const source = `TriangleCenter(A,B,C,${id})`;
+      expect(containsStudioCall(source)).toBe(true);
+      expect(extendedTriangleCenterIds(source, environment())).toEqual([id]);
+      expect(compileStudioCommand(source, environment())).not.toContain(source);
+    }
+    const fixed = 'Intersect(Line(TriangleCenter(A,B,C,1),TriangleCenter(A,B,C,84)),Line(TriangleCenter(A,B,C,4),TriangleCenter(A,B,C,7)))';
+    for (const selector of ['1071', '(1071)', '+1071', '1071.0', '1.071e3']) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${selector})`, environment())).toBe(fixed);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73990)', environment())).toBe(`Midpoint(${fixed},TriangleCenter(A,B,C,1))`);
+    for (const selector of ['1000+71', 'n', '1070', '3053']) {
+      const source = `TriangleCenter(A,B,C,${selector})`;
+      expect(containsStudioCall(source)).toBe(false);
+      expect(compileStudioCommand(source, environment())).toBe(source);
+    }
+  });
+
+  it('compiles remaining-coordinate repairs with all roots and locals bound', async () => {
+    for (const id of [3067, 10228, 11811, 13301, 23032, 23033, 23034, 26653, 26842, 31664, 31665,
+      31957, 36721, 36731, 38439, 40303, 45306, 45307, 47752, 47753, 51777, 65951, 72483, 72513,
+      72698, 72699, 72700, 72701, 72934, 72935]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:OH|SA|SB|SC|SW|T[12]?)\b/u);
+    }
+    const hungerbuhler = compileStudioCommand('TriangleCenter(A,B,C,72483)', environment());
+    expect(hungerbuhler).toContain('asinh(');
+    expect(hungerbuhler).toContain('sinh(');
+  });
+
+  it('uses the reviewed repairs and the cancelled Danneels coordinates', async () => {
+    for (const id of [7742, 8037, 40822, 48720, 72796]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,7742)', environment()))
+      .toBe('Intersect(Line(TriangleCenter(A,B,C,1),TriangleCenter(A,B,C,3)),Line(TriangleCenter(A,B,C,22),TriangleCenter(A,B,C,1612)))');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,40822)', environment()))
+      .toBe('Intersect(Line(TriangleCenter(A,B,C,5),TriangleCenter(A,B,C,264)),Line(TriangleCenter(A,B,C,290),TriangleCenter(A,B,C,1352)))');
+    const danneels = compileStudioCommand('TriangleCenter(A,B,C,8037)', environment());
+    for (const source of [1131, 3068]) expect(danneels).not.toContain(`TriangleCenter(A,B,C,${source})`);
+    const perspector = compileStudioCommand('TriangleCenter(A,B,C,48720)', environment());
+    for (const source of [115, 1043]) expect(perspector).not.toContain(`TriangleCenter(A,B,C,${source})`);
+    for (const [id, result] of [[8037, danneels], [48720, perspector]] as const) {
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW|S)\b/u);
+    }
+  });
+
+  it('loads and compiles a representative from every published chunk', async () => {
+    const chunks = import.meta.glob('../../data/triangle-centers/chunks/*.txt', { query: '?raw', import: 'default' });
+    expect(Object.keys(chunks)).toHaveLength(74);
+    for (const load of Object.values(chunks)) {
+      const rows = (await load() as string).trim().split('\n');
+      const id = Number(rows[0].split(' ')[0]);
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result, `X(${id})`).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result, `X(${id})`).not.toMatch(/\b(?:NaN|Infinity|undefined)\b/u);
+    }
+  });
+
+  it('compiles the recovered finite cross-conjugates without guessing local J', async () => {
+    for (const id of [13580, 13581]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(result).not.toMatch(/\b(?:J|z|u|v|w)\b/u);
+    }
+  });
+
+  it('keeps reviewed generic nonreal focus images out of the runtime library', async () => {
+    for (const id of [65627, 65628]) {
+      await expect(prepareTriangleCenter(id)).rejects.toThrow(`X(${id}) is not implemented`);
+    }
+  });
+
+  it('leaves native selectors untouched, including computed numbers', () => {
+    for (const selector of ['1', '3053', 'n', '3+3051', 'Floor(n)', '3e3', '-1', '0']) {
+      const source = `TriangleCenter(A,B,C,${selector})`;
+      expect(containsStudioCall(source), selector).toBe(false);
+      expect(compileStudioCommand(source, environment())).toBe(source);
+    }
+  });
+
+  it('expands only reviewed higher literals using native dependencies', () => {
+    expect(containsStudioCall('P=TriangleCenter(A,B,C,(3054))')).toBe(true);
+    expect(compileStudioCommand('P=TriangleCenter(A,B,C,3054)', environment()))
+      .toBe('P=Midpoint(TriangleCenter(A,B,C,590),TriangleCenter(A,B,C,615))');
+    for (const selector of ['3054.0', '3.054e3', '+3054', '(3054)']) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${selector})`, environment()))
+        .toBe('Midpoint(TriangleCenter(A,B,C,590),TriangleCenter(A,B,C,615))');
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3060)', environment()))
+      .toBe('Reflect(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,51))');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3061)', environment()))
+      .toBe('Intersect(Line(TriangleCenter(A,B,C,1),TriangleCenter(A,B,C,6)),Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,257)))');
+  });
+
+  it('keeps file tools first and reports unsupported extended IDs', () => {
+    const scope = environment();
+    scope.macros.add('trianglecenter');
+    expect(extendedTriangleCenterIds('TriangleCenter(A,B,C,3054)', scope)).toEqual([]);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3054)', scope)).toBe('TriangleCenter(A,B,C,3054)');
+    expect(extendedTriangleCenterIds('P=TriangleCenter(A,B,C,3070)+TriangleCenter(A,B,C,3054)', environment()))
+      .toEqual([3070, 3054]);
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,100000)', environment())).toThrow('X(100000) is not implemented');
+  });
+
+  it('uses compact affine recipes without loading symbolic coordinates', () => {
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3070)', environment()))
+      .toBe('((A)+(B)+(C)-(TriangleCenter(A,B,C,490)))/2');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3100)', environment()))
+      .toBe('(A)+(B)+(C)-2*(TriangleCenter(A,B,C,1861))');
+    for (const id of [3071, 3081, 3094, 3095, 3097, 3098, 3357]) {
+      const expanded = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(expanded).not.toContain(`,${id})`);
+      expect(expanded.length).toBeLessThan(400);
+    }
+  });
+
+  it('resolves a later ETC block through a non-native cross-chunk dependency', () => {
+    const projection = 'ClosestPoint(Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3)),TriangleCenter(A,B,C,1))';
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3109)', environment())).toBe(projection);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73001)', environment()))
+      .toBe(`Reflect(TriangleCenter(A,B,C,476),${projection})`);
+  });
+
+  it('expands automatically extracted recipes with forward and cross-chunk references', () => {
+    const forward = compileStudioCommand('TriangleCenter(A,B,C,3154)', environment());
+    expect(forward).toContain('Midpoint(');
+    expect(forward).not.toContain('TriangleCenter(A,B,C,3258)');
+    const crossChunk = compileStudioCommand('TriangleCenter(A,B,C,3933)', environment());
+    expect(crossChunk).not.toContain('TriangleCenter(A,B,C,5305)');
+    const later = compileStudioCommand('TriangleCenter(A,B,C,72478)', environment());
+    expect(later).toContain('Reflect(');
+    expect(later).not.toContain('TriangleCenter(A,B,C,3057)');
+  });
+
+  it('uses the shared conjugate builder and the new line relations', () => {
+    const isogonal = compileStudioCommand('TriangleCenter(A,B,C,3385)', environment());
+    const isotomic = compileStudioCommand('TriangleCenter(A,B,C,9464)', environment());
+    expect(isogonal).toContain('Distance(');
+    expect(isogonal).not.toContain('IsogonalConjugate(');
+    expect(isotomic).toContain('If(');
+    expect(isotomic).not.toContain('IsotomicConjugate(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5091)', environment())).toContain('ClosestPoint(Line(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Reflect(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73007)', environment())).toContain('Line(');
+    expect(isogonal.length).toBeLessThan(50_000);
+  });
+
+  it('closes isogonal relations after coordinate anchors without duplicating their formulas', () => {
+    const expanded = compileStudioCommand('TriangleCenter(A,B,C,3385)', environment());
+    expect(expanded).toContain('sec(');
+    expect(expanded).not.toContain('IsogonalConjugate(');
+    expect(expanded.match(/sec\(/gu)).toHaveLength(3);
+    expect(expanded.length).toBeLessThan(6000);
+    for (const id of [7044, 72657]) {
+      const relation = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      // Full-range dependencies may replace the former conjugate with an intersection.
+      expect(relation).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(relation.length).toBeLessThan(6000);
+    }
+  });
+
+  it('renders circumcircle inversion of native and extended source points', () => {
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3455)', environment()))
+      .toBe('Reflect(TriangleCenter(A,B,C,67),Circle(A,B,C))');
+    const chained = compileStudioCommand('TriangleCenter(A,B,C,3110)', environment());
+    expect(chained).toContain('Reflect(');
+    expect(chained).toContain('Circle(A,B,C)');
+    expect(chained).not.toContain('TriangleCenter(A,B,C,3286)');
+  });
+
+  it('uses ideal directions in intersections and isogonal conjugates', () => {
+    const intersection = compileStudioCommand('TriangleCenter(A,B,C,3058)', environment());
+    expect(intersection).toContain('Line(TriangleCenter(A,B,C,1),Line(TriangleCenter(A,B,C,2),TriangleCenter(A,B,C,3)))');
+    expect(intersection).toContain('Intersect(');
+    // Protocol fixture: the real X6012 is free to choose a shorter intersection.
+    const conjugate = compileStudioCommand('TriangleCenter(A,B,C,73989)', environment());
+    expect(conjugate).toContain('Vector(TriangleCenter(A,B,C,659),TriangleCenter(A,B,C,1734))');
+    expect(conjugate).toContain('Distance(');
+    for (const id of [3221, 5957, 6004, 72060]) {
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
+    }
+  });
+
+  it('keeps centers identified by a single infinity line undefined', async () => {
+    for (const id of [5959, 6364, 6365, 9043, 20403, 64802]) {
+      await prepareTriangleCenter(id);
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toBe('If(false,A)');
+    }
+  });
+
+  it('loads independently reviewed coordinates despite conflicting source lines', async () => {
+    for (const id of [7065, 32072, 39038]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:SA|SB|SC|SW|S|u|v|w)\b/u);
+      if (id === 39038) {
+        for (const source of [162, 2167]) {
+          expect(result.match(new RegExp(`TriangleCenter\\(A,B,C,${source}\\)`, 'gu'))).toHaveLength(1);
+        }
+      }
+    }
+  });
+
+  it('compiles the reviewed Steiner minor branch and Brocard source repair', async () => {
+    for (const id of [39204, 39302, 39303, 10685]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:J|SA|SB|SC|SW|S)\b/u);
+      expect(result).toContain('Distance(');
+    }
+  });
+
+  it('preserves projective directions for powers, projections and reflections', async () => {
+    for (const id of [73996, 73995, 73994, 73993, 73992]) await prepareTriangleCenter(id);
+    const cube = compileStudioCommand('TriangleCenter(A,B,C,73996)', environment());
+    expect(cube).toContain('Vector(TriangleCenter(A,B,C,110),TriangleCenter(A,B,C,250))');
+    expect(cube.match(/Vector\(/gu)).toHaveLength(1);
+    expect(cube).not.toContain('TriangleCenter(A,B,C,520)');
+    expect(cube).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73995)', environment())).toContain('ClosestPoint(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,73994)', environment())).toContain('Reflect(');
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,73993)', environment())).toThrow(/finite inputs/u);
+    expect(() => compileStudioCommand('TriangleCenter(A,B,C,73992)', environment())).toThrow(/no known direction/u);
+  });
+
+  it('loads the reviewed PB branch roots and algebraic-product targets', async () => {
+    for (const id of [11761, 11770, 11779, 11788, 13137, 14079, 14087, 14088, 14090, 14821]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).not.toMatch(/\b(?:U|S|SA|SB|SC|SW)\b/u);
+    }
+    for (const id of [12025, 32584]) await expect(prepareTriangleCenter(id)).rejects.toThrow(/not implemented/u);
+  });
+
+  it('compiles constant and Conway-weighted ETC combos with a guarded sum', async () => {
+    for (const id of [3622, 8350]) await prepareTriangleCenter(id);
+    const constant = compileStudioCommand('TriangleCenter(A,B,C,3622)', environment());
+    expect(constant).toContain('TriangleCenter(A,B,C,1)');
+    expect(constant).toContain('TriangleCenter(A,B,C,2)');
+    expect(constant).toContain('If(');
+    const conway = compileStudioCommand('TriangleCenter(A,B,C,8350)', environment());
+    expect(conway).toContain('Distance(B,C)');
+    expect(conway).toContain('TriangleCenter(A,B,C,6)');
+    expect(conway).toContain('If(');
+    expect(conway).not.toContain('SW');
+  });
+
+  it('expands centers recovered from nonstandard ETC line lists', () => {
+    for (const id of [3134, 3162, 3234]) {
+      const command = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(command).toContain('Intersect(Line(');
+      expect(command).not.toContain(`,${id})`);
+    }
+  });
+
+  it('expands compact cyclic coordinates and Conway symbols', () => {
+    const barycentric = compileStudioCommand('TriangleCenter(A,B,C,4182)', environment());
+    expect(barycentric).toContain('Distance(B,C)');
+    expect(barycentric).toContain('^(1/2)');
+    expect(barycentric).toContain('If(');
+    const trilinear = compileStudioCommand('TriangleCenter(A,B,C,3283)', environment());
+    expect(trilinear).toContain('acos(');
+    expect(trilinear).toContain('cos(');
+    const piFormula = compileStudioCommand('TriangleCenter(A,B,C,3371)', environment());
+    expect(piFormula).toContain('sin(');
+    expect(piFormula).toContain('pi');
+    for (const id of [4180, 4181]) {
+      const radical = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(radical).toContain('^(1/2)');
+      expect(radical).toContain('If(');
+    }
+    const shinagawa = compileStudioCommand('TriangleCenter(A,B,C,3078)', environment());
+    expect(shinagawa).toContain('TriangleCenter(A,B,C,2)');
+    expect(shinagawa).toContain('TriangleCenter(A,B,C,4)');
+    expect(shinagawa).toContain('Distance(B,C)');
+    expect(shinagawa).not.toMatch(/\b[EF]\b/u);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5600)', environment())).toContain('^(4)');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,4174)', environment())).toContain('^(6)');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5600)', environment())).toContain('^(1/2)');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5998)', environment())).toContain('^(1/2)');
+    for (const id of [72005, 9232]) {
+      const independent = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      // Both centers now have shorter constructions through full-range dependencies.
+      expect(independent).not.toContain(`TriangleCenter(A,B,C,${id})`);
+      expect(independent).not.toMatch(/\b(?:SA|SB|SC|SW|S)\b/u);
+    }
+    // Keep Conway rendering independent of changes to production recipe selection.
+    const conway = compileStudioCommand('TriangleCenter(A,B,C,73991)', environment());
+    expect(conway).toContain('sqrt(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,72003)', environment())).not.toContain('TriangleCenter(A,B,C,72003)');
+    for (const output of [barycentric, trilinear, conway]) expect(output.length).toBeLessThan(50_000);
+  });
+
+  it('loads recovered wrapped and longer coordinates and their dependent constructions', async () => {
+    for (const id of [5374, 7638, 7639, 7640, 9728, 72514]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      if (id !== 72514) expect(result.length).toBeLessThan(50_000);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5374)', environment())).toContain('cot(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,9728)', environment())).toContain('Distance(B,C)');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,72514)', environment()).length).toBeGreaterThan(5_000);
+  });
+
+  it('loads a coordinate followed by attribution and its dependent center', async () => {
+    for (const id of [5458, 5509, 5508]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).not.toContain(`,${id})`);
+      expect(result).toContain('Distance(');
+    }
+  });
+
+  it('loads recovered conjugate, reflection and coordinate cases', async () => {
+    for (const id of [3232, 5528, 7002, 8183]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3232)', environment())).toContain('asinh(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,5528)', environment()))
+      .toBe('Reflect(TriangleCenter(A,B,C,9),TriangleCenter(A,B,C,100))');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,7002)', environment())).toContain('sec(');
+    expect(compileStudioCommand('TriangleCenter(A,B,C,8183)', environment())).toContain('^(1/3)');
+  });
+
+  it('compiles additional ETC coordinate and partially real combo definitions', async () => {
+    for (const id of [3408, 3409, 5002, 5003, 5390, 5431, 5455, 5500, 5945, 6160, 6188, 7985, 9393]) {
+      await prepareTriangleCenter(id);
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).not.toContain(`,${id})`);
+    }
+    expect(compileStudioCommand('TriangleCenter(A,B,C,3408)', environment())).toContain('atan(');
+  });
+
+  it('loads reviewed coordinate seeds for conflicting ETC entries', async () => {
+    for (const id of [5507, 8064, 72904]) {
+      await prepareTriangleCenter(id);
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).toContain('Distance(B,C)');
+    }
+  });
+
+  it('permits long triangle-center binding output without relaxing other plans', () => {
+    const longValue = '1+'.repeat(250_001) + '1';
+    const ordinary = createBindingCapture();
+    const normalToken = ordinary.captureBinding(['v1'], [longValue], 'v1', ['number']);
+    expect(() => ordinary.lower(normalToken, '0000000000000000', false)).toThrow('500,000');
+    const triangleCenter = createBindingCapture(true);
+    const centerToken = triangleCenter.captureBinding(['v1'], [longValue], 'v1', ['number']);
+    expect(triangleCenter.lower(centerToken, '0000000000000000', false).output.length).toBeGreaterThan(500_000);
+  });
+  it('loads the independently reviewed PB cluster anchors without unresolved scalars', async () => {
+    for (const id of [11753, 11754]) {
+      await prepareTriangleCenter(id);
+      const result = compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment());
+      expect(result).toContain('sqrt(3)');
+      expect(result).not.toMatch(/\bU\b/u);
+      expect(result).not.toContain(`,${id})`);
+    }
+  });
+
+  it('compiles finite three-center circles and natural-log coordinates', async () => {
+    for (const id of [11619, 40300, 72481, 72891]) await prepareTriangleCenter(id);
+    expect(compileStudioCommand('TriangleCenter(A,B,C,11619)', environment()))
+      .toBe('Center(Circle(TriangleCenter(A,B,C,5),TriangleCenter(A,B,C,6),TriangleCenter(A,B,C,22)))');
+    for (const id of [72481, 72891]) {
+      // X(11619) above exercises O; these targets can select equivalent affine recipes.
+      expect(compileStudioCommand(`TriangleCenter(A,B,C,${id})`, environment())).not.toContain(`TriangleCenter(A,B,C,${id})`);
+    }
+    const logarithmic = compileStudioCommand('TriangleCenter(A,B,C,40300)', environment());
+    expect(logarithmic).toContain('ln(');
+    expect(logarithmic).not.toContain('log(');
+    expect(logarithmic).not.toContain(',40300)');
+  });
+
+  it('loads reviewed cyclic roots and the Brocard inverse dependency graph', async () => {
+    for (const id of [11667, 4254]) await prepareTriangleCenter(id);
+    const roots = compileStudioCommand('TriangleCenter(A,B,C,11667)', environment());
+    expect(roots).toContain('sqrt(');
+    expect(roots).not.toMatch(/\b[UVW]\b/u);
+    const inverse = compileStudioCommand('TriangleCenter(A,B,C,4254)', environment());
+    expect(inverse).toContain('Reflect(');
+    expect(inverse).toContain('Circle(TriangleCenter(A,B,C,182),TriangleCenter(A,B,C,3))');
+    expect(inverse).not.toContain(',4254)');
+    expect(inverse).not.toContain(',5120)');
+  });
+
+  it('binds the two input points and distance in a Vu first PCC combo', async () => {
+    await prepareTriangleCenter(73999);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,73999)', environment());
+    expect(result).toContain('Distance(');
+    expect(result).toContain('TriangleCenter(A,B,C,560)');
+    expect(result).not.toMatch(/\bd\b/u);
+    expect(result).not.toContain(',73999)');
+  });
+
+  it('binds source barycentrics in a dependent coordinate recipe', async () => {
+    await prepareTriangleCenter(73998);
+    const result = compileStudioCommand('TriangleCenter(A,B,C,73998)',environment());
+    expect(result).toContain('TriangleCenter(A,B,C,9)');
+    expect(result).toContain('x(');
+    expect(result).not.toMatch(/\b[xyz]\b(?!\s*\()/u);
+    expect(result).not.toContain(',73998)');
+    expect(result.match(/TriangleCenter\(A,B,C,9\)/gu)).toHaveLength(1);
+  });
+
+  it('binds both sources once for a two-input coordinate recipe',async () => {
+    await prepareTriangleCenter(73997);
+    const result=compileStudioCommand('TriangleCenter(A,B,C,73997)',environment());
+    expect(result).not.toMatch(/\b[xyzuvw]\b(?!\s*\()/u);
+    expect(result).not.toContain(',73997)');
+    for (const id of [1,2]) expect(result.match(new RegExp(`TriangleCenter\\(A,B,C,${id}\\)`,'gu'))).toHaveLength(1);
+  });
+
+  it('loads the reviewed Vijay-Paasche-Hutson seeds from their new chunk',async () => {
+    for (const id of [38493,38494]) {
+      await prepareTriangleCenter(id);
+      const result=compileStudioCommand(`TriangleCenter(A,B,C,${id})`,environment());
+      expect(result).toContain('Distance(');
+      expect(result).not.toMatch(/\bR\b/u);
+      expect(result).not.toContain(`,${id})`);
+    }
+  });
+
+});

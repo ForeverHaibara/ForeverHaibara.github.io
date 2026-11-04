@@ -1,0 +1,411 @@
+# Initially reviewed examples. Automatic ETC extraction adds the remaining rows.
+# Explicit exclusions: id SKIP reason (optional trailing # comment).
+# Reserve SKIP for reviewed exclusions; missing pages/rules and an unclosed graph
+# are run diagnostics, not permanent exclusions. Existing reviewed rows remain as-is.
+# Reviewed 2026-11-02: construct the Auriga vertices from ETC X(5597), choose
+# the first triangle by its A-vertex being on A's side of BC. Its perspector
+# with the anticomplementary triangle is X(5601); the opposite triangle gives
+# X(5602). The printed coordinate signs at X(5601)/X(5602) are interchanged.
+5601 J 8 21 145 5598
+5602 J 2 5598 3617 5599
+# The same independent Auriga construction gives the first/second orthocenters
+# X(9834)/X(9835). Do not swap them through X(9835)'s conflicting listed pair.
+# The two triangles, hence their orthocenters, reflect in the inverter center X(55).
+9834 J 55 515 5691 8186
+9835 R 9834 55
+# ETC X(7581)/X(7582): printed trilinears and multiple native incidence lines
+# agree; the printed reflections in X(7601)/X(7602) leave the Euler line.
+7581 J 4 6 371 376
+7582 J 4 6 371 631
+# Some seeds below are initially used for testing this file
+3054 M 590 615
+3056 R 1469 1
+3057 J 1 3 10 11
+3059 J 7 8 9 55
+3060 R 2 51
+3061 J 1 6 2 257
+3070 C 490
+3071 C 489
+3081 R 1650 1651
+3094 M 69 194
+3095 M 4 194
+3097 R 1699 262
+3098 M 3 1350
+3100 A 1861
+3109 P 1 2 3
+3357 M 3 64
+3371 B a*(sin(A+pi/8))
+# Keep the previously screened ETC line pair used by X(73143).
+8004 J 3 3277 1135 8002
+# ETC X(5959) says “tthese lines”; the reviewed list contains the infinity line X(30)X(511).
+5959 I
+73001 R 476 3109
+# ETC X(369), Peter Moses (2026-06-05): explicit cyclic barycentrics for X(3232).
+3232 B 1/((2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))^2+2*(b-c)*(2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))+6*b*c+8*a*(b+c)+5*(-a^2+b^2+c^2))
+
+# X(5507): reviewed radical-center construction; the printed coordinate disagrees with it and line X(600)X(4640).
+5507 B a*(R-a)*(R*(b+c-a)+a^2-b^2-c^2)
+# X(8064): printed coordinates agree with the isogonal conjugate of the printed ideal coordinates of X(8063); the listed line conflicts.
+8064 B a*(a/((cos(B)*cot(B/2))/(1+cos(B)-cos(C)-cos(A))-(cos(C)*cot(C/2))/(1+cos(C)-cos(A)-cos(B))))
+# X(72904): reviewed printed coordinates agree with multiple listed lines; an earlier line-pair-only selection conflicted.
+72904 B a^2*(2*a^6*b^2*c^2-4*a^4*b^4*c^2+2*a^2*b^6*c^2-4*a^4*b^2*c^4-4*a^2*b^4*c^4+2*a^2*b^2*c^6+a^6*b^2*S-3*a^4*b^4*S+3*a^2*b^6*S-b^8*S+a^6*c^2*S-2*a^4*b^2*c^2*S-2*a^2*b^4*c^2*S+3*b^6*c^2*S-3*a^4*c^4*S-2*a^2*b^2*c^4*S-4*b^4*c^4*S+3*a^2*c^6*S+3*b^2*c^6*S-c^8*S)
+# ETC X(5500): reviewed single-colon cyclic polynomial; lies on the Euler line in both samples. The Shinagawa coefficients have inconsistent dimensions.
+5500 B 2*a^22-15*(b^2+c^2)*a^20+6*(8*b^4+13*b^2*c^2+8*c^4)*a^18-(b^2+c^2)*(81*b^4+71*b^2*c^2+81*c^4)*a^16+(b^4+c^4)*(64*b^4+111*b^2*c^2+64*c^4)*a^14+(b^2+c^2)*(14*b^8+14*c^8+3*(5*b^4+7*b^2*c^2+5*c^4)*b^2*c^2)*a^12-(84*b^12+84*c^12+(67*b^8+67*c^8+8*(7*b^4+6*b^2*c^2+7*c^4)*b^2*c^2)*b^2*c^2)*a^10+(b^2+c^2)*(82*b^12+82*c^12-(105*b^8+105*c^8-(74*b^4-93*b^2*c^2+74*c^4)*b^2*c^2)*b^2*c^2)*a^8-(b^2-c^2)^2*(34*b^12+34*c^12+(11*b^8+11*c^8-5*(6*b^4+7*b^2*c^2+6*c^4)*b^2*c^2)*b^2*c^2)*a^6+(b^4-c^4)*(b^2-c^2)^3*(b^8+c^8-(3*b^4+19*b^2*c^2+3*c^4)*b^2*c^2)*a^4+(b^2-c^2)^6*(b^4+c^4)*(4*b^4+5*b^2*c^2+4*c^4)*a^2-(b^2-c^2)^8*(b^2+c^2)*(b^4+c^4)
+# ETC X(5945): stray backslash before Barycentrics; use the printed cyclic coordinates.
+5945 B (((sin(A))^2)/A)*(((sin(B))^2)/B+((sin(C))^2)/C-((sin(A))^2)/A)
+# ETC X(6160): Trlinears is a misspelling; printed trilinears agree with the listed line.
+6160 B a*((b+c)*(3*a^5*b+8*a^4*b^2+9*a^3*b^3+4*a^2*b^4+a*b^5+3*a^5*c+10*a^4*b*c+17*a^3*b^2*c+16*a^2*b^3*c+7*a*b^4*c+2*b^5*c+8*a^4*c^2+17*a^3*b*c^2+20*a^2*b^2*c^2+11*a*b^3*c^2+2*b^4*c^2+9*a^3*c^3+16*a^2*b*c^3+11*a*b^2*c^3+2*b^3*c^3+4*a^2*c^4+7*a*b*c^4+2*b^2*c^4+a*c^5+2*b*c^5))
+# ETC X(6188): printed single cyclic coordinate is symmetric after algebraic simplification; agrees with line X(20)X(399).
+6188 B 1/(a^8-4*a^6*(b^2+c^2)+(b^2-c^2)^2*(b^4+6*b^2*c^2+c^4)+a^4*(6*b^4-3*b^2*c^2+6*c^4)+a^2*(-4*b^6+3*b^4*c^2+3*b^2*c^4-4*c^6))
+# ETC X(7985): soft hyphen between terms is a missing minus; corrected symmetric coordinate agrees with X(726)X(3241).
+7985 B 3*(b^2+c^2)*a^3+(-b^2+c^2)*(b-c)*a^2+(-2*b^4+b^2*c^2-2*c^4)*a+b*c*(b+c)*(2*c^2-b*c+2*b^2)
+
+# pending: unsure data
+# 3067
+# 6346
+
+# pending: too compliated
+# 5373
+# 5394
+# 5626
+
+# Part 34 has two different complete definitions both labeled X(66288).
+# Both source fragments are isolated by the reviewed file patch; no ID is guessed.
+66288 SKIP source-error: conflicting duplicate definitions in cached Part 34
+
+# Reviewed PB-cluster anchors, ETC preamble immediately before X(11752).
+# U = sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S)); the Ai vertex triples independently
+# give the perspectors with ABC (11753) and the excentral triangle (11754).
+# Only these two verified anchors expand U; do not guess U/S sign conventions
+# for the rest of the preamble's inconsistent printed transformation table.
+11753 B a*(sqrt(3)*a*(-a^2+b^2+c^2)+2*S*(a+sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11754 B a*(sqrt(3)*a*(-a^2+b^2+c^2)+S*(2*a+sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+
+# Source conflict observed at X(11619): printed trilinears do not give the center
+# of {X(5),X(6),X(22)} and fail its X(2492)X(2780) line. Independent perpendicular
+# bisectors give the named center and satisfy that line on both atlas samples.
+# Restored by the finite three-center circumcenter recipe below.
+
+# ETC X(11755): its line list starts with a stray backslash and its printed
+# first coordinate lacks one closing parenthesis. The two explicit incidence
+# lines below agree with the balanced coordinate after expanding preamble U,
+# on both independent atlas samples. Do not relax general syntax for this typo.
+11755 J 11 15 12 11753
+
+# X(11619)'s named three-point circle definition independently agrees with
+# its incidence line, unlike the printed coordinates (see source-error tests).
+11619 O 5 6 22
+# Power curve P(t)=(a^t:b^t:c^t): its tangent at t=1 has coefficients
+# (bc*ln(c/b),ca*ln(a/c),ab*ln(b/a)); reciprocal line coefficients give
+# the printed trilinear pole X(40300). A verified root for its dependent cluster.
+40300 B a/ln(c/b)
+
+# DOMAIN rows are reviewed diagnostics, not recipes, skips or runtime coverage.
+# ETC X(5003) explicitly states that X(5000..5003) are nonreal for obtuse ABC.
+# X(5002)+X(5003) nevertheless has the real midpoint X(858); do not infer that
+# every dependent point is nonreal. Existing real-domain recipes remain usable.
+5000 DOMAIN conditional_complex
+5001 DOMAIN conditional_complex
+5002 DOMAIN conditional_complex
+5003 DOMAIN conditional_complex
+# ETC Part 20: imaginary foci of the Steiner circumellipse/inellipse.
+# An ellipse with positive unequal semiaxes has imaginary foci on its minor axis
+# at center +/- i*sqrt(major^2-minor^2), not finite real-plane points.
+# Equilateral/coincident-axis degeneracies do not supply a generic real domain.
+39160 DOMAIN nonreal
+39161 DOMAIN nonreal
+39164 DOMAIN nonreal
+39165 DOMAIN nonreal
+
+# ETC X(11667): U^2 is explicit but V/W are defined in prose. Use nonnegative
+# cyclic square roots; independently agrees with its printed Euler-line combo
+# on acute/obtuse samples. Do not add a general U^2/prose substitution rule.
+11667 B (a^2+b^2-c^2)*(a^2-b^2+c^2)*(sqrt((a^12-3*a^10*b^2+a^8*b^4+6*a^6*b^6-9*a^4*b^8+5*a^2*b^10-b^12-3*a^10*c^2+7*a^8*b^2*c^2-6*a^6*b^4*c^2+6*a^4*b^6*c^2-7*a^2*b^8*c^2+3*b^10*c^2+a^8*c^4-6*a^6*b^2*c^4+6*a^4*b^4*c^4+2*a^2*b^6*c^4-3*b^8*c^4+6*a^6*c^6+6*a^4*b^2*c^6+2*a^2*b^4*c^6+2*b^6*c^6-9*a^4*c^8-7*a^2*b^2*c^8-3*b^4*c^8+5*a^2*c^10+3*b^2*c^10-c^12))+sqrt((b^12-3*b^10*c^2+b^8*c^4+6*b^6*c^6-9*b^4*c^8+5*b^2*c^10-c^12-3*b^10*a^2+7*b^8*c^2*a^2-6*b^6*c^4*a^2+6*b^4*c^6*a^2-7*b^2*c^8*a^2+3*c^10*a^2+b^8*a^4-6*b^6*c^2*a^4+6*b^4*c^4*a^4+2*b^2*c^6*a^4-3*c^8*a^4+6*b^6*a^6+6*b^4*c^2*a^6+2*b^2*c^4*a^6+2*c^6*a^6-9*b^4*a^8-7*b^2*c^2*a^8-3*c^4*a^8+5*b^2*a^10+3*c^2*a^10-a^12)))*(sqrt((a^12-3*a^10*b^2+a^8*b^4+6*a^6*b^6-9*a^4*b^8+5*a^2*b^10-b^12-3*a^10*c^2+7*a^8*b^2*c^2-6*a^6*b^4*c^2+6*a^4*b^6*c^2-7*a^2*b^8*c^2+3*b^10*c^2+a^8*c^4-6*a^6*b^2*c^4+6*a^4*b^4*c^4+2*a^2*b^6*c^4-3*b^8*c^4+6*a^6*c^6+6*a^4*b^2*c^6+2*a^2*b^4*c^6+2*b^6*c^6-9*a^4*c^8-7*a^2*b^2*c^8-3*b^4*c^8+5*a^2*c^10+3*b^2*c^10-c^12))+sqrt((c^12-3*c^10*a^2+c^8*a^4+6*c^6*a^6-9*c^4*a^8+5*c^2*a^10-a^12-3*c^10*b^2+7*c^8*a^2*b^2-6*c^6*a^4*b^2+6*c^4*a^6*b^2-7*c^2*a^8*b^2+3*a^10*b^2+c^8*b^4-6*c^6*a^2*b^4+6*c^4*a^4*b^4+2*c^2*a^6*b^4-3*a^8*b^4+6*c^6*b^6+6*c^4*a^2*b^6+2*c^2*a^4*b^6+2*a^6*b^6-9*c^4*b^8-7*c^2*a^2*b^8-3*a^4*b^8+5*c^2*b^10+3*a^2*b^10-b^12)))
+
+# ETC X(39641/39642) explicitly give imaginary Brocard-inellipse foci with i.
+39641 DOMAIN nonreal
+39642 DOMAIN nonreal
+
+# X(38493/38494): reviewed extra a in selected printed bc terms. Preserve
+# the genuine abc*(b+c-2a) in X(38494); global abc -> bc is incorrect.
+# Verified by the preamble midpoint/intersection construction of P'a,Va,Ra
+# and concurrency of all three corresponding lines on both atlas shapes.
+38493 B a*(4*R+b)*(4*R+c)*(4*R+b+c)*(32*R^3+16*(a+b+c)*R^2+2*R*(a^2+4*a*b+4*a*c+3*b*c)+a*(a*b+a*c+2*b*c))
+38494 B 256*R^5+64*R^4*(2*a+b+c)+16*R^3*b*c-8*R^2*(a^2*(b+c)+a*(b^2+c^2+b*c))-2*R*(a^2*(b^2+c^2)+a*b*c*(b+c-2*a))+a^2*b*c*(b+c)
+
+# ETC explicitly says X(11065/11066) are not always real-valued.
+# The parsed coordinates are real on a near-equilateral independent sample.
+11065 DOMAIN conditional_complex
+11066 DOMAIN conditional_complex
+
+# Reviewed ideal formulas: the cyclic barycentric sum is identically zero,
+# with nonzero direction witnesses. Retain the printed finite direction lines
+# below; the independent formula direction agrees on both atlas triangles.
+# 14988: its two defining finite lines are parallel (not a finite J result).
+14988 I 1 1399
+# 20403: no usable incidence direction is stated. Bare I is status only.
+20403 I
+# The following line lists have the wrong target IDs (46193, 537, 6249).
+# Do not teach the general parser to transfer another target's line list.
+46183 I 38 76
+53806 I 3 2378
+62503 I 108 1214
+
+# X(7065): the newly readable "the line {219,6862}" conflicts with the
+# printed coordinates. The named extra-triangle of Brisse transform X(1363)
+# independently gives these coordinates: start with X(107), use the Brisse
+# map a^4/((b+c-a)*u^2), then negate each side for the three extraversions
+# and intersect the corresponding vertex lines. Retain the verified formula;
+# do not suppress all "the line" descriptions to hide this source conflict.
+7065 B a^4*(b+c-a)*(b^2-c^2)^2*(b^2+c^2-a^2)^4
+
+# X(32072): centroid computed from the Lucas inner triangle's trilinear
+# vertex matrix independently agrees with the printed coordinates. The
+# newly readable line {356,8496} conflicts with both. Matrix reference:
+# https://mathworld.wolfram.com/LucasInnerTriangle.html (Moses, Jan. 13, 2005).
+32072 B (SB+SC)*(260*(3*SA+2*SW)*S^2+260*SA*SW^2+S*(1351*S^2+901*SA^2-900*SB*SC+150*SW^2))
+
+# X(39038): independently fit the conic through A,B,C,X(162),X(2167).
+# Its center matches the printed coordinates; line {2549,24185} conflicts.
+# For conic U*yz+V*zx+W*xy=0, center=(U*(V+W-U):...). U,V,W are the
+# cross product of the two rows (yz,zx,xy) at the finite input points.
+39038 B 162 2167 x*u*(z*v-y*w)*(y*v*(x*w-z*u)+z*w*(y*u-x*v)-x*u*(z*v-y*w))
+
+# Steiner minor-axis anchor: project the symmedian-centroid direction onto
+# the minor eigenspace and normalize its zero-sum barycentric vector.
+# Matches the printed first branch without J or a product of imaginary roots.
+# The source lines {2,1341} at 39204/39205 are on the wrong (major) axis.
+# Some isosceles labels genuinely give 0:0:0; leave those undefined.
+39204 B 1+sqrt(6)*(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*((a^2-b^2)+(a^2-c^2))+4*(a^2-b^2)*(a^2-c^2)-(a^2-b^2)^2-(a^2-c^2)^2)/sqrt(((sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*((a^2-b^2)+(a^2-c^2))+4*(a^2-b^2)*(a^2-c^2)-(a^2-b^2)^2-(a^2-c^2)^2))^2+((sqrt(((b^2-c^2)^2+(c^2-a^2)^2+(a^2-b^2)^2)/2)*((b^2-c^2)+(b^2-a^2))+4*(b^2-c^2)*(b^2-a^2)-(b^2-c^2)^2-(b^2-a^2)^2))^2+((sqrt(((c^2-a^2)^2+(a^2-b^2)^2+(b^2-c^2)^2)/2)*((c^2-a^2)+(c^2-b^2))+4*(c^2-a^2)*(c^2-b^2)-(c^2-a^2)^2-(c^2-b^2)^2))^2)
+# Curvature center G-(major^2-minor^2)/minor^2*(vertex-G).
+# Rationalized denominator avoids cancellation in s-2*sqrt(D).
+39302 F 2:1+(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*(a^2+b^2+c^2+2*sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2))/(3*S^2)) 39204:-(sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2)*(a^2+b^2+c^2+2*sqrt(((a^2-b^2)^2+(b^2-c^2)^2+(c^2-a^2)^2)/2))/(3*S^2))
+# Source 39303 mistakenly labels its own reflection as 30303.
+39303 R 39302 2
+
+# X(10685): missing + between the last two degree-12 terms. Confirmed
+# independently by the two Brocard points, their anticevian triangles, and
+# each point's isogonal conjugate relative to that triangle. The - variant
+# is homogeneous too but fails this construction on independent samples.
+10685 B a^10*(b^2+c^2)-a^8*(3*b^4+b^2*c^2+3*c^4)+2*a^6*(b^6+b^4*c^2+b^2*c^4+c^6)+a^4*(-2*b^6*c^2+b^4*c^4-2*b^2*c^6)-a^2*b^2*c^2*(b^2-c^2)^2*(b^2+c^2)+b^4*c^4*(b^2-c^2)^2
+
+# User review 2026-11-02: 12025 uses a nonhomogeneous formula; the original
+# Hyacinthos 25422 construction was identified as X(11). Do not draw a guessed
+# homogeneous repair or silently alias the erroneous ETC entry.
+12025 SKIP source-error: nonhomogeneous formula; reviewed original geometry reduces to X(11)
+# 32584: the mutual-polar conic matrix for the Schroeter anticevian
+# triangle has off-diagonal (w,v,u), u=b^2-c^2, v=c^2-a^2, w=a^2-b^2.
+# Its center is (u^2:v^2:w^2)=X(115), not the printed degree-9/10 mixture.
+32584 SKIP source-error: nonhomogeneous formula conflicts with mutual-polar center X(115)
+# PB/Montesdeoca-Hung: audited all 36 PB perspectors from independent
+# vertex matrices. All 32 already selected points agree; add only four roots.
+# Star: S changes sign INSIDE U as well. The preamble diameter-circle
+# condition rejects keeping U+ for the X(16) group. Each sign below is frozen
+# before expanding the root; do not copy the erroneous printed 11770/11779
+# swap or 11788 missing multiplication.
+11761 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*S)+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*S*(sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11770 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*S)+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*S*(-sqrt(2*(a^2+b^2+c^2+2*sqrt(3)*S))))
+11779 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*(-S))+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(-S)*(sqrt(2*(a^2+b^2+c^2-2*sqrt(3)*S))))
+11788 B a*((a^6+2*a^5*b+2*a^4*b^2+2*a^3*b^3+2*a^2*b^4+2*a*b^5+b^6+2*a^5*c+6*a^4*b*c+8*a^3*b^2*c+8*a^2*b^3*c+6*a*b^4*c+2*b^5*c+2*a^4*c^2+8*a^3*b*c^2+13*a^2*b^2*c^2+8*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+8*a^2*b*c^3+8*a*b^2*c^3+2*b^3*c^3+2*a^2*c^4+6*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(sqrt(3)*a*(-a^2+b^2+c^2)+2*a*(-S))+(2*a^6+4*a^5*b+4*a^4*b^2+4*a^3*b^3+3*a^2*b^4+2*a*b^5+b^6+4*a^5*c+12*a^4*b*c+16*a^3*b^2*c+12*a^2*b^3*c+6*a*b^4*c+2*b^5*c+4*a^4*c^2+16*a^3*b*c^2+20*a^2*b^2*c^2+8*a*b^3*c^2+b^4*c^2+4*a^3*c^3+12*a^2*b*c^3+8*a*b^2*c^3+3*a^2*c^4+6*a*b*c^4+b^2*c^4+2*a*c^5+2*b*c^5+c^6)*(-S)*(-sqrt(2*(a^2+b^2+c^2-2*sqrt(3)*S))))
+# User-reviewed targets, without adjudicating contradictory endpoint
+# definitions: 14079 agrees with its barycentric product and two other lines.
+14079 B a*abs(b-c)
+# 14821: printed coordinates, GL construction, and the X(38)*X(7829)
+# product agree. Isolate the conflicting {11709,14933} incidence claim.
+14821 B 38 7829 x*u
+# 13137: the actual pedal/Simson line of X(98) gives the printed point
+# after reflection. The labeled line X(115)X(523) is not that Simson line.
+# Printed coordinates and four native lines agree; use two native pairs.
+13137 J 4 512 23 1976
+# 51539/51540: explicit conjugate complex coordinates. The real and
+# imaginary barycentric triples have a generically nonzero 2x2 minor;
+# squaring the imaginary Brocard foci does not make these real points.
+# This is a direct projective reality check, not nonreal propagation.
+51539 DOMAIN nonreal
+51540 DOMAIN nonreal
+# 64802: the cyclic degree-six coordinate sum cancels identically;
+# a nonzero witness gives an ideal point. Its previous finite construction
+# is not a reason to admit it as a finite B. Direction remains unreviewed.
+64802 I
+# Focused family audit after restoring 14079: the old A(14084) path
+# moved 14087 away from its BSS/isotomic coordinate, and propagated to
+# 14088; 14090 used an inconsistent 14083 line. Preserve the mutually
+# agreeing BSS, printed coordinates, and G/T definitions. Do not decide
+# the separate singular-focus definitions of 14083/14084 by this choice.
+14087 B abs((a-b)*(a-c))
+14088 B a^2*abs(b-c)
+14090 B a^2*abs(b^2-c^2)
+
+# User review: generic nonreal Steiner imaginary-focus images under
+# isotomic conjugation followed by complement. Both maps are invertible
+# over the reals on their generic domains; no real-plane drawing required.
+65627 DOMAIN nonreal
+65628 DOMAIN nonreal
+
+# User confirmed with the independent GeoGebra singular-focus tool (K340/K792).
+# Preserve the reviewed focal definitions; do not replace by conflicting affine relations.
+14083 J 120 4220 3 14680
+14084 J 729 2080 351 14830
+
+# 4201/13740 cannot both be complements of each other. X(4201)'s explicit
+# Euler-line intersection and coordinates agree; X(13740)=C(4201), not conversely.
+4201 J 2 3 8 38
+# 9858's explicit r/R combo, printed coordinates and native incidence lines
+# agree. The isolated C(20012) statement does not; preserve the checked combo.
+9858 F 3:r*(r+8*R) 9:-(r+2*R)*(r+4*R)
+
+# User review 2026-11-03: the isolated V(5560) relation is false; other
+# definitions of both 5560 and 7742 are retained. Use the verified native lines.
+7742 J 1 3 22 1612
+# 8037: the Ceva relation is correct generically. On the obtuse atlas shape
+# X(1131)=A and the unsimplified map has a 0:0:0 base point. Cancel the
+# common factor algebraically; use its continuous polynomial coordinates.
+8037 B (a^2+S)*(a^2+b^2-c^2+S)*(a^2-b^2+c^2+S)
+# User independently checked Dao / X-parabola-tangential perspectivity.
+# The printed coordinates are correct; the cevapoint(115,1043) relation is not.
+48720 B (b^2-c^2)*(b+c)*(2*a^7-(b+c)*a^6-(3*b^2+4*b*c+3*c^2)*a^5+(b+c)*(5*b^2-9*b*c+5*c^2)*a^4+4*(b+c)^2*b*c*a^3-(b+c)*(7*b^4+7*c^4-6*b*c*(b^2+b*c+c^2))*a^2+(b^2-8*b*c+c^2)*(b^2-c^2)^2*a+(b^2-c^2)^2*(b+c)*(3*b^2-5*b*c+3*c^2))
+# User review: X(40822)'s title uses 6 where the compatible line table
+# uses 2. These two independently confirmed listed native lines suffice.
+40822 J 5 264 290 1352
+# User review: X(72796)'s title uses 8 where compatible incidences use 80.
+72796 J 80 53618 1293 30198
+# Additional reviewed title/line conflicts: corrected endpoint pairs agree
+# with each target's coordinates on both atlas shapes; all available listed
+# lines support these positions. No global identifier replacement is made.
+# 71989: 27196 -> 27186 (191 available supporting lines); opens the correct
+# R(71989,5278) position for 72215 without changing that valid reflection.
+71989 J 1 27186 2 902
+# 72498: 36063 -> 36036 (11 supporting lines).
+72498 J 31 36061 75 36036
+# The following two titles have only two listed lines, so the generic
+# independent-line screen cannot decide them. Both corrected intersections
+# also match the printed coordinates; keep these as reviewed exceptions.
+72939 J 3 15111 34152 63631
+73051 J 52 27361 1154 3627
+# 72941: corrected X(3)X(15111) intersection matches its coordinates and
+# 31 listed lines; leave the separate 15366 dependency question open.
+72941 J 3 15111 26 476
+
+# Batch property consensus, 2026-11-03. Provisional choices based on weighted
+# independent properties, not blanket claims of source-error or geometric proof.
+# Only roots are pinned: six downstream discrepancies resolve without more seeds.
+# Evidence: triangle-centers-consensus-review.md; geometric follow-up closed by user decision.
+# X(21910): support 4/5; runner bound 2.
+21910 J 154 511 523 4885
+# X(25408): support 6.75/7; runner bound 1.5.
+25408 R 24651 13415
+# X(31608): support 10/11; runner bound 3.5.
+31608 M 3 14867
+# X(34367): support 2.5/3; runner bound 1.5.
+34367 J 2 249 14559 24975
+# X(38941): support 40/41; runner bound 3.
+38941 J 1 7 2 514
+# X(72140): support 18.5/20; runner bound 3.5.
+72140 J 75 244 514 661
+# X(72141): support 22/23; runner bound 3.
+72141 J 2 668 10 63508
+# X(72147): support 34/36; runner bound 4.
+72147 J 1 2229 2 668
+# X(72150): support 34/37; runner bound 5.
+72150 J 2 668 6 43
+# X(72152): support 34/35; runner bound 3.
+72152 J 1 7275 2 668
+# X(72160): support 144.6/150; runner bound 8.528.
+72160 J 1 312 2 3996
+# X(72780): support 22/23; runner bound 4.433.
+72780 A 14027
+# X(72968): support 54.5/59; runner bound 15.
+72968 J 1 901 244 513
+
+# User review: Hyacinthos 27607/29607 confirm 15497 and 48; ETC titles
+# transcribed 14597 and 46. See source-review documentation for provenance.
+18131 J 226 15497 1445 15487
+34419 J 3 3648 48 16553
+# User verified Q004 / Euclid 19 coordinates. Keep the false incidences
+# in source text; do not use them to displace these reviewed definitions.
+34307 B (a^2-a*b+b^2-c^2)*(a^2-b^2-a*c+c^2)*(a^3+a^2*b-a*b^2-b^3+a^2*c+a*b*c+b^2*c-a*c^2+b*c^2-c^3)*(a^8+a^7*b-4*a^6*b^2-3*a^5*b^3+6*a^4*b^4+3*a^3*b^5-4*a^2*b^6-a*b^7+b^8+a^7*c-3*a^6*b*c+a^5*b^2*c+3*a^4*b^3*c-3*a^3*b^4*c-a^2*b^5*c+a*b^6*c+b^7*c-4*a^6*c^2+a^5*b*c^2+a^4*b^2*c^2+a^3*b^3*c^2+a^2*b^4*c^2+3*a*b^5*c^2-2*b^6*c^2-3*a^5*c^3+3*a^4*b*c^3+a^3*b^2*c^3-a^2*b^3*c^3-3*a*b^4*c^3-b^5*c^3+6*a^4*c^4-3*a^3*b*c^4+a^2*b^2*c^4-3*a*b^3*c^4+2*b^4*c^4+3*a^3*c^5-a^2*b*c^5+3*a*b^2*c^5-b^3*c^5-4*a^2*c^6+a*b*c^6-2*b^2*c^6-a*c^7+b*c^7+c^8)
+34575 B (35*a^6+27*a^4*b^2-15*a^2*b^4-7*b^6+27*a^4*c^2-3*a^2*b^2*c^2-21*b^4*c^2-15*a^2*c^4-21*b^2*c^4-7*c^6)*(a^6+9*a^4*b^2+9*a^2*b^4+b^6+a^4*c^2+17*a^2*b^2*c^2+b^4*c^2-a^2*c^4-b^2*c^4-c^6)*(a^6+a^4*b^2-a^2*b^4-b^6+9*a^4*c^2+17*a^2*b^2*c^2-b^4*c^2+9*a^2*c^4+b^2*c^4+c^6)
+# User verified 20211 coordinates and {2,77}/{145,515}; 515 is ideal.
+# A(22654) and the reciprocal C(20211) claim are both false. Pin both
+# compatible positions so breaking the old dependency cycle cannot enable
+# the cheaper but false inverse relation at the other endpoint.
+20211 J 2 77 145 515
+22654 J 1 159 3 10
+# User verified: the 14838 title transcribed 1557 instead of 1577;
+# the body statement and incidence list agree with C(1577).
+14838 C 1577
+
+# Follow-up majority review: 8430 support 13/14; 38513 support 24/26.
+# Fix roots only; 67420/67634 should recover without additional seeds.
+# 38513 coordinates agree; geometric follow-up closed by user decision.
+8430 J 112 250 6 512
+38513 R 944 1 3
+
+# Remaining-coordinate review (2026-11-03).
+# Deferred, NOT SKIP: 5373 / 5394 / 5626 / 40139 need implicit solvers.
+# 15276 fd12 coefficient corrected to 12 by user geometric review (2026-11-03).
+
+# Exposed angles AB/AC are products A*B/A*C; expand explicitly.
+3067 B a^2/(A*(B-C))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+10228 B a^2*(a^26-8*a^24*(b^2+c^2)+28*a^22*(b^2+c^2)^2-6*a^20*(9*b^6+28*b^4*c^2+28*b^2*c^4+9*c^6)+a^18*(53*b^8+277*b^6*c^2+406*b^4*c^4+277*b^2*c^6+53*c^8)+a^16*(6*b^10-273*b^8*c^2-499*b^6*c^4-499*b^4*c^6-273*b^2*c^8+6*c^10)+a^14*(-96*b^12+184*b^10*c^2+307*b^8*c^4+386*b^6*c^6+307*b^4*c^8+184*b^2*c^10-96*c^12)+2*a^12*(66*b^14-56*b^12*c^2-9*b^10*c^4-38*b^8*c^6-38*b^6*c^8-9*b^4*c^10-56*b^2*c^12+66*c^14)-a^10*(69*b^16+6*b^14*c^2+97*b^12*c^4+43*b^10*c^6+5*b^8*c^8+43*b^6*c^10+97*b^4*c^12+6*b^2*c^14+69*c^16)-a^8*(28*b^18-238*b^16*c^2+176*b^14*c^4-11*b^12*c^6+63*b^10*c^8+63*b^8*c^10-11*b^6*c^12+176*b^4*c^14-238*b^2*c^16+28*c^18)+a^6*(b^2-c^2)^2*(68*b^16-256*b^14*c^2+89*b^12*c^4+65*b^10*c^6+97*b^8*c^8+65*b^6*c^10+89*b^4*c^12-256*b^2*c^14+68*c^16)-a^4*(b^2-c^2)^4*(46*b^14-120*b^12*c^2+26*b^10*c^4+73*b^8*c^6+73*b^6*c^8+26*b^4*c^10-120*b^2*c^12+46*c^14)+a^2*(b^2-c^2)^6*(15*b^12-29*b^10*c^2+16*b^8*c^4+32*b^6*c^6+16*b^4*c^8-29*b^2*c^10+15*c^12)-(b^2-c^2)^8*(2*b^10-3*b^8*c^2+5*b^6*c^4+5*b^4*c^6-3*b^2*c^8+2*c^10))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+11811 B a^2*(a^10-5*a^8*b^2+9*a^6*b^4-7*a^4*b^6+2*a^2*b^8-5*a^8*c^2+9*a^6*b^2*c^2+a^4*b^4*c^2-6*a^2*b^6*c^2+b^8*c^2+9*a^6*c^4+a^4*b^2*c^4+2*a^2*b^4*c^4-b^6*c^4-7*a^4*c^6-6*a^2*b^2*c^6-b^4*c^6+2*a^2*c^8+b^2*c^8)
+
+# Inline this entry's three local F/G/H functions, including G(a,c,b); F remains the global Conway symbol elsewhere.
+13301 B a*(((b-c)*(-a+b+c)*(a^4-4*(b+c)*a^3+3*(b^2-b*c+c^2)*a^2+b*c*(b+c)^2))*sin(A/2)+((a-b+c)*((3*b-2*c)*a^4-(4*b^2+3*b*c-3*c^2)*a^3+(b^3+c^3-b*c*(4*b-7*c))*a^2+(b^3-3*c^3+b*c*(b-c))*c*a+c*(b-c)*(2*b^3+b*c^2-c^3)))*sin(B/2)-((a-c+b)*((3*c-2*b)*a^4-(4*c^2+3*c*b-3*b^2)*a^3+(c^3+b^3-c*b*(4*c-7*b))*a^2+(c^3-3*b^3+c*b*(c-b))*b*a+b*(c-b)*(2*c^3+c*b^2-b^3)))*sin(C/2)+(-4*S^2*(b-c)*(2*a-b-c)))
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23032 B b*c*(3*(c*(sec(B/3))+b*(sec(C/3)))*a+4*sqrt(3)*S+6*a^2)*(sec(A/3))+6*a^2*b*c*(sec(B/3))*(sec(C/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec(B/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec(C/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23033 B b*c*(3*(c*(sec((B-2*pi)/3))+b*(sec((C-2*pi)/3)))*a+4*sqrt(3)*S+6*a^2)*(sec((A-2*pi)/3))+6*a^2*b*c*(sec((B-2*pi)/3))*(sec((C-2*pi)/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec((B-2*pi)/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec((C-2*pi)/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Expand x=sec(angle/3) and its implicit cyclic y,z explicitly; no generic implicit-variable guessing.
+23034 B b*c*(3*(c*(sec((B-4*pi)/3))+b*(sec((C-4*pi)/3)))*a+4*sqrt(3)*S+6*a^2)*(sec((A-4*pi)/3))+6*a^2*b*c*(sec((B-4*pi)/3))*(sec((C-4*pi)/3))+(3*a^2+9*b^2-3*c^2+2*sqrt(3)*S)*a*c*(sec((B-4*pi)/3))+(3*a^2-3*b^2+9*c^2+2*sqrt(3)*S)*a*b*(sec((C-4*pi)/3))+4*sqrt(3)*(b^2+c^2)*S+6*(b^2+c^2)*a^2-6*(b^2-c^2)^2
+
+# Misplaced incidence table: intersect {1,2} and {9,20248}.
+26653 J 1 2 9 20248
+
+# Misplaced incidence table: intersect {2,7} and {149,354}.
+26842 J 2 7 149 354
+
+# Inline this entry's three local F/G/H functions, including G(a,c,b); F remains the global Conway symbol elsewhere.
+31957 B (-2*(2*a^2+7*(b+c)*a+(b+c)^2)*S+(-a+b+c)*(a^3-(b+c)*a^2-3*(b+c)^2*a-(b^2-c^2)*(b-c)))*sin(A/2)+(2*a*((a-3*b-3*c)*S-(a-b+c)*(3*a^2+(5*b+6*c)*a+(b+c)*(2*b+c))))*sin(B/2)+(2*a*((a-3*c-3*b)*S-(a-c+b)*(3*a^2+(5*c+6*b)*a+(c+b)*(2*c+b))))*sin(C/2)+(-2*a*(7*a+3*b+3*c)*S-(b+c)*(a+b-c)*(-a+b+c)*(a-b+c))
+
+# Remove unrelated parameter prefix before semicolon; body incidence uses wrong self number 38721/38731. Do not alter source.
+36721 B a^6-4*a^5*b+2*a^4*b^2+2*a^3*b^3-a^2*b^4+2*a*b^5-2*b^6-4*a^5*c-4*a^4*b*c+2*a^3*b^2*c+2*a^2*b^3*c+2*a*b^4*c+2*b^5*c+2*a^4*c^2+2*a^3*b*c^2+6*a^2*b^2*c^2-4*a*b^3*c^2+2*b^4*c^2+2*a^3*c^3+2*a^2*b*c^3-4*a*b^2*c^3-4*b^3*c^3-a^2*c^4+2*a*b*c^4+2*b^2*c^4+2*a*c^5+2*b*c^5-2*c^6
+
+# Remove unrelated parameter prefix before semicolon; body incidence uses wrong self number 38721/38731. Do not alter source.
+36731 B a^5+3*a^4*b-a^3*b^2-a^2*b^3-2*b^5+3*a^4*c-2*a^3*b*c+a^2*b^2*c-2*a*b^3*c-a^3*c^2+a^2*b*c^2+4*a*b^2*c^2+2*b^3*c^2-a^2*c^3-2*a*b*c^3+2*b^2*c^3-2*c^5
+
+# Remove one surplus terminal right parenthesis in printed denominator.
+38439 B 1/(13*a^8+46*a^4*b^2*c^2-26*a^6*(b^2+c^2)-(b^2-c^2)^2*(13*b^4+24*b^2*c^2+13*c^4)+a^2*(26*b^6-22*b^4*c^2-22*b^2*c^4+26*c^6))
+
+# Printed first cyclic coordinate; omitted : : / block-separated label. No generic missing-label inference.
+51777 B a^2*(a^4+b^4+c^4-2*a^2*(b^2+c^2))/(a^16-5*a^14*(b^2+c^2)-(b^2-c^2)^4*(b^4+c^4)^2-a^4*(b^4-c^4)^2*(2*b^4-b^2*c^2+2*c^4)+a^12*(10*b^4+13*b^2*c^2+10*c^4)-a^10*(11*b^6+13*b^4*c^2+13*b^2*c^4+11*c^6)+a^8*(8*b^8+6*b^6*c^2+4*b^4*c^4+6*b^2*c^6+8*c^8)+a^6*(-3*b^10+b^8*c^2-2*b^6*c^4-2*b^4*c^6+b^2*c^8-3*c^10)+a^2*(b^2-c^2)^2*(3*b^10-b^8*c^2+2*b^6*c^4+2*b^4*c^6-b^2*c^8+3*c^10))
+
+# Inline the unique cyclic[...] local triple. This is X65951.
+65951 B (a*(a-b-c)-(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2)))))*(a^2-a*b-2*a*c-b*c+c^2-(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2)))))*(a^2-2*a*b+b^2-a*c-b*c-(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2)))))*(b*(a+b-c)*c*(a-b+c)*(a^5-3*a^4*b+3*a^2*b^3+a*b^4-2*b^5-3*a^4*c-4*a^3*b*c-3*a^2*b^2*c+4*a*b^3*c+6*b^4*c-3*a^2*b*c^2-10*a*b^2*c^2-4*b^3*c^2+3*a^2*c^3+4*a*b*c^3-4*b^2*c^3+a*c^4+6*b*c^4-2*c^5)-b*(a+b-c)*c*(a-b+c)*(2*a^3+a^2*b-a*b^2-2*b^3+a^2*c+2*a*b*c+2*b^2*c-a*c^2+2*b*c^2-2*c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))+(a+b-c)*c*(a^5-2*a^4*b-2*a^3*b^2+5*a^2*b^3-a*b^4-b^5-2*a^4*c-2*a^3*b*c-5*a^2*b^2*c+6*a*b^3*c+3*b^4*c-a^2*b*c^2-8*a*b^2*c^2-2*b^3*c^2+a^2*c^3+2*a*b*c^3-2*b^2*c^3+a*c^4+3*b*c^4-c^5)*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))-(a+b-c)*c*(a^3+2*a^2*b-2*a*b^2-b^3+2*a*b*c+b^2*c+b*c^2-c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))+b*(a-b+c)*(a^5-2*a^4*b+a^2*b^3+a*b^4-b^5-2*a^4*c-2*a^3*b*c-a^2*b^2*c+2*a*b^3*c+3*b^4*c-2*a^3*c^2-5*a^2*b*c^2-8*a*b^2*c^2-2*b^3*c^2+5*a^2*c^3+6*a*b*c^3-2*b^2*c^3-a*c^4+3*b*c^4-c^5)*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))-b*(a-b+c)*(a^3-b^3+2*a^2*c+2*a*b*c+b^2*c-2*a*c^2+b*c^2-c^3)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))+a*(a^4-a^3*b-2*a^2*b^2+3*a*b^3-b^4-a^3*c-3*a*b^2*c+4*b^3*c-2*a^2*c^2-3*a*b*c^2-6*b^2*c^2+3*a*c^3+4*b*c^3-c^4)*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2))))-a*(a*b-b^2+a*c+2*b*c-c^2)*(sqrt(-(a*(a-b-c)*(a^2+a*b-2*b^2+a*c+4*b*c-2*c^2))))*(sqrt(-(b*(b-c-a)*(b^2+b*c-2*c^2+b*a+4*c*a-2*a^2))))*(sqrt(-(c*(c-a-b)*(c^2+c*a-2*a^2+c*b+4*a*b-2*b^2)))))
+
+# Use the printed second closed form; balance its surplus opening parenthesis and expand symmetric s1/s2/s3. Hyperbolic functions already supported.
+72483 B a*(b+c)-2*(((a+b+c)+2*sqrt(6*(b*c+c*a+a*b)-(a+b+c)^2)*sinh(asinh(((a+b+c)^3-9*(a+b+c)*(b*c+c*a+a*b)+54*(a*b*c))/(6*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3))/6)*(a-(((a+b+c)+2*sqrt(6*(b*c+c*a+a*b)-(a+b+c)^2)*sinh(asinh(((a+b+c)^3-9*(a+b+c)*(b*c+c*a+a*b)+54*(a*b*c))/(6*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3))/6))
+
+# Printed cyclic coordinate has no Barycentrics label; preserve as an individual seed.
+72513 B ((b^2+c^2)*a^10-(3*b^4+5*b^2*c^2+3*c^4)*a^8+2*((b^2+c^2)^2-b^2*c^2)*(b^2+c^2)*a^6+((b^2+c^2)^2-b^2*c^2)*(2*b^4-b^2*c^2+2*c^4)*a^4-(b^4-c^4)*(b^2-c^2)*(3*b^4+2*b^2*c^2+3*c^4)*a^2+(b^4-c^4)^2*(b^2-c^2)^2)*(a^20-(2*b^2+5*c^2)*a^18-(3*b^2-8*c^2)*(b^2+c^2)*a^16+(8*b^4+9*b^2*c^2-5*c^4)*b^2*a^14+(2*b^8-14*c^8-(7*b^4-2*b^2*c^2-16*c^4)*b^2*c^2)*a^12-(12*b^10-14*c^10+(2*b^6+39*c^6-2*(b-2*c)*(b+2*c)*b^2*c^2)*b^2*c^2)*a^10+2*(b^10+16*c^10-(b^6+14*c^6+(7*b^2+4*c^2)*b^2*c^2)*b^2*c^2)*b^2*a^8+(b^2-c^2)*(8*b^12+8*c^12+(b^8+3*c^8+(3*b^4-5*b^2*c^2-32*c^4)*b^2*c^2)*b^2*c^2)*a^6-(b^2-c^2)^3*(3*b^10+5*c^10-(11*b^4+22*b^2*c^2+5*c^4)*b^2*c^4)*a^4-(b^2-c^2)^5*(2*b^8-c^8+(5*b^4+10*b^2*c^2+4*c^4)*b^2*c^2)*a^2+(b^4-c^4)^2*(b^2-c^2)^5*b^2)*(a^20-(5*b^2+2*c^2)*a^18+(8*b^2-3*c^2)*(b^2+c^2)*a^16-(5*b^4-9*b^2*c^2-8*c^4)*c^2*a^14-(14*b^8-2*c^8-(16*b^4+2*b^2*c^2-7*c^4)*b^2*c^2)*a^12+(14*b^10-12*c^10-(39*b^6+2*c^6+2*(2*b-c)*(2*b+c)*b^2*c^2)*b^2*c^2)*a^10+2*(16*b^10+c^10-(14*b^6+c^6+(4*b^2+7*c^2)*b^2*c^2)*b^2*c^2)*c^2*a^8-(b^2-c^2)*(8*b^12+8*c^12+(3*b^8+c^8-(32*b^4+5*b^2*c^2-3*c^4)*b^2*c^2)*b^2*c^2)*a^6+(5*b^10+3*c^10-(5*b^4+22*b^2*c^2+11*c^4)*b^4*c^2)*(b^2-c^2)^3*a^4-(b^2-c^2)^5*(b^8-2*c^8-(4*b^4+10*b^2*c^2+5*c^4)*b^2*c^2)*a^2-(b^4-c^4)^2*(b^2-c^2)^5*c^2)
+
+# Use first component of a comma-separated full cyclic triple followed by redundant : :. Positive local square roots; partner follows existing reflection.
+72698 B 2*S^2*(SA*SB+SA*SC-2*SB*SC)*SW-2*(SA*SB+SA*SC-2*SB*SC)*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))+a*b*c*S^2*(sqrt(a^2*b^2*c^2+4*SA*SB*SC-4*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))))
+
+# Use first component of a comma-separated full cyclic triple followed by redundant : :. Positive local square roots; partner follows existing reflection.
+72700 B -2*(SA*SB+SA*SC-2*SB*SC)*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC)))-S^2*(2*SA*SB*SW+2*SA*SC*SW-4*SB*SC*SW+a*b*c*(sqrt(a^2*b^2*c^2+4*SA*SB*SC+4*(sqrt(SA*SB*SC*(a^2*b^2*c^2+SA*SB*SC))))))
+
+# X72514: exact invariant-basis reduction of the printed degree-46 polynomial.
+# Remove common 16*S^14; reduce a^2 by its symmetric cubic; use F=SW-E.
+# This preserves the point and avoids cancellation after X72513 becomes available.
+72514 B -4*S^2*(1071*F^7+4854*F^6*SW-47316*F^5*S^2+5057*F^5*SW^2-56428*F^4*S^2*SW-3020*F^4*SW^3+3584*F^3*S^4-23944*F^3*S^2*SW^2-5503*F^3*SW^4-3072*F^2*S^4*SW-3224*F^2*S^2*SW^3-2186*F^2*SW^5-512*F*S^4*SW^2-100*F*S^2*SW^4-273*F*SW^6-60*S^2*SW^5)+a^4*(-1323*F^7-4662*F^6*SW+217368*F^5*S^2+8835*F^5*SW^2+264600*F^4*S^2*SW+42348*F^4*SW^3-17472*F^3*S^4+119152*F^3*S^2*SW^2+38475*F^3*SW^4+14528*F^2*S^4*SW+19760*F^2*S^2*SW^3+13098*F^2*SW^5+2880*F*S^4*SW^2+1400*F*S^2*SW^4+1533*F*SW^6+64*S^4*SW^3+312*S^2*SW^5)+a^2*(1323*F^7*SW-9720*F^6*S^2+4662*F^6*SW^2-234000*F^5*S^2*SW-8835*F^5*SW^3-19440*F^4*S^4-271560*F^4*S^2*SW^2-42348*F^4*SW^4+3648*F^3*S^4*SW-118880*F^3*S^2*SW^3-38475*F^3*SW^5-14624*F^2*S^4*SW^2-19464*F^2*S^2*SW^4-13098*F^2*SW^6-2240*F*S^4*SW^3-1424*F*S^2*SW^5-1533*F*SW^7-112*S^4*SW^4-312*S^2*SW^6)
+
+# User verified X15276 from its geometric definition: fd12 is 12.
+15276 B a^2*(-a^2+b^2+c^2)*(a^6-2*(b+c)*a^5-(b-c)^2*a^4+2*(b+2*c)*(2*b+c)*(b+c)*a^3-(b^2-12*b*c+c^2)*(b+c)^2*a^2-2*(b^3+c^3)*(b+c)^2*a+(b^2+c^2)*(b^2-6*b*c+c^2)*(b+c)^2)

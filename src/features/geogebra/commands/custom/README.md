@@ -13,7 +13,7 @@ command; its input points need not be deleted. Deleting the input points also
 removes their dependent outputs, which can make redrawing appear to fix an old
 definition.
 
-The library is still unpublished and uses version **0.2.0**. Development
+The library is still unpublished and uses version **0.3.0**. Development
 milestones in the implementation notes are not release versions.
 
 ## Directory layout
@@ -36,8 +36,11 @@ Implementation files are grouped by responsibility:
 | `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
 | [docs/related-curves.md](docs/related-curves.md) | Consolidated coverage and limits of native GibertCurve sampling. |
+| [docs/triangle-centers-plan.md](docs/triangle-centers-plan.md) | Design and staged implementation plan for extending TriangleCenter beyond GeoGebra's native range. |
 
 ## Manage the library
+
+`TriangleCenter(A,B,C,id)` uses 70,213 lazily loaded recipe/status records, including 14 explicit native patches. Higher-center ideal states include 1,128 usable directions and 65 markers without directions; requesting an ideal point directly returns an undefined GeoGebra point. Unpatched native IDs through 3053 and computed selectors retain GeoGebra behavior. The parser covers screened relations, intersections, conjugates and coordinates, including shared Gemini collineation templates. These templates use native numeric matrices to avoid expensive nested scalar `Zip` evaluation in Low mode; High additionally permits typed hidden point/vector and matrix intermediates through the normal execution plan. Extraction, update commands and current counts are in [data/triangle-centers/README.md](data/triangle-centers/README.md).
 
 `library.json` is the versioned, declarative source for names, descriptions,
 typed overloads and implementations. It also feeds command completion and
@@ -72,7 +75,7 @@ case-insensitively across canonical commands and aliases; self-aliases, duplicat
 aliases and malformed names are rejected. Flat lists avoid alias chains. File
 macros retain priority at the call site, including when they own only an alias.
 
-The catalog currently has **163 canonical commands and 188 callable names**.
+The catalog currently has **164 canonical commands and 189 callable names**.
 For example, `SouthPole` aliases `ArcMidpoint`, and `NorthPole` aliases
 `OppositeArcMidpoint`.
 

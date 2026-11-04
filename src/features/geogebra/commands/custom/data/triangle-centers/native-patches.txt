@@ -1,0 +1,18 @@
+# Reviewed native overrides; GeoGebra engine 5.4.920.0.
+# Same recipe syntax as seeds; only listed positive IDs <=3053 are overridden.
+# Raw native atlas/status retain their original engine observations.
+# Deferred (not overridden): 368, 370, 1144; implicit real-root selection.
+369 B (2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))^2+2*(b-c)*(2*sqrt((12*(b*c+c*a+a*b)-(a+b+c)^2))*sinh(asinh(12*sqrt(3)*(b-c)*(c-a)*(a-b)/(12*(b*c+c*a+a*b)-(a+b+c)^2)^(3/2))/3)/sqrt(3))+6*b*c+8*a*(b+c)+5*(-a^2+b^2+c^2)
+459 B SB*SC/(S^2-2*SB*SC)
+1071 J 1 84 4 7
+1285 B (3*a^2+b^2-c^2)*(3*a^2-b^2+c^2)
+1908 B a*(a^2*(b^3+c^3)+2*a*b*c*(a^2+b*c))
+1913 B a^3*(2*a^3*b*c+a*b^4+a*c^4+b^2*c^2*(b+c))
+1939 B a*((a*cos(B)+b*cos(C)+c*cos(A))*cos(C)+(a*cos(C)+b*cos(A)+c*cos(B))*cos(B))
+2923 B a^2*(-a^3/(c*csc(B+(pi/3))+b*csc(C+(pi/3)))+b^3/(a*csc(C+(pi/3))+c*csc(A+(pi/3)))+c^3/(b*csc(A+(pi/3))+a*csc(B+(pi/3))))
+2924 B a^2*(-a^3/(c*csc(B+(-pi/3))+b*csc(C+(-pi/3)))+b^3/(a*csc(C+(-pi/3))+c*csc(A+(-pi/3)))+c^3/(b*csc(A+(-pi/3))+a*csc(B+(-pi/3))))
+2925 B a^2*(-a^3/(c*sin(B+(pi/3))+b*sin(C+(pi/3)))+b^3/(a*sin(C+(pi/3))+c*sin(A+(pi/3)))+c^3/(b*sin(A+(pi/3))+a*sin(B+(pi/3))))
+2926 B a^2*(-a^3/(c*sin(B+(-pi/3))+b*sin(C+(-pi/3)))+b^3/(a*sin(C+(-pi/3))+c*sin(A+(-pi/3)))+c^3/(b*sin(A+(-pi/3))+a*sin(B+(-pi/3))))
+2927 B a^2*(-a^3/(c*csc(B+(pi/6))+b*csc(C+(pi/6)))+b^3/(a*csc(C+(pi/6))+c*csc(A+(pi/6)))+c^3/(b*csc(A+(pi/6))+a*csc(B+(pi/6))))
+2928 B a^2*(-a^3/(c*csc(B+(-pi/6))+b*csc(C+(-pi/6)))+b^3/(a*csc(C+(-pi/6))+c*csc(A+(-pi/6)))+c^3/(b*csc(A+(-pi/6))+a*csc(B+(-pi/6))))
+3020 B (b+c-a)*((b-c)*(b^2+c^2-b*c))^2

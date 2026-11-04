@@ -6,7 +6,7 @@ body{font:14px system-ui;margin:20px}button,input{padding:8px}pre{white-space:pr
 </style></head>
 <body><h1 id="title">GeoGebra verification</h1><p id="description"></p>
 <div id="timing" hidden><label>Rounds <input id="rounds" type="number" value="3" min="1" max="8"></label> <label>Updates per case <input id="steps" type="number" value="12" min="2" max="120"></label></div>
-<button id="run">Run verification</button><span id="command-controls" hidden><button id="probe">Run commands</button><textarea id="commands" rows="5" cols="100" aria-label="Commands"></textarea></span>
+<button id="run">Run verification</button><a id="download" hidden>Download native coordinate sample</a><span id="command-controls" hidden><button id="probe">Run commands</button><textarea id="commands" rows="5" cols="100" aria-label="Commands"></textarea></span>
 <p id="status">Ready</p><pre id="results">Ready</pre><div class="viewport" id="viewport"><div id="canvas"></div></div><iframe id="test" title="Native test" hidden></iframe>
 <details id="json-details" hidden><summary>Raw JSON</summary><pre id="json"></pre></details><details id="raw-details" hidden><summary>Raw results</summary><pre id="raw"></pre></details>
 <script type="module" src="./verification.ts"></script></body></html>
