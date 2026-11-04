@@ -22,8 +22,8 @@ const GeoGebraFileActions: React.FC<GeoGebraFileActionsProps> = ({ onImport, onE
     <button type="button" aria-label="Open construction" onClick={() => inputRef.current?.click()}><StudioIcon name="open" /><span>Open construction<small>Import a .ggb file</small></span><span className="ggb-file-extension">.ggb</span></button>
     <button type="button" aria-label="Export construction" onClick={() => void run(onExport)}><StudioIcon name="download" /><span>Export construction<small>Save a copy to your device</small></span></button>
     <hr />
-    <button type="button" aria-label="Clear saved draft" onClick={() => void run(onClearDraft)}><StudioIcon name="trash" /><span>Clear saved draft<small>Remove the browser backup</small></span></button>
-    <button type="button" aria-label="Reset initial" className="ggb-file-reset" onClick={() => void run(onResetInitial)}><StudioIcon name="reset" /><span>Reset initial<small>Fresh file · Keep your preferences</small></span></button>
+    <button type="button" aria-label="Clear saved draft" onClick={() => void run(onClearDraft)}><StudioIcon name="trash" /><span>Clear saved draft<small>Remove all browser tab backups</small></span></button>
+    <button type="button" aria-label="Reset initial" className="ggb-file-reset" onClick={() => void run(onResetInitial)}><StudioIcon name="reset" /><span>Reset initial<small>Reset current tab · Keep preferences</small></span></button>
     {error && <p role="alert" className="ggb-file-error">{error}</p>}
   </div>;
 };

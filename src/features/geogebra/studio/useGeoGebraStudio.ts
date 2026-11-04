@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DEFAULT_STUDIO_SETTINGS, GEOGEBRA_AUTOSAVE_DELAY, GEOGEBRA_LATEST_PROJECT_ID, MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../config';
+import { DEFAULT_STUDIO_SETTINGS, GEOGEBRA_AUTOSAVE_DELAY, MAX_SIDE_PANEL_WIDTH, MIN_SIDE_PANEL_WIDTH } from '../config';
 import { GeoGebraEmbeddingAdapter } from '../adapters/GeoGebraEmbeddingAdapter';
 import { IndexedDbProjectStore } from '../persistence/indexedDbProjectStore';
 import { base64ToFile, blobToDownload } from '../persistence/ggbFileCodec';
-import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, GeometryProjectRecord, StudioSettings } from '../types';
+import type { CommandResult, EngineCapabilities, GeoGebraEngine, GeometryEvent, StudioSettings } from '../types';
 import { useDependencyGraph } from '../analysis/useDependencyGraph';
 import { useGeometryRelations } from '../analysis/useGeometryRelations';
 import { PreferenceController } from '../settings/PreferenceController';
@@ -11,6 +11,7 @@ import { InternalHelperLifecycle } from '../commands/custom/helperLifecycle';
 import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { readPreferences, savePreferences } from '../settings/preferenceStore';
 import type { GgbPreferences, ObjectStyle } from '../settings/types';
+import { newDocument, restoreWorkspace, uniqueTitle, type WorkspaceDocument, type WorkspaceSnapshot } from '../persistence/workspace';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -40,7 +41,7 @@ const readSettings = (): StudioSettings => {
 };
 
 export function useGeoGebraStudio() {
-  const [engine, setEngine] = useState<GeoGebraEngine>(() => new GeoGebraEmbeddingAdapter());
+  const [engine] = useState<GeoGebraEngine>(() => new GeoGebraEmbeddingAdapter());
   const store = useMemo(() => new IndexedDbProjectStore(), []);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +56,18 @@ export function useGeoGebraStudio() {
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const restoredRef = useRef(false);
+  const workspaceRef = useRef<WorkspaceSnapshot | null>(null);
+  const [workspace, setWorkspace] = useState<WorkspaceSnapshot | null>(null);
+  const [documentBusy, setDocumentBusy] = useState(false);
+  const busyRef = useRef(false);
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  const autosaveRef = useRef<Promise<void> | null>(null);
+  const publishWorkspace = useCallback((next: WorkspaceSnapshot) => { workspaceRef.current = next; setWorkspace(next); }, []);
+  const persistWorkspace = useCallback((next: WorkspaceSnapshot) => {
+    const task = saveQueue.current.catch(() => undefined).then(() => store.saveWorkspace(next));
+    saveQueue.current = task;
+    return task;
+  }, [store]);
   const loadOperationRef = useRef(0);
   const resettingRef = useRef(false);
   const dependencyGraphState = useDependencyGraph(engine, ready);
@@ -150,30 +163,6 @@ export function useGeoGebraStudio() {
     }
   }, [settings]);
 
-  const resetToInitial = useCallback(async () => {
-    if (!window.confirm('Reset GeoGebra Studio to its initial state? The current construction and local draft will be discarded.')) return;
-    loadOperationRef.current += 1;
-    resettingRef.current = true;
-    setLoadingMessage(null);
-    preferenceControllerRef.current?.dispose();
-    preferenceControllerRef.current = null;
-
-    // reset() restores the applet's loaded file. A new embedding also removes
-    // imported macros and returns to a genuinely empty document.
-    engine.dispose();
-    await store.clear().catch(() => undefined);
-    setReady(false);
-    setError(null);
-    setEvents([]);
-    setHasUnsavedChanges(false);
-    setLastResult({ success: true, command: 'Reset initial state', labels: [], timestamp: Date.now() });
-    restoredRef.current = false;
-
-    const nextEngine = new GeoGebraEmbeddingAdapter();
-    setCapabilities(nextEngine.getCapabilities());
-    setEngine(nextEngine);
-  }, [engine, store]);
-
   const handleReady = useCallback(() => {
     setReady(true);
     setCapabilities(engine.getCapabilities());
@@ -188,16 +177,25 @@ export function useGeoGebraStudio() {
     }
     const operationId = ++loadOperationRef.current;
     setLoadingMessage('Restoring your last GeoGebra draft...');
-    void store.getLatest().then(async (project) => {
+    void Promise.all([store.getWorkspace(), store.getLatest()]).then(async ([saved, legacy]) => {
       if (operationId !== loadOperationRef.current) return;
+      const next = restoreWorkspace(saved, legacy);
+      const doc = next.documents.find((item) => item.id === next.activeId)!;
       await controller.loadDocument(async () => {
-        if (project?.ggbBase64) await engine.importGgb(base64ToFile(project.ggbBase64));
-      }, project?.managedStyles);
+        if (doc.ggbBase64) await engine.importGgb(base64ToFile(doc.ggbBase64));
+      }, doc.managedStyles);
+      publishWorkspace(next);
+      // Persist migration before any later automatic save can replace it.
+      await persistWorkspace(next);
       dependencyGraphState.refresh();
-    }).catch(() => controller.loadDocument(async () => undefined)).finally(() => {
+    }).catch(async (error: unknown) => {
+      if (!workspaceRef.current) await controller.loadDocument(async () => undefined).catch(() => undefined);
+      setPreferenceError(error instanceof Error ? `Could not restore workspace: ${error.message}` : 'Could not restore workspace.');
+      if (!workspaceRef.current) publishWorkspace(restoreWorkspace(null, null));
+    }).finally(() => {
       if (operationId === loadOperationRef.current) setLoadingMessage(null);
     });
-  }, [dependencyGraphState.refresh, engine, store]);
+  }, [dependencyGraphState.refresh, engine, store, publishWorkspace, persistWorkspace]);
 
   const handleError = useCallback((loadError: Error) => {
     resettingRef.current = false;
@@ -207,65 +205,128 @@ export function useGeoGebraStudio() {
 
   const handleSettingsChange = useCallback((nextSettings: StudioSettings) => setSettings(nextSettings), []);
 
-  const saveDraft = useCallback(async () => {
-    if (!ready || loadingMessage || resettingRef.current) return;
-    const operationId = loadOperationRef.current;
-    try {
-      const managedStyles = await preferenceControllerRef.current?.snapshot();
-      const blob = await engine.exportGgb();
-      const record: GeometryProjectRecord = {
-        id: GEOGEBRA_LATEST_PROJECT_ID,
-        title: 'GeoGebra Studio Draft',
-        ggbBase64: await blobToBase64(blob),
-        settings,
-        updatedAt: Date.now(),
-        managedStyles,
-      };
-      if (operationId !== loadOperationRef.current) return;
-      await store.save(record);
-      setHasUnsavedChanges(false);
-    } catch {
-      // Some browser privacy modes disable IndexedDB; no user action should be blocked.
-    }
-  }, [engine, ready, settings, preferences, store, loadingMessage]);
+  const captureActive = useCallback(async (current: WorkspaceSnapshot): Promise<WorkspaceSnapshot> => {
+    const managedStyles = await preferenceControllerRef.current?.snapshot();
+    const ggbBase64 = await blobToBase64(await engine.exportGgb());
+    return { ...current, documents: current.documents.map((doc) => doc.id === current.activeId ? { ...doc, ggbBase64, managedStyles } : doc) };
+  }, [engine]);
+
+  const saveDraft = useCallback(() => {
+    if (!ready || loadingMessage || busyRef.current || autosaveRef.current || !workspaceRef.current) return;
+    const task = (async () => {
+      try {
+        const next = await captureActive(workspaceRef.current!);
+        await persistWorkspace(next);
+        publishWorkspace(next);
+        setHasUnsavedChanges(false);
+      } catch {
+        setPreferenceError('Could not save workspace in browser storage.');
+      }
+    })();
+    autosaveRef.current = task;
+    void task.finally(() => { autosaveRef.current = null; });
+  }, [ready, loadingMessage, captureActive, persistWorkspace, publishWorkspace]);
 
   useEffect(() => {
-    if (!ready) return undefined;
+    if (!ready || !workspace) return undefined;
     const timeout = window.setTimeout(() => void saveDraft(), GEOGEBRA_AUTOSAVE_DELAY);
     return () => window.clearTimeout(timeout);
-  }, [events, lastResult, ready, saveDraft]);
+  }, [events, lastResult, ready, saveDraft, workspace?.activeId]);
+
+  // All document transitions serialize behind an in-flight autosave and capture
+  // the current engine before replacing it. The overlay blocks canvas edits.
+  const transition = useCallback(async (choose: (current: WorkspaceSnapshot) => { next: WorkspaceSnapshot; target?: WorkspaceDocument; file?: File }) => {
+    if (!ready || !workspaceRef.current || busyRef.current || loadingMessage) return;
+    busyRef.current = true;
+    setDocumentBusy(true);
+    setLoadingMessage('Switching construction…');
+    const operationId = ++loadOperationRef.current;
+    let captured: WorkspaceSnapshot | undefined;
+    try {
+      await autosaveRef.current;
+      captured = await captureActive(workspaceRef.current!);
+      await persistWorkspace(captured);
+      const { next, target, file } = choose(captured);
+      if (target || file) {
+        const controller = preferenceControllerRef.current;
+        const load = async () => {
+          if (file) await engine.importGgb(file);
+          else if (target?.ggbBase64) await engine.importGgb(base64ToFile(target.ggbBase64));
+          else await engine.callApi('newConstruction', []);
+        };
+        if (controller) await controller.loadDocument(load, target?.managedStyles);
+        else await load();
+      }
+      // Save the new active construction before committing its selection.
+      const complete = target || file ? await captureActive(next) : next;
+      await persistWorkspace(complete);
+      publishWorkspace(complete);
+      setHasUnsavedChanges(false);
+      setLastResult(null);
+      setEvents([]);
+      dependencyGraphState.refresh();
+    } catch (error) {
+      if (captured) {
+        const previous = captured.documents.find((doc) => doc.id === captured!.activeId)!;
+        try { await preferenceControllerRef.current?.loadDocument(() => engine.importGgb(base64ToFile(previous.ggbBase64!)), previous.managedStyles); } catch { /* retain the saved copy */ }
+        publishWorkspace(captured);
+      }
+      throw error;
+    } finally {
+      busyRef.current = false;
+      setDocumentBusy(false);
+      if (operationId === loadOperationRef.current) setLoadingMessage(null);
+    }
+  }, [ready, loadingMessage, captureActive, persistWorkspace, publishWorkspace, engine, dependencyGraphState.refresh]);
+
+  const switchDocument = useCallback((id: string) => transition((current) => {
+    const target = current.documents.find((doc) => doc.id === id);
+    return target && id !== current.activeId ? { next: { ...current, activeId: id }, target } : { next: current };
+  }), [transition]);
+  const createDocument = useCallback(() => transition((current) => {
+    const target = newDocument(uniqueTitle(current.documents, 'Untitled'));
+    return { next: { ...current, activeId: target.id, documents: [...current.documents, target] }, target };
+  }), [transition]);
+  const closeDocument = useCallback((id: string) => transition((current) => {
+    const index = current.documents.findIndex((doc) => doc.id === id);
+    if (index < 0) return { next: current };
+    const documents = current.documents.filter((doc) => doc.id !== id);
+    if (!documents.length) documents.push(newDocument());
+    const target = id === current.activeId ? documents[Math.min(index, documents.length - 1)] : undefined;
+    return { next: { ...current, documents, activeId: target?.id ?? current.activeId }, target };
+  }), [transition]);
 
   const handleCommandResult = useCallback((result: CommandResult) => {
     setLastResult(result);
     if (result.success) setHasUnsavedChanges(true);
   }, []);
 
-  const handleImport = useCallback(async (file: File) => {
-    const operationId = ++loadOperationRef.current;
-    setLoadingMessage(`Opening ${file.name}...`);
-    try {
-      const controller = preferenceControllerRef.current;
-      if (controller) await controller.loadDocument(() => engine.importGgb(file));
-      else await engine.importGgb(file);
-      dependencyGraphState.refresh();
-      if (operationId !== loadOperationRef.current) return;
-      setEvents((current) => [...current, { type: 'clear', timestamp: Date.now() }]);
-      setHasUnsavedChanges(true);
-      setLastResult({ success: true, command: `Imported ${file.name}`, labels: [], timestamp: Date.now() });
-    } finally {
-      if (operationId === loadOperationRef.current) setLoadingMessage(null);
-    }
-  }, [dependencyGraphState.refresh, engine]);
+  const handleImport = useCallback((file: File) => transition((current) => {
+    const target = newDocument(uniqueTitle(current.documents, file.name.replace(/\.ggb$/i, '') || file.name));
+    return { next: { ...current, activeId: target.id, documents: [...current.documents, target] }, target, file };
+  }), [transition]);
 
   const handleExport = useCallback(async () => {
     const blob = await engine.exportGgb();
-    blobToDownload(blob, 'geogebra-studio.ggb');
+    const title = workspaceRef.current?.documents.find((doc) => doc.id === workspaceRef.current?.activeId)?.title ?? 'geogebra-studio';
+    blobToDownload(blob, `${title.replace(/[\\/:*?"<>|]/g, '_')}.ggb`);
   }, [engine]);
 
   const handleClearDraft = useCallback(async () => {
-    await store.clear();
-    setLastResult({ success: true, command: 'Clear local draft', labels: [], timestamp: Date.now() });
+    if (!window.confirm('Remove all saved workspace tabs from this browser? The current canvas stays open until you leave.')) return;
+    await autosaveRef.current;
+    await saveQueue.current.catch(() => undefined);
+    await store.clearWorkspace();
+    setPreferenceError('Browser workspace backup cleared. Further changes will save it again.');
   }, [store]);
+
+  const resetToInitial = useCallback(async () => {
+    if (!window.confirm('Reset this construction? Its current contents will be discarded.')) return;
+    await transition((current) => {
+      const target = { ...newDocument(), id: current.activeId };
+      return { next: { ...current, documents: current.documents.map((doc) => doc.id === current.activeId ? target : doc) }, target };
+    });
+  }, [transition]);
 
   return {
     onEditObjectStyle: handleEditObjectStyle,
@@ -274,6 +335,7 @@ export function useGeoGebraStudio() {
     onPreferencesChange: handlePreferencesChange,
     onApplyPreferences: () => preferenceControllerRef.current?.applyToAll() ?? Promise.resolve(),
     engine, ready, error, loadingMessage, settings, capabilities, events,
+    workspace, documentBusy, onSwitchDocument: switchDocument, onNewDocument: createDocument, onCloseDocument: closeDocument,
     graph: dependencyGraphState.graph,
     graphStatus: dependencyGraphState.status,
     graphError: dependencyGraphState.error,

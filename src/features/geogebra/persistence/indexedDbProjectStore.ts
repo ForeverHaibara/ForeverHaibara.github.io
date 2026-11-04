@@ -1,6 +1,7 @@
 import { GEOGEBRA_DATABASE_NAME, GEOGEBRA_LATEST_PROJECT_ID, GEOGEBRA_PROJECT_STORE } from '../config';
 import type { GeometryProjectRecord } from '../types';
 import type { ProjectStore } from './projectStore';
+import type { WorkspaceSnapshot } from './workspace';
 
 export class IndexedDbProjectStore implements ProjectStore {
   private databasePromise: Promise<IDBDatabase> | null = null;
@@ -29,6 +30,39 @@ export class IndexedDbProjectStore implements ProjectStore {
       const request = database.transaction(GEOGEBRA_PROJECT_STORE, 'readwrite').objectStore(GEOGEBRA_PROJECT_STORE).delete(GEOGEBRA_LATEST_PROJECT_ID);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error ?? new Error('Unable to clear the local GeoGebra draft.'));
+    });
+  }
+
+  async getWorkspace(): Promise<WorkspaceSnapshot | null> {
+    const database = await this.open();
+    return new Promise((resolve, reject) => {
+      const request = database.transaction(GEOGEBRA_PROJECT_STORE, 'readonly').objectStore(GEOGEBRA_PROJECT_STORE).get('workspace-v1');
+      request.onsuccess = () => resolve(request.result?.workspace ?? null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveWorkspace(workspace: WorkspaceSnapshot): Promise<void> {
+    const database = await this.open();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(GEOGEBRA_PROJECT_STORE, 'readwrite');
+      transaction.objectStore(GEOGEBRA_PROJECT_STORE).put({ id: 'workspace-v1', workspace });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+  }
+
+  async clearWorkspace(): Promise<void> {
+    const database = await this.open();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(GEOGEBRA_PROJECT_STORE, 'readwrite');
+      const objects = transaction.objectStore(GEOGEBRA_PROJECT_STORE);
+      objects.delete('workspace-v1');
+      objects.delete(GEOGEBRA_LATEST_PROJECT_ID);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
     });
   }
 

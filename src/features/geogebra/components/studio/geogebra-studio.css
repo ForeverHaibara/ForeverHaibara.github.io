@@ -974,3 +974,18 @@
 .ggb-settings-content .ggb-point-role-help {
   margin-top: 10px;
 }
+
+/* Open constructions */
+.ggb-document-bar { display:flex; align-items:stretch; min-width:0; background:#f1f5f9; border-bottom:1px solid #dce5ef; }
+.ggb-document-tabs { display:flex; min-width:0; overflow-x:auto; scrollbar-width:thin; }
+.ggb-document-tab { display:flex; align-items:center; flex:0 0 auto; max-width:220px; border-right:1px solid #dce5ef; border-bottom:2px solid transparent; color:#64748b; }
+.ggb-document-tab[data-active="true"] { background:white; color:#1e40af; border-bottom-color:#3b82f6; }
+.ggb-document-select { display:flex; align-items:center; gap:8px; min-width:0; padding:10px 4px 10px 14px; font-size:12px; font-weight:600; }
+.ggb-document-select span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ggb-document-close, .ggb-document-add { flex:none; width:32px; height:36px; font-size:19px; color:#64748b; border-radius:6px; }
+.ggb-document-close:hover, .ggb-document-add:hover { background:#e2e8f0; color:#1e293b; }
+.ggb-document-add { margin:1px 5px; }
+.ggb-document-bar button:disabled { opacity:.5; cursor:wait; }
+.ggb-document-bar button:focus-visible { outline:2px solid #3b82f6; outline-offset:-2px; }
+
+.ggb-workspace-content[data-document-busy="true"] .geogebra-studio-body, .ggb-workspace-content[data-document-busy="true"] .geogebra-command-dock { pointer-events:none; }

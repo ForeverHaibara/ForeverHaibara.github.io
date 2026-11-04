@@ -14,9 +14,15 @@ import type { DependencyGraph } from '../../analysis/graphTypes';
 import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
 import type { GgbPreferences, ObjectStyle } from '../../settings/types';
 import { useObjectLink } from '../../interaction/useObjectLink';
+import type { WorkspaceSnapshot } from '../../persistence/workspace';
 import './geogebra-studio.css';
 
 interface GeoGebraStudioShellProps {
+  workspace: WorkspaceSnapshot | null;
+  documentBusy: boolean;
+  onSwitchDocument(id: string): Promise<void>;
+  onNewDocument(): Promise<void>;
+  onCloseDocument(id: string): Promise<void>;
   engine: GeoGebraEngine;
   ready: boolean;
   error: string | null;
@@ -144,7 +150,14 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
           <button ref={fullscreenButtonRef} type="button" className="ggb-icon-button ggb-fullscreen-button" title={fullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen workspace'} aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen workspace'} aria-pressed={fullscreen} onClick={toggleFullscreen}><StudioIcon name={fullscreen ? 'collapse' : 'expand'} /></button>
         </div>
       </header>
-      <div className="ggb-workspace-content" ref={contentRef}>
+      <div className="ggb-workspace-content" ref={contentRef} data-document-busy={props.documentBusy}>
+        <div className="ggb-document-bar" aria-label="Open constructions">
+          <div className="ggb-document-tabs">{props.workspace?.documents.map((doc) => <div className="ggb-document-tab" data-active={doc.id === props.workspace?.activeId} key={doc.id}>
+            <button type="button" className="ggb-document-select" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-current={doc.id === props.workspace?.activeId ? 'page' : undefined} title={doc.title} onClick={() => void props.onSwitchDocument(doc.id).catch((error) => alert(error instanceof Error ? error.message : 'Could not switch construction.'))}><StudioIcon name="geometry" size={15} /><span>{doc.title}</span></button>
+            <button type="button" className="ggb-document-close" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-label={`Close ${doc.title}`} title={`Close ${doc.title}`} onClick={() => { if (window.confirm(`Close “${doc.title}”? Its browser draft will be removed.`)) void props.onCloseDocument(doc.id).catch((error) => alert(error instanceof Error ? error.message : 'Could not close construction.')); }}>×</button>
+          </div>)}</div>
+          <button type="button" className="ggb-document-add" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-label="New construction" title="New construction" onClick={() => void props.onNewDocument().catch((error) => alert(error instanceof Error ? error.message : 'Could not create construction.'))}>+</button>
+        </div>
         <div className="geogebra-studio-body relative isolate flex flex-col lg:flex-row">
           <main className="geogebra-studio-canvas relative min-w-0 flex-1 overflow-hidden bg-slate-100/70" aria-label="GeoGebra canvas">
             <div className="absolute inset-0"><GeoGebraCanvas engine={engine} onReady={onReady} onError={onError} /></div>
@@ -156,7 +169,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
           <GeoGebraSidePanel engine={engine} objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
         </div>
         <div id="geogebra-command-dock" hidden={commandsHidden} className="geogebra-command-dock">
-          <GeoGebraCommandBar engine={engine} ready={ready} helperMode={settings.helperMode} onResult={onCommandResult} />
+          <GeoGebraCommandBar engine={engine} ready={ready && !loadingMessage} helperMode={settings.helperMode} onResult={onCommandResult} />
           {lastResult && <div className={`ggb-command-status ${lastResult.success ? '' : 'error'}`} role="status" title={lastResult.command}><span className={`ggb-status-dot ${lastResult.success ? '' : 'error'}`} />{lastResult.success ? `${lastResult.command} → ${lastResult.labels.join(', ') || 'done'}` : lastResult.error}</div>}
         </div>
       </div>
