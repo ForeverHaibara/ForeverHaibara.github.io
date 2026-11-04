@@ -21,6 +21,7 @@ export class PreferenceController {
   private unsubscribe: () => void;
   private writing = false;
   private restoringHistory = false;
+  private pendingViewReset = false;
   private objectKinds = new Map<string, ObjectStyleInfo>();
 
   constructor(private engine: GeoGebraEngine, private preferences: GgbPreferences, private onError: (message: string) => void) {
@@ -51,8 +52,11 @@ export class PreferenceController {
       // Remove/add and clear/add also describe Attach/Detach and other native
       // reconstruction operations. Retain ownership until reconciliation, and
       // prune only objects that are still absent when the burst has settled.
-      if (event.type === 'remove') this.scheduleDocument();
+      // Native algorithms (including circle inversion) briefly add/remove
+      // labeled scratch objects while recomputing. They never acquired styles.
+      if (event.type === 'remove' && event.objectName && this.managed[event.objectName]) this.scheduleDocument();
       if (event.type === 'clear') {
+        this.pendingViewReset = true;
         this.scheduleDocument();
       }
       if (event.type === 'add' && event.objectName) {
@@ -81,6 +85,8 @@ export class PreferenceController {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => {
       this.timer = undefined;
+      const resetView = this.pendingViewReset;
+      this.pendingViewReset = false;
       void this.enqueue(async () => {
         // Undo/redo restores the document's styles as well as its geometry.
         // Accept those values before reconciling ownership, rather than replaying
@@ -92,7 +98,10 @@ export class PreferenceController {
             await this.captureEdits(name);
           }
         }
-        await this.applyDocument(true);
+        // setRounding recomputes geometry and may itself emit add/remove.
+        // Ordinary object reconciliation must never reapply view preferences.
+        if (resetView) await this.applyView();
+        await this.applyObjects(false, true);
       });
     }, 180);
   }
@@ -103,6 +112,7 @@ export class PreferenceController {
     clearTimeout(this.timer);
     this.timer = undefined;
     this.restoringHistory = false;
+    this.pendingViewReset = false;
     await this.pending;
     try {
       await load();

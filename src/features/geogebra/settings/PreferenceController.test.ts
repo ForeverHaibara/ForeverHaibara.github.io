@@ -47,6 +47,54 @@ const line = (type = 'line'): ObjectState => ({ type, label: true, size: 1, colo
 afterEach(() => vi.useRealTimers());
 
 describe('GeoGebra preferences lifecycle and ownership', () => {
+  it('ignores scratch add/remove bursts from native inversion without reapplying view settings', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ c: line('conic'), d: line('conic') });
+    await f.controller.loadDocument(async () => undefined);
+    f.callApi.mockClear();
+    // Reflect(d,c) internally creates and removes A before publishing d'.
+    f.emit('add', 'A'); f.emit('remove', 'A');
+    f.objects["d'"] = line('conic');
+    f.emit('add', "d'");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(f.objects["d'"]).toMatchObject({ label: false, size: 3, color: '#475569' });
+    expect(f.callApi.mock.calls.some(([method]) => ['setPerspective', 'setRounding', 'refreshViews', 'setRepaintingActive'].includes(method))).toBe(false);
+    expect(f.errors).not.toHaveBeenCalled();
+    f.controller.dispose();
+  });
+
+  it('reconciles real removals and undo without recomputing the native construction', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ c: line('conic'), d: line('conic') });
+    await f.controller.loadDocument(async () => undefined);
+    f.callApi.mockClear();
+    delete f.objects.d;
+    f.emit('remove', 'd'); f.emit('undo');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(await f.controller.snapshot()).not.toHaveProperty('d');
+    expect(f.callApi.mock.calls.some(([method]) => ['setPerspective', 'setRounding', 'refreshViews'].includes(method))).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    f.controller.dispose();
+  });
+
+  it('restores views once after native file opening even when rounding emits scratch removals', async () => {
+    vi.useFakeTimers();
+    const f = fixture({ c: line('conic') });
+    await f.controller.loadDocument(async () => undefined);
+    const original = f.callApi.getMockImplementation()!;
+    f.callApi.mockImplementation(async (method, args) => {
+      if (method === 'setRounding') { f.emit('add', 'A'); f.emit('remove', 'A'); }
+      return original(method, args);
+    });
+    f.callApi.mockClear();
+    f.emit('clear'); f.emit('add', 'c');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(f.callApi.mock.calls.filter(([method]) => method === 'setRounding')).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(f.errors).not.toHaveBeenCalled();
+    f.controller.dispose();
+  });
+
   it('keeps fill, stroke, point and line styles through reconstruction, draft reload and selected reset', async () => {
     vi.useFakeTimers();
     const f = fixture({ A: { ...point(), pointStyle: 0 }, c: { ...line('intersectinglines'), storedType: 'conic', opacity: 0, lineStyle: 0, strokeOpacity: 1 } });

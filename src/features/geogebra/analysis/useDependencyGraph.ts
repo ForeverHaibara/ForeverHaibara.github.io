@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildDependencyGraph, collapseInternalHelpers } from './constructionGraph';
 import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { GeoGebraConstructionSource } from './constructionSource';
+import { ConstructionRefreshScheduler } from './constructionRefreshScheduler';
 import type { DependencyGraph } from './graphTypes';
 import type { GeoGebraEngine, GeometryEvent } from '../types';
 
@@ -14,110 +15,58 @@ export interface DependencyGraphState {
   refresh(): void;
 }
 
-const UPDATE_DEBOUNCE_MS = 200;
-
 export const useDependencyGraph = (engine: GeoGebraEngine, ready: boolean): DependencyGraphState => {
   const [graph, setGraph] = useState<DependencyGraph | null>(null);
   const [status, setStatus] = useState<DependencyGraphStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const sourceRef = useRef<GeoGebraConstructionSource | null>(null);
-  const requestVersionRef = useRef(0);
-  const runningRef = useRef(false);
-  const pendingRef = useRef(false);
-  const draggingRef = useRef(false);
-  const updateTimerRef = useRef<number | null>(null);
-
-  const runRefresh = useCallback(async () => {
-    if (!ready || runningRef.current) {
-      if (ready) pendingRef.current = true;
-      return;
-    }
-    runningRef.current = true;
-    setStatus('loading');
-    setError(null);
-    const startedVersion = requestVersionRef.current;
-    try {
-      const source = sourceRef.current ?? new GeoGebraConstructionSource(engine);
-      sourceRef.current = source;
-      const snapshot = await source.read();
-      const nextGraph = collapseInternalHelpers(buildDependencyGraph(snapshot.objects, snapshot.capturedAt));
-      if (startedVersion === requestVersionRef.current) {
-        setGraph(nextGraph);
-        setStatus('ready');
-        setError(snapshot.diagnostics.length > 0 ? snapshot.diagnostics.join(' ') : null);
-      } else {
-        pendingRef.current = true;
-      }
-    } catch (refreshError) {
-      if (startedVersion === requestVersionRef.current) {
-        setStatus('error');
-        setError(refreshError instanceof Error ? refreshError.message : 'Unable to build the dependency graph.');
-      } else {
-        pendingRef.current = true;
-      }
-    } finally {
-      runningRef.current = false;
-      if (pendingRef.current && ready) {
-        pendingRef.current = false;
-        void runRefresh();
-      }
-    }
-  }, [engine, ready]);
-
-  const requestRefresh = useCallback((immediate = false) => {
-    requestVersionRef.current += 1;
-    pendingRef.current = true;
-    if (updateTimerRef.current !== null) {
-      window.clearTimeout(updateTimerRef.current);
-      updateTimerRef.current = null;
-    }
-    if (immediate) {
-      pendingRef.current = false;
-      void runRefresh();
-    } else {
-      updateTimerRef.current = window.setTimeout(() => {
-        updateTimerRef.current = null;
-        pendingRef.current = false;
-        void runRefresh();
-      }, UPDATE_DEBOUNCE_MS);
-    }
-  }, [runRefresh]);
-
-  const handleEvent = useCallback((event: GeometryEvent) => {
-    if (event.objectName && isInternalHelperName(event.objectName)) return;
-    if (event.type === 'style') return;
-    if (event.type === 'dragStart') {
-      draggingRef.current = true;
-      return;
-    }
-    if (event.type === 'dragEnd') {
-      draggingRef.current = false;
-      requestRefresh(true);
-      return;
-    }
-    if (draggingRef.current && event.type === 'update') return;
-    if (event.type === 'update') requestRefresh(false);
-    else requestRefresh(true);
-  }, [requestRefresh]);
+  const schedulerRef = useRef<ConstructionRefreshScheduler | null>(null);
 
   useEffect(() => {
-    sourceRef.current = null;
-    requestVersionRef.current += 1;
-    pendingRef.current = false;
     setGraph(null);
     setError(null);
     setStatus(ready ? 'loading' : 'idle');
     if (!ready) return undefined;
-    const unsubscribe = engine.subscribe(handleEvent);
-    requestRefresh(true);
+    const source = new GeoGebraConstructionSource(engine);
+    const scheduler = new ConstructionRefreshScheduler(async (isCurrent) => {
+      setStatus('loading');
+      setError(null);
+      try {
+        const snapshot = await source.read();
+        if (!isCurrent()) return;
+        const nextGraph = collapseInternalHelpers(buildDependencyGraph(snapshot.objects, snapshot.capturedAt));
+        setGraph(nextGraph);
+        setStatus('ready');
+        setError(snapshot.diagnostics.length > 0 ? snapshot.diagnostics.join(' ') : null);
+      } catch (refreshError) {
+        if (!isCurrent()) return;
+        setStatus('error');
+        setError(refreshError instanceof Error ? refreshError.message : 'Unable to build the dependency graph.');
+      }
+    });
+    schedulerRef.current = scheduler;
+    let dragging = false;
+    const unsubscribe = engine.subscribe((event: GeometryEvent) => {
+      if ((event.objectName && isInternalHelperName(event.objectName)) || event.type === 'style') return;
+      if (event.type === 'dragStart') {
+        dragging = true;
+        scheduler.cancel();
+      } else if (event.type === 'dragEnd') {
+        dragging = false;
+        scheduler.request(0);
+      } else if (!dragging) {
+        // Inversion and other native algorithms expose scratch objects before
+        // the enclosing construction is complete. Coalesce the entire burst.
+        scheduler.request();
+      }
+    });
+    scheduler.request(0);
     return () => {
       unsubscribe();
-      if (updateTimerRef.current !== null) window.clearTimeout(updateTimerRef.current);
-      updateTimerRef.current = null;
-      pendingRef.current = false;
+      scheduler.dispose();
+      if (schedulerRef.current === scheduler) schedulerRef.current = null;
     };
-  }, [engine, ready, handleEvent, requestRefresh]);
+  }, [engine, ready]);
 
-  const refresh = useCallback(() => requestRefresh(true), [requestRefresh]);
+  const refresh = useCallback(() => schedulerRef.current?.request(0), []);
   return { graph, status, error, refresh };
 };

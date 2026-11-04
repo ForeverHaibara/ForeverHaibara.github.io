@@ -10,6 +10,7 @@ import { verifyMaterializationPerformance } from './geogebra-materialization-per
 import { verifyNamedExecution } from './geogebra-named-execution-smoke';
 import { verifyNamedLifecycle } from './geogebra-named-lifecycle-smoke';
 import { verifyAlgebraicGeometry } from './geogebra-algebraic-geometry-smoke';
+import { verifyNativeEvents } from './geogebra-native-events-smoke';
 
 const button = document.querySelector<HTMLButtonElement>('#run')!;
 const results = document.querySelector<HTMLPreElement>('#results')!;
@@ -64,6 +65,11 @@ button.onclick = async () => {
   try {
     if (!initialized) { await engine.initialize(canvas); initialized = true; }
     await api('newConstruction');
+    if (new URLSearchParams(window.location.search).get('suite') === 'native-events') {
+      await verifyNativeEvents(engine, report);
+      report('COMPLETE');
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('suite') === 'cubic-misc') {
       await verifyCubicMisc(engine, report);
       report('COMPLETE');

@@ -24,6 +24,20 @@ the public GeoGebra API. Keep engine behavior out of UI controls.
   The native GeoGebra Open path is handled by debouncing clear/add events.
 - Views, axes, grid and rounding apply on document load. Individual view toggles
   use incremental perspectives, preserving the other native view arrangements.
+- Native algorithms can briefly publish scratch points as add/remove events
+  (circle inversion does this while recomputing). Ignore removal of objects that
+  never acquired managed styles. Reconcile real removals and undo/redo through
+  object styles only; replaying `setRounding` or the perspective here recomputes
+  the same algorithm and creates an endless refresh/flicker loop. Only an actual
+  clear/load restores view preferences. Dependency snapshots defer and coalesce
+  native event bursts, with stale results discarded and retries yielding to paint.
+
+Real-engine regression: open
+`/scripts/geogebra/browser/verification.html?page=smoke&suite=native-events` and
+run verification. It checks that event streams settle after circle/line/point
+inversions, circle-to-line degeneration, input moves, rounding, deletion and
+undo/redo. Unit regressions cover scratch removals, native file opening and the
+snapshot scheduler's cancellation/retry lifecycle.
 
 To add a preference, extend the type, defaults and storage validation, add its
 engine mapping and a panel control, and cover its lifecycle where needed. If the
