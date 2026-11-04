@@ -57,3 +57,27 @@ export function closeDocuments(current: WorkspaceSnapshot, anchorId: string, sco
   const target = documents.some((doc) => doc.id === current.activeId) ? undefined : documents[Math.min(activeIndex, documents.length - 1)];
   return { next: { ...current, documents, activeId: target?.id ?? current.activeId }, target };
 }
+
+/** Safe across common desktop filesystems while preserving Unicode titles. */
+export function constructionFilename(title: string): string {
+  let name = title.replace(/\.ggb$/i, '').replace(/[\x00-\x1f\x7f\\/:*?"<>|]/g, '_').replace(/[. ]+$/g, '').trim();
+  if (!name || /^\.+$/.test(name)) name = 'Untitled';
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) name = `_${name}`;
+  const encoder = new TextEncoder();
+  let shortened = '';
+  for (const character of name) {
+    if (encoder.encode(shortened + character).length > 200) break;
+    shortened += character;
+  }
+  name = shortened.replace(/[. ]+$/g, '') || 'Untitled';
+  return `${name}.ggb`;
+}
+
+export function reorderDocuments(current: WorkspaceSnapshot, draggedId: string, targetId: string, side: 'before' | 'after'): WorkspaceSnapshot {
+  const dragged = current.documents.find((doc) => doc.id === draggedId);
+  if (!dragged || draggedId === targetId || !current.documents.some((doc) => doc.id === targetId)) return current;
+  const documents = current.documents.filter((doc) => doc.id !== draggedId);
+  const targetIndex = documents.findIndex((doc) => doc.id === targetId);
+  documents.splice(targetIndex + (side === 'after' ? 1 : 0), 0, dragged);
+  return documents.every((doc, i) => doc === current.documents[i]) ? current : { ...current, documents };
+}

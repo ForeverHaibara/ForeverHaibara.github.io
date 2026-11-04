@@ -11,7 +11,7 @@ import { InternalHelperLifecycle } from '../commands/custom/helperLifecycle';
 import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { readPreferences, savePreferences } from '../settings/preferenceStore';
 import type { GgbPreferences, ObjectStyle } from '../settings/types';
-import { closeDocuments, newDocument, restoreWorkspace, uniqueTitle, type CloseScope, type WorkspaceDocument, type WorkspaceSnapshot } from '../persistence/workspace';
+import { closeDocuments, constructionFilename, newDocument, reorderDocuments, restoreWorkspace, uniqueTitle, type CloseScope, type WorkspaceDocument, type WorkspaceSnapshot } from '../persistence/workspace';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -289,6 +289,30 @@ export function useGeoGebraStudio() {
   }), [transition]);
   const closeDocument = useCallback((id: string, scope: CloseScope = 'one') => transition((current) => closeDocuments(current, id, scope)), [transition]);
 
+  // Metadata updates share the autosave lock and persist the latest canvas snapshot.
+  const updateWorkspaceMetadata = useCallback(async (change: (current: WorkspaceSnapshot) => WorkspaceSnapshot) => {
+    if (!ready || !workspaceRef.current || busyRef.current || loadingMessage) return;
+    busyRef.current = true;
+    setDocumentBusy(true);
+    try {
+      await autosaveRef.current;
+      const captured = await captureActive(workspaceRef.current!);
+      const next = change(captured);
+      await persistWorkspace(next);
+      publishWorkspace(next);
+    } finally {
+      busyRef.current = false; setDocumentBusy(false);
+      // Capture any canvas edits made while the metadata write was in flight.
+      setEvents((current) => [...current, { type: 'update' as const, timestamp: Date.now() }].slice(-100));
+    }
+  }, [ready, loadingMessage, captureActive, persistWorkspace, publishWorkspace]);
+  const renameDocument = useCallback((id: string, title: string) => updateWorkspaceMetadata((current) => {
+    const name = title.trim();
+    if (!name) return current;
+    return { ...current, documents: current.documents.map((doc) => doc.id === id ? { ...doc, title: name } : doc) };
+  }), [updateWorkspaceMetadata]);
+  const reorderDocument = useCallback((id: string, target: string, side: 'before' | 'after') => updateWorkspaceMetadata((current) => reorderDocuments(current, id, target, side)), [updateWorkspaceMetadata]);
+
   const handleCommandResult = useCallback((result: CommandResult) => {
     setLastResult(result);
     if (result.success) setHasUnsavedChanges(true);
@@ -299,11 +323,15 @@ export function useGeoGebraStudio() {
     return { next: { ...current, activeId: target.id, documents: [...current.documents, target] }, target, file };
   }), [transition]);
 
-  const handleExport = useCallback(async () => {
-    const blob = await engine.exportGgb();
-    const title = workspaceRef.current?.documents.find((doc) => doc.id === workspaceRef.current?.activeId)?.title ?? 'geogebra-studio';
-    blobToDownload(blob, `${title.replace(/[\\/:*?"<>|]/g, '_')}.ggb`);
+  const exportDocument = useCallback(async (id?: string) => {
+    const current = workspaceRef.current;
+    const doc = current?.documents.find((item) => item.id === (id ?? current.activeId));
+    if (!doc) throw new Error('Construction is no longer open.');
+    const blob = doc.id === current!.activeId ? await engine.exportGgb() : doc.ggbBase64 ? base64ToFile(doc.ggbBase64) : null;
+    if (!blob) throw new Error('This construction has not been saved yet.');
+    blobToDownload(blob, constructionFilename(doc.title));
   }, [engine]);
+  const handleExport = useCallback(() => exportDocument(), [exportDocument]);
 
   const handleClearDraft = useCallback(async () => {
     if (!window.confirm('Remove all saved workspace tabs from this browser? The current canvas stays open until you leave.')) return;
@@ -328,7 +356,7 @@ export function useGeoGebraStudio() {
     onPreferencesChange: handlePreferencesChange,
     onApplyPreferences: () => preferenceControllerRef.current?.applyToAll() ?? Promise.resolve(),
     engine, ready, error, loadingMessage, settings, capabilities, events,
-    workspace, documentBusy, onSwitchDocument: switchDocument, onNewDocument: createDocument, onCloseDocument: closeDocument,
+    workspace, documentBusy, onSwitchDocument: switchDocument, onNewDocument: createDocument, onCloseDocument: closeDocument, onRenameDocument: renameDocument, onReorderDocument: reorderDocument, onExportDocument: exportDocument,
     graph: dependencyGraphState.graph,
     graphStatus: dependencyGraphState.status,
     graphError: dependencyGraphState.error,

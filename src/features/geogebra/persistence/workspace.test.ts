@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeDocuments, restoreWorkspace } from './workspace';
+import { closeDocuments, constructionFilename, reorderDocuments, restoreWorkspace } from './workspace';
 import { DEFAULT_STUDIO_SETTINGS } from '../config';
 
 describe('workspace restoration', () => {
@@ -35,5 +35,23 @@ describe('closing workspace tabs', () => {
     expect(result.next.documents).toHaveLength(1);
     expect(result.target).toMatchObject({ title: 'Untitled', ggbBase64: null });
     expect(result.next.activeId).toBe(result.target?.id);
+  });
+});
+
+describe('tab names and ordering', () => {
+  it('creates portable download names without losing Unicode or duplicating the extension', () => {
+    expect(constructionFilename('三角形: A/B.ggb')).toBe('三角形_ A_B.ggb');
+    expect(constructionFilename('CON')).toBe('_CON.ggb');
+    expect(constructionFilename(' ... ')).toBe('Untitled.ggb');
+    expect(constructionFilename('a\\b?c.')).toBe('a_b_c.ggb');
+  });
+  it('moves tabs on either side without changing the active document', () => {
+    const documents = ['a', 'b', 'c'].map((id) => ({ id, title: id, ggbBase64: id }));
+    const workspace = { version: 1 as const, activeId: 'b', documents };
+    const moved = reorderDocuments(workspace, 'a', 'c', 'after');
+    expect(moved.documents.map((doc) => doc.id)).toEqual(['b', 'c', 'a']);
+    expect(moved.activeId).toBe('b');
+    expect(reorderDocuments(moved, 'a', 'b', 'before').documents.map((doc) => doc.id)).toEqual(['a', 'b', 'c']);
+    expect(reorderDocuments(workspace, 'a', 'missing', 'before')).toBe(workspace);
   });
 });

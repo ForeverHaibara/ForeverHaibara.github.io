@@ -1002,3 +1002,10 @@
 }
 
 .ggb-workspace-content[data-document-busy="true"] .geogebra-studio-body, .ggb-workspace-content[data-document-busy="true"] .geogebra-command-dock { pointer-events:none; }
+
+.ggb-document-tab[draggable="true"] { cursor:grab; }
+.ggb-document-tab[data-dragged="true"] { opacity:.45; }
+.ggb-document-tab[data-drop="before"] { box-shadow:inset 3px 0 #3b82f6; }
+.ggb-document-tab[data-drop="after"] { box-shadow:inset -3px 0 #3b82f6; }
+.ggb-document-rename { width:140px; max-width:calc(100vw - 100px); margin:3px 2px 3px 7px; padding:4px 6px; border:1px solid #60a5fa; border-radius:5px; outline:2px solid #dbeafe; background:#fff; color:#1e293b; font-size:12px; }
+.ggb-document-menu-divider { height:1px; background:#edf1f5; margin:4px 5px; }

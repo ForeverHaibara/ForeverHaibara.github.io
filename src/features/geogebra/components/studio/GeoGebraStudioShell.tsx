@@ -24,6 +24,9 @@ interface GeoGebraStudioShellProps {
   onSwitchDocument(id: string): Promise<void>;
   onNewDocument(): Promise<void>;
   onCloseDocument(id: string, scope: CloseScope): Promise<void>;
+  onRenameDocument(id: string, title: string): Promise<void>;
+  onReorderDocument(id: string, target: string, side: 'before' | 'after'): Promise<void>;
+  onExportDocument(id: string): Promise<void>;
   engine: GeoGebraEngine;
   ready: boolean;
   error: string | null;
@@ -133,7 +136,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
     <ReasoningPreferencesContext.Provider value={reasoningPreferences}><div className="geogebra-studio-shell" data-floating-commands={floating}>
       <header className="geogebra-studio-header">
         <div className="geogebra-studio-title"><span className="ggb-brand-mark"><StudioIcon name="geometry" size={22} /></span><div><h1>GeoGebra <span>Studio</span></h1><p>Geometry, with room to think.</p></div></div>
-        <DocumentTabs workspace={props.workspace} disabled={props.documentBusy || !ready || Boolean(loadingMessage)} onSwitch={props.onSwitchDocument} onNew={props.onNewDocument} onClose={props.onCloseDocument} />
+        <DocumentTabs workspace={props.workspace} disabled={props.documentBusy || !ready || Boolean(loadingMessage)} onSwitch={props.onSwitchDocument} onNew={props.onNewDocument} onClose={props.onCloseDocument} onRename={props.onRenameDocument} onReorder={props.onReorderDocument} onSave={props.onExportDocument} />
         <div className="ggb-workspace-toolbar" role="toolbar" aria-label="Workspace tools">
           <button ref={proofSettingsButtonRef} type="button" className="ggb-icon-button" title="Proof settings" aria-label="Proof settings" aria-expanded={proofSettingsOpen} aria-controls="geogebra-proof-settings" disabled={settingsOpen} onClick={() => { if (filesRef.current) filesRef.current.open = false; setProofSettingsOpen(!proofSettingsOpen); }}><StudioIcon name="sparkles" /></button>
           <GeoGebraQuickStyle engine={engine} names={objectLink.selectedNames} disabled={!ready || settingsOpen || Boolean(loadingMessage)} onOpen={() => { objectLink.hover(null); if (filesRef.current) filesRef.current.open = false; }} onEdit={props.onEditObjectStyle} />
