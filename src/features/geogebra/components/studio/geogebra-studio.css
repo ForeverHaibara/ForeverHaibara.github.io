@@ -975,17 +975,30 @@
   margin-top: 10px;
 }
 
-/* Open constructions */
-.ggb-document-bar { display:flex; align-items:stretch; min-width:0; background:#f1f5f9; border-bottom:1px solid #dce5ef; }
-.ggb-document-tabs { display:flex; min-width:0; overflow-x:auto; scrollbar-width:thin; }
-.ggb-document-tab { display:flex; align-items:center; flex:0 0 auto; max-width:220px; border-right:1px solid #dce5ef; border-bottom:2px solid transparent; color:#64748b; }
-.ggb-document-tab[data-active="true"] { background:white; color:#1e40af; border-bottom-color:#3b82f6; }
-.ggb-document-select { display:flex; align-items:center; gap:8px; min-width:0; padding:10px 4px 10px 14px; font-size:12px; font-weight:600; }
+/* Constructions share the workspace header with the tools. */
+.ggb-document-bar { display:flex; align-items:center; flex:1 1 200px; min-width:0; align-self:stretch; }
+.ggb-document-tabs { display:flex; align-items:center; min-width:0; overflow-x:auto; scrollbar-width:thin; }
+.ggb-document-tab { display:flex; align-items:center; flex:0 0 auto; max-width:190px; margin:3px 2px; border:1px solid transparent; border-radius:9px; color:#64748b; }
+.ggb-document-tab[data-active="true"] { background:#fff; color:#245bb1; border-color:#dbe6f5; box-shadow:0 1px 3px #1e3a5f0d; }
+.ggb-document-select { display:flex; align-items:center; gap:7px; min-width:0; padding:8px 2px 8px 10px; font-size:12px; font-weight:600; }
+.ggb-document-select svg { flex:none; }
 .ggb-document-select span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ggb-document-close, .ggb-document-add { flex:none; width:32px; height:36px; font-size:19px; color:#64748b; border-radius:6px; }
-.ggb-document-close:hover, .ggb-document-add:hover { background:#e2e8f0; color:#1e293b; }
-.ggb-document-add { margin:1px 5px; }
+.ggb-document-close, .ggb-document-add { flex:none; width:28px; height:30px; font-size:18px; color:#8290a2; border-radius:6px; }
+.ggb-document-close:hover, .ggb-document-add:hover { background:#e9eff7; color:#334155; }
+.ggb-document-add { margin:0 3px; }
 .ggb-document-bar button:disabled { opacity:.5; cursor:wait; }
-.ggb-document-bar button:focus-visible { outline:2px solid #3b82f6; outline-offset:-2px; }
+.ggb-document-bar button:focus-visible, .ggb-document-menu button:focus-visible { outline:2px solid #3b82f6; outline-offset:-2px; }
+.ggb-document-menu { position:fixed; z-index:10000; width:192px; padding:5px; border:1px solid #dce5f0; border-radius:11px; background:#fff; box-shadow:0 14px 36px #142b4f28, 0 2px 8px #142b4f12; }
+.ggb-document-menu button { display:block; width:100%; padding:8px 10px; border-radius:6px; color:#334155; font-size:12px; text-align:left; }
+.ggb-document-menu button:hover, .ggb-document-menu button:focus { background:#eff5ff; color:#245bb1; }
+.ggb-document-menu button:disabled { color:#aab4c2; cursor:default; background:transparent; }
+.ggb-document-menu button:last-child { border-top:1px solid #edf1f5; border-radius:0 0 6px 6px; margin-top:4px; padding-top:10px; }
+@media (max-width: 1050px) { .geogebra-studio-title p, .geogebra-studio-title h1 { display:none; } .geogebra-studio-header { gap:8px; } }
+@media (max-width: 639px) {
+  .geogebra-studio-header { flex-wrap:wrap; }
+  .ggb-document-bar { order:1; flex:1 1 120px; }
+  .ggb-workspace-toolbar { order:2; flex:1 1 100%; justify-content:flex-end; }
+  .geogebra-studio-fullscreen .geogebra-studio-title { display:flex; }
+}
 
 .ggb-workspace-content[data-document-busy="true"] .geogebra-studio-body, .ggb-workspace-content[data-document-busy="true"] .geogebra-command-dock { pointer-events:none; }

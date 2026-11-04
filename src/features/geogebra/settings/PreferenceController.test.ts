@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PreferenceController } from './PreferenceController';
-import { DEFAULT_GGB_PREFERENCES } from './defaults';
+import { DEFAULT_GGB_PREFERENCES, GGB_PALETTES } from './defaults';
 import { normalizePreferences } from './preferenceStore';
 import type { EngineEventListener, GeoGebraEngine, GeometryEvent } from '../types';
 
@@ -168,7 +168,7 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
   });
 
   it('migrates missing shape colors from the selected palette', () => {
-    expect(normalizePreferences({ palette: 'forest' })).toMatchObject({ conicColor: '#047857', implicitCurveColor: '#7c3aed', angleLabels: true });
+    expect(normalizePreferences({ palette: 'forest' })).toMatchObject({ conicColor: GGB_PALETTES[2].conic, implicitCurveColor: GGB_PALETTES[2].implicitCurve, angleLabels: true });
     expect(normalizePreferences({ palette: 'forest', conicColor: '#123456', angleLabels: false })).toMatchObject({ conicColor: '#123456', angleLabels: false });
   });
 
@@ -382,7 +382,7 @@ describe('GeoGebra preferences lifecycle and ownership', () => {
 it('validates stored preferences and migrates missing fields without trusting invalid input', () => {
   expect(normalizePreferences({ pointSize: 99, decimals: -3, lineThickness: NaN, axes: 'false', pointColor: 'red' })).toMatchObject({ pointSize: 9, decimals: 0, lineThickness: 3, axes: false, pointColor: '#2563eb' });
   expect(normalizePreferences(null)).toEqual(DEFAULT_GGB_PREFERENCES);
-  expect(normalizePreferences({ palette: 'ink', pointColor: '#18181b' })).toMatchObject({ pointColorMode: 'uniform', constrainedPointColor: '#18181b', dependentPointColor: '#18181b' });
-  expect(normalizePreferences({ palette: 'violet', pointColor: '#7c3aed' })).toMatchObject({ pointColorMode: 'by-role', constrainedPointColor: '#db2777', dependentPointColor: '#475569' });
+  expect(normalizePreferences({ palette: 'ink', pointColor: '#18181b' })).toMatchObject({ pointColorMode: 'uniform', constrainedPointColor: GGB_PALETTES[1].constrained, dependentPointColor: GGB_PALETTES[1].dependent });
+  expect(normalizePreferences({ palette: 'violet', pointColor: '#7c3aed' })).toMatchObject({ pointColorMode: 'by-role', constrainedPointColor: GGB_PALETTES[3].constrained, dependentPointColor: GGB_PALETTES[3].dependent });
   expect(normalizePreferences({ pointColor: '#ffaa33', constrainedPointColor: 'red', dependentPointColor: '#ABCDEF' })).toMatchObject({ pointColor: '#ffaa33', constrainedPointColor: DEFAULT_GGB_PREFERENCES.constrainedPointColor, dependentPointColor: '#abcdef' });
 });

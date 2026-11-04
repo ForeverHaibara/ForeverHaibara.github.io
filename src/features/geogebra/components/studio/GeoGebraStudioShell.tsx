@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import GeoGebraCanvas from './GeoGebraCanvas';
+import DocumentTabs from './DocumentTabs';
 import GeoGebraCommandBar from '../command/GeoGebraCommandBar';
 import GeoGebraFileActions from './GeoGebraFileActions';
 import GeoGebraSidePanel from './GeoGebraSidePanel';
@@ -14,7 +15,7 @@ import type { DependencyGraph } from '../../analysis/graphTypes';
 import type { GeometryRelationsState } from '../../analysis/useGeometryRelations';
 import type { GgbPreferences, ObjectStyle } from '../../settings/types';
 import { useObjectLink } from '../../interaction/useObjectLink';
-import type { WorkspaceSnapshot } from '../../persistence/workspace';
+import type { CloseScope, WorkspaceSnapshot } from '../../persistence/workspace';
 import './geogebra-studio.css';
 
 interface GeoGebraStudioShellProps {
@@ -22,7 +23,7 @@ interface GeoGebraStudioShellProps {
   documentBusy: boolean;
   onSwitchDocument(id: string): Promise<void>;
   onNewDocument(): Promise<void>;
-  onCloseDocument(id: string): Promise<void>;
+  onCloseDocument(id: string, scope: CloseScope): Promise<void>;
   engine: GeoGebraEngine;
   ready: boolean;
   error: string | null;
@@ -132,6 +133,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
     <ReasoningPreferencesContext.Provider value={reasoningPreferences}><div className="geogebra-studio-shell" data-floating-commands={floating}>
       <header className="geogebra-studio-header">
         <div className="geogebra-studio-title"><span className="ggb-brand-mark"><StudioIcon name="geometry" size={22} /></span><div><h1>GeoGebra <span>Studio</span></h1><p>Geometry, with room to think.</p></div></div>
+        <DocumentTabs workspace={props.workspace} disabled={props.documentBusy || !ready || Boolean(loadingMessage)} onSwitch={props.onSwitchDocument} onNew={props.onNewDocument} onClose={props.onCloseDocument} />
         <div className="ggb-workspace-toolbar" role="toolbar" aria-label="Workspace tools">
           <button ref={proofSettingsButtonRef} type="button" className="ggb-icon-button" title="Proof settings" aria-label="Proof settings" aria-expanded={proofSettingsOpen} aria-controls="geogebra-proof-settings" disabled={settingsOpen} onClick={() => { if (filesRef.current) filesRef.current.open = false; setProofSettingsOpen(!proofSettingsOpen); }}><StudioIcon name="sparkles" /></button>
           <GeoGebraQuickStyle engine={engine} names={objectLink.selectedNames} disabled={!ready || settingsOpen || Boolean(loadingMessage)} onOpen={() => { objectLink.hover(null); if (filesRef.current) filesRef.current.open = false; }} onEdit={props.onEditObjectStyle} />
@@ -151,13 +153,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
         </div>
       </header>
       <div className="ggb-workspace-content" ref={contentRef} data-document-busy={props.documentBusy}>
-        <div className="ggb-document-bar" aria-label="Open constructions">
-          <div className="ggb-document-tabs">{props.workspace?.documents.map((doc) => <div className="ggb-document-tab" data-active={doc.id === props.workspace?.activeId} key={doc.id}>
-            <button type="button" className="ggb-document-select" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-current={doc.id === props.workspace?.activeId ? 'page' : undefined} title={doc.title} onClick={() => void props.onSwitchDocument(doc.id).catch((error) => alert(error instanceof Error ? error.message : 'Could not switch construction.'))}><StudioIcon name="geometry" size={15} /><span>{doc.title}</span></button>
-            <button type="button" className="ggb-document-close" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-label={`Close ${doc.title}`} title={`Close ${doc.title}`} onClick={() => { if (window.confirm(`Close “${doc.title}”? Its browser draft will be removed.`)) void props.onCloseDocument(doc.id).catch((error) => alert(error instanceof Error ? error.message : 'Could not close construction.')); }}>×</button>
-          </div>)}</div>
-          <button type="button" className="ggb-document-add" disabled={props.documentBusy || !ready || Boolean(loadingMessage)} aria-label="New construction" title="New construction" onClick={() => void props.onNewDocument().catch((error) => alert(error instanceof Error ? error.message : 'Could not create construction.'))}>+</button>
-        </div>
+
         <div className="geogebra-studio-body relative isolate flex flex-col lg:flex-row">
           <main className="geogebra-studio-canvas relative min-w-0 flex-1 overflow-hidden bg-slate-100/70" aria-label="GeoGebra canvas">
             <div className="absolute inset-0"><GeoGebraCanvas engine={engine} onReady={onReady} onError={onError} /></div>

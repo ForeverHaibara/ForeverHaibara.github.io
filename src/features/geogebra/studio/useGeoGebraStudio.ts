@@ -11,7 +11,7 @@ import { InternalHelperLifecycle } from '../commands/custom/helperLifecycle';
 import { isInternalHelperName } from '../commands/custom/internalHelpers';
 import { readPreferences, savePreferences } from '../settings/preferenceStore';
 import type { GgbPreferences, ObjectStyle } from '../settings/types';
-import { newDocument, restoreWorkspace, uniqueTitle, type WorkspaceDocument, type WorkspaceSnapshot } from '../persistence/workspace';
+import { closeDocuments, newDocument, restoreWorkspace, uniqueTitle, type CloseScope, type WorkspaceDocument, type WorkspaceSnapshot } from '../persistence/workspace';
 
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const buffer = await blob.arrayBuffer();
@@ -287,14 +287,7 @@ export function useGeoGebraStudio() {
     const target = newDocument(uniqueTitle(current.documents, 'Untitled'));
     return { next: { ...current, activeId: target.id, documents: [...current.documents, target] }, target };
   }), [transition]);
-  const closeDocument = useCallback((id: string) => transition((current) => {
-    const index = current.documents.findIndex((doc) => doc.id === id);
-    if (index < 0) return { next: current };
-    const documents = current.documents.filter((doc) => doc.id !== id);
-    if (!documents.length) documents.push(newDocument());
-    const target = id === current.activeId ? documents[Math.min(index, documents.length - 1)] : undefined;
-    return { next: { ...current, documents, activeId: target?.id ?? current.activeId }, target };
-  }), [transition]);
+  const closeDocument = useCallback((id: string, scope: CloseScope = 'one') => transition((current) => closeDocuments(current, id, scope)), [transition]);
 
   const handleCommandResult = useCallback((result: CommandResult) => {
     setLastResult(result);

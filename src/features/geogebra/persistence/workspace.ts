@@ -35,3 +35,25 @@ export function restoreWorkspace(value: WorkspaceSnapshot | null, legacy: Geomet
   const doc = legacy?.ggbBase64 ? { id: newDocument().id, title: 'Previous draft', ggbBase64: legacy.ggbBase64, managedStyles: legacy.managedStyles } : newDocument();
   return { version: 1, activeId: doc.id, documents: [doc] };
 }
+
+export type CloseScope = 'one' | 'others' | 'right' | 'left' | 'all';
+
+/** Compute a single atomic close operation, retaining the active document when possible. */
+export function closeDocuments(current: WorkspaceSnapshot, anchorId: string, scope: CloseScope): { next: WorkspaceSnapshot; target?: WorkspaceDocument } {
+  const index = current.documents.findIndex((doc) => doc.id === anchorId);
+  if (index < 0) return { next: current };
+  const documents = current.documents.filter((doc, i) => {
+    switch (scope) {
+      case 'one': return doc.id !== anchorId;
+      case 'others': return doc.id === anchorId;
+      case 'right': return i <= index;
+      case 'left': return i >= index;
+      case 'all': return false;
+    }
+  });
+  if (documents.length === current.documents.length) return { next: current };
+  if (!documents.length) documents.push(newDocument());
+  const activeIndex = current.documents.findIndex((doc) => doc.id === current.activeId);
+  const target = documents.some((doc) => doc.id === current.activeId) ? undefined : documents[Math.min(activeIndex, documents.length - 1)];
+  return { next: { ...current, documents, activeId: target?.id ?? current.activeId }, target };
+}

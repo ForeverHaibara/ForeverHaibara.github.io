@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { restoreWorkspace } from './workspace';
+import { closeDocuments, restoreWorkspace } from './workspace';
 import { DEFAULT_STUDIO_SETTINGS } from '../config';
 
 describe('workspace restoration', () => {
@@ -18,5 +18,22 @@ describe('workspace restoration', () => {
     const result = restoreWorkspace(null, null);
     expect(result.documents[0]).toMatchObject({ title: 'Untitled', ggbBase64: null });
     expect(result.activeId).toBe(result.documents[0].id);
+  });
+});
+
+describe('closing workspace tabs', () => {
+  const documents = ['a', 'b', 'c', 'd'].map((id) => ({ id, title: id, ggbBase64: id }));
+  const workspace = { version: 1 as const, activeId: 'c', documents };
+  it('closes the requested range in one operation and retains the active tab when possible', () => {
+    expect(closeDocuments(workspace, 'b', 'left').next.documents.map((doc) => doc.id)).toEqual(['b', 'c', 'd']);
+    expect(closeDocuments(workspace, 'b', 'right').next).toMatchObject({ activeId: 'b', documents: documents.slice(0, 2) });
+    expect(closeDocuments(workspace, 'b', 'others').next).toMatchObject({ activeId: 'b', documents: [documents[1]] });
+    expect(closeDocuments(workspace, 'b', 'one').next.activeId).toBe('c');
+  });
+  it('replaces the last tab with a new blank document', () => {
+    const result = closeDocuments(workspace, 'b', 'all');
+    expect(result.next.documents).toHaveLength(1);
+    expect(result.target).toMatchObject({ title: 'Untitled', ggbBase64: null });
+    expect(result.next.activeId).toBe(result.target?.id);
   });
 });
