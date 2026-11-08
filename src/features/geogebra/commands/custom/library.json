@@ -144,7 +144,7 @@
     {
       "name": "Incenter",
       "aliases": ["内心"],
-      "description": "Triangle incenter.",
+      "description": "Triangle incenter, X(1).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
       ],
@@ -152,14 +152,15 @@
         "keywords": "incircle 内切圆圆心 内切圆心 incentre",
         "related": [
           "Excenter",
-          "IntouchTriangle"
+          "IntouchTriangle",
+          "Incircle"
         ]
       }
     },
     {
       "name": "Centroid",
       "aliases": ["重心"],
-      "description": "Triangle centroid.",
+      "description": "Triangle centroid, X(2).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "($A+$B+$C)/3"}
       ],
@@ -174,7 +175,7 @@
     {
       "name": "Circumcenter",
       "aliases": ["外心"],
-      "description": "Triangle circumcenter.",
+      "description": "Triangle circumcenter, X(3).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,3)"}
       ],
@@ -188,7 +189,7 @@
     },
     {
       "name": "Orthocenter",
-      "description": "Triangle orthocenter.",
+      "description": "Triangle orthocenter, X(4).",
       "aliases": ["垂心"],
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,4)"}
@@ -211,7 +212,7 @@
     {
       "name": "NinePointCenter",
       "aliases": ["九点圆心"],
-      "description": "Center of the triangle nine-point circle.",
+      "description": "Center of the triangle nine-point circle, X(5).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,5)"}
       ],
@@ -226,7 +227,7 @@
     {
       "name": "SymmedianPoint",
       "aliases": ["共轭重心"],
-      "description": "Triangle symmedian point.",
+      "description": "Triangle symmedian point, X(6).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,6)"}
       ],
@@ -240,7 +241,7 @@
     {
       "name": "GergonnePoint",
       "aliases": ["葛尔刚点"],
-      "description": "Triangle Gergonne point.",
+      "description": "Triangle Gergonne point, X(7).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,7)"}
       ],
@@ -254,7 +255,7 @@
     {
       "name": "NagelPoint",
       "aliases": ["奈格尔点"],
-      "description": "Triangle Nagel point.",
+      "description": "Triangle Nagel point, X(8).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,8)"}
       ]
@@ -262,7 +263,7 @@
     {
       "name": "Mittenpunkt",
       "aliases": ["中聚点"],
-      "description": "Triangle mittenpunkt.",
+      "description": "Triangle mittenpunkt, X(9).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,9)"}
       ]
@@ -270,7 +271,7 @@
     {
       "name": "SpiekerCenter",
       "aliases": ["斯派克点"],
-      "description": "Incenter of the medial triangle.",
+      "description": "Incenter of the medial triangle, X(10).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,10)"}
       ],
@@ -1372,32 +1373,52 @@
       "description": "Cundy-Parry Phi image: OP intersected with H(gP).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cundyPhi"}
-      ]
+      ],
+      "reference":{
+        "related": [
+          "CundyParryPsi"
+        ]
+      }
     },
     {
       "name": "CundyParryPsi",
       "description": "Cundy-Parry Psi image: O(gP) intersected with HP.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cundyPsi"}
-      ]
+      ],
+      "reference":{
+        "related": [
+          "CundyParryPhi"
+        ]
+      }
     },
     {
       "name": "CoTf3",
       "description": "Scimemi image of P with respect to the conic.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "scimemi"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "CoTf3Inv"
+        ]
+      }
     },
     {
       "name": "CoTf3Inv",
       "description": "Inverse Scimemi image of P.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "inverseScimemi"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "CoTf3"
+        ]
+      }
     },
     {
       "name": "QAP2",
-      "description": "Euler-Poncelet point of the four-point set.",
+      "description": "Euler-Poncelet point of the four-point set. The center of the rectangular hyperbola passing through A,B,C,D.",
       "aliases": ["PonceletPoint"],
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qap2"}
