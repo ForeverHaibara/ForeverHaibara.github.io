@@ -5,12 +5,12 @@
   "tools": [
     {
       "name": "TriangleCenter",
-      "description": "A numbered ETC triangle center. Literal patched native IDs and higher IDs use reviewed site recipes; other selectors use GeoGebra.",
+      "description": "A numbered ETC triangle center from https://faculty.evansville.edu/ck6/encyclopedia/ETC.html. Literal patched native IDs and higher IDs use reviewed site recipes; other selectors use GeoGebra.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "point", "builder": "triangleCenter"}
       ],
       "reference": {
-        "keywords": "ETC encyclopedia triangle centre 三角形中心 编号",
+        "keywords": "encyclopedia of triangle centers centre 三角形中心 三角形特征点 编号",
         "details": [
           "Use a literal integer to request a reviewed extension or a patched native center. Unpatched native indices and computed selectors use the native GeoGebra command.",
           "An extended index needs a supported recipe. A center at infinity does not produce a finite point when requested directly."
@@ -22,34 +22,33 @@
           }
         ],
         "related": [
-          "Centroid",
           "!nearestTriangleCenter"
         ]
       }
     },
     {
       "name": "GibertCurve",
-      "description": "A triangle curve from Gibert's catalogue of related curves. Use a literal number or a quoted ID such as \"Q036A\". See the related-curves database for supported IDs. Requires Medium or High performance and a new output label.",
+      "description": "A triangle curve from Gibert's catalogue of related curves from http://bernard-gibert.fr/relatedcurves.html. Use a literal number or a quoted ID such as \"Q036A\". See the related-curves database for supported IDs. Requires Medium or High performance and a new output label.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "implicitCurve", "builder": "gibertCurve", "requiresNamed": true}
       ],
       "reference": {
-        "keywords": "catalogue catalog implicit quartic quintic sextic septic octic nonic 曲线",
+        "keywords": "implicit quartic quintic sextic septic octic nonic 高次曲线 Q00",
         "details": [
           "Use a supported literal number such as 12 or a quoted catalogue ID such as \"Q012\" or \"Q036A\". The selector cannot be a slider or an arithmetic expression.",
           "Use Medium or High custom tool performance and a fresh output label. To replace an existing result, delete it and recreate it."
         ],
         "examples": [
           {
-            "command": "g = GibertCurve(A, B, C, \"Q012\")",
-            "note": "Choose an unused label in place of g if needed."
+            "command": "eq1 = GibertCurve(A, B, C, \"Q012\")",
+            "note": "Choose an unused label in place of eq1 if needed."
           }
         ]
       }
     },
     {
       "name": "GeminiTriangle",
-      "description": "Numbered Gemini triangle; optionally select vertex 1, 2 or 3.",
+      "description": "Numbered Gemini triangle from https://faculty.evansville.edu/ck6/encyclopedia/gemini.html; optionally select vertex 1, 2 or 3.",
       "overloads": [
         {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"id","type":"catalogId"}], "returns":"point", "builder":"geminiTriangle"},
         {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"id","type":"catalogId"},{"name":"i","type":"number"}], "returns":"point", "builder":"geminiTriangle"}
@@ -57,12 +56,13 @@
     },
     {
       "name": "Intersect",
+      "aliases": ["交点"],
       "description": "Four points intersect the infinite lines AB and CD. All other signatures use the native Intersect command.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "Intersect(Line($A,$B),Line($C,$D))"}
       ],
       "reference": {
-        "keywords": "intersection supporting lines 交点",
+        "keywords": "intersection",
         "details": [
           "The four-point form intersects the infinite lines AB and CD. Other signatures use the native GeoGebra command."
         ],
@@ -76,13 +76,14 @@
     },
     {
       "name": "Pedal",
+      "aliases": ["垂足"],
       "description": "Projection of a point to a line.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "(($A)+Reflect($A,Line($B,$C)))/2"},
         {"params": [{"name": "A", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "expression": "(($A)+Reflect($A,$l))/2"}
       ],
       "reference": {
-        "keywords": "foot perpendicular projection 垂足 投影",
+        "keywords": "foot perpendicular projection 投影",
         "examples": [
           {
             "command": "Pedal(P, Line(A, B))",
@@ -105,13 +106,22 @@
     },
     {
       "name": "Pole",
+      "aliases": ["极点"],
       "description": "Pole of a line with respect to a conic.",
       "overloads": [
         {"params": [{"name": "l", "type": "line"}, {"name": "q", "type": "conic"}], "returns": "point", "expression": "Polar($l,$q)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "polar",
+        "related": [
+          "Polar",
+          "PolarConic"
+        ]
+      }
     },
     {
       "name": "Conic",
+      "aliases": ["圆锥曲线"],
       "description": "Five point/tangent-line constraints in any order. Mixed inputs create separate conics (2 or 4 slots); undefined slots can appear on dragging. Add a 1-based index to select one. Nested calls select the first solution. Segments/rays mean supporting lines. Native point/coefficient forms are preserved.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "conic", "expression": "Conic($A,$B,$C,$D,$E)"},
@@ -120,7 +130,7 @@
         {"params": [{"name": "a", "type": "pointOrLine"}, {"name": "b", "type": "pointOrLine"}, {"name": "c", "type": "pointOrLine"}, {"name": "d", "type": "pointOrLine"}, {"name": "e", "type": "pointOrLine"}, {"name": "index", "type": "number"}], "returns": "conic", "builder": "conicBranch"}
       ],
       "reference": {
-        "keywords": "tangent line ellipse parabola hyperbola 二次曲线 圆锥曲线",
+        "keywords": "ellipse parabola hyperbola 二次曲线 圆锥曲线",
         "details": [
           "The extended forms accept five point or tangent-line constraints. Segments and rays use their supporting lines. Mixed constraints can produce two or four independent solutions. Use the 1-based index to select a slot, which can be undefined.",
           "The native five-point and coefficient forms remain available."
@@ -133,12 +143,13 @@
     },
     {
       "name": "Incenter",
-      "description": "Triangle incenter; uses the native triangle-center construction.",
+      "aliases": ["内心"],
+      "description": "Triangle incenter.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
       ],
       "reference": {
-        "keywords": "angle bisector incircle 内心 内切圆",
+        "keywords": "incircle 内切圆圆心 内切圆心 incentre",
         "related": [
           "Excenter",
           "IntouchTriangle"
@@ -147,12 +158,13 @@
     },
     {
       "name": "Centroid",
-      "description": "Triangle centroid; the three-point overload also accepts collinear points.",
+      "aliases": ["重心"],
+      "description": "Triangle centroid.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "($A+$B+$C)/3"}
       ],
       "reference": {
-        "keywords": "median barycenter 重心 中线",
+        "keywords": "median barycenter barycentre 质心 中线",
         "related": [
           "MedialTriangle",
           "EulerLine"
@@ -161,12 +173,13 @@
     },
     {
       "name": "Circumcenter",
+      "aliases": ["外心"],
       "description": "Triangle circumcenter.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,3)"}
       ],
       "reference": {
-        "keywords": "perpendicular bisector 外心 外接圆",
+        "keywords": "外接圆圆心 circumcentre",
         "related": [
           "Orthocenter",
           "EulerLine"
@@ -176,11 +189,12 @@
     {
       "name": "Orthocenter",
       "description": "Triangle orthocenter.",
+      "aliases": ["垂心"],
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,4)"}
       ],
       "reference": {
-        "keywords": "altitude intersection 垂心",
+        "keywords": "altitude orthocentre",
         "examples": [
           {
             "command": "Orthocenter(A, B, C)",
@@ -196,27 +210,50 @@
     },
     {
       "name": "NinePointCenter",
+      "aliases": ["九点圆心"],
       "description": "Center of the triangle nine-point circle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,5)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "九点圆圆心",
+        "related": [
+          "NinePointCircle",
+          "EulerLine"
+        ]
+      }
     },   
     {
       "name": "SymmedianPoint",
+      "aliases": ["共轭重心"],
       "description": "Triangle symmedian point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,6)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "陪位重心",
+        "related": [
+          "HarmonicConjugate"
+        ]
+      }
     },
     {
       "name": "GergonnePoint",
+      "aliases": ["葛尔刚点"],
       "description": "Triangle Gergonne point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,7)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "格尔刚点 葛尔冈点 热尔冈点 热尔岗点",
+        "related": [
+          "IntouchTriangle"
+        ]
+      }
     },
     {
       "name": "NagelPoint",
+      "aliases": ["奈格尔点"],
       "description": "Triangle Nagel point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,8)"}
@@ -224,6 +261,7 @@
     },
     {
       "name": "Mittenpunkt",
+      "aliases": ["中聚点"],
       "description": "Triangle mittenpunkt.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,9)"}
@@ -231,34 +269,67 @@
     },
     {
       "name": "SpiekerCenter",
+      "aliases": ["斯派克点"],
       "description": "Incenter of the medial triangle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,10)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "斯佩克点"
+      }
     }, 
     {
       "name": "FeuerbachPoint",
+      "aliases": ["费尔巴哈点"],
       "description": "Feuerbach contact point of the incircle and nine-point circle, X(11).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,11)"}
+      ],
+      "related": [
+        "NinePointCircle",
+        "Incircle"
       ]
     },
     {
+      "name": "FermatPoint",
+      "aliases": ["费马点"],
+      "description": "First isogonic center X(13), including its algebraic continuation for angles beyond 120 degrees.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,13)"}
+      ],
+      "reference": {
+        "keywords": "托里拆利点 Torricelli",
+        "related": [
+          "IsodynamicPoint"
+        ]
+      }
+    },
+    {
       "name": "IsodynamicPoint",
+      "aliases": ["等力点"],
       "description": "First (i=1) or second (i=2) isodynamic point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "expression": "If($i==1,TriangleCenter($A,$B,$C,15),If($i==2,TriangleCenter($A,$B,$C,16)))"}
+      ],
+      "related": [
+        "ApolloniusCircle",
+        "FermatPoint"
       ]
     },
     {
       "name": "DeLongchampsPoint",
+      "aliases": ["德朗谢姆点"],
       "description": "Reflection of the orthocenter in the circumcenter, X(20).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,20)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "德朗香点"
+      }
     },
     {
       "name": "BevanPoint",
+      "aliases": ["贝文点"],
       "description": "Circumcenter of the excenter triangle, X(40).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,40)"}
@@ -266,6 +337,7 @@
     },
     {
       "name": "SoddyPoint",
+      "aliases": ["索迪点"],
       "description": "Outer (i=1, X175) or inner (i=2, X176) Soddy point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "expression": "If($i==1,TriangleCenter($A,$B,$C,175),If($i==2,TriangleCenter($A,$B,$C,176)))"}
@@ -273,10 +345,18 @@
     },
     {
       "name": "Excenter",
+      "aliases": ["旁心"],
       "description": "Excenter opposite A.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "Trilinear($A,$B,$C,-1,1,1)"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Excenters",
+          "Excircle",
+          "Excircles"
+        ]
+      }
     },
     {
       "name": "Excenters",
@@ -284,30 +364,61 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Excenter($A,$B,$C)", "Excenter($B,$C,$A)", "Excenter($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Excenter($A,$B,$C),Excenter($B,$C,$A),Excenter($C,$A,$B)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "旁心",
+        "related": [
+          "Excenter",
+          "Excircle",
+          "Excircles"
+        ]
+      }
     },
     {
       "name": "IsogonalConjugate",
+      "aliases": ["等角共轭点"],
       "description": "Isogonal image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isogonal"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isogonalLine"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "IsotomicConjugate",
+          "Isoconjugate"
+        ]
+      }
     },
     {
       "name": "IsotomicConjugate",
+      "aliases": ["等截共轭点"],
       "description": "Isotomic image of a point or supporting line with respect to triangle ABC; line images return their algebraic conic closure.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isotomic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "conic", "builder": "isotomicLine"}
-      ]
+      ],
+      "reference": {
+        "keywords": "等距共轭点",
+        "related": [
+          "IsogonalConjugate",
+          "Isoconjugate"
+        ]
+      }
     },
     {
       "name": "Excircle",
+      "aliases": ["旁切圆"],
       "description": "Excircle opposite A.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,Distance($center,Line($B,$C)))", "locals": [{"name": "center", "expression": "Excenter($A,$B,$C)"}]}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Excircles",
+          "Excenter",
+          "Excenters"
+        ]
+      }
     },
     {
       "name": "Excircles",
@@ -315,17 +426,32 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["Excircle($A,$B,$C)", "Excircle($B,$C,$A)", "Excircle($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Excircle($A,$B,$C),Excircle($B,$C,$A),Excircle($C,$A,$B)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "旁切圆",
+        "related": [
+          "Excircle",
+          "Excenter",
+          "Excenters"
+        ]
+      }
     },
     {
       "name": "NinePointCircle",
+      "aliases": ["九点圆"],
       "description": "Triangle nine-point circle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(NinePointCenter($A,$B,$C),Distance(Circumcenter($A,$B,$C),$A)/2)"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "NinePointCenter"
+        ]
+      }
     },
     {
       "name": "EulerLine",
+      "aliases": ["欧拉线"],
       "description": "Line through the triangle circumcenter and orthocenter; undefined when they coincide.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Line(Circumcenter($A,$B,$C),Orthocenter($A,$B,$C))"}
@@ -333,6 +459,7 @@
     },
     {
       "name": "BrocardPoints",
+      "aliases": ["布洛卡点"],
       "description": "First and second Brocard points of ordered triangle ABC; the first satisfies angle PAB = PBC = PCA. Optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "builder": "brocard"},
@@ -341,6 +468,7 @@
     },
     {
       "name": "FuhrmannCircle",
+      "aliases": ["夫尔曼圆"],
       "description": "Circle with diameter joining the orthocenter and Nagel point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(($left+$right)/2,Distance($left,$right)/2)", "locals": [{"name": "left", "expression": "Orthocenter($A,$B,$C)"}, {"name": "right", "expression": "NagelPoint($A,$B,$C)"}]}
@@ -348,6 +476,7 @@
     },
     {
       "name": "BrocardCircle",
+      "aliases": ["布洛卡圆"],
       "description": "Circle with diameter joining the circumcenter and symmedian point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(($left+$right)/2,Distance($left,$right)/2)", "locals": [{"name": "left", "expression": "Circumcenter($A,$B,$C)"}, {"name": "right", "expression": "SymmedianPoint($A,$B,$C)"}]}
@@ -359,7 +488,11 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($B+$C)/2", "($C+$A)/2", "($A+$B)/2"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($B+$C)/2,($C+$A)/2,($A+$B)/2},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "中点三角形 中位三角形 中线",
+        "related": ["Centroid", "Circumcenter"]
+      }
     },
     {
       "name": "OrthicTriangle",
@@ -367,25 +500,34 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($A+Reflect($A,Line($B,$C)))/2", "($B+Reflect($B,Line($C,$A)))/2", "($C+Reflect($C,Line($A,$B)))/2"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($A+Reflect($A,Line($B,$C)))/2,($B+Reflect($B,Line($C,$A)))/2,($C+Reflect($C,Line($A,$B)))/2},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "垂三角形 orthocenter 垂足三角形",
+        "related": ["Orthocenter"]
+      }
     },
     {
       "name": "CevianTriangle",
+      "aliases": ["塞瓦三角形"],
       "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$P),Line($B,$C))", "Intersect(Line($B,$P),Line($C,$A))", "Intersect(Line($C,$P),Line($A,$B))"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$P),Line($B,$C)),Intersect(Line($B,$P),Line($C,$A)),Intersect(Line($C,$P),Line($A,$B))},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "ceva triangle"
+      }
     },
     {
       "name": "PedalTriangle",
+      "aliases": ["垂足三角形"],
       "description": "Projections of P onto the supporting lines BC, CA and AB; optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["($P+Reflect($P,Line($B,$C)))/2", "($P+Reflect($P,Line($C,$A)))/2", "($P+Reflect($P,Line($A,$B)))/2"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($P+Reflect($P,Line($B,$C)))/2,($P+Reflect($P,Line($C,$A)))/2,($P+Reflect($P,Line($A,$B)))/2},$i))"}
       ],
       "reference": {
-        "keywords": "foot perpendicular projection 垂足 垂足三角形 投影",
+        "keywords": "foot perpendicular projection 投影",
         "details": [
           "At the top level the four-argument form creates three independent points, in the order BC, CA, AB. An assignment names the first point.",
           "Use the five-argument form to select one point. Indices 1, 2 and 3 select BC, CA and AB respectively. A nested call without an index uses the first point."
@@ -405,12 +547,13 @@
     },
     {
       "name": "PedalCircle",
+      "aliases": ["垂足圆"],
       "description": "Circle through the three pedal points of P; undefined when they are collinear.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(PedalTriangle($A,$B,$C,$P,1),PedalTriangle($A,$B,$C,$P,2),PedalTriangle($A,$B,$C,$P,3))"}
       ],
       "reference": {
-        "keywords": "foot projection 垂足 垂足圆",
+        "keywords": "foot projection",
         "related": [
           "PedalTriangle",
           "SimsonLine"
@@ -423,10 +566,18 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($center+Reflect($center,Line($B,$C)))/2", "($center+Reflect($center,Line($C,$A)))/2", "($center+Reflect($center,Line($A,$B)))/2"], "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($center+Reflect($center,Line($B,$C)))/2,($center+Reflect($center,Line($C,$A)))/2,($center+Reflect($center,Line($A,$B)))/2},$i))", "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]}
-      ]
+      ],
+      "reference": {
+        "keywords": "incenter",
+        "related": [
+          "Incenter",
+          "Incircle"
+        ]
+      }
     },
     {
       "name": "AnticevianTriangle",
+      "aliases": ["反塞瓦三角形"],
       "description": "Anticevian vertices (-p:q:r), (p:-q:r), (p:q:-r) of P; optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "anticevian"},
@@ -458,6 +609,7 @@
     },
     {
       "name": "AntipedalTriangle",
+      "aliases": ["反垂足三角形"],
       "description": "Vertices opposite the lines through A, B and C perpendicular to PA, PB and PC; optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C)))", "Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A)))", "Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))"]},
@@ -466,6 +618,7 @@
     },
     {
       "name": "CarnotTriangle",
+      "aliases": ["卡诺三角形"],
       "description": "Circumcenters of PBC, PCA and PAB; optional 1-based index.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Circumcenter($P,$B,$C)", "Circumcenter($P,$C,$A)", "Circumcenter($P,$A,$B)"]},
@@ -474,6 +627,7 @@
     },
     {
       "name": "Orthopole",
+      "aliases": ["垂极点"],
       "description": "Orthopole of the supporting line l with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(PerpendicularLine(($A+Reflect($A,$support))/2,Line($B,$C)),PerpendicularLine(($B+Reflect($B,$support))/2,Line($C,$A)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}]}
@@ -481,17 +635,29 @@
     },
     {
       "name": "Complement",
+      "aliases": ["补点"],
       "description": "Complement of P with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "($A+$B+$C-$P)/2"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Anticomplement"
+        ]
+      }
     },
     {
       "name": "Anticomplement",
+      "aliases": ["反补点"],
       "description": "Anticomplement of P with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "$A+$B+$C-2*$P"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Complement"
+        ]
+      }
     },
     {
       "name": "IsogonalComplement",
@@ -502,6 +668,7 @@
     },
     {
       "name": "TrilinearPolar",
+      "aliases": ["三线性极线"],
       "description": "Trilinear polar of P with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "builder": "trilinearPolar"}
@@ -509,6 +676,7 @@
     },
     {
       "name": "TrilinearPole",
+      "aliases": ["三线性极点"],
       "description": "Trilinear pole of the supporting line l with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "builder": "trilinearPole"}
@@ -516,10 +684,14 @@
     },
     {
       "name": "HarmonicConjugate",
-      "description": "Point Q with complex cross-ratio (A,B;P,Q)=-1; includes the collinear harmonic conjugate.",
+      "aliases": ["调和共轭点"],
+      "description": "Point Q with complex cross-ratio (A,B;P,Q)=-1 so that (A,B;P,Q) is a harmonic quadrilateral; includes the collinear harmonic conjugate.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($B-$A)*ToComplex($P-$A)/ToComplex(2*$P-$A-$B))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "调和四边形"
+      }
     },
     {
       "name": "TransferRatio",
@@ -548,7 +720,10 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($C-$A)*(ToComplex($D-$A)/ToComplex($B-$A)))"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($D)+ToComplex($E-$D)*(ToComplex($C-$A)/ToComplex($B-$A)))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "顺相似"
+      }
     },
     {
       "name": "OppositeSimilarity",
@@ -556,7 +731,10 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($C-$A)*(conjugate(ToComplex($D-$A)/ToComplex($B-$A))))"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($D)+ToComplex($E-$D)*(conjugate(ToComplex($C-$A)/ToComplex($B-$A))))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "逆相似"
+      }
     },
     {
       "name": "ArcMidpoint",
@@ -566,7 +744,7 @@
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$A+($B-$A)/Distance($A,$B)+($C-$A)/Distance($A,$C))"}
       ],
       "reference": {
-        "keywords": "arc midpoint 弧中点",
+        "keywords": "弧中点",
         "related": [
           "OppositeArcMidpoint"
         ]
@@ -578,10 +756,17 @@
       "description": "Midpoint of the BC arc containing A on the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "Antipode(Circle($A,$B,$C),ArcMidpoint($A,$B,$C))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "弧中点",
+        "related": [
+          "ArcMidpoint"
+        ]
+      }
     },
     {
       "name": "Antipode",
+      "aliases": ["对径点"],
       "description": "Central reflection of P in a conic center, or of A in the circumcenter of ABC; parabolas have no finite antipode.",
       "overloads": [
         {"params": [{"name": "q", "type": "conic"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "Reflect($P,Center($q))"},
@@ -590,24 +775,35 @@
     },
     {
       "name": "RadicalAxis",
+      "aliases": ["根轴"],
       "description": "Line of equal powers to two circles. Works for disjoint and tangent circles; concentric circles have no unique finite radical axis.",
       "overloads": [
         {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}], "returns": "line", "expression": "PerpendicularLine(($o1+$o2)/2+($r1^2-$r2^2)/(2*Distance($o1,$o2)^2)*($o2-$o1),Line($o1,$o2))", "locals": [{"name": "o1", "expression": "Center($c1)"}, {"name": "o2", "expression": "Center($c2)"}, {"name": "r1", "expression": "Radius($c1)"}, {"name": "r2", "expression": "Radius($c2)"}]}
-      ]
+      ],
+      "reference": {
+        "keywords": "等幂轴"
+      }
     },
     {
       "name": "RadicalCenter",
+      "aliases": ["根心"],
       "description": "Radical center of three circles.",
       "overloads": [
         {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "c3", "type": "circle"}], "returns": "point", "compose": "Intersect(RadicalAxis($c1,$c2),RadicalAxis($c1,$c3))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "等幂心"
+      }
     },
     {
       "name": "SimilarityCenter",
       "description": "External (s=1) or internal (s=-1) center of similitude of two circles.",
       "overloads": [
         {"params": [{"name": "c1", "type": "circle"}, {"name": "c2", "type": "circle"}, {"name": "s", "type": "number"}], "returns": "point", "expression": "If($s^2==1,(Radius($c1)*Center($c2)-$s*Radius($c2)*Center($c1))/(Radius($c1)-$s*Radius($c2)))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "内相似中心 外相似中心"
+      }
     },
     {
       "name": "DiagonalPoints",
@@ -618,14 +814,8 @@
       ]
     },
     {
-      "name": "FermatPoint",
-      "description": "First isogonic center X(13), including its algebraic continuation for angles beyond 120 degrees.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,13)"}
-      ]
-    },
-    {
       "name": "SimsonLine",
+      "aliases": ["西姆松线"],
       "description": "Line joining the projections of P onto AB and AC; the Simson line when P is on the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "compose": "Line(($P+Reflect($P,Line($A,$B)))/2,($P+Reflect($P,Line($A,$C)))/2)"}
@@ -633,34 +823,61 @@
     },
     {
       "name": "SteinerLine",
-      "description": "Line joining the reflections of P in AB and AC; the triangle Steiner line when P is on the circumcircle.",
+      "aliases": ["斯坦纳线"],
+      "description": "Line joining the reflections of P in AB and AC; the triangle Steiner line when P is on the circumcircle. For Steiner line of a quadrilateral, see SteinerLineQ.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "compose": "Line(Reflect($P,Line($A,$B)),Reflect($P,Line($A,$C)))"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "AntiSteinerPoint",
+          "SteinerLineQ"
+        ]
+      }
     },
     {
       "name": "AntiSteinerPoint",
+      "aliases": ["逆斯坦纳点"],
       "description": "Circumcircle point whose triangle Steiner line has the direction of l.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "compose": "Intersect(Reflect($throughH,Line($A,$B)),Reflect($throughH,Line($A,$C)))", "locals": [{"name": "support", "expression": "Line(Point($l,0.25),Point($l,0.5))"}, {"name": "throughH", "expression": "Line(Orthocenter($A,$B,$C),$support)"}]}
-      ]
+      ],
+      "reference": {
+        "keywords": "斯坦纳逆点",
+        "related": [
+          "SteinerLine"
+        ]
+      }
     },
     {
       "name": "Orthotransversal",
+      "aliases": ["正交截线"],
       "description": "Line through the sideline traces of the perpendiculars to AP, BP and CP through P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "line", "builder": "orthotransversal"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Orthocorrespondent"
+        ]
+      }
     },
     {
       "name": "Orthocorrespondent",
+      "aliases": ["正对应极点"],
       "description": "Trilinear pole of the orthotransversal of P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "orthocorrespondent"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Orthotransversal"
+        ]
+      }
     },
     {
       "name": "TaylorCircle",
+      "aliases": ["泰勒圆"],
       "description": "Taylor circle of triangle ABC, with center X(389).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle(TriangleCenter($A,$B,$C,389),($foot+Reflect($foot,Line($A,$B)))/2)", "locals": [{"name": "foot", "expression": "OrthicTriangle($A,$B,$C,1)"}]}
@@ -668,6 +885,7 @@
     },
     {
       "name": "AntigonalConjugate",
+      "aliases": ["反角共轭点"],
       "description": "Antigonal image of P, the antipode of H on the hyperbola passing through ABCHP.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "antigonal"}
@@ -689,43 +907,63 @@
     },
     {
       "name": "Isoconjugate",
+      "aliases": ["等度共轭点"],
       "description": "Diagonal reciprocal isoconjugation fixing X (five points), or sending X to Y (six points).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "Y", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "IsogonalConjugate",
+          "IsotomicConjugate"
+        ]
+      }
     },
     {
       "name": "Crosspoint",
       "description": "Crosspoint of P and Q with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "crosspoint"}
-      ]
+      ],
+      "reference": {
+        "keywords": "塞瓦巢 cevanest crossmul"
+      }
     },
     {
       "name": "Cevapoint",
       "description": "Cevapoint of P and Q with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "cevapoint"}
-      ]
+      ],
+      "reference": {
+        "keywords": "塞瓦巢 cevanest cevamul"
+      }
     },
     {
       "name": "CevaConjugate",
       "description": "X-Ceva conjugate of P with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cevaConjugate"}
-      ]
+      ],
+      "reference": {
+        "keywords": "塞瓦巢 cevanest cevaquotient cevadiv"
+      }
     },
     {
       "name": "CrossConjugate",
       "description": "X-cross conjugate of P with respect to triangle ABC.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "crossConjugate"}
-      ]
+      ],
+      "reference": {
+        "keywords": "塞瓦巢 cevanest crossquotient crossdiv"
+      }
     },
     {
       "name": "CyclocevianConjugate",
-      "description": "Cyclocevian conjugate of P with respect to triangle ABC.",
+      "aliases": ["圆截共轭点"],
+      "description": "Cyclocevian conjugate of P with respect to triangle ABC. The cyclocevian conjugate of a point is the isotomic conjugate of the anticomplement of the isogonal conjugate of the complement of the isotomic conjugate (tagct) of the point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cyclocevian"}
       ]
@@ -740,10 +978,17 @@
     },
     {
       "name": "MixtilinearIncircle",
+      "aliases": ["伪内切圆"],
       "description": "Circle tangent to rays AB and AC and internally tangent to the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,$contact)", "locals": [{"name": "reference", "expression": "Incenter($A,$B,$C)"}, {"name": "bisector", "expression": "Line($A,$reference)"}, {"name": "contact", "expression": "Intersect(Line($A,$B),PerpendicularLine($reference,$bisector))"}, {"name": "center", "expression": "Intersect($bisector,PerpendicularLine($contact,Line($A,$B)))"}]}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "MixtilinearIncircles",
+          "MixtilinearContactPoint"
+        ]
+      }
     },
     {
       "name": "MixtilinearIncircles",
@@ -751,14 +996,27 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["MixtilinearIncircle($A,$B,$C)", "MixtilinearIncircle($B,$C,$A)", "MixtilinearIncircle($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({MixtilinearIncircle($A,$B,$C),MixtilinearIncircle($B,$C,$A),MixtilinearIncircle($C,$A,$B)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "伪内切圆",
+        "related": [
+          "MixtilinearIncircle",
+          "MixtilinearContactPoint"
+        ]
+      }
     },
     {
       "name": "MixtilinearExcircle",
+      "aliases": ["伪旁切圆"],
       "description": "Circle tangent to rays AB and AC and externally tangent to the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": "Circle($center,$contact)", "locals": [{"name": "reference", "expression": "Excenter($A,$B,$C)"}, {"name": "bisector", "expression": "Line($A,$reference)"}, {"name": "contact", "expression": "Intersect(Line($A,$B),PerpendicularLine($reference,$bisector))"}, {"name": "center", "expression": "Intersect($bisector,PerpendicularLine($contact,Line($A,$B)))"}]}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "MixtilinearExcircles"
+        ]
+      }
     },
     {
       "name": "MixtilinearExcircles",
@@ -766,35 +1024,66 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "circle", "compose": ["MixtilinearExcircle($A,$B,$C)", "MixtilinearExcircle($B,$C,$A)", "MixtilinearExcircle($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "circle", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({MixtilinearExcircle($A,$B,$C),MixtilinearExcircle($B,$C,$A),MixtilinearExcircle($C,$A,$B)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "伪旁切圆",
+        "related": [
+          "MixtilinearExcircles"
+        ]
+      }
     },
     {
       "name": "MixtilinearContactPoint",
       "description": "Contact point of the A-mixtilinear incircle with the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "(Radius($circum)*Center($mixt)-Radius($mixt)*Center($circum))/(Radius($circum)-Radius($mixt))", "locals": [{"name": "circum", "expression": "Circle($A,$B,$C)"}, {"name": "mixt", "expression": "MixtilinearIncircle($A,$B,$C)"}]}
-      ]
+      ],
+      "reference": {
+        "keywords": "伪内切圆切点",
+        "related": [
+          "MixtilinearIncircle",
+          "MixtilinearContactPoint"
+        ]
+      }
     },
     {
       "name": "HaggeCircle",
       "description": "Hagge circle of P, through the orthocenter with center the reflection of its isogonal conjugate in the nine-point center.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(Reflect(IsogonalConjugate($A,$B,$C,$P),NinePointCenter($A,$B,$C)),Orthocenter($A,$B,$C))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "哈格圆",
+        "related": [
+          "HaggeInverse"
+        ]
+      }
     },
     {
       "name": "HaggeInverse",
       "description": "Inverse of P in its Hagge circle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "Reflect($P,HaggeCircle($A,$B,$C,$P))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "哈格圆反演",
+        "related": [
+          "HaggeCircle"
+        ]
+      }
     },
     {
       "name": "ApolloniusCircle",
       "description": "Generalized Apollonius circle PB/PC = AB/AC; an equal ratio gives a line represented as a degenerate conic.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "apollonius"}
-      ]
+      ],
+      "reference": {
+        "keywords": "阿波罗尼奥斯圆 阿波罗尼斯圆 调和",
+        "related": [
+          "ApolloniusCircles"
+        ]
+      }
     },
     {
       "name": "ApolloniusCircles",
@@ -802,10 +1091,17 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": ["ApolloniusCircle($A,$B,$C)", "ApolloniusCircle($B,$C,$A)", "ApolloniusCircle($C,$A,$B)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "conic", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({ApolloniusCircle($A,$B,$C),ApolloniusCircle($B,$C,$A),ApolloniusCircle($C,$A,$B)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "阿波罗尼奥斯圆 阿波罗尼斯圆 调和",
+        "related": [
+          "ApolloniusCircle"
+        ]
+      }
     },
     {
       "name": "KiepertHyperbola",
+      "aliases": ["基佩特双曲线"],
       "description": "Kiepert rectangular circumhyperbola, the isogonal image of the Brocard axis.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "IsogonalConjugate($A,$B,$C,Line(Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C)))"}
@@ -813,6 +1109,7 @@
     },
     {
       "name": "JerabekHyperbola",
+      "aliases": ["杰拉贝克双曲线"],
       "description": "Jerabek rectangular circumhyperbola through ABC, the circumcenter and symmedian point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "Conic($A,$B,$C,Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C))"}
@@ -820,6 +1117,7 @@
     },
     {
       "name": "FeuerbachHyperbola",
+      "aliases": ["费尔巴哈双曲线"],
       "description": "Feuerbach rectangular circumhyperbola through ABC, I and the orthocenter of BCI.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "compose": "Conic($A,$B,$C,$incenter,TriangleCenter($A,$B,$C,7))", "locals": [{"name": "incenter", "expression": "Incenter($A,$B,$C)"}]}
@@ -827,17 +1125,30 @@
     },
     {
       "name": "SteinerInellipse",
+      "aliases": ["斯坦纳内切椭圆"],
       "description": "Ellipse tangent to the triangle sidelines at their midpoints.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "steinerInellipse"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "SteinerFoci",
+          "SteinerCircumellipse"
+        ]
+      }
     },
     {
       "name": "SteinerCircumellipse",
+      "aliases": ["斯坦纳外接椭圆"],
       "description": "Circumellipse of ABC centered at its centroid.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "conic", "builder": "steinerCircumellipse"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "SteinerInellipse"
+        ]
+      }
     },
     {
       "name": "SteinerFoci",
@@ -845,7 +1156,13 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Element({Focus(SteinerInellipse($A,$B,$C))},1)", "Element({Focus(SteinerInellipse($A,$B,$C))},2)"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=2,Element({Element({Focus(SteinerInellipse($A,$B,$C))},1),Element({Focus(SteinerInellipse($A,$B,$C))},2)},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "斯坦纳内切椭圆 焦点 老封点 Laofeng",
+        "related": [
+          "SteinerInellipse"
+        ]
+      }
     },
     {
       "name": "InconicWithFocus",
@@ -871,24 +1188,37 @@
     },
     {
       "name": "Cubic",
-      "description": "Cubic through nine points; native triangle/index forms retain their original meaning.",
+      "aliases": ["三次曲线"],
+      "description": "Cubic through nine points or a Gibert cubic from http://bernard-gibert.fr/index.html.",
       "overloads": [
         {"params": [{"name": "P1", "type": "point"}, {"name": "P2", "type": "point"}, {"name": "P3", "type": "point"}, {"name": "P4", "type": "point"}, {"name": "P5", "type": "point"}, {"name": "P6", "type": "point"}, {"name": "P7", "type": "point"}, {"name": "P8", "type": "point"}, {"name": "P9", "type": "point"}], "returns": "implicitCurve", "expression": "ImplicitCurve($P1,$P2,$P3,$P4,$P5,$P6,$P7,$P8,$P9)"}
       ],
       "reference": {
-        "keywords": "interpolation third degree 三次曲线",
+        "keywords": "interpolation third degree 三次曲线 K00 Neuberg Thompson McCay Lucas",
         "details": [
           "The extension constructs a cubic through nine points. The native triangle-and-index form remains available."
         ],
         "related": [
           "CircularCubic",
-          "HessianCubic",
-          "ThirdIntersection"
+          "ThirdIntersection",
+          "Polar",
+          "PolarConic",
+          "HessianCubic"
+        ],
+        "examples": [
+          {
+            "command": "Cubic(A,B,C,D,E,F,G,H,I)"
+          },
+          {
+            "command": "Cubic(A,B,C,1)",
+            "note": "Gibert cubic K001 (Neuberg cubic)."
+          }
         ]
       }
     },
     {
       "name": "Polar",
+      "aliases": ["极线"],
       "description": "Second polar line of a point with respect to a cubic; native conic polar and pole overloads are preserved.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "cubicPolar"}
@@ -906,10 +1236,17 @@
     },
     {
       "name": "PolarConic",
+      "aliases": ["极锥线"],
       "description": "First homogeneous polar conic of a point with respect to a cubic.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "conic", "builder": "cubicPolarConic"}
-      ]
+      ],
+      "reference": {
+        "keywords": "极圆锥曲线",
+        "related": [
+          "Polar"
+        ]
+      }
     },
     {
       "name": "ThirdIntersection",
@@ -928,6 +1265,7 @@
           }
         ],
         "related": [
+          "Polar",
           "Pretangential",
           "CubicInvolution"
         ]
@@ -939,7 +1277,14 @@
       "overloads": [
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}], "returns": "point", "builder": "pretangential"},
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "A", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "pretangential"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "PolarConic",
+          "ThirdIntersection",
+          "CubicInvolution"
+        ]
+      }
     },
     {
       "name": "CubicInvolution",
@@ -951,27 +1296,50 @@
     },
     {
       "name": "PivotalIsogonalCubic",
+      "aliases": ["主等角三次曲线"],
       "description": "Locus where a point, its isogonal conjugate and pivot P are collinear.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotal"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "PivotalCubic",
+          "PivotalIsotomicCubic"
+        ]
+      }
     },
     {
       "name": "BrocardAxis",
+      "aliases": ["布洛卡轴"],
       "description": "Line joining the circumcenter and symmedian point.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Line(Circumcenter($A,$B,$C),SymmedianPoint($A,$B,$C))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "布洛卡线 布罗卡轴 布罗卡线",
+        "related": [
+          "KiepertHyperbola",
+          "SymmedianPoint"
+        ]
+      }
     },
     {
       "name": "LemoineAxis",
+      "aliases": ["莱莫恩轴"],
       "description": "Polar of the symmedian point in the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "compose": "Polar(SymmedianPoint($A,$B,$C),Circle($A,$B,$C))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "莱莫恩线",
+        "related": [
+          "SymmedianPoint"
+        ]
+      }
     },
     {
       "name": "OrthicAxis",
+      "aliases": ["极轴"],
       "description": "Trilinear polar of the orthocenter or the locus of points whose polar conic of a cubic is a rectangular hyperbola.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "line", "builder": "orthicAxis"},
@@ -1038,7 +1406,7 @@
     {
       "name": "QAP3",
       "description": "Gergonne-Steiner point of the four-point set.",
-      "aliases": ["GergonneSteinerPoint", "Pseudocircumcenter"],
+      "aliases": ["GergonneSteinerPoint", "Pseudocircumcenter", "伪外心"],
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "compose": "($A+$B+$C+$D)/2-QAP2($A,$B,$C,$D)"}
       ]
@@ -1046,7 +1414,7 @@
     {
       "name": "QAP4",
       "description": "Isogonal center of the four-point set; cyclic sets return their circumcenter.",
-      "aliases": ["IsogonalCenter"],
+      "aliases": ["IsogonalCenter", "等角中心"],
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "builder": "qap4"}
       ]
@@ -1088,7 +1456,7 @@
     },
     {
       "name": "MiquelPoint",
-      "aliases": ["QLP1"],
+      "aliases": ["QLP1", "密克点"],
       "description": "Miquel point of the complete quadrilateral with ordered vertices ABCD, or of four supporting lines.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "ToPoint(ToComplex($A)+ToComplex($B-$A)*ToComplex($D-$A)/ToComplex($B+$D-$C-$A))"},
@@ -1166,7 +1534,7 @@
     },
     {
       "name": "NewtonLine",
-      "aliases": ["QLL1"],
+      "aliases": ["QLL1", "牛顿线"],
       "description": "Newton line of the quadrilateral with ordered vertices ABCD, or of four supporting lines.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "Line(($A+$C)/2,($B+$D)/2)"},
@@ -1175,12 +1543,16 @@
     },
     {
       "name": "SteinerLineQ",
-      "aliases": ["QLL2"],
+      "aliases": ["QLL2", "垂心线"],
       "description": "Steiner line of a complete quadrilateral. Radical axis of the circles with diameters AC and BD; contains the four component-triangle orthocenters.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "line", "expression": "($nx*x+$ny*y+$k=0)", "locals": [{"name": "nx", "expression": "x($B)+x($D)-x($A)-x($C)"}, {"name": "ny", "expression": "y($B)+y($D)-y($A)-y($C)"}, {"name": "k", "expression": "x($A)*x($C)+y($A)*y($C)-x($B)*x($D)-y($B)*y($D)"}]},
         {"params": [{"name": "l1", "type": "lineLike"}, {"name": "l2", "type": "lineLike"}, {"name": "l3", "type": "lineLike"}, {"name": "l4", "type": "lineLike"}], "returns": "line", "compose": "SteinerLineQ(Intersect($s4,$s1),Intersect($s1,$s2),Intersect($s2,$s3),Intersect($s3,$s4))", "locals": [{"name": "s1", "expression": "Line(Point($l1,0.25),Point($l1,0.5))"}, {"name": "s2", "expression": "Line(Point($l2,0.25),Point($l2,0.5))"}, {"name": "s3", "expression": "Line(Point($l3,0.25),Point($l3,0.5))"}, {"name": "s4", "expression": "Line(Point($l4,0.25),Point($l4,0.5))"}]}
-      ]
+      ],
+      "reference": {
+        "keywords": "高斯-波登米勒定理 Gauss Bodenmiller coaxial radical 根轴 共轴",
+        "related": ["TangentParabola", "SteinerLine"]
+      }
     },
     {
       "name": "QLCi5",
@@ -1228,8 +1600,8 @@
     },
     {
       "name": "QLCu1",
-      "aliases": ["DragonCubic"],
-      "description": "Loci of isogonal conjugate pairs of a complete quadrilateral. Circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
+      "aliases": ["DragonCubic", "巨龙曲线"],
+      "description": "Loci of isogonal conjugate pairs of a complete quadrilateral. Focal circular cubic whose conjugate-pair midpoints lie on the Newton or specified line.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qlCubicCoordinates"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "qlCubic"}
@@ -1240,7 +1612,12 @@
       "description": "Circular cubic of coaxal circles through the corresponding diagonal pairs.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "qaCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "QACu1Inv"
+        ]
+      }
     },
     {
       "name": "QLQu3",
@@ -1262,7 +1639,14 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "G", "type": "point"}], "returns": "implicitCurve", "builder": "circularCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "E", "type": "point"}, {"name": "F", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "circularCubicDirection"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Cubic",
+          "NodalCubic",
+          "Strophoid"
+        ]
+      }
     },
     {
       "name": "CayleyBacharachPoint",
@@ -1341,14 +1725,28 @@
       "description": "Pivotal isocubic with conjugation pole Omega and pivot P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "PivotalIsogonalCubic",
+          "PivotalIsotomicCubic",
+          "NonpivotalCubic"
+        ]
+      }
     },
     {
       "name": "PivotalIsotomicCubic",
+      "aliases": ["主等截三次曲线"],
       "description": "Pivotal isocubic for isotomic conjugation with pivot P.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalIsotomicCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "PivotalCubic",
+          "PivotalIsogonalCubic"
+        ]
+      }
     },
     {
       "name": "NonpivotalCubic",
@@ -1356,14 +1754,24 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "PivotalCubic"
+        ]
+      }
     },
     {
       "name": "QACu1Inv",
       "description": "Locus of fourth vertices X for which P lies on QA-Cu1(A,B,C,X).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "qaCu1Inverse"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "QACu1"
+        ]
+      }
     },
     {
       "name": "ConicoPivotalCubic",
@@ -1389,7 +1797,15 @@
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "nodalCubic"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "nodalCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Cubic",
+          "CircularCubic",
+          "CuspidalCubic",
+          "Strophoid"
+        ]
+      }
     },
     {
       "name": "CuspidalCubic",
@@ -1401,17 +1817,33 @@
         {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
         {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"l","type":"lineLike"}],"returns":"implicitCurve","builder":"cuspidalCubic"},
         {"params": [{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"l","type":"lineLike"},{"name":"i","type":"number"}],"returns":"implicitCurve","builder":"cuspidalCubic"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Cubic",
+          "CircularCubic",
+          "NodalCubic"
+        ]
+      }
     },
     {
       "name": "Strophoid",
+      "aliases": ["斜环索线"],
       "description": "Orthogonal nodal circular cubic, angle-bisector locus, or moving-circle locus, according to the overload.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "implicitCurve", "builder": "strophoid"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "strophoid"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "implicitCurve", "builder": "strophoid"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "implicitCurve", "builder": "strophoid"}
-      ]
+      ],
+      "reference": {
+        "related": [
+          "Cubic",
+          "CircularCubic",
+          "NodalCubic",
+          "CuspidalCubic"
+        ]
+      }
     }
   ]
 }
