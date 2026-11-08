@@ -14,7 +14,7 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 | `persistence/` | 本地草稿存储和 GGB 文件编解码。 |
 | `commands/` | 命令解析、执行、补全及自定义工具编译。 |
 | `analysis/` | 作图依赖图与数值关系发现；算法和 Worker 见该目录 README。 |
-| `commands/reference/`、`components/reference/` | 工具参考的数据索引和共享阅读界面。 |
+| `commands/toolReference.ts`、`components/reference/` | 工具参考的数据索引和共享阅读界面。 |
 | `reasoning/` | 推理问题、中间表示、条件选择、证明和后端；详见该目录 README。 |
 | `settings/`、`interaction/`、`geometry/` | 对象偏好、画布联动和共享几何运算。 |
 
@@ -24,7 +24,7 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 
 ## 维护工具参考
 
-普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/reference/toolCategories.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。测试要求每个正式工具至少属于一个分类，运行时仍会将未归类工具显示在 Other constructions。
+普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/custom/toolCategories.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。测试要求每个正式工具至少属于一个分类，运行时仍会将未归类工具显示在 Other constructions。
 
 在 `library.json` 工具条目的可选 `reference` 字段中补充 `examples`、`details`、`related` 和 `keywords`。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。相关工具使用正式名称，高级命令带 `!` 前缀。
 

@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   findReferenceTool, getReferenceTools, gibertReferenceIds,
   searchReferenceTools, specialGroup, toolReferencePath, visitToolCategories,
-} from '../../commands/reference/toolReference';
-import type { ReferenceTool } from '../../commands/reference/toolReference';
-import { toolGroups } from '../../commands/reference/toolCategories';
-import type { ToolCategory } from '../../commands/reference/toolCategories';
+} from '../../commands/toolReference';
+import type { ReferenceTool } from '../../commands/toolReference';
+import { toolGroups } from '../../commands/custom/toolCategories';
+import type { ToolCategory } from '../../commands/custom/toolCategories';
+import { studioToolCatalog } from '../../commands/custom/toolLibrary';
+import { advancedCommands } from '../../commands/advancedCommands';
 import StudioIcon from '../studio/StudioIcon';
 import './tool-reference.css';
 
@@ -130,7 +132,7 @@ export default function ToolReference({ name, onSelect, onClose, onInsert, inser
   const id = useId();
   const searchRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLElement>(null);
-  const tools = getReferenceTools();
+  const tools = getReferenceTools(studioToolCatalog, advancedCommands.list());
   const selected = findReferenceTool(tools, name);
   const results = searchReferenceTools(tools, query, '');
   const other = tools.filter((tool) => tool.groups.includes('Other constructions')).map((tool) => tool.name);

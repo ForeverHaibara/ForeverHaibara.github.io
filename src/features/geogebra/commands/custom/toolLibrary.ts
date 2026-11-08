@@ -1,6 +1,7 @@
 import definitions from './library.json';
 import { GEOMETRY_BUILDERS } from './builders';
-import { validateReferenceMetadata } from '../reference/referenceMetadata';
+import { validateReferenceMetadata } from '../toolReference';
+export { toolSignature } from '../toolReference';
 import type { GeometryType, ParameterType, ResolvedToolLibrary, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
 
 const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine', 'catalogId']);
@@ -99,5 +100,3 @@ export const expandTool = (overload: ToolOverload, args: readonly TypedExpressio
   for (const local of overload.locals ?? []) bindings.set(local.name, substitute(local.expression));
   return { expression: substitute(overload.expression!), type: overload.returns };
 };
-
-export const toolSignature = (tool: ToolDefinition, overload: ToolOverload) => `${tool.name}(${overload.params.map((param) => `${param.name}: ${param.type}${overload.variadic ? '…' : ''}`).join(', ')})`;

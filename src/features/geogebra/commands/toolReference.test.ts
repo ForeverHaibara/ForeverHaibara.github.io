@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AdvancedCommandRegistry, advancedCommands } from '../advancedCommands';
-import { resolveToolAliases, studioToolCatalog } from '../custom/toolLibrary';
-import { toolGroups } from './toolCategories';
+import { AdvancedCommandRegistry, advancedCommands } from './advancedCommands';
+import { resolveToolAliases, studioToolCatalog } from './custom/toolLibrary';
+import { toolGroups } from './custom/toolCategories';
 import { findReferenceTool, getReferenceTools, searchReferenceTools, specialGroup, visitToolCategories } from './toolReference';
 
-const tools = getReferenceTools();
+const tools = getReferenceTools(studioToolCatalog, advancedCommands.list());
 
 describe('Studio tool reference', () => {
   it('uses canonical construction entries and derives special command syntax from the registry', () => {

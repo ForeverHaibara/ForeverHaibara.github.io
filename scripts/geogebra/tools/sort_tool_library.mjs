@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
 const libraryUrl = new URL('../../../src/features/geogebra/commands/custom/library.json', import.meta.url);
-const categoriesUrl = new URL('../../../src/features/geogebra/commands/reference/toolCategories.ts', import.meta.url);
+const categoriesUrl = new URL('../../../src/features/geogebra/commands/custom/toolCategories.ts', import.meta.url);
 
 // Read the literal tree with the TypeScript parser without executing the source file.
 export function readCategories(source) {

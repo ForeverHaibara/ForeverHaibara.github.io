@@ -1,3 +1,5 @@
+import type { ReferenceMetadata } from '../toolReference';
+
 export type GeometryType = 'point' | 'line' | 'segment' | 'ray' | 'circle' | 'conic' | 'implicitCurve' | 'number' | 'list' | 'vector' | 'function' | 'unknown';
 export type ParameterType = GeometryType | 'lineLike' | 'pointOrLine' | 'catalogId';
 
@@ -64,6 +66,3 @@ export interface CommandEnvironment {
   /** Internal composition tokens whose binding is a lexical literal. */
   literals?: Map<string, string>;
 }
-
-import type { ReferenceMetadata } from '../reference/referenceMetadata';
-

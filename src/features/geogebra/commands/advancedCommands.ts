@@ -1,8 +1,8 @@
 import type { GeoGebraEngine } from '../types';
 import { nearestTriangleCenter } from './advanced/nearestTriangleCenter';
 import { parseApiCall } from './apiConsoleParser';
-import { validateReferenceMetadata } from './reference/referenceMetadata';
-import type { ReferenceMetadata } from './reference/referenceMetadata';
+import { validateReferenceMetadata } from './toolReference';
+import type { ReferenceMetadata } from './toolReference';
 export interface AdvancedCommand {
   name: string;
   description: string;
