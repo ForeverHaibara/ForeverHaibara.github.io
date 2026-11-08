@@ -69,11 +69,16 @@ describe('Studio tool reference', () => {
     const complete = async (query: string) => studioCompletionRegistry.complete(getCompletionContext(query, query.length, query.length, true)!, new AbortController().signal);
     const nativeCompletion = (await complete('Incircle')).find((item) => item.label === 'Incircle')!;
     expect(nativeCompletion.referenceName).toBe('Incircle');
+    expect(nativeCompletion.description).toBe(nativeCommandReference.Incircle.description);
+    expect(nativeCompletion.nativeDescription).toBeUndefined();
     expect(nativeCompletion.signatures).toContain('Incircle(A: point, B: point, C: point)');
     const mixedCompletion = (await complete('Conic')).find((item) => item.label === 'Conic')!;
     expect(mixedCompletion.referenceName).toBe('Conic');
+    expect(mixedCompletion.description).toBe(findReferenceTool(tools, 'Conic')?.description);
+    expect(mixedCompletion.nativeDescription).toBe(nativeCommandReference.Conic.description);
     expect(mixedCompletion.signatures).toContain('Conic(coefficients: list)');
     expect(mixedCompletion.signatures?.filter((signature) => signature === 'Conic(A: point, B: point, C: point, D: point, E: point)')).toHaveLength(1);
+    expect(searchReferenceTools(tools, 'polygon', '').map(({ tool }) => tool.name)).toContain('Centroid');
   });
 
   it('finds aliases, terminology, cross-listed cubics and numbered tools', () => {

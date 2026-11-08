@@ -34,6 +34,7 @@ studioCompletionRegistry.registerCommands('studio-geometry', studioToolLibrary.t
   kind: 'custom',
   referenceName: tool.canonicalName,
   description: tool.description,
+  nativeDescription: tool.name === tool.canonicalName ? nativeCommandReference[tool.name]?.description : undefined,
   signatures: [...new Set([
     ...tool.overloads.map((overload) => toolSignature(tool, overload)),
     ...(tool.name === tool.canonicalName ? nativeCommandReference[tool.name]?.signatures.map(({ text }) => text) ?? [] : []),

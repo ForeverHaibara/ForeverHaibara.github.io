@@ -144,7 +144,7 @@ export function searchReferenceTools(tools: readonly ReferenceTool[], query: str
     const labels = [tool.name, ...tool.aliases].flatMap((name) =>
       name.startsWith('!') ? [name.toLowerCase(), name.slice(1).toLowerCase()] : [name.toLowerCase()],
     );
-    const index = [...labels, ...tool.paths.flat(), tool.description, tool.notes?.keywords ?? ''].join(' ').toLowerCase();
+    const index = [...labels, ...tool.paths.flat(), tool.description, tool.native?.description ?? '', tool.notes?.keywords ?? ''].join(' ').toLowerCase();
     const numberedMatch = (tool.name === 'TriangleCenter' && /^x\(\s*\d+\s*\)$/u.test(key))
       || (tool.name === 'GibertCurve' && gibertReferenceIds.includes(key.toUpperCase()));
     if (!numberedMatch && !terms.every((term) => index.includes(term))) return [];

@@ -72,6 +72,7 @@ function ToolDetail({ tool, related, onSelect, onInsert, insertUnavailable }: To
     {tool.aliases.length > 0 && <p className="ggb-reference-aliases">Also available as {tool.aliases.map((alias) => <code key={alias}>{alias}</code>)}</p>}
     {tool.native && <>
       <h4>GeoGebra syntax</h4>
+      {tool.native.description !== tool.description && <p>{tool.native.description}</p>}
       <ul className="ggb-reference-signatures">
         {tool.native.signatures.map(({ text, type, note }) => <li key={text}>
           <code>{text}</code>
@@ -190,6 +191,7 @@ export default function ToolReference({ name, onSelect, onClose, onInsert, inser
         {onClose && <button type="button" onClick={onClose} aria-label="Close tool reference" className="ggb-reference-close"><StudioIcon name="close" /></button>}
       </div>
     </header>
+    <p className="ggb-reference-manual">Explore more native commands in the <a href="https://geogebra.github.io/docs/manual/en/commands/All_Commands/" target="_blank" rel="noopener noreferrer">GeoGebra command index ↗</a>.</p>
     <div className="ggb-reference-body">
       <nav aria-label="Browse tools" className="ggb-reference-browser">
         <div className="ggb-reference-filters">
