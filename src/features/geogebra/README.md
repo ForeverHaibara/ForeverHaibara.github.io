@@ -24,7 +24,7 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 
 ## 维护工具参考
 
-普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/reference/referenceNotes.ts` 的 `toolGroups` 中按正式名称维护。跨领域命令可以加入多个分类，目录依然只显示一条。暂未归类的工具会出现在 Other constructions。
+普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/reference/referenceNotes.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。暂未归类的工具会出现在 Other constructions。
 
 在同一文件的 `referenceNotes` 中按正式名称补充示例、限制、相关工具和常用搜索词。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。
 

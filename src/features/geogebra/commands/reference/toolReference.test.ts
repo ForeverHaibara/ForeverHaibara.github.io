@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advancedCommands } from '../advancedCommands';
 import { studioToolCatalog } from '../custom/toolLibrary';
 import { referenceNotes, toolGroups } from './referenceNotes';
-import { findReferenceTool, getReferenceTools, searchReferenceTools, specialGroup } from './toolReference';
+import { findReferenceTool, getReferenceTools, searchReferenceTools, specialGroup, visitToolCategories } from './toolReference';
 
 const tools = getReferenceTools();
 
@@ -20,14 +20,16 @@ describe('Studio tool reference', () => {
   it('keeps classifications and supplemental notes attached to real canonical entries', () => {
     const names = new Set(tools.map(({ name }) => name));
     const duplicates: string[] = [];
-    for (const [category, group] of Object.entries(toolGroups)) {
-      const seen = new Set<string>();
+    const seenByGroup = new Map<string, Set<string>>();
+    visitToolCategories(toolGroups, (path, group) => {
+      const seen = seenByGroup.get(path[0]) ?? new Set<string>();
+      seenByGroup.set(path[0], seen);
       for (const name of group) {
-        if (seen.has(name)) duplicates.push(`${category}: ${name}`);
+        if (seen.has(name)) duplicates.push(`${path.join(' / ')}: ${name}`);
         seen.add(name);
-        expect(names.has(name), `Unknown tool "${name}" in category "${category}"`).toBe(true);
+        expect(names.has(name), `Unknown tool "${name}" in category "${path.join(' / ')}"`).toBe(true);
       }
-    }
+    });
     expect(duplicates, 'Duplicate tools within categories').toEqual([]);
     for (const [name, note] of Object.entries(referenceNotes)) {
       expect(names.has(name), name).toBe(true);
@@ -44,5 +46,7 @@ describe('Studio tool reference', () => {
     }
     expect(searchReferenceTools(tools, 'Q036A', '')[0]?.tool.name).toBe('GibertCurve');
     expect(searchReferenceTools(tools, 'X(2)', '')[0]?.tool.name).toBe('TriangleCenter');
+    expect(findReferenceTool(tools, 'PedalCircle')?.paths).toContainEqual(['Triangle constructions', 'Circles', 'Circles from a point']);
+    expect(searchReferenceTools(tools, 'circles from a point', '').map(({ tool }) => tool.name)).toContain('PedalCircle');
   });
 });

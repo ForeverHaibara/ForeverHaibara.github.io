@@ -3,6 +3,7 @@ import { gibertCurveRecords } from '../custom/builders/relatedCurves';
 import { studioToolCatalog, toolSignature } from '../custom/toolLibrary';
 import type { GeometryType } from '../custom/types';
 import { referenceNotes, toolGroups } from './referenceNotes';
+import type { ToolCategory } from './referenceNotes';
 
 export const specialGroup = 'Special commands';
 const otherGroup = 'Other constructions';
@@ -14,24 +15,37 @@ export interface ReferenceTool {
   description: string;
   aliases: readonly string[];
   groups: readonly string[];
+  paths: readonly (readonly string[])[];
   signatures: readonly { text: string; type?: GeometryType }[];
   notes: (typeof referenceNotes)[string];
 }
 
 const groupsByTool = new Map<string, string[]>();
-for (const [group, names] of Object.entries(toolGroups)) {
-  for (const name of names) {
-    const groups = groupsByTool.get(name) ?? [];
-    groups.push(group);
-    groupsByTool.set(name, groups);
+const pathsByTool = new Map<string, string[][]>();
+export function visitToolCategories(categories: ToolCategory, visit: (path: string[], names: readonly string[]) => void, parent: string[] = []) {
+  for (const [label, children] of Object.entries(categories)) {
+    const path = [...parent, label];
+    if (Array.isArray(children)) visit(path, children);
+    else visitToolCategories(children as ToolCategory, visit, path);
   }
 }
+visitToolCategories(toolGroups, (path, names) => {
+  for (const name of names) {
+    const paths = pathsByTool.get(name) ?? [];
+    paths.push(path);
+    pathsByTool.set(name, paths);
+    const groups = groupsByTool.get(name) ?? [];
+    if (!groups.includes(path[0])) groups.push(path[0]);
+    groupsByTool.set(name, groups);
+  }
+});
 
 const constructions: ReferenceTool[] = studioToolCatalog.tools.map((tool) => ({
   name: tool.name,
   description: tool.description,
   aliases: tool.aliases ?? [],
   groups: groupsByTool.get(tool.name) ?? [otherGroup],
+  paths: pathsByTool.get(tool.name) ?? [[otherGroup]],
   signatures: tool.overloads.map((overload) => ({ text: toolSignature(tool, overload), type: overload.returns })),
   notes: referenceNotes[tool.name],
 }));
@@ -44,6 +58,7 @@ export function getReferenceTools(): ReferenceTool[] {
       description,
       aliases: [],
       groups: [specialGroup],
+      paths: [[specialGroup]],
       signatures: signatures.map((text) => ({ text: `!${text}` })),
       notes: referenceNotes[command],
     };
@@ -67,7 +82,7 @@ export function searchReferenceTools(tools: readonly ReferenceTool[], query: str
     const labels = [tool.name, ...tool.aliases].flatMap((name) =>
       name.startsWith('!') ? [name.toLowerCase(), name.slice(1).toLowerCase()] : [name.toLowerCase()],
     );
-    const index = [...labels, ...tool.groups, tool.description, tool.notes?.keywords ?? ''].join(' ').toLowerCase();
+    const index = [...labels, ...tool.paths.flat(), tool.description, tool.notes?.keywords ?? ''].join(' ').toLowerCase();
     const numberedMatch = (tool.name === 'TriangleCenter' && /^x\(\s*\d+\s*\)$/u.test(key))
       || (tool.name === 'GibertCurve' && gibertReferenceIds.includes(key.toUpperCase()));
     if (!numberedMatch && !terms.every((term) => index.includes(term))) return [];

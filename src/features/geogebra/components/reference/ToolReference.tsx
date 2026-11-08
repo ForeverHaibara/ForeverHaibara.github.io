@@ -1,10 +1,12 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  findReferenceTool, getReferenceTools, gibertReferenceIds, referenceGroups,
-  searchReferenceTools, specialGroup, toolReferencePath,
+  findReferenceTool, getReferenceTools, gibertReferenceIds,
+  searchReferenceTools, specialGroup, toolReferencePath, visitToolCategories,
 } from '../../commands/reference/toolReference';
 import type { ReferenceTool } from '../../commands/reference/toolReference';
+import { toolGroups } from '../../commands/reference/referenceNotes';
+import type { ToolCategory } from '../../commands/reference/referenceNotes';
 import StudioIcon from '../studio/StudioIcon';
 import './tool-reference.css';
 
@@ -60,7 +62,7 @@ function ToolDetail({ tool, related, onSelect, onInsert, insertUnavailable }: To
   related: ReferenceTool[];
 }) {
   return <>
-    <p className="ggb-reference-kicker">{tool.groups.join(' · ')}</p>
+    <div className="ggb-reference-paths">{tool.paths.map((path) => <p className="ggb-reference-kicker" key={JSON.stringify(path)}>{path.join(' / ')}</p>)}</div>
     <h3><code>{tool.name}</code></h3>
     <p>{tool.description}</p>
     {tool.aliases.length > 0 && <p className="ggb-reference-aliases">Also available as {tool.aliases.map((alias) => <code key={alias}>{alias}</code>)}</p>}
@@ -92,23 +94,54 @@ function ToolDetail({ tool, related, onSelect, onInsert, insertUnavailable }: To
   </>;
 }
 
+function CategoryTree({ categories, tools, selected, onSelect }: {
+  categories: ToolCategory;
+  tools: readonly ReferenceTool[];
+  selected?: ReferenceTool;
+  onSelect?: ToolReferenceProps['onSelect'];
+}) {
+  const byName = new Map(tools.map((tool) => [tool.name, tool]));
+  const renderCategories = (branches: ToolCategory): React.ReactNode => Object.entries(branches).map(([label, children]) => {
+    const names = new Set<string>();
+    if (Array.isArray(children)) children.forEach((name) => names.add(name));
+    else visitToolCategories(children as ToolCategory, (_path, entries) => entries.forEach((name) => names.add(name)));
+    const count = [...names].filter((name) => byName.has(name)).length;
+    if (!count) return null;
+    return <li key={label} className="ggb-reference-category">
+      <details>
+        <summary><span>{label}</span><span className="ggb-reference-category-count">{count}</span></summary>
+        {Array.isArray(children)
+          ? <ul className="ggb-reference-category-tools">{children.flatMap((name) => {
+            const tool = byName.get(name);
+            return tool ? [<li key={name}><ReferenceAction name={name} onSelect={onSelect} current={selected?.name === name}>
+              <code>{name}</code>
+            </ReferenceAction></li>] : [];
+          })}</ul>
+          : <ul className="ggb-reference-category-children">{renderCategories(children as ToolCategory)}</ul>}
+      </details>
+    </li>;
+  });
+  return <ul className="ggb-reference-category-tree">{renderCategories(categories)}</ul>;
+}
+
 export default function ToolReference({ name, onSelect, onClose, onInsert, insertUnavailable }: ToolReferenceProps) {
   const [query, setQuery] = useState('');
-  const [group, setGroup] = useState('');
   const [introOpen, setIntroOpen] = useState(false);
   const id = useId();
   const searchRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const tools = getReferenceTools();
   const selected = findReferenceTool(tools, name);
-  const results = searchReferenceTools(tools, query, group);
-  const groups = referenceGroups.filter((category) => tools.some((tool) => tool.groups.includes(category)));
+  const results = searchReferenceTools(tools, query, '');
+  const other = tools.filter((tool) => tool.groups.includes('Other constructions')).map((tool) => tool.name);
+  const special = tools.filter((tool) => tool.groups.includes(specialGroup)).map((tool) => tool.name);
+  const categories: ToolCategory = { ...toolGroups, ...(other.length ? { 'Other constructions': other } : {}), ...(special.length ? { [specialGroup]: special } : {}) };
   const related = selected?.notes?.related?.flatMap((relatedName) => {
     const tool = findReferenceTool(tools, relatedName);
     return tool ? [tool] : [];
   }) ?? [];
   const Heading = onClose ? 'h2' : 'h1';
-  const hasFilter = Boolean(query.trim() || group);
+  const hasFilter = Boolean(query.trim());
   const showDetail = Boolean(name || introOpen);
   const focusOnNavigate = useRef(false);
   const select = onSelect && ((target?: string) => {
@@ -143,28 +176,24 @@ export default function ToolReference({ name, onSelect, onClose, onInsert, inser
         <div className="ggb-reference-filters">
           <label className="sr-only" htmlFor={`${id}-search`}>Search tools</label>
           <input ref={searchRef} id={`${id}-search`} type="search" placeholder="Search tools, aliases or terms…" value={query} onChange={(event) => setQuery(event.target.value)} />
-          <label className="sr-only" htmlFor={`${id}-group`}>Tool category</label>
-          <select id={`${id}-group`} value={group} onChange={(event) => setGroup(event.target.value)}>
-            <option value="">All categories</option>
-            {groups.map((category) => <option key={category}>{category}</option>)}
-          </select>
         </div>
         <div className="ggb-reference-list">
           <div className="ggb-reference-list-meta">
             <ReferenceAction onSelect={onSelect && (() => { focusOnNavigate.current = true; setIntroOpen(true); })}><strong>Quick start</strong></ReferenceAction>
             <span role="status">{results.length} {results.length === 1 ? 'tool' : 'tools'}</span>
           </div>
-          {group === specialGroup && <p className="ggb-reference-muted">These commands use the <code>!</code> prefix in the Studio command bar.</p>}
+          {!hasFilter && <p className="ggb-reference-browse-label">Browse by category</p>}
           {results.length === 0 && <div className="ggb-reference-empty">
             <p>No tools match these filters.</p>
-            <button type="button" onClick={() => { setQuery(''); setGroup(''); searchRef.current?.focus(); }}>Clear filters</button>
+            <button type="button" onClick={() => { setQuery(''); searchRef.current?.focus(); }}>Clear search</button>
           </div>}
-          {results.length > 0 && <ul>
+          <div hidden={hasFilter}><CategoryTree categories={categories} tools={tools} selected={selected} onSelect={select} /></div>
+          {hasFilter && results.length > 0 && <ul>
             {results.map(({ tool, alias }) => <li key={tool.name}>
               <ReferenceAction name={tool.name} onSelect={select} current={selected?.name === tool.name}>
                 <code>{tool.name}</code>
                 {alias && <span>Alias {alias}</span>}
-                <span>{hasFilter ? tool.description : tool.groups.join(' · ')}</span>
+                <span>{tool.description}</span>
               </ReferenceAction>
             </li>)}
           </ul>}
