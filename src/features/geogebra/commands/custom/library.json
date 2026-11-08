@@ -1394,11 +1394,12 @@
     },
     {
       "name": "CoTf3",
-      "description": "Scimemi image of P with respect to the conic.",
+      "description": "Scimemi image of P with respect to the conic. Generalization of the Frégier's point.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "scimemi"}
       ],
       "reference": {
+        "keywords": "Fregier",
         "related": [
           "CoTf3Inv"
         ]
@@ -1411,6 +1412,7 @@
         {"params": [{"name": "P", "type": "point"}, {"name": "q", "type": "conic"}], "returns": "point", "builder": "inverseScimemi"}
       ],
       "reference": {
+        "keywords": "Fregier",
         "related": [
           "CoTf3"
         ]
@@ -1605,7 +1607,7 @@
     {
       "name": "NinePointConic",
       "aliases": ["QACo1"],
-      "description": "Conic through the six pairwise midpoints of ABCD.",
+      "description": "Conic through the six pairwise midpoints and three diagonal points of ABCD.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "conic", "builder": "ninePointConic"}
       ]

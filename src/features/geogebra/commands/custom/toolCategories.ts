@@ -19,7 +19,7 @@ export const toolGroups: ToolCategory = {
       'Crosspoint', 'Cevapoint', 'CevaConjugate', 'CrossConjugate', 'CevianAffineMap', 'PedalAffineMap', 
       'HaggeInverse', 'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
       'CircumcevianPoint',
-      'Orthopole', 'Orthocorrespondent', 'IsogonalPairWithMidpoint'
+      'Orthopole', 'Orthocorrespondent', 'IsogonalPairWithMidpoint', 'Trilinear'
     ],
   },
   'Triangle constructions': {
@@ -48,12 +48,24 @@ export const toolGroups: ToolCategory = {
       'Conics from a point': ['InconicWithFocus', 'InconicWithCenter', 'OrthopolarConic'],
     },
     'Cubics': ['PivotalCubic', 'PivotalIsogonalCubic', 'PivotalIsotomicCubic', 'NonpivotalCubic', 'ConicoPivotalCubic', 'OrthopivotalCubic'],
-    'Catalogue curves': ['GibertCurve'],
+    'Catalogue curves': ['GibertCurve', 'TriangleCurve'],
   },
-  'Circles and conics': ['Conic', 'Pole', 'SecondIntersection', 'RadicalAxis', 'RadicalCenter', 'CoTf3', 'CoTf3Inv', 'SimilarityCenter', 'CommonTangents', 'NinePointConic', 'TangentParabola'],
-  'Quadrangle or quadrilateral geometry': {
+  'Circles and conics': {
+    'General constructions': [
+      'Circle', 'Conic', 'Ellipse', 'Hyperbola', 'Parabola',
+      'InconicWithFocus', 'InconicWithCenter',
+      'NinePointConic', 'TangentParabola'
+    ],
+    'Components': ['Center', 'Axes', 'MajorAxis', 'MinorAxis', 'Focus', 'Directrix'],
+    'Conical transformations': ['SecondIntersection', 'Pole', 'Polar', 'Tangent', 'ConjugateDiameter', 'CoTf3', 'CoTf3Inv', 'OsculatingCircle'],
+    'Interrelations': ['RadicalAxis', 'RadicalCenter', 'SimilarityCenter', 'CommonTangents'],
+    'Measurements and coefficients': ['Coefficients', 'Radius', 'Circumference', 'Eccentricity', 'LinearEccentricity', 'SemiMajorAxisLength', 'SemiMinorAxisLength', 'Curvature', 'Parameter'],
+    'Arcs and sectors': ['Arc', 'CircularArc', 'CircularSector', 'CircumcircularArc', 'CircumcircularSector', 'Sector', 'Semicircle'],
+  },
+  'Quadri or poly geometry': {
     'Quadrangles': ['DiagonalPoints', 'QAP2', 'QAP3', 'QAP4', 'QAP5', 'QL2P1', 'QL2P2', 'QL2P3', 'NinePointConic', 'QACu1', 'QACu1Inv'],
-    'Quadrilaterals': ['MiquelPoint', 'QLP3', 'QLP4', 'QLP5', 'QLP6', 'QLP7', 'QLP20', 'QLP19', 'QLP21', 'QLCi3', 'NewtonLine', 'SteinerLineQ', 'QLCi5', 'QLCi6', 'TangentParabola', 'QLTf1', 'QLCu1', 'QLQu3'],
+    'Quadrilaterals': ['MiquelPoint', 'QLP3', 'QLP4', 'QLP5', 'QLP6', 'QLP7', 'QLP19', 'QLP20', 'QLP21', 'QLCi3', 'NewtonLine', 'SteinerLineQ', 'QLCi5', 'QLCi6', 'TangentParabola', 'QLTf1', 'QLCu1', 'QLQu3'],
+    'Polygons': ['Polygon', 'Polyline', 'RigidPolygon', 'Vertex', 'Centroid', 'Area', 'Perimeter', 'InteriorAngles', 'Union', 'Difference', 'IntersectPath'],
   },
   'Cubics': {
     'General constructions': ['Cubic', 'ConicLineCubic', 'CircularCubic', 'ThirdIntersection', 'Pretangential', 'CayleyBacharachPoint', 'CubicPencil', 'NodalCubic', 'Strophoid', 'CuspidalCubic', 'CubicAsymptotes', 'CubicInvolution'],
@@ -61,6 +73,13 @@ export const toolGroups: ToolCategory = {
     'Hessian and related constructions': ['HessianCubic', 'HessianCorrespondent', 'PrehessianCubic', 'JacobianCubic'],
     'Special cubic families': ['QLCu1', 'QACu1', 'QACu1Inv', 'OrthopivotalCubic', 'NonpivotalCubic', 'ConicoPivotalCubic'],
   },
-  'General constructions': ['Intersect', 'Pedal', 'HarmonicConjugate', 'TransferRatio', 'TrisectionPoint', 'GoldenSectionPoint', 'DirectSimilarity', 'OppositeSimilarity'],
+  'General constructions': {
+    'Basics': ['Point', 'Midpoint', 'Intersect', 'Pedal',
+      'Line', 'Ray', 'Segment', 'AngleBisector', 'PerpendicularBisector', 'PerpendicularLine'],
+    'Extended': ['HarmonicConjugate', 'TransferRatio', 'TrisectionPoint', 'GoldenSectionPoint'],
+    'Numerics': ['Type', 'Distance', 'Length', 'Angle', 'Slope', 'Direction', 'AffineRatio', 'CrossRatio'],
+    'Loci and envelopes': ['Locus', 'Envelope'],
+    'Similarities': ['DirectSimilarity', 'OppositeSimilarity'],
+  },
 };
 

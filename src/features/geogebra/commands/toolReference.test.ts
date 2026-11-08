@@ -79,13 +79,18 @@ describe('Studio tool reference', () => {
     expect(mixedCompletion.signatures).toContain('Conic(coefficients: list)');
     expect(mixedCompletion.signatures?.filter((signature) => signature === 'Conic(A: point, B: point, C: point, D: point, E: point)')).toHaveLength(1);
     expect(searchReferenceTools(tools, 'polygon', '').map(({ tool }) => tool.name)).toContain('Centroid');
+    expect(findReferenceTool(tools, 'Polygon')?.paths).toContainEqual(['Quadri or poly geometry', 'Polygons']);
+    expect(findReferenceTool(tools, 'Ellipse')?.paths).toContainEqual(['Circles and conics', 'Constructions and transforms']);
+    const polygonCompletion = (await complete('Polygon')).find((item) => item.label === 'Polygon')!;
+    expect(polygonCompletion.referenceName).toBe('Polygon');
+    expect(polygonCompletion.signatures).toContain('Polygon(points: list)');
   });
 
   it('finds aliases, terminology, cross-listed cubics and numbered tools', () => {
     expect(findReferenceTool(tools, 'southpole')?.name).toBe('ArcMidpoint');
     expect(searchReferenceTools(tools, 'SouthPole', '')[0]).toMatchObject({ alias: 'SouthPole', tool: { name: 'ArcMidpoint' } });
     expect(searchReferenceTools(tools, '垂足', '').map(({ tool }) => tool.name)).toContain('PedalTriangle');
-    for (const category of ['Cubics', 'Quadrangle or quadrilateral geometry']) {
+    for (const category of ['Cubics', 'Quadri or poly geometry']) {
       expect(searchReferenceTools(tools, '', category).map(({ tool }) => tool.name)).toContain('QACu1');
     }
     expect(searchReferenceTools(tools, 'Q036A', '')[0]?.tool.name).toBe('GibertCurve');

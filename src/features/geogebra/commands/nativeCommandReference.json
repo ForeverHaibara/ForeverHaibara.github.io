@@ -50,5 +50,723 @@
     "description": "Construct a numbered triangle center.",
     "signatures": [{ "text": "TriangleCenter(A: point, B: point, C: point, index: number)", "type": "point", "note": "GeoGebra's native catalogue accepts numbers below 3054." }],
     "dispatch": "In the Studio command bar, literal patched native IDs and supported higher IDs use site recipes. Unpatched native IDs and computed selectors use GeoGebra."
+  },
+  "AffineRatio": {
+    "description": "Find the directed affine ratio of three collinear points.",
+    "signatures": [
+      {
+        "text": "AffineRatio(A: point, B: point, C: point)",
+        "type": "number"
+      }
+    ]
+  },
+  "Angle": {
+    "description": "Measure an angle or construct an angle from points, lines, vectors or another geometric object.",
+    "signatures": [
+      {
+        "text": "Angle(object)"
+      },
+      {
+        "text": "Angle(vector1: vector, vector2: vector)"
+      },
+      {
+        "text": "Angle(line1: line, line2: line)"
+      },
+      {
+        "text": "Angle(A: point, vertex: point, C: point)"
+      },
+      {
+        "text": "Angle(A: point, vertex: point, angle: number)"
+      }
+    ]
+  },
+  "AngleBisector": {
+    "description": "Construct an angle bisector from three points, or both bisectors of two lines.",
+    "signatures": [
+      {
+        "text": "AngleBisector(A: point, vertex: point, C: point)",
+        "type": "line"
+      },
+      {
+        "text": "AngleBisector(line1: line, line2: line)",
+        "type": "line",
+        "note": "Returns both angle bisectors of the two lines."
+      }
+    ]
+  },
+  "Arc": {
+    "description": "Construct an arc of a circle or ellipse between points or parameter values.",
+    "signatures": [
+      {
+        "text": "Arc(conic, M: point, N: point)"
+      },
+      {
+        "text": "Arc(conic, start: number, end: number)"
+      }
+    ]
+  },
+  "Area": {
+    "description": "Measure the area of a polygon or conic, or of a polygon defined by points.",
+    "signatures": [
+      {
+        "text": "Area(polygon)",
+        "type": "number"
+      },
+      {
+        "text": "Area(conic: conic)",
+        "type": "number"
+      },
+      {
+        "text": "Area(A: point, B: point, C: point, …)",
+        "type": "number"
+      }
+    ]
+  },
+  "Circle": {
+    "description": "Construct a circle from a center and radius, a center and point, or three points.",
+    "signatures": [
+      {
+        "text": "Circle(center, radius)",
+        "type": "circle"
+      },
+      {
+        "text": "Circle(center: point, radius: segment)",
+        "type": "circle"
+      },
+      {
+        "text": "Circle(center: point, point: point)",
+        "type": "circle"
+      },
+      {
+        "text": "Circle(A, B, C)",
+        "type": "circle"
+      }
+    ]
+  },
+  "CircularArc": {
+    "description": "Construct a circular arc from its center, starting point and a point determining its end direction.",
+    "signatures": [
+      {
+        "text": "CircularArc(center: point, A: point, B: point)"
+      }
+    ]
+  },
+  "CircularSector": {
+    "description": "Construct a circular sector from its center, starting point and a point determining its end direction.",
+    "signatures": [
+      {
+        "text": "CircularSector(center: point, A: point, B: point)"
+      }
+    ]
+  },
+  "CircumcircularArc": {
+    "description": "Construct the circular arc through three points.",
+    "signatures": [
+      {
+        "text": "CircumcircularArc(A: point, B: point, C: point)"
+      }
+    ]
+  },
+  "CircumcircularSector": {
+    "description": "Construct the circular sector whose arc passes through three points.",
+    "signatures": [
+      {
+        "text": "CircumcircularSector(A: point, B: point, C: point)"
+      }
+    ]
+  },
+  "Circumference": {
+    "description": "Measure the circumference of a circle or ellipse.",
+    "signatures": [
+      {
+        "text": "Circumference(conic: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "CrossRatio": {
+    "description": "Calculate the cross ratio of four collinear points.",
+    "signatures": [
+      {
+        "text": "CrossRatio(A: point, B: point, C: point, D: point)",
+        "type": "number"
+      }
+    ]
+  },
+  "Difference": {
+    "description": "Construct the region of one polygon outside another polygon.",
+    "signatures": [
+      {
+        "text": "Difference(polygon1, polygon2)"
+      }
+    ]
+  },
+  "Direction": {
+    "description": "Find a direction vector of a line.",
+    "signatures": [
+      {
+        "text": "Direction(line: line)",
+        "type": "vector"
+      }
+    ]
+  },
+  "Distance": {
+    "description": "Measure the distance between a point and an object, or between two lines.",
+    "signatures": [
+      {
+        "text": "Distance(P: point, object)",
+        "type": "number"
+      },
+      {
+        "text": "Distance(line1: line, line2: line)",
+        "type": "number"
+      }
+    ]
+  },
+  "Envelope": {
+    "description": "Construct the envelope of a path depending on a point.",
+    "signatures": [
+      {
+        "text": "Envelope(path, P: point)"
+      }
+    ]
+  },
+  "InteriorAngles": {
+    "description": "Construct the interior angles of a polygon.",
+    "signatures": [
+      {
+        "text": "InteriorAngles(polygon)"
+      }
+    ]
+  },
+  "IntersectPath": {
+    "description": "Construct the intersection region of a line and polygon, or of two polygons.",
+    "signatures": [
+      {
+        "text": "IntersectPath(line: line, polygon)"
+      },
+      {
+        "text": "IntersectPath(polygon1, polygon2)"
+      }
+    ]
+  },
+  "Length": {
+    "description": "Find the length of an object or the arc length of a function or curve over an interval.",
+    "signatures": [
+      {
+        "text": "Length(object)",
+        "type": "number"
+      },
+      {
+        "text": "Length(function: function, start: number, end: number)",
+        "type": "number"
+      },
+      {
+        "text": "Length(function: function, start: point, end: point)",
+        "type": "number"
+      },
+      {
+        "text": "Length(curve, start: number, end: number)",
+        "type": "number"
+      },
+      {
+        "text": "Length(curve, start: point, end: point)",
+        "type": "number"
+      }
+    ]
+  },
+  "Line": {
+    "description": "Construct a line through two points, parallel to a line, or with a given direction vector.",
+    "signatures": [
+      {
+        "text": "Line(A: point, B: point)",
+        "type": "line"
+      },
+      {
+        "text": "Line(P: point, parallel: line)",
+        "type": "line"
+      },
+      {
+        "text": "Line(P: point, direction: vector)",
+        "type": "line"
+      }
+    ]
+  },
+  "Locus": {
+    "description": "Construct the locus traced by a dependent point as another point or slider moves.",
+    "signatures": [
+      {
+        "text": "Locus(Q: point, P: point)"
+      },
+      {
+        "text": "Locus(Q: point, slider: number)"
+      }
+    ]
+  },
+  "Midpoint": {
+    "description": "Construct the midpoint of two points, a segment or an interval, or the center of a conic.",
+    "signatures": [
+      {
+        "text": "Midpoint(A: point, B: point)",
+        "type": "point"
+      },
+      {
+        "text": "Midpoint(segment: segment)",
+        "type": "point"
+      },
+      {
+        "text": "Midpoint(conic: conic)",
+        "type": "point"
+      },
+      {
+        "text": "Midpoint(interval)",
+        "type": "number"
+      }
+    ]
+  },
+  "Perimeter": {
+    "description": "Measure the perimeter of a polygon or conic, or the length of a locus.",
+    "signatures": [
+      {
+        "text": "Perimeter(polygon)",
+        "type": "number"
+      },
+      {
+        "text": "Perimeter(conic: conic)",
+        "type": "number"
+      },
+      {
+        "text": "Perimeter(locus)",
+        "type": "number"
+      }
+    ]
+  },
+  "PerpendicularBisector": {
+    "description": "Construct the perpendicular bisector of a segment or of two points.",
+    "signatures": [
+      {
+        "text": "PerpendicularBisector(segment: segment)",
+        "type": "line"
+      },
+      {
+        "text": "PerpendicularBisector(A: point, B: point)",
+        "type": "line"
+      }
+    ]
+  },
+  "PerpendicularLine": {
+    "description": "Construct a line through a point perpendicular to a line, segment or vector.",
+    "signatures": [
+      {
+        "text": "PerpendicularLine(P: point, line: line)",
+        "type": "line"
+      },
+      {
+        "text": "PerpendicularLine(P: point, segment: segment)",
+        "type": "line"
+      },
+      {
+        "text": "PerpendicularLine(P: point, vector: vector)",
+        "type": "line"
+      }
+    ]
+  },
+  "Point": {
+    "description": "Construct a point on a path, translate a point by a vector, or convert coordinates from a list.",
+    "signatures": [
+      {
+        "text": "Point(path)",
+        "type": "point"
+      },
+      {
+        "text": "Point(path, parameter: number)",
+        "type": "point"
+      },
+      {
+        "text": "Point(P: point, vector: vector)",
+        "type": "point"
+      },
+      {
+        "text": "Point(coordinates: list)",
+        "type": "point"
+      }
+    ]
+  },
+  "Polygon": {
+    "description": "Construct a polygon from points, a list of points, or two vertices and a vertex count.",
+    "signatures": [
+      {
+        "text": "Polygon(A: point, B: point, C: point, …)"
+      },
+      {
+        "text": "Polygon(points: list)"
+      },
+      {
+        "text": "Polygon(A: point, B: point, vertices: number)"
+      }
+    ]
+  },
+  "Polyline": {
+    "description": "Construct a polyline through the supplied points.",
+    "signatures": [
+      {
+        "text": "Polyline(points: list)"
+      },
+      {
+        "text": "Polyline(A: point, B: point, …)"
+      }
+    ]
+  },
+  "Radius": {
+    "description": "Get the radius of a conic when defined.",
+    "signatures": [
+      {
+        "text": "Radius(conic: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "Ray": {
+    "description": "Construct a ray from a starting point through a point or in a vector direction.",
+    "signatures": [
+      {
+        "text": "Ray(start: point, through: point)",
+        "type": "ray"
+      },
+      {
+        "text": "Ray(start: point, direction: vector)",
+        "type": "ray"
+      }
+    ]
+  },
+  "RigidPolygon": {
+    "description": "Construct a polygon whose shape remains rigid when moved.",
+    "signatures": [
+      {
+        "text": "RigidPolygon(polygon)"
+      },
+      {
+        "text": "RigidPolygon(polygon, offsetX: number, offsetY: number)"
+      },
+      {
+        "text": "RigidPolygon(A: point, B: point, C: point, …)"
+      }
+    ]
+  },
+  "Sector": {
+    "description": "Construct a conic sector between points or parameter values.",
+    "signatures": [
+      {
+        "text": "Sector(conic: conic, A: point, B: point)"
+      },
+      {
+        "text": "Sector(conic: conic, start: number, end: number)"
+      }
+    ]
+  },
+  "Segment": {
+    "description": "Construct a segment between two points or from a point with a given length.",
+    "signatures": [
+      {
+        "text": "Segment(A: point, B: point)",
+        "type": "segment"
+      },
+      {
+        "text": "Segment(A: point, length: number)",
+        "type": "segment"
+      }
+    ]
+  },
+  "Semicircle": {
+    "description": "Construct a semicircle with the segment between two points as diameter.",
+    "signatures": [
+      {
+        "text": "Semicircle(A: point, B: point)"
+      }
+    ]
+  },
+  "Slope": {
+    "description": "Find the slope of a line.",
+    "signatures": [
+      {
+        "text": "Slope(line: line)",
+        "type": "number"
+      }
+    ]
+  },
+  "Tangent": {
+    "description": "Construct tangents to conics, functions and curves using a point, a line or other supported inputs.",
+    "signatures": [
+      {
+        "text": "Tangent(P: point, conic: conic)"
+      },
+      {
+        "text": "Tangent(P: point, function: function)"
+      },
+      {
+        "text": "Tangent(P: point on curve, curve)"
+      },
+      {
+        "text": "Tangent(x: number, function: function)"
+      },
+      {
+        "text": "Tangent(line: line, conic: conic)"
+      },
+      {
+        "text": "Tangent(circle1: circle, circle2: circle)"
+      },
+      {
+        "text": "Tangent(P: point, implicitCurve: implicitCurve)"
+      }
+    ]
+  },
+  "TriangleCurve": {
+    "description": "Construct a triangle curve from an equation in the barycentric variables A, B and C.",
+    "signatures": [
+      {
+        "text": "TriangleCurve(P: point, Q: point, R: point, equation)"
+      }
+    ]
+  },
+  "Trilinear": {
+    "description": "Construct a point with specified trilinear coordinates relative to a triangle.",
+    "signatures": [
+      {
+        "text": "Trilinear(A: point, B: point, C: point, x: number, y: number, z: number)",
+        "type": "point"
+      }
+    ]
+  },
+  "Union": {
+    "description": "Construct the union of two lists or two polygons.",
+    "signatures": [
+      {
+        "text": "Union(list1: list, list2: list)"
+      },
+      {
+        "text": "Union(polygon1, polygon2)"
+      }
+    ]
+  },
+  "Type": {
+    "description": "Get the numeric type code of a conic.",
+    "signatures": [
+      {
+        "text": "Type(object)",
+        "type": "number"
+      }
+    ]
+  },
+  "Vertex": {
+    "description": "Construct vertices of a conic, polygon, segment or inequality.",
+    "signatures": [
+      {
+        "text": "Vertex(conic: conic)"
+      },
+      {
+        "text": "Vertex(inequality)"
+      },
+      {
+        "text": "Vertex(polygon)"
+      },
+      {
+        "text": "Vertex(polygon, index: number)"
+      },
+      {
+        "text": "Vertex(segment: segment, index: number)"
+      }
+    ]
+  },
+  "Axes": {
+    "description": "Construct the axes of a conic.",
+    "signatures": [
+      {
+        "text": "Axes(conic: conic)"
+      }
+    ]
+  },
+  "Center": {
+    "description": "Construct the center of a conic.",
+    "signatures": [
+      {
+        "text": "Center(conic: conic)",
+        "type": "point"
+      }
+    ]
+  },
+  "Coefficients": {
+    "description": "Get the coefficients of a polynomial or conic.",
+    "signatures": [
+      {
+        "text": "Coefficients(polynomial)",
+        "type": "list"
+      },
+      {
+        "text": "Coefficients(conic: conic)",
+        "type": "list"
+      }
+    ]
+  },
+  "ConjugateDiameter": {
+    "description": "Construct the diameter of a conic conjugate to a line or vector direction.",
+    "signatures": [
+      {
+        "text": "ConjugateDiameter(line: line, conic: conic)",
+        "type": "line"
+      },
+      {
+        "text": "ConjugateDiameter(vector: vector, conic: conic)",
+        "type": "line"
+      }
+    ]
+  },
+  "Curvature": {
+    "description": "Find the curvature of a function, curve or conic at a point.",
+    "signatures": [
+      {
+        "text": "Curvature(P: point, object)",
+        "type": "number"
+      }
+    ]
+  },
+  "Directrix": {
+    "description": "Construct the directrix of a conic.",
+    "signatures": [
+      {
+        "text": "Directrix(conic: conic)",
+        "type": "line"
+      }
+    ]
+  },
+  "Eccentricity": {
+    "description": "Get the eccentricity of a conic.",
+    "signatures": [
+      {
+        "text": "Eccentricity(conic: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "Ellipse": {
+    "description": "Construct an ellipse from its foci and an axis length, segment or point.",
+    "signatures": [
+      {
+        "text": "Ellipse(F1: point, F2: point, semiMajorAxis: number)",
+        "type": "conic"
+      },
+      {
+        "text": "Ellipse(F1: point, F2: point, segment: segment)",
+        "type": "conic"
+      },
+      {
+        "text": "Ellipse(F1: point, F2: point, P: point)",
+        "type": "conic"
+      }
+    ]
+  },
+  "Focus": {
+    "description": "Construct the focus or foci of a conic.",
+    "signatures": [
+      {
+        "text": "Focus(conic: conic)"
+      }
+    ]
+  },
+  "Hyperbola": {
+    "description": "Construct a hyperbola from its foci and an axis length, segment or point.",
+    "signatures": [
+      {
+        "text": "Hyperbola(F1: point, F2: point, semiMajorAxis: number)",
+        "type": "conic"
+      },
+      {
+        "text": "Hyperbola(F1: point, F2: point, segment: segment)",
+        "type": "conic"
+      },
+      {
+        "text": "Hyperbola(F1: point, F2: point, P: point)",
+        "type": "conic"
+      }
+    ]
+  },
+  "LinearEccentricity": {
+    "description": "Get the linear eccentricity of a conic.",
+    "signatures": [
+      {
+        "text": "LinearEccentricity(conic: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "MajorAxis": {
+    "description": "Construct the major axis of a conic.",
+    "signatures": [
+      {
+        "text": "MajorAxis(conic: conic)",
+        "type": "line"
+      }
+    ]
+  },
+  "MinorAxis": {
+    "description": "Construct the minor axis of a conic.",
+    "signatures": [
+      {
+        "text": "MinorAxis(conic: conic)",
+        "type": "line"
+      }
+    ]
+  },
+  "OsculatingCircle": {
+    "description": "Construct the osculating circle of a function, curve or supported object at a point.",
+    "signatures": [
+      {
+        "text": "OsculatingCircle(P: point, function: function)",
+        "type": "circle"
+      },
+      {
+        "text": "OsculatingCircle(P: point, curve)",
+        "type": "circle"
+      },
+      {
+        "text": "OsculatingCircle(P: point, object)",
+        "type": "circle"
+      }
+    ]
+  },
+  "Parabola": {
+    "description": "Construct a parabola from its focus and directrix.",
+    "signatures": [
+      {
+        "text": "Parabola(focus: point, directrix: line)",
+        "type": "conic"
+      }
+    ]
+  },
+  "Parameter": {
+    "description": "Get the distance between the focus and directrix of a parabola.",
+    "signatures": [
+      {
+        "text": "Parameter(parabola: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "SemiMajorAxisLength": {
+    "description": "Get the semi-major axis length of a conic.",
+    "signatures": [
+      {
+        "text": "SemiMajorAxisLength(conic: conic)",
+        "type": "number"
+      }
+    ]
+  },
+  "SemiMinorAxisLength": {
+    "description": "Get the semi-minor axis length of a conic.",
+    "signatures": [
+      {
+        "text": "SemiMinorAxisLength(conic: conic)",
+        "type": "number"
+      }
+    ]
   }
 }
