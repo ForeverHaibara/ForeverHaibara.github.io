@@ -41,7 +41,7 @@ describe('Studio tool reference', () => {
     expect(findReferenceTool(tools, 'southpole')?.name).toBe('ArcMidpoint');
     expect(searchReferenceTools(tools, 'SouthPole', '')[0]).toMatchObject({ alias: 'SouthPole', tool: { name: 'ArcMidpoint' } });
     expect(searchReferenceTools(tools, '垂足', '').map(({ tool }) => tool.name)).toContain('PedalTriangle');
-    for (const category of ['Cubics', 'Quadrilateral or quadrangle geometry']) {
+    for (const category of ['Cubics', 'Quadrangle or quadrilateral geometry']) {
       expect(searchReferenceTools(tools, '', category).map(({ tool }) => tool.name)).toContain('QACu1');
     }
     expect(searchReferenceTools(tools, 'Q036A', '')[0]?.tool.name).toBe('GibertCurve');

@@ -163,6 +163,7 @@ export default function ToolReference({ name, onSelect, onClose, onInsert, inser
       <div>
         <p className="ggb-reference-kicker">GeoGebra Studio</p>
         <Heading>Tool Reference</Heading>
+        {!onClose && <p className="ggb-reference-introduction">Explore constructions, curves and commands for your geometry workspace.</p>}
       </div>
       <div className="ggb-reference-header-actions">
         {onClose

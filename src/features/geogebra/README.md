@@ -29,3 +29,5 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 在同一文件的 `referenceNotes` 中按正式名称补充示例、限制、相关工具和常用搜索词。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。
 
 在 `advancedCommands` 注册特殊命令后，参考页会自动将其放进 Special commands，签名从注册数据读取。可选说明以带 `!` 的命令名作为键，例如 `!nearestTriangleCenter`。普通命令和特殊命令各自保留可分享的链接。
+
+需要按分类整理工具库时，运行 `node scripts/geogebra/tools/sort_tool_library.mjs` 预览，再加 `--write` 写入。脚本按分类树的首次出现顺序排列，报告跨分类重复项，将未分类工具按原顺序放在末尾。分类引用不存在的工具时会停止，并在写入前验证工具数据完整。使用 `--check` 可以在需要排序时返回非零退出码。
