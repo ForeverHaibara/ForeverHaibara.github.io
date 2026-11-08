@@ -1,5 +1,6 @@
 import definitions from './library.json';
 import { GEOMETRY_BUILDERS } from './builders';
+import { validateReferenceMetadata } from '../reference/referenceMetadata';
 import type { GeometryType, ParameterType, ResolvedToolLibrary, ToolDefinition, ToolLibrary, ToolOverload, TypedExpression } from './types';
 
 const parameterTypes = new Set(['point', 'line', 'segment', 'ray', 'circle', 'conic', 'implicitCurve', 'number', 'list', 'vector', 'function', 'unknown', 'lineLike', 'pointOrLine', 'catalogId']);
@@ -12,6 +13,7 @@ export const validateToolLibrary = (value: unknown): ToolLibrary => {
   const names = new Set<string>();
   for (const tool of library.tools) {
     if (!validName(tool.name) || !tool.description || !tool.overloads?.length) throw new Error(`Invalid tool: ${tool.name}`);
+    validateReferenceMetadata(tool.reference, tool.name);
     if (tool.aliases !== undefined && !Array.isArray(tool.aliases)) throw new Error(`Invalid aliases for tool: ${tool.name}`);
     for (const name of [tool.name, ...(tool.aliases ?? [])]) {
       if (!validName(name) || names.has(name.toLowerCase())) throw new Error(`Invalid or duplicate tool name or alias: ${String(name)}`);

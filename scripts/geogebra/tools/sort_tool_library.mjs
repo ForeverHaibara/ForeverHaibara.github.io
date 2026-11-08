@@ -3,12 +3,12 @@ import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
 const libraryUrl = new URL('../../../src/features/geogebra/commands/custom/library.json', import.meta.url);
-const categoriesUrl = new URL('../../../src/features/geogebra/commands/reference/referenceNotes.ts', import.meta.url);
+const categoriesUrl = new URL('../../../src/features/geogebra/commands/reference/toolCategories.ts', import.meta.url);
 
 // Read the literal tree with the TypeScript parser without executing the source file.
 export function readCategories(source) {
-  const file = ts.createSourceFile('referenceNotes.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  if (file.parseDiagnostics.length) throw new Error('Cannot parse referenceNotes.ts.');
+  const file = ts.createSourceFile('toolCategories.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  if (file.parseDiagnostics.length) throw new Error('Cannot parse toolCategories.ts.');
   const declarations = file.statements.flatMap((statement) => ts.isVariableStatement(statement)
     ? [...statement.declarationList.declarations] : []);
   const root = declarations.find((declaration) => declaration.name.getText(file) === 'toolGroups')?.initializer;
@@ -30,7 +30,7 @@ export function readCategories(source) {
       walk(property.initializer, [...path, property.name.text]);
     }
   };
-  if (!root) throw new Error('Could not find toolGroups in referenceNotes.ts.');
+  if (!root) throw new Error('Could not find toolGroups in toolCategories.ts.');
   walk(root, []);
   return entries;
 }

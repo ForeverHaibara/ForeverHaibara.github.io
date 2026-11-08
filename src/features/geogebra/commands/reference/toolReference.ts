@@ -2,8 +2,9 @@ import { advancedCommands } from '../advancedCommands';
 import { gibertCurveRecords } from '../custom/builders/relatedCurves';
 import { studioToolCatalog, toolSignature } from '../custom/toolLibrary';
 import type { GeometryType } from '../custom/types';
-import { referenceNotes, toolGroups } from './referenceNotes';
-import type { ToolCategory } from './referenceNotes';
+import { toolGroups } from './toolCategories';
+import type { ToolCategory } from './toolCategories';
+import type { ReferenceMetadata } from './referenceMetadata';
 
 export const specialGroup = 'Special commands';
 const otherGroup = 'Other constructions';
@@ -17,7 +18,7 @@ export interface ReferenceTool {
   groups: readonly string[];
   paths: readonly (readonly string[])[];
   signatures: readonly { text: string; type?: GeometryType }[];
-  notes: (typeof referenceNotes)[string];
+  notes: ReferenceMetadata | undefined;
 }
 
 const groupsByTool = new Map<string, string[]>();
@@ -47,11 +48,11 @@ const constructions: ReferenceTool[] = studioToolCatalog.tools.map((tool) => ({
   groups: groupsByTool.get(tool.name) ?? [otherGroup],
   paths: pathsByTool.get(tool.name) ?? [[otherGroup]],
   signatures: tool.overloads.map((overload) => ({ text: toolSignature(tool, overload), type: overload.returns })),
-  notes: referenceNotes[tool.name],
+  notes: tool.reference,
 }));
 
 export function getReferenceTools(): ReferenceTool[] {
-  const special = advancedCommands.list().map(({ name, description, signatures }) => {
+  const special = advancedCommands.list().map(({ name, description, signatures, reference }) => {
     const command = `!${name}`;
     return {
       name: command,
@@ -60,7 +61,7 @@ export function getReferenceTools(): ReferenceTool[] {
       groups: [specialGroup],
       paths: [[specialGroup]],
       signatures: signatures.map((text) => ({ text: `!${text}` })),
-      notes: referenceNotes[command],
+      notes: reference,
     };
   });
   return [...constructions, ...special].sort((a, b) => a.name.localeCompare(b.name, 'en'));

@@ -5,8 +5,8 @@ import {
   searchReferenceTools, specialGroup, toolReferencePath, visitToolCategories,
 } from '../../commands/reference/toolReference';
 import type { ReferenceTool } from '../../commands/reference/toolReference';
-import { toolGroups } from '../../commands/reference/referenceNotes';
-import type { ToolCategory } from '../../commands/reference/referenceNotes';
+import { toolGroups } from '../../commands/reference/toolCategories';
+import type { ToolCategory } from '../../commands/reference/toolCategories';
 import StudioIcon from '../studio/StudioIcon';
 import './tool-reference.css';
 

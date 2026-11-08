@@ -20,6 +20,7 @@ export interface ToolDefinition {
   /** Additional callable names sharing this tool's description and all overloads. */
   aliases?: string[];
   description: string;
+  reference?: ReferenceMetadata;
   overloads: ToolOverload[];
 }
 
@@ -63,4 +64,6 @@ export interface CommandEnvironment {
   /** Internal composition tokens whose binding is a lexical literal. */
   literals?: Map<string, string>;
 }
+
+import type { ReferenceMetadata } from '../reference/referenceMetadata';
 

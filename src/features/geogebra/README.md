@@ -24,10 +24,10 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 
 ## 维护工具参考
 
-普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/reference/referenceNotes.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。暂未归类的工具会出现在 Other constructions。
+普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/reference/toolCategories.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。测试要求每个正式工具至少属于一个分类，运行时仍会将未归类工具显示在 Other constructions。
 
-在同一文件的 `referenceNotes` 中按正式名称补充示例、限制、相关工具和常用搜索词。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。
+在 `library.json` 工具条目的可选 `reference` 字段中补充 `examples`、`details`、`related` 和 `keywords`。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。相关工具使用正式名称，高级命令带 `!` 前缀。
 
-在 `advancedCommands` 注册特殊命令后，参考页会自动将其放进 Special commands，签名从注册数据读取。可选说明以带 `!` 的命令名作为键，例如 `!nearestTriangleCenter`。普通命令和特殊命令各自保留可分享的链接。
+在 `advancedCommands` 注册特殊命令后，参考页会自动将其放进 Special commands，签名和可选的 `reference` 说明从命令注册数据读取。普通命令和特殊命令各自保留可分享的链接。
 
 需要按分类整理工具库时，运行 `node scripts/geogebra/tools/sort_tool_library.mjs` 预览，再加 `--write` 写入。脚本按分类树的首次出现顺序排列，报告跨分类重复项，将未分类工具按原顺序放在末尾。分类引用不存在的工具时会停止，并在写入前验证工具数据完整。使用 `--check` 可以在需要排序时返回非零退出码。

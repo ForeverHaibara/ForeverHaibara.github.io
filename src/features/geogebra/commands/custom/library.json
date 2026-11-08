@@ -8,14 +8,44 @@
       "description": "A numbered ETC triangle center. Literal patched native IDs and higher IDs use reviewed site recipes; other selectors use GeoGebra.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "point", "builder": "triangleCenter"}
-      ]
+      ],
+      "reference": {
+        "keywords": "ETC encyclopedia triangle centre 三角形中心 编号",
+        "details": [
+          "Use a literal integer to request a reviewed extension or a patched native center. Unpatched native indices and computed selectors use the native GeoGebra command.",
+          "An extended index needs a supported recipe. A center at infinity does not produce a finite point when requested directly."
+        ],
+        "examples": [
+          {
+            "command": "TriangleCenter(A, B, C, 2)",
+            "note": "Constructs ETC X(2), the centroid of ABC."
+          }
+        ],
+        "related": [
+          "Centroid",
+          "!nearestTriangleCenter"
+        ]
+      }
     },
     {
       "name": "GibertCurve",
       "description": "A triangle curve from Gibert's catalogue of related curves. Use a literal number or a quoted ID such as \"Q036A\". See the related-curves database for supported IDs. Requires Medium or High performance and a new output label.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "id", "type": "catalogId"}], "returns": "implicitCurve", "builder": "gibertCurve", "requiresNamed": true}
-      ]
+      ],
+      "reference": {
+        "keywords": "catalogue catalog implicit quartic quintic sextic septic octic nonic 曲线",
+        "details": [
+          "Use a supported literal number such as 12 or a quoted catalogue ID such as \"Q012\" or \"Q036A\". The selector cannot be a slider or an arithmetic expression.",
+          "Use Medium or High custom tool performance and a fresh output label. To replace an existing result, delete it and recreate it."
+        ],
+        "examples": [
+          {
+            "command": "g = GibertCurve(A, B, C, \"Q012\")",
+            "note": "Choose an unused label in place of g if needed."
+          }
+        ]
+      }
     },
     {
       "name": "GeminiTriangle",
@@ -30,7 +60,19 @@
       "description": "Four points intersect the infinite lines AB and CD. All other signatures use the native Intersect command.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}], "returns": "point", "expression": "Intersect(Line($A,$B),Line($C,$D))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "intersection supporting lines 交点",
+        "details": [
+          "The four-point form intersects the infinite lines AB and CD. Other signatures use the native GeoGebra command."
+        ],
+        "examples": [
+          {
+            "command": "Intersect(A, B, C, D)",
+            "note": "Uses four existing points to define the two lines."
+          }
+        ]
+      }
     },
     {
       "name": "Pedal",
@@ -38,7 +80,20 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "(($A)+Reflect($A,Line($B,$C)))/2"},
         {"params": [{"name": "A", "type": "point"}, {"name": "l", "type": "lineLike"}], "returns": "point", "expression": "(($A)+Reflect($A,$l))/2"}
-      ]
+      ],
+      "reference": {
+        "keywords": "foot perpendicular projection 垂足 投影",
+        "examples": [
+          {
+            "command": "Pedal(P, Line(A, B))",
+            "note": "Projects P onto the line through A and B."
+          }
+        ],
+        "related": [
+          "PedalTriangle",
+          "PedalCircle"
+        ]
+      }
     },
     {
       "name": "SecondIntersection",
@@ -63,35 +118,81 @@
         {"params": [{"name": "a", "type": "lineLike"}, {"name": "b", "type": "lineLike"}, {"name": "c", "type": "lineLike"}, {"name": "d", "type": "lineLike"}, {"name": "e", "type": "lineLike"}], "returns": "conic", "builder": "conic"},
         {"params": [{"name": "a", "type": "pointOrLine"}, {"name": "b", "type": "pointOrLine"}, {"name": "c", "type": "pointOrLine"}, {"name": "d", "type": "pointOrLine"}, {"name": "e", "type": "pointOrLine"}], "returns": "conic", "builder": "conic"},
         {"params": [{"name": "a", "type": "pointOrLine"}, {"name": "b", "type": "pointOrLine"}, {"name": "c", "type": "pointOrLine"}, {"name": "d", "type": "pointOrLine"}, {"name": "e", "type": "pointOrLine"}, {"name": "index", "type": "number"}], "returns": "conic", "builder": "conicBranch"}
-      ]
+      ],
+      "reference": {
+        "keywords": "tangent line ellipse parabola hyperbola 二次曲线 圆锥曲线",
+        "details": [
+          "The extended forms accept five point or tangent-line constraints. Segments and rays use their supporting lines. Mixed constraints can produce two or four independent solutions. Use the 1-based index to select a slot, which can be undefined.",
+          "The native five-point and coefficient forms remain available."
+        ],
+        "related": [
+          "Pole",
+          "SecondIntersection"
+        ]
+      }
     },
     {
       "name": "Incenter",
       "description": "Triangle incenter; uses the native triangle-center construction.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,1)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "angle bisector incircle 内心 内切圆",
+        "related": [
+          "Excenter",
+          "IntouchTriangle"
+        ]
+      }
     },
     {
       "name": "Centroid",
       "description": "Triangle centroid; the three-point overload also accepts collinear points.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "($A+$B+$C)/3"}
-      ]
+      ],
+      "reference": {
+        "keywords": "median barycenter 重心 中线",
+        "related": [
+          "MedialTriangle",
+          "EulerLine"
+        ]
+      }
     },
     {
       "name": "Circumcenter",
       "description": "Triangle circumcenter.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,3)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "perpendicular bisector 外心 外接圆",
+        "related": [
+          "Orthocenter",
+          "EulerLine"
+        ]
+      }
     },
     {
       "name": "Orthocenter",
       "description": "Triangle orthocenter.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "expression": "TriangleCenter($A,$B,$C,4)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "altitude intersection 垂心",
+        "examples": [
+          {
+            "command": "Orthocenter(A, B, C)",
+            "note": "Constructs the orthocenter of the existing triangle ABC."
+          }
+        ],
+        "related": [
+          "Circumcenter",
+          "EulerLine",
+          "NinePointCenter"
+        ]
+      }
     },
     {
       "name": "NinePointCenter",
@@ -282,14 +383,39 @@
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["($P+Reflect($P,Line($B,$C)))/2", "($P+Reflect($P,Line($C,$A)))/2", "($P+Reflect($P,Line($A,$B)))/2"]},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($P+Reflect($P,Line($B,$C)))/2,($P+Reflect($P,Line($C,$A)))/2,($P+Reflect($P,Line($A,$B)))/2},$i))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "foot perpendicular projection 垂足 垂足三角形 投影",
+        "details": [
+          "At the top level the four-argument form creates three independent points, in the order BC, CA, AB. An assignment names the first point.",
+          "Use the five-argument form to select one point. Indices 1, 2 and 3 select BC, CA and AB respectively. A nested call without an index uses the first point."
+        ],
+        "examples": [
+          {
+            "command": "PedalTriangle(A, B, C, P, 1)",
+            "note": "With four existing points, constructs just the projection of P onto BC."
+          }
+        ],
+        "related": [
+          "Pedal",
+          "PedalCircle",
+          "OrthicTriangle"
+        ]
+      }
     },
     {
       "name": "PedalCircle",
       "description": "Circle through the three pedal points of P; undefined when they are collinear.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(PedalTriangle($A,$B,$C,$P,1),PedalTriangle($A,$B,$C,$P,2),PedalTriangle($A,$B,$C,$P,3))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "foot projection 垂足 垂足圆",
+        "related": [
+          "PedalTriangle",
+          "SimsonLine"
+        ]
+      }
     },
     {
       "name": "IntouchTriangle",
@@ -438,7 +564,13 @@
       "description": "Midpoint of the BC arc not containing A on the circumcircle.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$A+($B-$A)/Distance($A,$B)+($C-$A)/Distance($A,$C))"}
-      ]
+      ],
+      "reference": {
+        "keywords": "arc midpoint 弧中点",
+        "related": [
+          "OppositeArcMidpoint"
+        ]
+      }
     },
     {
       "name": "OppositeArcMidpoint",
@@ -742,14 +874,35 @@
       "description": "Cubic through nine points; native triangle/index forms retain their original meaning.",
       "overloads": [
         {"params": [{"name": "P1", "type": "point"}, {"name": "P2", "type": "point"}, {"name": "P3", "type": "point"}, {"name": "P4", "type": "point"}, {"name": "P5", "type": "point"}, {"name": "P6", "type": "point"}, {"name": "P7", "type": "point"}, {"name": "P8", "type": "point"}, {"name": "P9", "type": "point"}], "returns": "implicitCurve", "expression": "ImplicitCurve($P1,$P2,$P3,$P4,$P5,$P6,$P7,$P8,$P9)"}
-      ]
+      ],
+      "reference": {
+        "keywords": "interpolation third degree 三次曲线",
+        "details": [
+          "The extension constructs a cubic through nine points. The native triangle-and-index form remains available."
+        ],
+        "related": [
+          "CircularCubic",
+          "HessianCubic",
+          "ThirdIntersection"
+        ]
+      }
     },
     {
       "name": "Polar",
       "description": "Second polar line of a point with respect to a cubic; native conic polar and pole overloads are preserved.",
       "overloads": [
         {"params": [{"name": "P", "type": "point"}, {"name": "F", "type": "implicitCurve"}], "returns": "line", "builder": "cubicPolar"}
-      ]
+      ],
+      "reference": {
+        "details": [
+          "With a cubic, the extension returns the second polar line. Native conic polar and pole forms remain available."
+        ],
+        "related": [
+          "PolarConic",
+          "MixedPolar",
+          "Pole"
+        ]
+      }
     },
     {
       "name": "PolarConic",
@@ -765,7 +918,20 @@
       "overloads": [
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "point", "builder": "thirdIntersection"},
         {"params": [{"name": "F", "type": "implicitCurve"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "thirdIntersection"}
-      ]
+      ],
+      "reference": {
+        "keywords": "tangential tangent residual 第三交点 切点",
+        "examples": [
+          {
+            "command": "ThirdIntersection(F, P, Q)",
+            "note": "F is a cubic and P and Q are known points on the secant."
+          }
+        ],
+        "related": [
+          "Pretangential",
+          "CubicInvolution"
+        ]
+      }
     },
     {
       "name": "Pretangential",

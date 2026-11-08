@@ -8,7 +8,7 @@ const categories = `export const toolGroups: ToolCategory = {
 const source = `{
   "version": 2,
   "tools": [
-    {"name":"A", "aliases":["Alpha"], "custom":{"nested":true}},
+    {"name":"A", "aliases":["Alpha"], "custom":{"nested":true}, "reference":{"keywords":"垂足", "related":["B"]}},
     {"name":"C", "overloads":[{"expression":"a,b"}]},
     {"name":"B", "description":"Text with } and \\\"quotes\\\""}
   ]
@@ -21,7 +21,7 @@ describe('sort tool library', () => {
     const sorted = JSON.parse(result.output);
     expect(sorted.tools.map((tool) => tool.name)).toEqual(['B', 'A', 'C']);
     expect(sorted.tools).toEqual([original.tools[2], original.tools[0], original.tools[1]]);
-    expect(result.output).toContain('{"name":"A", "aliases":["Alpha"], "custom":{"nested":true}}');
+    expect(result.output).toContain('{"name":"A", "aliases":["Alpha"], "custom":{"nested":true}, "reference":{"keywords":"垂足", "related":["B"]}}');
     expect(result.unclassified).toEqual(['C']);
     expect(result.repeated).toEqual(['B: First / Inner | Second']);
     expect(sortLibrary(result.output, readCategories(categories)).output).toBe(result.output);

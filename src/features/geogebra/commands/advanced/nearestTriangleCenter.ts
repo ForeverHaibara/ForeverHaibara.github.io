@@ -5,6 +5,15 @@ export const nearestTriangleCenter: AdvancedCommand = {
   name: 'nearestTriangleCenter',
   description: 'Find the closest finite native or extended triangle center to P. Returns a coordinate snapshot without creating objects; equal distances prefer the smaller ID.',
   signatures: ['nearestTriangleCenter(A: point, B: point, C: point, P: point)'],
+  reference: {
+    keywords: 'ETC nearest closest numerical search 最近 三角形中心',
+    details: [
+      'Reads four defined 2D points and requires a nondegenerate triangle. The JSON result gives the nearest supported finite ETC center and its distance to P.',
+      'The result describes the current coordinates. Run the command again after moving a point.',
+    ],
+    examples: [{ command: '!nearestTriangleCenter(A, B, C, P)', note: 'Searches for the center nearest to the existing point P.' }],
+    related: ['TriangleCenter'],
+  },
   async execute(engine, args) {
     if (args.length !== 4 || args.some((arg) => typeof arg !== 'string' || !arg.trim())) {
       throw new Error('Use !nearestTriangleCenter(A,B,C,P) with four existing 2D point names.');
