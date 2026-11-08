@@ -1,50 +1,100 @@
 export const toolGroups = {
-  'Triangle centers': [
+  'Triangle centers': [ // Point-like constructions dependent on A,B,C
+    // Triangle centers in ETC
     'TriangleCenter', 'Incenter', 'Centroid', 'Circumcenter', 'Orthocenter', 'NinePointCenter',
     'SymmedianPoint', 'GergonnePoint', 'NagelPoint', 'Mittenpunkt', 'SpiekerCenter',
     'FeuerbachPoint', 'IsodynamicPoint', 'DeLongchampsPoint', 'BevanPoint', 'SoddyPoint',
-    'Excenter', 'Excenters', 'BrocardPoints', 'FermatPoint', 'LiangZelichPerspector',
-  ],
-  'Triangle constructions': [
-    'GeminiTriangle', 'MedialTriangle', 'OrthicTriangle', 'CevianTriangle', 'PedalTriangle',
-    'IntouchTriangle', 'AnticevianTriangle', 'CircumcevianPoint', 'CircumcevianTriangle',
-    'TangentialTriangle', 'AntipedalTriangle', 'CarnotTriangle', 'Orthopole', 'EulerLine',
-    'ArcMidpoint', 'OppositeArcMidpoint', 'SimsonLine', 'SteinerLine', 'AntiSteinerPoint',
-    'Orthotransversal', 'Orthocorrespondent', 'BrocardAxis', 'LemoineAxis',
-  ],
-  'Circles and conics': [
-    'Conic', 'Pole', 'SecondIntersection', 'Excircle', 'Excircles', 'NinePointCircle',
-    'FuhrmannCircle', 'BrocardCircle', 'PedalCircle', 'RadicalAxis', 'RadicalCenter',
-    'SimilarityCenter', 'TaylorCircle', 'CommonTangents', 'MixtilinearIncircle',
-    'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles', 'MixtilinearContactPoint',
-    'HaggeCircle', 'ApolloniusCircle', 'ApolloniusCircles', 'KiepertHyperbola',
-    'JerabekHyperbola', 'FeuerbachHyperbola', 'SteinerInellipse', 'SteinerCircumellipse',
-    'SteinerFoci', 'InconicWithFocus', 'InconicWithCenter', 'IsogonalPairWithMidpoint',
-    'StammlerHyperbola', 'OrthopolarConic', 'NinePointConic', 'TangentParabola',
-  ],
-  'Conjugates and maps': [
+    'Excenter', 'Excenters', 'BrocardPoints', 'FermatPoint',
+
+    // other fixed points
+    'Antipode', 'ArcMidpoint', 'OppositeArcMidpoint',
+    'SteinerFoci', 'MixtilinearContactPoint',
+ 
+    // transformations   
     'IsogonalConjugate', 'IsotomicConjugate', 'Complement', 'Anticomplement',
-    'IsogonalComplement', 'TrilinearPolar', 'TrilinearPole', 'Antipode', 'AntigonalConjugate',
+    'IsogonalComplement', 'AntigonalConjugate',
+    'TrilinearPole', 'AntiSteinerPoint',
     'CevianAffineMap', 'PedalAffineMap', 'Isoconjugate', 'Crosspoint', 'Cevapoint',
     'CevaConjugate', 'CrossConjugate', 'CyclocevianConjugate', 'HaggeInverse',
-    'CundyParryPhi', 'CundyParryPsi', 'CoTf3', 'CoTf3Inv',
+    'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
+     'Orthopole', 'Orthocorrespondent',
+    'IsogonalPairWithMidpoint',
   ],
-  'Four-point and four-line geometry': [
+  'Triangle constructions': [ // Constructions dependent on A,B,C
+    // triangles
+    'GeminiTriangle', 'MedialTriangle', 'OrthicTriangle', 'CevianTriangle', 'PedalTriangle',
+    'IntouchTriangle', 'AnticevianTriangle', 'CircumcevianPoint', 'CircumcevianTriangle',
+    'TangentialTriangle', 'AntipedalTriangle', 'CarnotTriangle',
+
+    // lines
+    // lines.fixedLines
+    'EulerLine', 'BrocardAxis', 'LemoineAxis', 'OrthicAxis',
+    // lines.dynamicLines
+    'TrilinearPolar', 'Orthotransversal',
+    'SimsonLine', 'SteinerLine',
+
+    
+    // circles
+    // circles.fixedCircles
+    'NinePointCircle', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle',
+    'Excircle', 'Excircles', 'ApolloniusCircle', 'ApolloniusCircles',
+    'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles', 
+    'PedalCircle',
+    // circles.dynamicCircles
+    'HaggeCircle', 'PedalCircle',
+
+    // conics
+    // conics.fixedConics
+    'FeuerbachHyperbola', 'JerabekHyperbola', 'KiepertHyperbola', 'StammlerHyperbola',
+    'SteinerInellipse', 'SteinerCircumellipse',
+
+    // conics.dynamicConics
+    'InconicWithFocus', 'InconicWithCenter', 'OrthopolarConic',
+
+    // cubics
+    'PivotalCubic', 'PivotalIsogonalCubic', 'PivotalIsotomicCubic',
+    'NonpivotalCubic', 'ConicoPivotalCubic',
+    'OrthopivotalCubic',
+
+    // others
+    'GibertCurve',
+  ],
+  'Circles and conics': [
+    'Conic', 'Pole', 'SecondIntersection',  'RadicalAxis', 'RadicalCenter',
+    'CoTf3', 'CoTf3Inv',
+    'SimilarityCenter', 'CommonTangents', 
+    'NinePointConic', 'TangentParabola',
+  ],
+  'Quadrilateral or quadrangle geometry': [
+    // QA objects
     'DiagonalPoints', 'QAP2', 'QAP3', 'QAP4', 'QAP5', 'QL2P1', 'QL2P2', 'QL2P3',
+    'NinePointConic', 'QACu1', 'QACu1Inv',
+
+    // QL objects
     'MiquelPoint', 'QLP3', 'QLP4', 'QLP5', 'QLP6', 'QLP7', 'QLP20', 'QLP19', 'QLP21',
-    'QLCi3', 'NewtonLine', 'SteinerLineQ', 'QLCi5', 'QLCi6', 'QLTf1', 'QLCu1', 'QACu1',
-    'QACu1Inv', 'QLQu3',
+    'QLCi3', 'NewtonLine', 'SteinerLineQ', 'QLCi5', 'QLCi6', 'TangentParabola',
+    'QLTf1', 'QLCu1', 'QLQu3',
   ],
-  'Cubic curves': [
-    'Cubic', 'Polar', 'PolarConic', 'ThirdIntersection', 'Pretangential', 'CubicInvolution',
-    'PivotalIsogonalCubic', 'OrthicAxis', 'QLCu1', 'QACu1', 'QACu1Inv',
-    'OrthopivotalCubic', 'CircularCubic', 'CayleyBacharachPoint', 'CircularPolarPoint',
-    'HessianCubic', 'HessianCorrespondent', 'PrehessianCubic', 'MixedPolar', 'Poloconic',
-    'JacobianCubic', 'ConicLineCubic', 'CubicPencil', 'PivotalCubic', 'PivotalIsotomicCubic',
-    'NonpivotalCubic', 'ConicoPivotalCubic', 'CubicAsymptotes', 'NodalCubic', 'CuspidalCubic',
-    'Strophoid',
+  'Cubics': [
+    // generics
+    'Cubic', 'ConicLineCubic', 'CircularCubic',
+    'ThirdIntersection', 'Pretangential',
+    'CayleyBacharachPoint', 'CubicPencil',
+    'NodalCubic', 'Strophoid', 'CuspidalCubic',
+
+    // polarity
+    'Polar', 'PolarConic', 'MixedPolar', 'Poloconic',
+    'CubicAsymptotes', 'OrthicAxis', 'CircularPolarPoint',
+    // hessians
+    'HessianCubic', 'HessianCorrespondent', 'PrehessianCubic', 'CubicInvolution',
+    'JacobianCubic',
+
+    // misc cubics
+    'QLCu1', 'QACu1', 'QACu1Inv',
+    'OrthopivotalCubic',
+    'NonpivotalCubic',
+    'ConicoPivotalCubic', 
   ],
-  'Other algebraic curves': ['GibertCurve', 'QLQu3'],
   'General constructions': [
     'Intersect', 'Pedal', 'HarmonicConjugate', 'TransferRatio', 'TrisectionPoint',
     'GoldenSectionPoint', 'DirectSimilarity', 'OppositeSimilarity',
