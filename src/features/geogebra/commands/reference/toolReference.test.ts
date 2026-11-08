@@ -19,10 +19,16 @@ describe('Studio tool reference', () => {
 
   it('keeps classifications and supplemental notes attached to real canonical entries', () => {
     const names = new Set(tools.map(({ name }) => name));
-    for (const group of Object.values(toolGroups)) {
-      expect(new Set(group).size).toBe(group.length);
-      for (const name of group) expect(names.has(name), name).toBe(true);
+    const duplicates: string[] = [];
+    for (const [category, group] of Object.entries(toolGroups)) {
+      const seen = new Set<string>();
+      for (const name of group) {
+        if (seen.has(name)) duplicates.push(`${category}: ${name}`);
+        seen.add(name);
+        expect(names.has(name), `Unknown tool "${name}" in category "${category}"`).toBe(true);
+      }
     }
+    expect(duplicates, 'Duplicate tools within categories').toEqual([]);
     for (const [name, note] of Object.entries(referenceNotes)) {
       expect(names.has(name), name).toBe(true);
       for (const related of note?.related ?? []) expect(names.has(related), related).toBe(true);

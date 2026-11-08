@@ -39,7 +39,7 @@ export const toolGroups = {
     'NinePointCircle', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle',
     'Excircle', 'Excircles', 'ApolloniusCircle', 'ApolloniusCircles',
     'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles', 
-    'PedalCircle',
+
     // circles.dynamicCircles
     'HaggeCircle', 'PedalCircle',
 
