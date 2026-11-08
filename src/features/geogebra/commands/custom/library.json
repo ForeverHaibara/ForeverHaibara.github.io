@@ -1167,9 +1167,9 @@
     },
     {
       "name": "InconicWithFocus",
-      "description": "Ellipse tangent to the three sidelines with interior point P as a focus; exterior inputs are outside this contract.",
+      "description": "Conic tangent to the three sidelines with P as a focus. Depending on P, it may be an ellipse, hyperbola or parabola.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "compose": "Ellipse($P,$other,Distance(Reflect($P,Line($B,$C)),$other)/2)", "locals": [{"name": "other", "expression": "IsogonalConjugate($A,$B,$C,$P)"}]}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "compose": "If(Distance($P,Circle($A,$B,$C))==0,Parabola($P,Line(Reflect($P,Line($A,$B)),Reflect($P,Line($A,$C)))),InconicWithCenter($A,$B,$C,Midpoint($P,IsogonalConjugate($A,$B,$C,$P))))"}
       ]
     },
     {

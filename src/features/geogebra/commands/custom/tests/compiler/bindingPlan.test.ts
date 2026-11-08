@@ -57,6 +57,13 @@ describe('one formula source with two binding lowerings', () => {
     expect(plan.helpers.some((helper) => /\bv1\b/u.test(helper.expression))).toBe(true);
   });
 
+  it.each(['medium', 'high'] as const)('preserves composed argument bindings when falling back in %s mode', (mode) => {
+    const source = 'InconicWithFocus(A,B,C,D)';
+    const plan = compileStudioPlan(source, environment(), id, mode);
+    expect(plan.materialized).toBe(false);
+    expect(plan.output).toBe(compileStudioCommand(source, environment()));
+  });
+
   it('materializes segment input for verified line-like overloads', () => {
     const scope = environment();
     scope.objects.set('l', 'segment');

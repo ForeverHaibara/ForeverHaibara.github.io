@@ -264,5 +264,9 @@ export const compileStudioPlan = (source: string, environment: CommandEnvironmen
     if (!plan.materialized) throw new Error('This curve requires named numeric intermediates. Use a standalone call or a supported native wrapper in Medium or High mode.');
     plan.requiresMaterialization = true;
   }
+  // Captured bindings inside composed tools can contain definition-local tokens.
+  // If no named plan was produced, compile normally so those tokens are replaced
+  // in their original scope before anonymous Zip expressions are emitted.
+  if (!plan.materialized) plan.output = compileStudioCommand(source, environment);
   return plan;
 };

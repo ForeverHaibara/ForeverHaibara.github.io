@@ -239,7 +239,7 @@
 | Implemented (P2) | `SteinerInellipse(A,B,C) → conic` | Ellipse tangent to the triangle sidelines at their midpoints. | 对标准等边三角形的内切圆作仿射映射，或用重心二次型 `X²+Y²+Z²−2XY−2YZ−2ZX=0` 换算系数；中心 G。非共线 ABC 时稳定。 | S401 |
 | Implemented (P2) | `SteinerCircumellipse(A,B,C) → conic` | Circumellipse of ABC centered at the centroid. | 将 SteinerInellipse 关于 G 作倍率 −2 的位似；亦可用重心方程 `XY+YZ+ZX=0`。原名 Steiner Exellipse 改为标准 circumellipse。 | S402 |
 | Implemented (P2) | `SteinerFoci(A,B,C[,i]) → point × 2 / point` | Foci of the Steiner inellipse. | 从上一二次型取原生 Focus。正三角形时两焦点重合 G，保留两个输出；不命名为 Laofeng Points。 | S372 |
-| Implemented (P2) | `InconicWithFocus(A,B,C,P) → conic` | Real ellipse tangent to the three sidelines with P as a focus. | 仅在 P 为严格内点时承诺实内切椭圆：另一焦点 Q 是等角共轭；将 P 关于任一边反射，反射点到 Q 的距离为长轴长，得到中心和二次型。不凭固定一条边与 PQ 相交取椭圆上的点。外点可能对应其他实 conic，不自动称 ellipse。 | S371 |
+| Implemented (P2) | `InconicWithFocus(A,B,C,P) → conic` | Conic tangent to the three sidelines with P as a focus. | 对不在外接圆上的焦点，以 P 和其等角共轭的中点为中心构造内切圆锥曲线；P 在外接圆上时，利用关于两边的反射点构造抛物线准线。退化位置可能无定义。 | S371 |
 | Implemented (P2) | `InconicWithCenter(A,B,C,P) → conic` | Conic tangent to the three sidelines with center P. | P 重心 p,q,r，令 u=p+q−r、v=p+r−q、w=q+r−p。对偶矩阵取零对角、非对角 u,v,w，其行和为 2p,2q,2r；取 adjugate 得原生六系数 `(-w²,-v²,-u²,2vw,2uw,2uv)` 后仿射变换到世界平面。中点三角形内部对应实内切椭圆；其他位置可能为双曲线或退化，不统一称 ellipse。 | S470 |
 | Implemented (P2) | `IsogonalPairWithMidpoint(A,B,C,P[,i]) → point × 2 / point` | Isogonal pair with prescribed midpoint P. | 作以P为中心的圆锥曲线的焦点。 | S471 |
 

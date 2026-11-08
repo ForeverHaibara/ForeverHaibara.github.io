@@ -272,7 +272,10 @@ inside GeoGebra, without JavaScript coordinate reads.
 affine line. These preserve finite results across intermediate points/lines at
 infinity instead of expanding through undefined affine objects.
 
-`InconicWithFocus` promises an ellipse for a strictly interior focus.
+`InconicWithFocus` constructs a conic tangent to the sidelines with the given
+focus. It uses the midpoint of the focus and its isogonal conjugate as the
+center, or constructs a parabola when the focus lies on the circumcircle.
+Degenerate focus positions, such as triangle vertices, may be undefined.
 `InconicWithCenter` can return an ellipse, hyperbola or degenerate conic;
 `IsogonalPairWithMidpoint` extracts its real foci when available. The generalized
 `ApolloniusCircle` keeps a conic object at equal side lengths, where its equation

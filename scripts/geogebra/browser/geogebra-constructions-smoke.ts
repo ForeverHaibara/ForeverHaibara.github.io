@@ -15,6 +15,15 @@ export const verifyConstructions = async (engine: GeoGebraEngine, report: (messa
     return result;
   };
   await run('A=(0,0)\nB=(6,0)\nC=(1,4)\nD=(-2,3)\nP=(2,1)\nQ=(1.5,1.4)\nX=(2.1,1.2)\nY=(1.2,0.8)\nc1=Circle(A,1)\nc2=Circle(B,2)\nl=Line(A,B)\nl1=Line(A,B)\nl2=Line(B,C)\nl3=Line(C,D)\nl4=Line(D,A)\ncurveOffset=1\ncubicCurve:y^2=x^3-x+curveOffset');
+  const bareFocus = await run('InconicWithFocus(A,B,C,D)');
+  check(Boolean(bareFocus.labels?.length), 'unassigned focus inconic creates an object');
+  check(Boolean(await api('isDefined', bareFocus.labels[0])), 'unassigned focus inconic is defined');
+  for (const helperMode of ['medium', 'high'] as const) {
+    const result = await executeCommandPipeline(engine, 'InconicWithFocus(A,B,C,D)', { helperMode });
+    if (!result.success) throw new Error(`focus inconic in ${helperMode}: ${result.error}\n${result.expandedCommand}`);
+    check(Boolean(result.labels.length), `unassigned focus inconic creates an object in ${helperMode}`);
+    check(Boolean(await api('isDefined', result.labels[0])), `unassigned focus inconic is defined in ${helperMode}`);
+  }
   const cubicPoints = ['(-1,sqrt(curveOffset))', '(-1,-sqrt(curveOffset))', '(0,sqrt(curveOffset))', '(0,-sqrt(curveOffset))', '(1,sqrt(curveOffset))', '(1,-sqrt(curveOffset))', '(2,sqrt(6+curveOffset))', '(2,-sqrt(6+curveOffset))', '(3,sqrt(24+curveOffset))'];
   await run(cubicPoints.map((point, i) => `P${i + 1}=${point}`).join('\n'));
   const names = new Set([
@@ -62,6 +71,38 @@ export const verifyConstructions = async (engine: GeoGebraEngine, report: (messa
     const x = await value(`x(${point})`); const y = await value(`y(${point})`);
     return Math.abs(a * x * x + b * y * y + c + d * x * y + e * x + f * y) / (1 + x * x + y * y);
   };
+  const tangentResidual = async (conic: string, first: string, second: string) => {
+    const coefficients = await Promise.all(Array.from({ length: 6 }, (_, i) => value(`Element(Coefficients(${conic}),${i + 1})`)));
+    const scale = Math.max(...coefficients.map(Math.abs));
+    const [a, b, c, d, e, f] = coefficients.map((coefficient) => coefficient / scale);
+    const [x1, y1, x2, y2] = await Promise.all([value(`x(${first})`), value(`y(${first})`), value(`x(${second})`), value(`y(${second})`)]);
+    const line = [y1 - y2, x2 - x1, x1 * y2 - x2 * y1];
+    const matrix = [[a, d / 2, e / 2], [d / 2, b, f / 2], [e / 2, f / 2, c]];
+    const adjugate = matrix.map((row, i) => row.map((_, j) => {
+      const rows = [0, 1, 2].filter((index) => index !== j);
+      const columns = [0, 1, 2].filter((index) => index !== i);
+      return (i + j) % 2 ? -(matrix[rows[0]][columns[0]] * matrix[rows[1]][columns[1]] - matrix[rows[0]][columns[1]] * matrix[rows[1]][columns[0]])
+        : matrix[rows[0]][columns[0]] * matrix[rows[1]][columns[1]] - matrix[rows[0]][columns[1]] * matrix[rows[1]][columns[0]];
+    }));
+    const residual = line.reduce((sum, x, i) => sum + line.reduce((inner, y, j) => inner + x * adjugate[i][j] * y, 0), 0);
+    return Math.abs(residual) / (1 + line.reduce((sum, coordinate) => sum + coordinate * coordinate, 0));
+  };
+  await run('FocusInput=(2,1)\nFocusConic=InconicWithFocus(A,B,C,FocusInput)');
+  for (const [x, y, expectedType, label] of [[2, 1, 3, 'interior ellipse'], [2, -1, 5, 'exterior hyperbola'], [6, 11 / 4, 9, 'circumcircle parabola'], [2, 1, 3, 'restored ellipse']] as const) {
+    await api('setCoords', 'FocusInput', x, y);
+    check(Boolean(await api('isDefined', 'FocusConic')), `focus inconic is defined for ${label}`);
+    const actualType = await value('Type(FocusConic)');
+    check(actualType === expectedType, `focus inconic has expected type for ${label}: ${actualType}`);
+    for (const [first, second] of [['A', 'B'], ['B', 'C'], ['C', 'A']]) {
+      check(await tangentResidual('FocusConic', first, second) < 1e-7, `focus inconic is tangent to ${first}${second} for ${label}`);
+    }
+    if (expectedType !== 9) {
+      const focusDistance = await value('Min(Distance(FocusInput,Element({Focus(FocusConic)},1)),Distance(FocusInput,Element({Focus(FocusConic)},2)))');
+      check(focusDistance < 1e-6, `requested point is a focus for ${label}`);
+    } else {
+      await near('Distance(FocusInput,Element({Focus(FocusConic)},1))', 'requested point is the parabola focus');
+    }
+  }
   await run('AG=AntigonalConjugate(A,B,C,P)\nAGback=AntigonalConjugate(A,B,C,AG)\nIso=Isoconjugate(A,B,C,X,Y,P)\nIsoBack=Isoconjugate(A,B,C,X,Y,Iso)\nCeva=CevaConjugate(A,B,C,Cevapoint(A,B,C,P,Q),P)\nCross=CrossConjugate(A,B,C,Crosspoint(A,B,C,P,Q),P)\nAffine=CevianAffineMap(A,B,C,Centroid(A,B,C),P)\nComplementary=Complement(A,B,C,P)\nCycle=CyclocevianConjugate(A,B,C,P)\nCycleBack=CyclocevianConjugate(A,B,C,Cycle)');
   await near('Distance(AGback,P)+Distance(IsoBack,P)+Distance(Ceva,Q)+Distance(Cross,Q)+Distance(Affine,Complementary)+Distance(CycleBack,P)', 'conjugation and affine defining identities');
   await run('PoleInput=(2*A+2*B-C)/3\nPoleCycle=CyclocevianConjugate(A,B,C,PoleInput)\nPoleCycleBack=CyclocevianConjugate(A,B,C,PoleCycle)\nOrthoH=Orthocorrespondent(A,B,C,Orthocenter(A,B,C))');
