@@ -1,0 +1,54 @@
+{
+  "Incircle": {
+    "description": "Construct the incircle of a triangle from its three vertices.",
+    "signatures": [{ "text": "Incircle(A: point, B: point, C: point)", "type": "circle" }],
+    "reference": {
+      "keywords": "incenter inscribed circle 内切圆 内心",
+      "examples": [{ "command": "Incircle(A, B, C)", "note": "Constructs the incircle of the existing triangle ABC." }],
+      "related": ["Incenter", "IntouchTriangle", "Excircle"]
+    }
+  },
+  "Conic": {
+    "description": "Construct a conic from points or coefficients.",
+    "signatures": [
+      { "text": "Conic(A: point, B: point, C: point, D: point, E: point)", "type": "conic", "shared": true, "note": "Studio expands this five-point form to the native command." },
+      { "text": "Conic(a: number, b: number, c: number, d: number, e: number, f: number)", "type": "conic", "note": "Coefficients define ax² + dxy + by² + ex + fy = −c." },
+      { "text": "Conic(coefficients: list)", "type": "conic", "note": "The list contains the six coefficients a, b, c, d, e, f in that order." }
+    ],
+    "dispatch": "The Studio command bar also accepts five point or tangent-line constraints, including mixed constraints. Unmatched native forms use GeoGebra."
+  },
+  "Intersect": {
+    "description": "Find intersections between objects.",
+    "signatures": [
+      { "text": "Intersect(object1, object2)", "note": "Finds intersections of two objects." },
+      { "text": "Intersect(object1, object2, index: number)", "note": "Selects an intersection by index for supported object types." },
+      { "text": "Intersect(object1, object2, initialPoint: point)", "note": "Finds an intersection numerically from an initial point." },
+      { "text": "Intersect(function1: function, function2: function, start: number, end: number)", "note": "Finds intersections numerically within an interval." },
+      { "text": "Intersect(curve1, curve2, parameter1: number, parameter2: number)", "note": "Finds an intersection numerically from initial curve parameters." }
+    ],
+    "dispatch": "In the Studio command bar, four points use the extension for the supporting lines AB and CD. Other forms shown here use GeoGebra."
+  },
+  "Centroid": {
+    "description": "Construct the centroid of a polygon.",
+    "signatures": [{ "text": "Centroid(polygon)", "type": "point" }],
+    "dispatch": "The three-point form is a Studio extension. The polygon form uses GeoGebra."
+  },
+  "Cubic": {
+    "description": "Construct a numbered triangle cubic.",
+    "signatures": [{ "text": "Cubic(A: point, B: point, C: point, index: number)", "type": "implicitCurve", "note": "Constructs a supported numbered triangle cubic." }],
+    "dispatch": "The nine-point form is a Studio extension. The triangle-and-index form uses GeoGebra."
+  },
+  "Polar": {
+    "description": "Construct the polar of a point or the pole of a line with respect to a conic.",
+    "signatures": [
+      { "text": "Polar(P: point, conic: conic)", "type": "line" },
+      { "text": "Polar(line: line, conic: conic)", "type": "point" }
+    ],
+    "dispatch": "The conic forms use GeoGebra. The point-and-cubic form is a Studio extension."
+  },
+  "TriangleCenter": {
+    "description": "Construct a numbered triangle center.",
+    "signatures": [{ "text": "TriangleCenter(A: point, B: point, C: point, index: number)", "type": "point", "note": "GeoGebra's native catalogue accepts numbers below 3054." }],
+    "dispatch": "In the Studio command bar, literal patched native IDs and supported higher IDs use site recipes. Unpatched native IDs and computed selectors use GeoGebra."
+  }
+}

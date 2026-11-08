@@ -26,8 +26,10 @@ GeoGebra 页面入口在 `src/pages/geogebra/GeoGebraStudioPage.tsx`，负责把
 
 普通工具来自 `studioToolCatalog`。新增工具时在工具库里维护名称、描述、别名和重载，参考页会自动显示这些信息。分类在 `commands/custom/toolCategories.ts` 的 `toolGroups` 中维护，嵌套对象表示子分类，叶节点数组列出正式名称。跨领域命令可以加入多个顶级分类，搜索结果只显示一条。同一顶级分类内不要重复列出工具，分类检查会报告完整路径。测试要求每个正式工具至少属于一个分类，运行时仍会将未归类工具显示在 Other constructions。
 
+精选的 GeoGebra 原生命令及其语法在 `commands/nativeCommandReference.json` 中维护，并可在同一分类树中引用。它们与同名的站点扩展合并为一个条目，参考页分别展示原生语法和站点扩展。原生条目只收录经过核对的常用形式，完整用法以各命令的 GeoGebra 手册为准；分类仅能引用该目录或工具库中的正式名称。重叠的语法可用 `shared` 标记合并显示，同时说明 Studio 命令栏的实际派发方式。补全和参考页共用该目录，未收录的原生命令仍由原有名称索引提供补全。
+
 在 `library.json` 工具条目的可选 `reference` 字段中补充 `examples`、`details`、`related` 和 `keywords`。搜索已覆盖名称、别名、分类和描述，补充词只需填写这些字段里没有的术语。示例使用 Studio 命令栏可执行的语法，并说明依赖的点或对象。相关工具使用正式名称，高级命令带 `!` 前缀。
 
 在 `advancedCommands` 注册特殊命令后，参考页会自动将其放进 Special commands，签名和可选的 `reference` 说明从命令注册数据读取。普通命令和特殊命令各自保留可分享的链接。
 
-需要按分类整理工具库时，运行 `node scripts/geogebra/tools/sort_tool_library.mjs` 预览，再加 `--write` 写入。脚本按分类树的首次出现顺序排列，报告跨分类重复项，将未分类工具按原顺序放在末尾。分类引用不存在的工具时会停止，并在写入前验证工具数据完整。使用 `--check` 可以在需要排序时返回非零退出码。
+需要按分类整理工具库时，运行 `node scripts/geogebra/tools/sort_tool_library.mjs` 预览，再加 `--write` 写入。脚本按分类树的首次出现顺序排列，报告跨分类重复项，将未分类工具按原顺序放在末尾，并跳过只有原生参考条目的命令。分类引用不存在的工具时会停止，并在写入前验证工具数据完整。使用 `--check` 可以在需要排序时返回非零退出码。

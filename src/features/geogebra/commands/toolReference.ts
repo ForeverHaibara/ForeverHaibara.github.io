@@ -1,4 +1,5 @@
 import gibertCurveRecords from './custom/data/related-curves/curves.json';
+import nativeData from './nativeCommandReference.json';
 import type { AdvancedCommand } from './advancedCommands';
 import type { GeometryType, ToolDefinition, ToolLibrary, ToolOverload } from './custom/types';
 import { toolGroups } from './custom/toolCategories';
@@ -37,6 +38,16 @@ const otherGroup = 'Other constructions';
 export const referenceGroups = [...Object.keys(toolGroups), otherGroup, specialGroup];
 export const gibertReferenceIds = gibertCurveRecords.map(({ id }) => id);
 
+export interface NativeCommandReference {
+  description: string;
+  signatures: Array<{ text: string; type?: string; note?: string; shared?: boolean }>;
+  dispatch?: string;
+  reference?: ReferenceMetadata;
+}
+
+/** Curated native forms for the Studio reference; the generated name index covers more commands. */
+export const nativeCommandReference: Readonly<Record<string, NativeCommandReference>> = nativeData;
+
 export interface ReferenceTool {
   name: string;
   description: string;
@@ -44,6 +55,7 @@ export interface ReferenceTool {
   groups: readonly string[];
   paths: readonly (readonly string[])[];
   signatures: readonly { text: string; type?: GeometryType }[];
+  native?: NativeCommandReference;
   notes: ReferenceMetadata | undefined;
 }
 
@@ -68,15 +80,39 @@ visitToolCategories(toolGroups, (path, names) => {
 });
 
 export function getReferenceTools(catalog: ToolLibrary, advanced: readonly AdvancedCommand[]): ReferenceTool[] {
-  const constructions: ReferenceTool[] = catalog.tools.map((tool) => ({
-    name: tool.name,
-    description: tool.description,
-    aliases: tool.aliases ?? [],
-    groups: groupsByTool.get(tool.name) ?? [otherGroup],
-    paths: pathsByTool.get(tool.name) ?? [[otherGroup]],
-    signatures: tool.overloads.map((overload) => ({ text: toolSignature(tool, overload), type: overload.returns })),
-    notes: tool.reference,
-  }));
+  const constructions: ReferenceTool[] = catalog.tools.map((tool) => {
+    const native = nativeCommandReference[tool.name];
+    const nativeNotes = native?.reference;
+    const notes = nativeNotes && tool.reference ? {
+      keywords: [tool.reference.keywords, nativeNotes.keywords].filter(Boolean).join(' '),
+      details: [...new Set([...(tool.reference.details ?? []), ...(nativeNotes.details ?? [])])],
+      examples: [...new Map([...(nativeNotes.examples ?? []), ...(tool.reference.examples ?? [])].map((example) => [example.command, example])).values()],
+      related: [...new Set([...(tool.reference.related ?? []), ...(nativeNotes.related ?? [])])],
+    } : tool.reference ?? nativeNotes;
+    return {
+      name: tool.name,
+      description: tool.description,
+      aliases: tool.aliases ?? [],
+      groups: groupsByTool.get(tool.name) ?? [otherGroup],
+      paths: pathsByTool.get(tool.name) ?? [[otherGroup]],
+      signatures: tool.overloads.map((overload) => ({ text: toolSignature(tool, overload), type: overload.returns })),
+      notes,
+      native,
+    };
+  });
+  const customNames = new Set(catalog.tools.map((tool) => tool.name.toLowerCase()));
+  const nativeOnly: ReferenceTool[] = Object.entries(nativeCommandReference)
+    .filter(([name]) => !customNames.has(name.toLowerCase()))
+    .map(([name, native]) => ({
+      name,
+      description: native.description,
+      aliases: [],
+      groups: groupsByTool.get(name) ?? [otherGroup],
+      paths: pathsByTool.get(name) ?? [[otherGroup]],
+      signatures: [],
+      notes: native.reference,
+      native,
+    }));
   const special = advanced.map(({ name, description, signatures, reference }) => {
     const command = `!${name}`;
     return {
@@ -89,7 +125,7 @@ export function getReferenceTools(catalog: ToolLibrary, advanced: readonly Advan
       notes: reference,
     };
   });
-  return [...constructions, ...special].sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  return [...constructions, ...nativeOnly, ...special].sort((a, b) => a.name.localeCompare(b.name, 'en'));
 }
 
 export const toolReferencePath = (name?: string) =>

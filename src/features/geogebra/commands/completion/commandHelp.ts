@@ -6,7 +6,6 @@ export const COMMAND_HELP: Record<string, Pick<CompletionItem, 'description' | '
   Line: { description: 'Construct a line through two points.', signatures: ['Line(A, B)'] },
   Segment: { description: 'Connect two endpoints.', signatures: ['Segment(A, B)'] },
   Ray: { description: 'Construct a ray from its start point through another point.', signatures: ['Ray(A, B)'] },
-  Intersect: { description: 'Find intersections of two objects.', signatures: ['Intersect(object1, object2)'] },
   Midpoint: { description: 'Find the midpoint of two points or a segment.', signatures: ['Midpoint(A, B)', 'Midpoint(segment)'] },
   Distance: { description: 'Measure the distance between objects.', signatures: ['Distance(A, B)'] },
   Angle: { description: 'Measure an angle with the middle point as its vertex.', signatures: ['Angle(A, B, C)'] },

@@ -4,6 +4,7 @@ import { GEOGEBRA_COMMAND_NAMES } from './geogebraCommandNames';
 import { COMMAND_HELP } from './commandHelp';
 import { studioToolLibrary, toolSignature } from '../custom/toolLibrary';
 import { advancedCommands } from '../advancedCommands';
+import { nativeCommandReference } from '../toolReference';
 
 /** Shared by all studio command bars. Extensions can also inject their own registry. */
 export const studioCompletionRegistry = new CompletionRegistry();
@@ -11,8 +12,12 @@ export const studioCompletionRegistry = new CompletionRegistry();
 studioCompletionRegistry.registerCommands('geogebra', GEOGEBRA_COMMAND_NAMES.map((label) => ({
   label,
   kind: 'command',
-  description: 'GeoGebra command',
   ...COMMAND_HELP[label],
+  description: nativeCommandReference[label]?.description ?? COMMAND_HELP[label]?.description ?? 'GeoGebra command',
+  ...(nativeCommandReference[label] && {
+    signatures: nativeCommandReference[label].signatures.map(({ text }) => text),
+    referenceName: label,
+  }),
 })));
 
 studioCompletionRegistry.registerCommands('geogebra-api', API_METHODS.map((label) => ({
@@ -29,6 +34,9 @@ studioCompletionRegistry.registerCommands('studio-geometry', studioToolLibrary.t
   kind: 'custom',
   referenceName: tool.canonicalName,
   description: tool.description,
-  signatures: [...tool.overloads.map((overload) => toolSignature(tool, overload)), ...(tool.name === 'Conic' ? ['Conic(a: number, b: number, c: number, d: number, e: number, f: number)', 'Conic(coefficients: list)'] : [])],
+  signatures: [...new Set([
+    ...tool.overloads.map((overload) => toolSignature(tool, overload)),
+    ...(tool.name === tool.canonicalName ? nativeCommandReference[tool.name]?.signatures.map(({ text }) => text) ?? [] : []),
+  ])],
   priority: 10,
 })));

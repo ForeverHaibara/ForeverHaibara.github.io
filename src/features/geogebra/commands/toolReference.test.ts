@@ -2,14 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { AdvancedCommandRegistry, advancedCommands } from './advancedCommands';
 import { resolveToolAliases, studioToolCatalog } from './custom/toolLibrary';
 import { toolGroups } from './custom/toolCategories';
-import { findReferenceTool, getReferenceTools, searchReferenceTools, specialGroup, visitToolCategories } from './toolReference';
+import { findReferenceTool, getReferenceTools, nativeCommandReference, searchReferenceTools, specialGroup, visitToolCategories } from './toolReference';
+import { GEOGEBRA_COMMAND_NAMES } from './completion/geogebraCommandNames';
+import { studioCompletionRegistry } from './completion/studioCompletionRegistry';
+import { getCompletionContext } from './completion/completionContext';
+import { compileStudioCommand } from './custom/commandCompiler';
 
 const tools = getReferenceTools(studioToolCatalog, advancedCommands.list());
 
 describe('Studio tool reference', () => {
   it('uses canonical construction entries and derives special command syntax from the registry', () => {
     const special = advancedCommands.list();
-    expect(tools).toHaveLength(studioToolCatalog.tools.length + special.length);
+    const nativeOnly = Object.keys(nativeCommandReference).filter((name) => !studioToolCatalog.tools.some((tool) => tool.name.toLowerCase() === name.toLowerCase()));
+    expect(tools).toHaveLength(studioToolCatalog.tools.length + nativeOnly.length + special.length);
     for (const { name, signatures } of special) {
       const entry = findReferenceTool(tools, `!${name}`);
       expect(entry?.groups).toEqual([specialGroup]);
@@ -19,7 +24,7 @@ describe('Studio tool reference', () => {
 
   it('keeps classifications and supplemental notes attached to real canonical entries', () => {
     const names = new Set(tools.map(({ name }) => name));
-    const canonicalNames = new Set(studioToolCatalog.tools.map(({ name }) => name));
+    const canonicalNames = new Set([...studioToolCatalog.tools.map(({ name }) => name), ...Object.keys(nativeCommandReference)]);
     const duplicates: string[] = [];
     const classified = new Set<string>();
     const seenByGroup = new Map<string, Set<string>>();
@@ -40,6 +45,35 @@ describe('Studio tool reference', () => {
         expect(names.has(related), `Unknown related tool "${related}" in ${tool.name}`).toBe(true);
       }
     }
+  });
+
+  it('merges documented native forms with extensions while preserving dispatch and completion', async () => {
+    for (const [name, native] of Object.entries(nativeCommandReference)) {
+      expect(GEOGEBRA_COMMAND_NAMES, name).toContain(name);
+      expect(tools.filter((tool) => tool.name === name)).toHaveLength(1);
+      const tool = findReferenceTool(tools, name)!;
+      for (const signature of native.signatures.filter((item) => item.shared)) {
+        expect(tool.signatures.map((item) => item.text), name).toContain(signature.text);
+      }
+    }
+    const incircle = findReferenceTool(tools, 'Incircle')!;
+    expect(incircle.paths).toContainEqual(['Triangle constructions', 'Circles', 'Circles of the triangle']);
+    expect(incircle.native?.signatures[0].text).toBe('Incircle(A: point, B: point, C: point)');
+    expect(searchReferenceTools(tools, '内切圆', '').map(({ tool }) => tool.name)).toContain('Incircle');
+    expect(findReferenceTool(tools, 'Conic')?.native?.signatures.map(({ text }) => text)).toContain('Conic(coefficients: list)');
+    expect(findReferenceTool(tools, 'Intersect')?.signatures.map(({ text }) => text)).toContain('Intersect(A: point, B: point, C: point, D: point)');
+    const scope = { objects: new Map([['A', 'point' as const], ['B', 'point' as const], ['C', 'point' as const], ['D', 'point' as const]]), macros: new Set<string>() };
+    expect(compileStudioCommand('Incircle(A,B,C)', scope)).toBe('Incircle(A,B,C)');
+    expect(compileStudioCommand('Conic(1,2,3,4,5,6)', scope)).toBe('Conic(1,2,3,4,5,6)');
+    expect(compileStudioCommand('Intersect(A,B,C,D)', scope)).toBe('Intersect(Line((A),(B)),Line((C),(D)))');
+    const complete = async (query: string) => studioCompletionRegistry.complete(getCompletionContext(query, query.length, query.length, true)!, new AbortController().signal);
+    const nativeCompletion = (await complete('Incircle')).find((item) => item.label === 'Incircle')!;
+    expect(nativeCompletion.referenceName).toBe('Incircle');
+    expect(nativeCompletion.signatures).toContain('Incircle(A: point, B: point, C: point)');
+    const mixedCompletion = (await complete('Conic')).find((item) => item.label === 'Conic')!;
+    expect(mixedCompletion.referenceName).toBe('Conic');
+    expect(mixedCompletion.signatures).toContain('Conic(coefficients: list)');
+    expect(mixedCompletion.signatures?.filter((signature) => signature === 'Conic(A: point, B: point, C: point, D: point, E: point)')).toHaveLength(1);
   });
 
   it('finds aliases, terminology, cross-listed cubics and numbered tools', () => {

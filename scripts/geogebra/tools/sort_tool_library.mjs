@@ -4,6 +4,7 @@ import ts from 'typescript';
 
 const libraryUrl = new URL('../../../src/features/geogebra/commands/custom/library.json', import.meta.url);
 const categoriesUrl = new URL('../../../src/features/geogebra/commands/custom/toolCategories.ts', import.meta.url);
+const nativeReferenceUrl = new URL('../../../src/features/geogebra/commands/nativeCommandReference.json', import.meta.url);
 
 // Read the literal tree with the TypeScript parser without executing the source file.
 export function readCategories(source) {
@@ -36,7 +37,7 @@ export function readCategories(source) {
 }
 
 // Reorder only the original object slices so every field and its formatting survives.
-export function sortLibrary(source, categories) {
+export function sortLibrary(source, categories, nativeNames = []) {
   const library = JSON.parse(source);
   if (!Array.isArray(library.tools)) throw new Error('library.json has no tools array.');
   const file = ts.createSourceFile('library.json', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSON);
@@ -62,8 +63,10 @@ export function sortLibrary(source, categories) {
   const seen = new Map();
   const repeated = [];
   const missing = [];
+  const nativeOnly = new Set(nativeNames);
   for (const { name, path } of categories) {
     if (!byName.has(name)) {
+      if (nativeOnly.has(name)) continue;
       missing.push(`${path.join(' / ')}: ${name}`);
       continue;
     }
@@ -74,7 +77,7 @@ export function sortLibrary(source, categories) {
     seen.set(name, path.join(' / '));
     order.push(name);
   }
-  if (missing.length) throw new Error(`Category entries missing from library.json:\n${missing.join('\n')}`);
+  if (missing.length) throw new Error(`Category entries missing from library.json and the native reference:\n${missing.join('\n')}`);
   const unclassified = library.tools.map((tool) => tool.name).filter((name) => !seen.has(name));
   order.push(...unclassified);
   if (!array.elements.length) return { output: source, repeated, unclassified };
@@ -93,8 +96,8 @@ async function main() {
   if (args.some((arg) => arg !== '--write' && arg !== '--check') || args.length > 1) {
     throw new Error('Usage: node scripts/geogebra/tools/sort_tool_library.mjs [--check | --write]');
   }
-  const [source, categorySource] = await Promise.all([readFile(libraryUrl, 'utf8'), readFile(categoriesUrl, 'utf8')]);
-  const { output, repeated, unclassified } = sortLibrary(source, readCategories(categorySource));
+  const [source, categorySource, nativeSource] = await Promise.all([readFile(libraryUrl, 'utf8'), readFile(categoriesUrl, 'utf8'), readFile(nativeReferenceUrl, 'utf8')]);
+  const { output, repeated, unclassified } = sortLibrary(source, readCategories(categorySource), Object.keys(JSON.parse(nativeSource)));
   if (repeated.length) console.log(`Tools in multiple category positions (first occurrence determines order):\n${repeated.join('\n')}`);
   if (unclassified.length) console.log(`Unclassified tools retained at the end:\n${unclassified.join(', ')}`);
   if (source === output) {

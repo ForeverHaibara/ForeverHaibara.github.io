@@ -260,6 +260,7 @@
 .ggb-reference-signatures li { display: grid; gap: 3px; padding: 9px 12px; }
 .ggb-reference-signatures li + li { border-top: 1px solid var(--reference-border); }
 .ggb-reference-signatures li span { color: var(--reference-muted); font-size: 11px; }
+.ggb-reference-dispatch { padding: 10px 12px; border-left: 2px solid #93c5fd; background: #eff6ff; font-size: 12px; }
 .ggb-reference-notes { margin-top: 12px; padding-left: 12px; border-left: 2px solid #bfdbfe; }
 .ggb-reference-ids summary { color: var(--reference-accent); cursor: pointer; }
 .ggb-reference-example pre {

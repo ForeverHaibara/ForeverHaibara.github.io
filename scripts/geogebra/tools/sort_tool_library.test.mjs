@@ -33,4 +33,11 @@ describe('sort tool library', () => {
     expect(() => sortLibrary('{"tools":[{"name":"A"},{"name":"a"}]}', []))
       .toThrow('duplicate library tool name');
   });
+
+  it('skips documented native-only names without losing custom entries', () => {
+    const entries = readCategories(`export const toolGroups = { X: ['Native', 'B', 'A'] };`);
+    const result = sortLibrary(source, entries, ['Native', 'B']);
+    expect(JSON.parse(result.output).tools.map((tool) => tool.name)).toEqual(['B', 'A', 'C']);
+    expect(result.unclassified).toEqual(['C']);
+  });
 });

@@ -63,26 +63,42 @@ function ToolDetail({ tool, related, onSelect, onInsert, insertUnavailable }: To
   tool: ReferenceTool;
   related: ReferenceTool[];
 }) {
+  const shared = new Set(tool.native?.signatures.filter((signature) => signature.shared).map((signature) => signature.text));
+  const extensions = tool.signatures.filter((signature) => !shared.has(signature.text));
   return <>
     <div className="ggb-reference-paths">{tool.paths.map((path) => <p className="ggb-reference-kicker" key={JSON.stringify(path)}>{path.join(' / ')}</p>)}</div>
     <h3><code>{tool.name}</code></h3>
     <p>{tool.description}</p>
     {tool.aliases.length > 0 && <p className="ggb-reference-aliases">Also available as {tool.aliases.map((alias) => <code key={alias}>{alias}</code>)}</p>}
-    <h4>Syntax</h4>
-    <ul className="ggb-reference-signatures">
-      {tool.signatures.map(({ text, type }) => <li key={text}>
+    {tool.native && <>
+      <h4>GeoGebra syntax</h4>
+      <ul className="ggb-reference-signatures">
+        {tool.native.signatures.map(({ text, type, note }) => <li key={text}>
+          <code>{text}</code>
+          {type && <span>Output type · {type.replace(/([A-Z])/gu, ' $1').toLowerCase()}</span>}
+          {note && <span>{note}</span>}
+        </li>)}
+      </ul>
+      <p className="ggb-reference-muted">Selected forms. See the <a href={`https://geogebra.github.io/docs/manual/en/commands/${encodeURIComponent(tool.name)}/`} target="_blank" rel="noopener noreferrer">GeoGebra manual ↗</a> for more.</p>
+      {tool.native.dispatch && <p className="ggb-reference-dispatch">{tool.native.dispatch}</p>}
+    </>}
+    {extensions.length > 0 && <>
+      <h4>{tool.native ? 'Studio extensions' : 'Syntax'}</h4>
+      <ul className="ggb-reference-signatures">
+      {extensions.map(({ text, type }) => <li key={text}>
         <code>{text}</code>
         {type && <span>Output type · {type.replace(/([A-Z])/gu, ' $1').toLowerCase()}</span>}
       </li>)}
-    </ul>
-    {tool.notes?.details && <div className="ggb-reference-notes">
+      </ul>
+    </>}
+    {!!tool.notes?.details?.length && <div className="ggb-reference-notes">
       {tool.notes.details.map((detail) => <p key={detail}>{detail}</p>)}
     </div>}
     {tool.name === 'GibertCurve' && <details className="ggb-reference-ids">
       <summary>Supported catalogue IDs ({gibertReferenceIds.length})</summary>
       <p>{gibertReferenceIds.join(', ')}</p>
     </details>}
-    {tool.notes?.examples && <>
+    {!!tool.notes?.examples?.length && <>
       <h4>Examples</h4>
       {tool.notes.examples.map((example) => <Example key={example.command} {...example} onInsert={onInsert} insertUnavailable={insertUnavailable} />)}
       {onInsert && insertUnavailable && <p className="ggb-reference-muted">{insertUnavailable}</p>}
