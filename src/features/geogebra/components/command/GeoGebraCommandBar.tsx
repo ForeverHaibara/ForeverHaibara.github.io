@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { formatApiResult } from '../../commands/apiConsoleParser';
 import { advancedCommands } from '../../commands/advancedCommands';
 import { CommandHistory } from '../../commands/commandHistory';
@@ -14,15 +14,26 @@ import { useCommandSpelling } from '../../commands/useCommandSpelling';
 import GeoGebraSpellingReview from './GeoGebraSpellingReview';
 import StudioIcon from '../studio/StudioIcon';
 
+export interface GeoGebraCommandBarHandle {
+  insertExample(command: string): boolean;
+}
+
 interface GeoGebraCommandBarProps {
   engine: GeoGebraEngine | null;
   ready: boolean;
   helperMode?: 'low' | 'medium' | 'high';
   onResult(result: CommandResult): void;
+  ref?: React.Ref<GeoGebraCommandBarHandle>;
+  onDraftChange(hasDraft: boolean): void;
+  referenceOpen: boolean;
+  onOpenReference(opener: HTMLElement, name?: string): void;
   completionRegistry?: CompletionRegistry;
 }
 
-const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, helperMode = 'low', onResult, completionRegistry = studioCompletionRegistry }) => {
+const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({
+  engine, ready, helperMode = 'low', onResult, ref, onDraftChange,
+  referenceOpen, onOpenReference, completionRegistry = studioCompletionRegistry,
+}) => {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [apiResult, setApiResult] = useState<ApiConsoleResult | null>(null);
@@ -33,10 +44,29 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
   const providers = useMemo(() => engine ? [createObjectCompletionProvider(engine), createFileToolCompletionProvider(engine)] : [], [engine]);
   const spelling = useCommandSpelling(value, inputRef, completionRegistry, providers, setValue);
   const completion = useCommandCompletion({ inputRef, registry: completionRegistry, providers, enabled: ready && !busy && !spelling.review, onChange: setValue });
+  const referenceName = completion.state?.items[completion.state.activeIndex]?.referenceName;
+  const openCompletionReference = () => {
+    if (!referenceName || !inputRef.current) return;
+    completion.dismiss();
+    onOpenReference(inputRef.current, referenceName);
+  };
 
   const refocus = () => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
+
+  const hasDraft = Boolean(value.trim());
+  useEffect(() => onDraftChange(hasDraft), [hasDraft, onDraftChange]);
+  useImperativeHandle(ref, () => ({
+    insertExample(command) {
+      if (!ready || busy || hasDraft) return false;
+      completion.dismiss();
+      spelling.dismiss();
+      setValue(command);
+      refocus();
+      return true;
+    },
+  }));
 
   const execute = async () => {
     if (!engine || !value.trim() || busy) return;
@@ -101,7 +131,10 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
               return;
             }
             if (event.key !== 'Escape') event.stopPropagation();
-            if (spelling.review && (event.key === 'Tab' || event.key === 'Enter') && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            if (event.key === 'F1' && referenceName) {
+              event.preventDefault();
+              openCompletionReference();
+            } else if (spelling.review && (event.key === 'Tab' || event.key === 'Enter') && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
               event.preventDefault();
               spelling.accept();
             } else if (spelling.review && event.key === 'Escape') {
@@ -141,6 +174,9 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
           className="ggb-command-textarea"
           data-testid="geogebra-command-input"
         />
+        <button type="button" className="ggb-command-tools" aria-haspopup="dialog" aria-expanded={referenceOpen} aria-controls="geogebra-tool-reference" onClick={(event) => onOpenReference(event.currentTarget)}>
+          <StudioIcon name="book" size={16} /> Tools
+        </button>
         <button
           type="button"
           onClick={() => void execute()}
@@ -153,8 +189,8 @@ const GeoGebraCommandBar: React.FC<GeoGebraCommandBarProps> = ({ engine, ready, 
         </button>
       </div>
       {spelling.review && <GeoGebraSpellingReview corrections={spelling.review.corrections} onChoose={spelling.choose} onAccept={spelling.accept} onDismiss={spelling.dismiss} />}
-      <p id={helpId} className="sr-only">Tab or Enter to complete. Ctrl+Space for suggestions. Ctrl+Enter to run. Shift+Enter for a new line.</p>
-      {completion.state && inputRef.current && <GeoGebraCompletionMenu anchor={inputRef.current} listId={completion.listId} items={completion.state.items} prefix={completion.state.context.prefix} activeIndex={completion.state.activeIndex} onAccept={completion.accept} onActiveIndexChange={completion.setActiveIndex} onDismiss={completion.dismiss} />}
+      <p id={helpId} className="sr-only">Tab or Enter to complete. Ctrl+Space for suggestions. F1 for the selected tool’s reference. Ctrl+Enter to run. Shift+Enter for a new line.</p>
+      {completion.state && inputRef.current && <GeoGebraCompletionMenu anchor={inputRef.current} listId={completion.listId} items={completion.state.items} prefix={completion.state.context.prefix} activeIndex={completion.state.activeIndex} onAccept={completion.accept} onActiveIndexChange={completion.setActiveIndex} onDismiss={completion.dismiss} onOpenReference={referenceName ? openCompletionReference : undefined} />}
       {apiResult && (
         <div className={`mt-2 rounded-xl border px-3 py-2 font-mono text-xs ${apiResult.error ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`} data-testid="geogebra-command-result">
           <p className="truncate font-semibold" title={apiResult.input}>{apiResult.input}</p>

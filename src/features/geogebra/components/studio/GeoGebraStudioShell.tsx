@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import GeoGebraCanvas from './GeoGebraCanvas';
 import DocumentTabs from './DocumentTabs';
 import GeoGebraCommandBar from '../command/GeoGebraCommandBar';
+import type { GeoGebraCommandBarHandle } from '../command/GeoGebraCommandBar';
+import ToolReferenceDrawer from '../reference/ToolReferenceDrawer';
 import GeoGebraFileActions from './GeoGebraFileActions';
 import GeoGebraSidePanel from './GeoGebraSidePanel';
 import GeoGebraSettingsPanel from '../settings/GeoGebraSettingsPanel';
@@ -61,6 +63,12 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const [focusMode, setFocusMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [proofSettingsOpen, setProofSettingsOpen] = useState(false);
+  const [referenceOpen, setReferenceOpen] = useState(false);
+  const [referenceName, setReferenceName] = useState<string>();
+  const [referenceWidth, setReferenceWidth] = useState<number>();
+  const [hasCommandDraft, setHasCommandDraft] = useState(false);
+  const commandBarRef = useRef<GeoGebraCommandBarHandle>(null);
+  const referenceOpener = useRef<HTMLElement>(null);
   const [reasoningPreferences, setReasoningPreferences] = useState(readReasoningPreferences);
   const [reasoningStorageUnavailable, setReasoningStorageUnavailable] = useState(false);
   const proofSettingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -75,14 +83,40 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const analysisButtonRef = useRef<HTMLButtonElement>(null);
   const filesRef = useRef<HTMLDetailsElement>(null);
   const analysisHidden = settings.sidePanelCollapsed || focusMode;
+  const preferredReferenceWidth = referenceWidth ?? Math.max(480, analysisHidden ? 0 : settings.sidePanelWidth);
   const commandsHidden = settings.commandBarCollapsed || focusMode;
   const floating = fullscreen && settings.commandBarFloating;
   const objectLink = useObjectLink(engine, ready);
   const closeSettings = () => { setSettingsOpen(false); settingsButtonRef.current?.focus(); };
+  const closeReference = React.useCallback(() => {
+    setReferenceOpen(false);
+    window.requestAnimationFrame(() => referenceOpener.current?.focus({ preventScroll: true }));
+  }, []);
+  const openReference = (opener: HTMLElement, name?: string) => {
+    if (referenceOpen && !name) {
+      closeReference();
+      return;
+    }
+    referenceOpener.current = opener;
+    if (name) setReferenceName(name);
+    if (filesRef.current) filesRef.current.open = false;
+    setSettingsOpen(false);
+    setProofSettingsOpen(false);
+    setReferenceOpen(true);
+  };
+  const insertReferenceExample = (command: string) => {
+    if (props.documentBusy || !commandBarRef.current?.insertExample(command)) return false;
+    if (commandsHidden) {
+      setFocusMode(false);
+      onSettingsChange({ ...settings, commandBarCollapsed: false });
+    }
+    setReferenceOpen(false);
+    return true;
+  };
 
   useEffect(() => {
-    if (analysisHidden || settingsOpen || proofSettingsOpen) objectLink.hover(null);
-  }, [analysisHidden, settingsOpen, proofSettingsOpen, objectLink.hover]);
+    if (analysisHidden || settingsOpen || proofSettingsOpen || referenceOpen) objectLink.hover(null);
+  }, [analysisHidden, settingsOpen, proofSettingsOpen, referenceOpen, objectLink.hover]);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.inert = settingsOpen;
@@ -99,6 +133,11 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
         filesRef.current.querySelector('summary')?.focus();
         return;
       }
+      if (referenceOpen) {
+        event.preventDefault();
+        closeReference();
+        return;
+      }
       if (fullscreen) {
         setFocusMode(false); setFullscreen(false);
         window.requestAnimationFrame(() => fullscreenButtonRef.current?.focus());
@@ -107,7 +146,7 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
     window.addEventListener('pointerdown', closeFiles);
     window.addEventListener('keydown', escape);
     return () => { window.removeEventListener('pointerdown', closeFiles); window.removeEventListener('keydown', escape); };
-  }, [fullscreen]);
+  }, [fullscreen, referenceOpen, closeReference]);
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -133,14 +172,15 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
   const hideAnalysis = () => { onSettingsChange({ ...settings, sidePanelCollapsed: true }); analysisButtonRef.current?.focus(); };
 
   return <div ref={workspaceRef} className={fullscreen ? 'geogebra-studio-fullscreen' : 'relative left-1/2 w-screen max-w-none -translate-x-1/2 px-3 pb-5 sm:px-5 lg:px-7'} data-focus-mode={focusMode}>
-    <ReasoningPreferencesContext.Provider value={reasoningPreferences}><div className="geogebra-studio-shell" data-floating-commands={floating}>
+    <ReasoningPreferencesContext.Provider value={reasoningPreferences}><div className="geogebra-studio-shell" data-floating-commands={floating} data-reference-open={referenceOpen}>
       <header className="geogebra-studio-header">
         <div className="geogebra-studio-title"><span className="ggb-brand-mark"><StudioIcon name="geometry" size={22} /></span><div><h1>GeoGebra <span>Studio</span></h1><p>Geometry, with room to think.</p></div></div>
         <DocumentTabs workspace={props.workspace} disabled={props.documentBusy || !ready || Boolean(loadingMessage)} onSwitch={props.onSwitchDocument} onNew={props.onNewDocument} onClose={props.onCloseDocument} onRename={props.onRenameDocument} onReorder={props.onReorderDocument} onSave={props.onExportDocument} />
         <div className="ggb-workspace-toolbar" role="toolbar" aria-label="Workspace tools">
-          <button ref={proofSettingsButtonRef} type="button" className="ggb-icon-button" title="Proof settings" aria-label="Proof settings" aria-expanded={proofSettingsOpen} aria-controls="geogebra-proof-settings" disabled={settingsOpen} onClick={() => { if (filesRef.current) filesRef.current.open = false; setProofSettingsOpen(!proofSettingsOpen); }}><StudioIcon name="sparkles" /></button>
+          <StudioIconButton icon="book" label="Tool Reference" aria-haspopup="dialog" aria-expanded={referenceOpen} aria-controls="geogebra-tool-reference" onClick={(event) => openReference(event.currentTarget)} />
+          <button ref={proofSettingsButtonRef} type="button" className="ggb-icon-button" title="Proof settings" aria-label="Proof settings" aria-expanded={proofSettingsOpen} aria-controls="geogebra-proof-settings" disabled={settingsOpen} onClick={() => { if (filesRef.current) filesRef.current.open = false; setReferenceOpen(false); setProofSettingsOpen(!proofSettingsOpen); }}><StudioIcon name="sparkles" /></button>
           <GeoGebraQuickStyle engine={engine} names={objectLink.selectedNames} disabled={!ready || settingsOpen || Boolean(loadingMessage)} onOpen={() => { objectLink.hover(null); if (filesRef.current) filesRef.current.open = false; }} onEdit={props.onEditObjectStyle} />
-          <button ref={settingsButtonRef} type="button" className="ggb-icon-button" title="Workspace settings" aria-label="Workspace settings" aria-expanded={settingsOpen} aria-controls="geogebra-settings-panel" onClick={() => { if (filesRef.current) filesRef.current.open = false; setSettingsOpen(!settingsOpen); }}><StudioIcon name="settings" />{preferenceError && <span className="ggb-button-alert" />}</button>
+          <button ref={settingsButtonRef} type="button" className="ggb-icon-button" title="Workspace settings" aria-label="Workspace settings" aria-expanded={settingsOpen} aria-controls="geogebra-settings-panel" onClick={() => { if (filesRef.current) filesRef.current.open = false; setReferenceOpen(false); setSettingsOpen(!settingsOpen); }}><StudioIcon name="settings" />{preferenceError && <span className="ggb-button-alert" />}</button>
           <details ref={filesRef} className="ggb-files-menu">
             <summary className="ggb-icon-button" title="Files" aria-label="Files"><StudioIcon name="files" /></summary>
             <div className="ggb-files-popover"><span className="ggb-eyebrow">CONSTRUCTION</span><GeoGebraFileActions onImport={onImport} onExport={onExport} onClearDraft={onClearDraft} onResetInitial={onResetInitial} onAction={() => { if (filesRef.current) filesRef.current.open = false; filesRef.current?.querySelector('summary')?.focus(); }} /></div>
@@ -151,11 +191,12 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
           <StudioIconButton icon="bottom" label="Toggle command bar" aria-expanded={!commandsHidden} aria-controls="geogebra-command-dock" onClick={() => { setFocusMode(false); onSettingsChange({ ...settings, commandBarCollapsed: !settings.commandBarCollapsed }); }} />
           {fullscreen && <StudioIconButton icon={floating ? 'pin' : 'float'} label={floating ? 'Dock command bar' : 'Float command bar'} aria-pressed={!floating} onClick={() => onSettingsChange({ ...settings, commandBarFloating: !settings.commandBarFloating })} />}
           <span className="ggb-toolbar-divider" />
-          {fullscreen && <StudioIconButton icon="focus" label="Focus canvas" onClick={() => setFocusMode(true)} />}
+          {fullscreen && <StudioIconButton icon="focus" label="Focus canvas" onClick={() => { setReferenceOpen(false); setFocusMode(true); }} />}
           <button ref={fullscreenButtonRef} type="button" className="ggb-icon-button ggb-fullscreen-button" title={fullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen workspace'} aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen workspace'} aria-pressed={fullscreen} onClick={toggleFullscreen}><StudioIcon name={fullscreen ? 'collapse' : 'expand'} /></button>
         </div>
       </header>
-      <div className="ggb-workspace-content" ref={contentRef} data-document-busy={props.documentBusy}>
+      <div className="ggb-workspace-content" ref={contentRef} data-document-busy={props.documentBusy}
+        style={{ '--reference-preferred-width': `${preferredReferenceWidth}px` } as React.CSSProperties}>
 
         <div className="geogebra-studio-body relative isolate flex flex-col lg:flex-row">
           <main className="geogebra-studio-canvas relative min-w-0 flex-1 overflow-hidden bg-slate-100/70" aria-label="GeoGebra canvas">
@@ -165,10 +206,14 @@ const GeoGebraStudioShell: React.FC<GeoGebraStudioShellProps> = (props) => {
             {loadingMessage && <div className="ggb-canvas-overlay" aria-live="polite"><div className="ggb-loading-card"><span className="ggb-spinner" /><strong>{loadingMessage}</strong></div></div>}
           </main>
           {fullscreen && !analysisHidden && <button type="button" className="geogebra-panel-backdrop absolute inset-0 z-20 bg-slate-900/20 lg:hidden" onClick={hideAnalysis} aria-label="Close analysis panel" />}
-          <GeoGebraSidePanel engine={engine} objectLink={objectLink} collapsed={analysisHidden} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
+          <GeoGebraSidePanel engine={engine} objectLink={objectLink} collapsed={analysisHidden} covered={referenceOpen} width={settings.sidePanelWidth} capabilities={capabilities} events={events} graph={graph} graphStatus={graphStatus} graphError={graphError} geometryRelations={geometryRelations} onRefreshGraph={onRefreshGraph} onToggle={hideAnalysis} onWidthChange={(sidePanelWidth) => onSettingsChange({ ...settings, sidePanelWidth })} />
+          <ToolReferenceDrawer open={referenceOpen} width={preferredReferenceWidth} onWidthChange={setReferenceWidth}
+            name={referenceName} onSelect={setReferenceName} onClose={closeReference}
+            onInsert={insertReferenceExample} insertUnavailable={hasCommandDraft ? 'Copy the example to keep your current draft.' : !ready || loadingMessage || props.documentBusy ? 'The command bar is unavailable. You can copy the example meanwhile.' : undefined} />
         </div>
         <div id="geogebra-command-dock" hidden={commandsHidden} className="geogebra-command-dock">
-          <GeoGebraCommandBar engine={engine} ready={ready && !loadingMessage} helperMode={settings.helperMode} onResult={onCommandResult} />
+          <GeoGebraCommandBar ref={commandBarRef} engine={engine} ready={ready && !loadingMessage} helperMode={settings.helperMode} onResult={onCommandResult}
+            onDraftChange={setHasCommandDraft} referenceOpen={referenceOpen} onOpenReference={openReference} />
           {lastResult && <div className={`ggb-command-status ${lastResult.success ? '' : 'error'}`} role="status" title={lastResult.command}><span className={`ggb-status-dot ${lastResult.success ? '' : 'error'}`} />{lastResult.success ? `${lastResult.command} → ${lastResult.labels.join(', ') || 'done'}` : lastResult.error}</div>}
         </div>
       </div>

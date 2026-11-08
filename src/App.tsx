@@ -12,6 +12,7 @@ import DynamicDocPage from './pages/triples/documentation/DynamicDocPage.tsx';
 import GeometryLayout from './pages/geometry/GeometryLayout.tsx';
 import PureGeometryTiebaSearchPage from './pages/geometry/PureGeometryTiebaSearchPage.tsx';
 import GeoGebraStudioPage from './pages/geogebra/GeoGebraStudioPage.tsx';
+import GeoGebraToolReferencePage from './pages/geogebra/GeoGebraToolReferencePage.tsx';
 import BlogPage from './pages/blog/BlogPage.tsx';
 import BlogPostPage from './pages/blog/BlogPostPage.tsx';
 import BlogLayout from './pages/blog/BlogLayout.tsx';
@@ -63,6 +64,7 @@ const App: React.FC = () => {
           <Route index element={<PureGeometryTiebaSearchPage />} />
         </Route>
         <Route path="geogebra" element={<GeoGebraStudioPage />} />
+        <Route path="geogebra/tools/:tool?" element={<GeoGebraToolReferencePage />} />
         <Route path="blog" element={<BlogLayout />}>
           <Route index element={<BlogPage />} />
           <Route path=":slug" element={<BlogPostPage />} />

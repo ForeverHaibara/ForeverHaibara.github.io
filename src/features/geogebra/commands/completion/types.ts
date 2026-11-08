@@ -17,6 +17,8 @@ export interface CompletionItem {
   objectType?: string;
   signatures?: readonly string[];
   aliases?: readonly string[];
+  /** Canonical entry in the Studio tool reference, when this provider owns one. */
+  referenceName?: string;
   /** Defaults to the label. Text only: never executed when a completion is accepted. */
   insertText?: string;
   /** Add parentheses and place the caret inside them (default: true). */

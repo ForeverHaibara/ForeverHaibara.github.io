@@ -22,11 +22,12 @@ studioCompletionRegistry.registerCommands('geogebra-api', API_METHODS.map((label
 })), 'api');
 
 studioCompletionRegistry.register({ id: 'studio-advanced', provide: (context) => context.mode === 'api'
-  ? advancedCommands.list().map(({ name, description, signatures }) => ({ label: name, kind: 'api' as const, description, signatures, priority: 10 })) : [] });
+  ? advancedCommands.list().map(({ name, description, signatures }) => ({ label: name, kind: 'api' as const, description, signatures, referenceName: `!${name}`, priority: 10 })) : [] });
 
 studioCompletionRegistry.registerCommands('studio-geometry', studioToolLibrary.tools.map((tool) => ({
   label: tool.name,
   kind: 'custom',
+  referenceName: tool.canonicalName,
   description: tool.description,
   signatures: [...tool.overloads.map((overload) => toolSignature(tool, overload)), ...(tool.name === 'Conic' ? ['Conic(a: number, b: number, c: number, d: number, e: number, f: number)', 'Conic(coefficients: list)'] : [])],
   priority: 10,

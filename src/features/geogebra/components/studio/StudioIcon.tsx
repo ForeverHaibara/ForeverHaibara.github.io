@@ -22,6 +22,7 @@ const paths = {
   pin: 'M9 3h6M9 3v6l-3 5h12l-3-5V3M12 14v7',
   float: 'M3 5h18v14H3V5ZM10 11h8v5h-8v-5Z',
   close: 'M6 6l12 12M18 6 6 18',
+  book: 'M12 6c-2-2-5-2-9-2v15c4 0 7 0 9 2 2-2 5-2 9-2V4c-4 0-7 0-9 2Zm0 0v15',
   open: 'M3 9V5h7l2 3h9l-3 12H3V9Zm0 3h16',
   download: 'M12 3v12M7 10l5 5 5-5M4 17v4h16v-4',
   trash: 'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',

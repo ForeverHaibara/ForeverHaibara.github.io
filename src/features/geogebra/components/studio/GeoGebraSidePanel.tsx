@@ -10,6 +10,7 @@ import type { ObjectLink } from '../../interaction/useObjectLink';
 interface GeoGebraSidePanelProps {
   engine: GeoGebraEngine;
   collapsed: boolean;
+  covered?: boolean;
   width: number;
   capabilities: EngineCapabilities;
   events: GeometryEvent[];
@@ -25,7 +26,7 @@ interface GeoGebraSidePanelProps {
 
 const clampWidth = (width: number): number => Math.min(MAX_SIDE_PANEL_WIDTH, Math.max(MIN_SIDE_PANEL_WIDTH, width));
 
-const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ engine, collapsed, width, capabilities, events, graph, graphStatus, graphError, geometryRelations, onRefreshGraph, onToggle, onWidthChange, objectLink }) => {
+const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ engine, collapsed, covered, width, capabilities, events, graph, graphStatus, graphError, geometryRelations, onRefreshGraph, onToggle, onWidthChange, objectLink }) => {
   const panelRef = useRef<HTMLElement>(null);
   const onWidthChangeRef = useRef(onWidthChange);
   const [dragging, setDragging] = useState(false);
@@ -72,7 +73,7 @@ const GeoGebraSidePanel: React.FC<GeoGebraSidePanelProps> = ({ engine, collapsed
   };
 
   return (
-    <aside id="geogebra-analysis-panel" ref={panelRef} hidden={collapsed} style={{ '--side-panel-width': `${width}px` } as React.CSSProperties} className={`geogebra-analysis-panel relative min-h-[520px] w-full min-w-0 flex-col border-l border-slate-200/80 bg-white/95 backdrop-blur-xl lg:w-[var(--side-panel-width)] lg:shrink-0 ${collapsed ? 'hidden' : 'flex'}`} aria-label="Analysis and proof panel">
+    <aside id="geogebra-analysis-panel" ref={panelRef} hidden={collapsed} inert={covered} style={{ '--side-panel-width': `${width}px` } as React.CSSProperties} className={`geogebra-analysis-panel relative min-h-[520px] w-full min-w-0 flex-col border-l border-slate-200/80 bg-white/95 backdrop-blur-xl lg:w-[var(--side-panel-width)] lg:shrink-0 ${collapsed ? 'hidden' : 'flex'}`} aria-label="Analysis and proof panel">
       <div
         className={`group absolute -left-2 top-0 z-10 hidden h-full w-4 cursor-col-resize items-center justify-center lg:flex ${dragging ? 'bg-sky-100/50' : 'hover:bg-sky-100/40'}`}
         onPointerDown={startDragging}

@@ -13,9 +13,10 @@ interface GeoGebraCompletionMenuProps {
   onAccept(index: number): void;
   onActiveIndexChange(index: number): void;
   onDismiss(): void;
+  onOpenReference?(): void;
 }
 
-const GeoGebraCompletionMenu: React.FC<GeoGebraCompletionMenuProps> = ({ anchor, listId, items, prefix, activeIndex, onAccept, onActiveIndexChange, onDismiss }) => {
+const GeoGebraCompletionMenu: React.FC<GeoGebraCompletionMenuProps> = ({ anchor, listId, items, prefix, activeIndex, onAccept, onActiveIndexChange, onDismiss, onOpenReference }) => {
   const [position, setPosition] = useState<React.CSSProperties | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const selected = items[activeIndex];
@@ -78,7 +79,10 @@ const GeoGebraCompletionMenu: React.FC<GeoGebraCompletionMenuProps> = ({ anchor,
         })}
       </div>
       {(selected.description || selected.signatures?.length) && <div className="max-h-24 shrink-0 overflow-auto border-t border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">{selected.description && <p className="ggb-completion-description" title={selected.description}>{selected.kind === 'object' && <span className="ggb-completion-definition-label">Definition</span>}{selected.description}</p>}{selected.signatures?.map((signature) => <p key={signature} className="mt-1 whitespace-pre-wrap break-words font-mono text-slate-700">{signature}</p>)}</div>}
-      <div className="shrink-0 border-t border-slate-100 px-3 py-2 text-[10px] text-slate-400">↑↓ navigate · Tab / Enter complete · Esc dismiss</div>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-3 py-2 text-[10px] text-slate-500">
+        <span>↑↓ navigate · Tab / Enter complete · Esc dismiss</span>
+        {onOpenReference && <button type="button" tabIndex={-1} onClick={onOpenReference} className="font-semibold text-blue-700 hover:underline">Tool reference (F1)</button>}
+      </div>
     </div>,
     document.body,
   );
