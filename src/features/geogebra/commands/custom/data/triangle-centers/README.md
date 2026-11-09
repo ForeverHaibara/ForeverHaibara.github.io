@@ -1,53 +1,56 @@
-# Triangle center recipe data
+# TriangleCenter runtime data
 
-The published runtime library uses all cached ETC Parts 1–37 (2026-11-04). `build` and `check` default to that range. It contains 70,213 recipe/status records in 74 chunks (1,958,618 bytes): 123 reviewed or provisional extended recipes, 14 native patches, and 70,076 automatic records, including 1,128 directed ideal points and 65 bare ideal markers. The latest hot-cache full rebuild took about 163 seconds. See the latest [implementation entry](../../docs/triangle-centers-scaling-plan.md).
+Use `TriangleCenter(A,B,C,n)` in the custom command bar. A literal extended ID or
+patched native ID uses the site catalogue. Unpatched IDs from 1 through 3053 and
+computed selectors use GeoGebra's native command. `!nearestTriangleCenter(A,B,C,P)`
+searches the catalogue for the nearest finite center. `GeminiTriangle(A,B,C,k,i)`
+returns vertex `i` (1–3) of Gemini triangle `k`. A standalone command
+without `i` constructs all three vertices.
 
-`chunks/*.txt` contains compact generated recipes, grouped by `floor(id/1000)`. The client discovers these files with lazy imports and loads the selected center's dependencies. A full library therefore does not require downloading every chunk when the page opens. Generated recipes may change when Parts, rules, or selection parameters change; equivalent constructions need not retain identical text. The full-range transition also exposed 38 old centers with changed sample positions; all are listed in the [source-review list](../../docs/triangle-centers-source-review.md), with printed-coordinate comparisons. They remain definition/endpoint consistency questions, not certified equivalent changes.
+The separate ETC maintenance workspace supplies these files as one set.
 
-The [tool README](../../../../../../../scripts/geogebra/tools/triangle_centers/README.md) documents all recipe syntax, source syntax, commands, and diagnostic codes in two tables. In particular, `R p q` reflects X(p) about X(q), while `R p q r` reflects X(p) in the line X(q)X(r). Both share R; L is no longer an operation. `V p` and `V p q r` similarly distinguish circumcircle and specified-circle inversion by arity.
+| File | Contents |
+| --- | --- |
+| `chunks/*.txt` | Recipes grouped by `floor(n/1000)`. Drawing loads the target chunk and its dependencies on demand. |
+| `native-patches.txt` | Native IDs dispatched to custom recipes. Their definitions are also included in the chunks. |
+| `native-status.txt` | Native availability notes and ideal directions. The site uses `n p q` rows as the direction of `X(p)X(q)` for `X(n)`. |
+| `gemini-triangles.txt` | Rows `k u\|v\|w` giving barycentrics of vertex 1. Vertices 2 and 3 follow by cyclic rotation. |
 
-`seeds.txt` holds reviewed constructions and annotations, with comments explaining exceptional source entries. `DOMAIN nonreal` records a reviewed generic nonreal point: it has no real-plane recipe and is excluded from unresolved counts. Conditional-complex domains retain their real-domain eligibility. `SKIP` records an explicit reviewed exclusion; it is distinct from unresolved dependencies. A bare `I` records an ideal point without a usable direction and cannot be a dependency. Directed `I p q` supplies a finite line direction to supported projective operations, although requesting the ideal point itself returns an undefined GeoGebra point.
+## Recipe syntax
 
-`native-status.txt` records unavailable native IDs and independently checked ideal directions. `coordinate-priority.txt` preserves reviewed anchor priorities without duplicating formulas. Native centers are numbered 1–3053; `native-patches.txt` explicitly overrides inaccurate or newly supported native IDs. Both patches and higher IDs require recipes, participate in the dependency graph, and use the same front-end builder. The patch file is the authoritative membership/definition input; rebuild chunks after editing it. The raw native atlas/status is retained as engine evidence, not overwritten with repaired values.
+Each row starts with the target ID `n`, followed by one of the forms below.
+`p`, `q`, `r` and `t` are center IDs. References must be positive and cannot
+form a cycle.
 
-Run from the repository root with Python 3 and `beautifulsoup4`:
+| Form after `n` | Construction |
+| --- | --- |
+| `M p q` | Midpoint of `X(p)` and `X(q)`. |
+| `R p q` or `R p q r` | Reflect `X(p)` about `X(q)` or across the line `X(q)X(r)`. |
+| `C p` or `A p` | Complement or anticomplement of `X(p)` with respect to `ABC`. |
+| `P p q r` | Orthogonal projection of `X(p)` onto `X(q)X(r)`. |
+| `J p q r t` | Intersection of `X(p)X(q)` and `X(r)X(t)`. |
+| `I p q` or `I` | Ideal point with direction `X(p)X(q)`, or an ideal point with no usable direction. |
+| `G p` or `T p` | Isogonal or isotomic conjugate of `X(p)`. |
+| `V p` or `V p q r` | Invert `X(p)` in the circumcircle or in the circle centered at `X(q)` through `X(r)`. |
+| `O p q r` | Circumcenter of `X(p)X(q)X(r)`. |
+| `F p:w1 q:w2 ...` | Weighted average of two to six distinct finite centers. The weights must have matching dimensions and a nonzero sum. |
+| `B f`, `B p f` or `B p q f` | Cyclic barycentrics from formula `f`, with zero, one or two center inputs. |
+| `B p @gk` | Projective image of `X(p)` taking `(A,B,C,X(2))` to the three Gemini vertices of `k` and `X(2)`. |
 
-```sh
-python scripts/geogebra/tools/triangle_centers/triangle_center_import.py build --report .cache/triangle-centers/runs/current/build.jsonl
-python scripts/geogebra/tools/triangle_centers/triangle_center_import.py check --report .cache/triangle-centers/runs/current/check.jsonl
-python scripts/geogebra/tools/triangle_centers/triangle_center_import.py verify
-python -m unittest discover -s scripts/geogebra/tools/triangle_centers -p 'test_*.py'
-```
+Requesting an ideal center directly returns an undefined point. A known direction
+can define a line with one finite point, or feed `G`, `T` and single-input `B`
+with `x^2`, `x^3` or `@gk`. A bare `I` cannot be used as a dependency.
 
-ETC HTML is manually downloaded with `fetch` to `.cache/triangle-centers/sources/ETCPartN.html`; this ignored cache is never shipped. The default fetch range is also 1–37. No automatic synchronization occurs. For a deliberate engine/atlas refresh, run `/scripts/geogebra/browser/verification.html?page=center-anchors` against the local site, download its native coordinate sample to `.cache/triangle-centers/native/native-atlas.json`, review unavailable native entries, then run `native`. Ordinary rebuilds reuse the existing reviewed source snapshots and atlas. Reviewed HTML corrections apply when the specific erroneous content is present, independent of the source file hash. Identical X(54980) duplicates are deduplicated; conflicting copies stop the import. Duplicate X(66288) entries are quarantined until the ambiguity is resolved. Heading preflight still checks for other boundary errors.
+Formulas use numbers, parentheses, explicit multiplication and the operators
+`+ - * / ^` without whitespace. Supported functions are
+`sqrt sin cos tan cot sec csc sinh asinh atan ln abs`.
 
-Build and check preflight source boundaries, extract candidates, select a globally closed acyclic graph, and screen types, budgets, sample geometry and incidence evidence. Extraction checkpoints are under `extracted/`; they do not freeze selection across Part sets. `verify` checks existing chunks without HTML or atlas. Two sample triangles provide regression evidence, not a proof for every special triangle. Formula candidates undefined on both samples require particular care; reviewed nonreal roots cannot enter through that allowance.
-
-Build already constructs every chunk in memory during validation. Publication compares each output file and skips unchanged content; changed files are replaced through temporary files, then obsolete chunks are removed. It reports write counts, bytes and elapsed time. Replacement is atomic per file, not for the whole directory; avoid concurrent builds/readers during publication. `dry-run` remains an optional diagnostic command but is no longer needed before every normal build. No redundant selected.tsv is generated: selected recipes are the runtime chunks themselves.
-
-Use `--uncovered-report .cache/triangle-centers/reports/uncovered/current.json` for unresolved diagnostics; run logs belong under `runs/`, geometric witnesses under `reports/reviews/`, and experiments under `research/` or `experiments/`. `--skip-ideal-audit` only skips the auxiliary full-formula ideal inventory when the same formula pool and atlas have already been audited; graph/type/numeric checks still run.
-
-See the [coverage history](../../docs/triangle-centers-uncovered.md), [source-review list](../../docs/triangle-centers-source-review.md), and [performance/dependency plan](../../docs/triangle-centers-scaling-plan.md) for mathematical evidence, outstanding conflicts and historical small-library measurements.
-
-Ceva/cross follow-up: four finite-input homogeneous transforms reuse two-input B, with strict ABC-only relation matching and ordered conjugate parameters. They recover X(13580), X(13581), X(64229), reduce pure coordinate anchors to 3,587, and left 42 unresolved targets in that historical stage. X(14083)/X(14084) are pinned to the user-confirmed singular-focus intersections. X(14821) is fixed by its reviewed seed; the raw false incidence is retained without a Python exclusion list. X(4201)/X(9858) use their checked primary definitions. Latest position-conflict evidence, including five newly exposed mismatches, is in the source-review list.
-
-2026-11-03: the explicit-intersection geometry screen now rejects unsupported titles contradicted by multiple independent available lines. Reviewed repairs use seeds, including the user-confirmed 7742/48720/40822/72796 definitions and a cancelled coordinate expression for the removable base point of X(8037). X(37868) recovers after its incidence endpoint X(14624) is corrected. At that stage the unresolved count was 41; 224 old sample positions changed, 210 now match source coordinates and none newly cease matching. Full differences and remaining questions are in the source-review list. `intersection_title_hints` also reports suspicious covered titles for review; it never rewrites IDs.
-
-Batch-consensus follow-up: 13 provisional root definitions reconcile 19 discrepancies; the other six recover through their inputs. Of 37 changed sample positions, 35 newly agree with coordinates and two have only property evidence; none newly lose coordinate agreement. At that stage coverage remained 70,162 / 41 unresolved. The [consensus review](../../docs/triangle-centers-consensus-review.md) lists twelve geometric definitions and their coordinates still awaiting independent verification, the former nine inconclusive cases and their subsequent human reviews. The new review tool is read-only for seeds/chunks; it caches positions by actual recipe/atlas/numeric inputs and always recomputes votes.
-
-
-Earlier human-review follow-up: 70,168 records / 35 unresolved. Corrected roots recover 34307, 34575, 34863, 40473, 40497 and 55092. Primitive relations now require complete matching; unsupported compound/triangle suffixes cannot silently produce a simpler point. X(40619) uses existing `J 11 693 100 2481`, without compound-expression syntax. Ideal reviews compare directions rather than finite candidates. Follow-up majority repairs for 8430 and 38513 address the remaining direction/upstream discrepancies; those thirteen textual geometric reviews have been closed by user decision in the consensus document.
-
-
-Remaining-coordinate review before native overrides: 70,198 records / **5 unresolved**. All 30 targeted coordinate/format gaps are recovered, with no old coverage lost. Twenty individual seeds avoid extending the parser for isolated malformed formats; shared parsing adds explicit square-root local graphs, standard ABC OH, and known-symbol/function multiplication. X(65397) also gains a usable ideal direction. X(72514)'s exact invariant-basis rewrite reduces its degree-46 source coordinate from 5,274 to 794 characters and improves sample conditioning; no incidence threshold changed. The previous thirteen geometry-only reviews are closed. Four implicit-solver points (5373/5394/5626/40139) remain deferred, 15276 was subsequently resolved by user review (fd12→12). The source-review document records this and the 10202 upstream issue, now resolved through native X1071.
-
-
-Latest native repair review: 70,213 total records, including 14 native patches (the thirteen reported discrepancies plus X369); extended unresolved count **4**, after the user-confirmed fd12→12 correction at X15276. Literal native overrides and downstream dependencies both use repaired definitions. All fourteen match the user-provided signed 6–9–13 references. Forty-one existing extended centers newly match source coordinates in both atlas samples; there is no lost old coverage or new coordinate mismatch. X10202 and both formerly suspicious X26842 incidences recover through X1071, without further seeds. X368/X370/X1144 remain explicitly deferred root-selection problems; they are separate from the four deferred extended centers. See the source-review record for evidence, scope and tests.
-
-
-Gemini collineation compression (2026-11-04): 1,434 selected recipes share 95 Gemini templates through `B p @gk`; The parser also recognizes `25962 B 3 @g37`; selection retains its cheaper existing intersection. `gemini-triangles.txt` contains 111 maintained A-vertex barycentric triples (about 4.9 KB), with cyclic B/C vertices; Python and the frontend read the same table. The explicit maintenance converter reads the downloaded Gemini definition HTML; normal builds read only this table and the ordinary ETC sources, never the experimental statistics JSON. Only the complete `(A,B,C,X(2); A′,B′,C′,X(2))` Gemini frame is supported. Other cases retain their existing candidates.
-
-Compared on LF-normalized chunk text, chunks shrink from 2,211,199 to 1,958,618 bytes (11.42%; 11.20% including the new table). Chunks 27–29 together shrink from 253,572 to 61,851 bytes (75.61%). Separate gzip compression of each chunk shrinks from 768,522 to 721,492 bytes before the small shared table; raw text savings are not a claim of equal network savings. Pure B records fall from 3,614 to 2,196; input B records become 1,582, including the 1,434 shared maps. Both atlas shapes retain every old position, finite/ideal type and definedness; four deferred targets remain. These are offline regression checks, not a fresh GeoGebra engine run.
-
-
-Runtime correction (2026-11-04): shared Gemini maps now evaluate with three native numeric matrix lists instead of deeply nested scalar singleton Zips. The original X29919 expansion reproduced a browser hang; the replacement works in the default Low mode. High mode also has production plan eligibility and uses the existing hidden-helper lifecycle. Both modes pass a twelve-center GeoGebra 5.4.920.0 regression covering coordinate references, moving vertices and save/reopen. This changes frontend evaluation only; the published chunks and shared table remain unchanged. See `/scripts/geogebra/browser/verification.html?page=centers&suite=collineations` (optional `mode=high`).
+- `a,b,c` are the opposite side lengths and `A,B,C` the angles in radians.
+- `s` is the semiperimeter and `sa,sb,sc` are `s-a,s-b,s-c`.
+- `S` is twice the area. `SA=(b²+c²-a²)/2`, with cyclic `SB,SC`.
+  `SW=(a²+b²+c²)/2`.
+- `r,R` are the inradius and circumradius. `E=4R²`, `F=SW-E` and `pi` is π.
+- In `B`, `x,y,z` are the first input's homogeneous barycentrics and `u,v,w`
+  the second input's. The formula is evaluated three times under cyclic
+  rotation. `S,SW,r,R,E,F,pi` are invariant.
+- In `F` with exactly two inputs, `d` is the distance between the input points.

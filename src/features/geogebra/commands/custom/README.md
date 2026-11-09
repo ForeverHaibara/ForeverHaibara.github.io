@@ -36,11 +36,14 @@ Implementation files are grouped by responsibility:
 | `tests/geometry/` | Algebraic identities, curve constructions and geometry regressions. |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Definitions, design decisions, source audit and verification history. |
 | [docs/related-curves.md](docs/related-curves.md) | Consolidated coverage and limits of native GibertCurve sampling. |
-| [docs/triangle-centers-plan.md](docs/triangle-centers-plan.md) | Design and staged implementation plan for extending TriangleCenter beyond GeoGebra's native range. |
+| [data/triangle-centers/README.md](data/triangle-centers/README.md) | TriangleCenter command and runtime recipe syntax. |
 
 ## Manage the library
 
-`TriangleCenter(A,B,C,id)` uses 70,213 lazily loaded recipe/status records, including 14 explicit native patches. Higher-center ideal states include 1,128 usable directions and 65 markers without directions; requesting an ideal point directly returns an undefined GeoGebra point. Unpatched native IDs through 3053 and computed selectors retain GeoGebra behavior. The parser covers screened relations, intersections, conjugates and coordinates, including shared Gemini collineation templates. These templates use native numeric matrices to avoid expensive nested scalar `Zip` evaluation in Low mode; High additionally permits typed hidden point/vector and matrix intermediates through the normal execution plan. Extraction, update commands and current counts are in [data/triangle-centers/README.md](data/triangle-centers/README.md).
+`TriangleCenter(A,B,C,id)` loads construction recipes on demand from the catalogue
+published by the separate ETC maintenance workspace. Literal patched native IDs
+and supported extended IDs use these recipes. Unpatched native IDs through 3053
+and computed selectors retain GeoGebra behavior.
 
 `library.json` is the versioned, declarative source for names, descriptions,
 typed overloads and implementations. It also feeds command completion and
