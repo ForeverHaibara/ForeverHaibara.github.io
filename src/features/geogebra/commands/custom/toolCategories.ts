@@ -77,7 +77,7 @@ export const toolGroups: ToolCategory = {
   'General constructions': {
     'Basics': ['Point', 'Midpoint', 'Intersect', 'Pedal',
       'Line', 'Ray', 'Segment', 'AngleBisector', 'PerpendicularBisector', 'PerpendicularLine'],
-    'Projective geometry': ['HarmonicConjugate', 'Collineation', 'Affine', 'Involution', 'InvolutionCenter', 'PascalLine', 'TransferRatio', 'TrisectionPoint', 'GoldenSectionPoint'],
+    'Projective geometry': ['HarmonicConjugate', 'Collineation', 'CollineationL', 'Affine', 'AffineL', 'Involution', 'InvolutionL', 'PascalLine', 'TrisectionPoint', 'GoldenSectionPoint'],
     'Numerics': ['Type', 'Distance', 'Length', 'Angle', 'Slope', 'Direction', 'AffineRatio', 'CrossRatio'],
     'Loci and envelopes': ['Locus', 'Envelope'],
     'Similarities': ['DirectSimilarity', 'OppositeSimilarity'],

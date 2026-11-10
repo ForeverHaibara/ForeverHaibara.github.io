@@ -176,7 +176,7 @@
         "related": [
           "Affine",
           "Involution",
-          "InvolutionCenter"
+          "CollineationL"
         ]
       }
     },
@@ -191,7 +191,7 @@
         "related": [
           "Collineation",
           "Involution",
-          "InvolutionCenter"
+          "AffineL"
         ]
       }
     },
@@ -205,26 +205,44 @@
       "reference": {
         "keywords": "collineation 射影变换 projective",
         "related": [
-          "InvolutionCenter",
+          "InvolutionL",
           "Collineation",
           "Affine"
         ]
       }
     },
     {
-      "name": "InvolutionCenter",
-      "aliases": ["对合中心"],
-      "description": "Finite center of the projective involution exchanging A with C and B with D. Each line argument denotes its direction at infinity.",
+      "name": "CollineationL",
+      "description": "Image of P under the projectivity of lines taking A, B, C to D, E, F. A line argument represents its direction at infinity.",
       "overloads": [
-        {"params":[{"name":"A","type":"pointOrLine"},{"name":"B","type":"pointOrLine"},{"name":"C","type":"pointOrLine"},{"name":"D","type":"pointOrLine"}],"returns":"point","builder":"involutionCenter"}
+        {"params": [{"name": "A", "type": "pointOrLine"}, {"name": "B", "type": "pointOrLine"}, {"name": "C", "type": "pointOrLine"}, {"name": "D", "type": "pointOrLine"}, {"name": "E", "type": "pointOrLine"}, {"name": "F", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}], "returns": "point", "builder": "collineationL"}
       ],
       "reference": {
-        "keywords": "collineation 射影变换",
-        "related": [
-          "Involution",
-          "Collineation",
-          "Affine"
-        ]
+        "keywords": "射影变换 projective line",
+        "related": ["Collineation", "AffineL", "InvolutionL"]
+      }
+    },
+    {
+      "name": "AffineL",
+      "description": "Image of P under the affine map of lines taking distinct finite points A and B to C and D. A direction input for P has its image at infinity.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "$C+AffineRatio($A,$B,$P)*($D-$C)"}
+      ],
+      "reference": {
+        "keywords": "仿射变换 affine line",
+        "related": ["Affine", "CollineationL"]
+      }
+    },
+    {
+      "name": "InvolutionL",
+      "description": "Image of P under the involution of a line exchanging A with C and B with D. Line arguments represent directions at infinity. Omitting P returns the image of infinity.",
+      "overloads": [
+        {"params": [{"name": "A", "type": "pointOrLine"}, {"name": "B", "type": "pointOrLine"}, {"name": "C", "type": "pointOrLine"}, {"name": "D", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}], "returns": "point", "builder": "involutionL"},
+        {"params": [{"name": "A", "type": "pointOrLine"}, {"name": "B", "type": "pointOrLine"}, {"name": "C", "type": "pointOrLine"}, {"name": "D", "type": "pointOrLine"}], "returns": "point", "builder": "involutionL"}
+      ],
+      "reference": {
+        "keywords": "对合 对合中心 projective line",
+        "related": ["Involution", "CollineationL"]
       }
     },
     {
@@ -837,13 +855,6 @@
       "reference": {
         "keywords": "调和四边形"
       }
-    },
-    {
-      "name": "TransferRatio",
-      "description": "Transfer the directed affine parameter of P on AB to CD; P must lie on AB.",
-      "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "D", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "expression": "$C+AffineRatio($A,$B,$P)*($D-$C)"}
-      ]
     },
     {
       "name": "TrisectionPoint",

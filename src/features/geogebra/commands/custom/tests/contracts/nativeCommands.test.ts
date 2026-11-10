@@ -31,6 +31,8 @@ describe('native command compatibility', () => {
         // A projective frame can contain at most two direction points.
         if (tool.name === 'Collineation' && [types.slice(0, 4), types.slice(4, 8)]
           .some((frame) => frame.filter((type) => type === 'line').length > 2)) continue;
+        if (tool.name === 'CollineationL' && [types.slice(0, 3), types.slice(3, 6)]
+          .some((frame) => frame.filter((type) => type === 'line').length > 1)) continue;
         const environment: CommandEnvironment = { objects: new Map(), macros: new Set() };
         const args = types.map((type, i) => {
           if (overload.params[i].type === 'catalogId') return '12';

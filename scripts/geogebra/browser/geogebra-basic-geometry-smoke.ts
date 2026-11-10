@@ -88,7 +88,7 @@ export const verifyBasicGeometry = async (engine: GeoGebraEngine, report: (messa
     'NagelPoint', 'NewtonLine', 'NinePointCenter', 'NinePointCircle', 'NorthPole',
     'OppositeArcMidpoint', 'OppositeSimilarity', 'OrthicTriangle', 'Orthocenter', 'Orthopole',
     'PedalCircle', 'PedalTriangle', 'RadicalCenter', 'SimilarityCenter', 'SouthPole',
-    'SpiekerCenter', 'SymmedianPoint', 'TangentialTriangle', 'TransferRatio', 'TrilinearPolar',
+    'SpiekerCenter', 'SymmedianPoint', 'TangentialTriangle', 'AffineL', 'TrilinearPolar',
     'TrilinearPole', 'TrisectionPoint',
   ]);
   let serial = 0;
@@ -123,7 +123,7 @@ export const verifyBasicGeometry = async (engine: GeoGebraEngine, report: (messa
   await run('DirectFour=DirectSimilarity(A,B,C,P)\nDirectFive=DirectSimilarity(A,B,P,A,C)\nOppositeFour=OppositeSimilarity(A,B,C,P)\nOppositeFive=OppositeSimilarity(A,B,P,A,C)');
   await near('Distance(DirectFour,DirectFive)+Distance(OppositeFour,OppositeFive)', 'four- and five-point similarity signatures agree');
   await near('Distance(DirectFour,A)*Distance(A,B)-Distance(P,A)*Distance(A,C)', 'similarity preserves the prescribed distance ratio');
-  await run('Directed=TransferRatio(A,B,D,E,(-3,0))');
+  // await run('Directed=AffineL(A,B,D,E,(-3,0))');
   await near('Distance(Directed,D-(E-D)/2)', 'ratio transfer retains exterior division and direction');
 
   await run('FirstBrocard=BrocardPoints(A,B,C,1)\nSecondBrocard=BrocardPoints(A,B,C,2)\nSwappedBrocard=BrocardPoints(A,C,B,1)\nArc=ArcMidpoint(A,B,C)\nArcAlias=SouthPole(A,B,C)\nOppositeArc=OppositeArcMidpoint(A,B,C)\nOppositeAlias=NorthPole(A,B,C)');

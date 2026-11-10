@@ -29,7 +29,9 @@
 | 第二批 | General constructions → Projective geometry（新增子类） | `Collineation(A†,B†,C†,D†,E†,F†,G†,H†,P)` → point | Image of P under the projectivity taking ABCD to EFGH in order. |
 | 第二批 | 同上 | `Affine(A,B,C,D,E,F,P)` → point | Image of P under the affine map taking ABC to DEF in order. |
 | 第二批 | 同上 | `Involution(A†,B†,C†,D†,P)` → point | Image of P under the projective involution exchanging A with C and B with D. |
-| 第二批 | 同上 | `InvolutionCenter(A†,B†,C†,D†)` → point | Finite center of the projective involution exchanging A with C and B with D. |
+| 直线版 | 同上 | `CollineationL(A†,B†,C†,D†,E†,F†,P†)` → point | Projectivity of lines taking A, B, C to D, E, F. |
+| 直线版 | 同上 | `AffineL(A,B,C,D,P)` → point | Affine map of lines taking finite points A and B to C and D. |
+| 直线版 | 同上 | `InvolutionL(A†,B†,C†,D†[,P†])` → point | Involution of a line exchanging A with C and B with D. Omitting P returns the image of infinity. |
 | 第二批 | 同上，可在 Triangle constructions → Correspondence 同时列出 | `PascalLine(A,B,C,D,E,F)`，别名 `PerspectiveAxis` → line | Line through the intersections of AB with DE and BC with EF. |
 | 第二批 | Circles and conics → Conical transformations | `OsculatingCircle(P,F)` → conic | Osculating circle of the level curve of F through P, with a tangent-line limit at zero curvature. |
 | 三次曲线优先试验 | Cubics → Hessian and related constructions | `CubicFlexes(F[,i])` → point × 3／point | Real finite flexes of a smooth plane cubic. |
@@ -87,7 +89,7 @@
 
 ### 对应点与无穷远方向
 
-在 `Collineation`、`Involution` 和 `InvolutionCenter` 的标定参数中，`point` 转成 `(x:y:1)`，`lineLike` 若支撑线为 `ax+by+c=0`，转成 `(b:−a:0)`。线的位置、端点顺序和长度不参与标定。复用 `supportingLine` 取得系数，在这些 builder 内专门做方向转换。其他命令的 `pointOrLine` 参数仍按其原有语义解释。全程保留齐次坐标，待输出时才有限化。最后的动点 P 及返回值采用实仿射点；像在无穷远时为 undefined。
+在射影变换的 † 参数中，`point` 转成 `(x:y:1)`，`lineLike` 若支撑线为 `ax+by+c=0`，转成 `(b:−a:0)`。线的位置、端点顺序和长度不参与标定。复用 `supportingLine` 取得系数。直线版的动点 P 也接受方向，返回值有限化后为实仿射点，像在无穷远时为 undefined。
 
 ### Collineation 与 Affine
 
@@ -105,7 +107,15 @@
 
 > `O=AC∩BD`，`K=AB∩CD`，`L=AD∩BC`，`ℓ=K∨L`。
 
-`InvolutionCenter` 将 O 有限化。`Involution` 直接计算 `Q=(ℓ·O)P−2(ℓ·P)O`。在轴上矩阵作用为乘 `ℓ·O`，在 O 的代表向量上乘 `−ℓ·O`，因此平方在射影意义下为恒等；轴、中心和两个交换点对可分别验算。轴可以是无穷远线，中心也可以是无穷远点，中途无需创建原生点或线。例如 O 在无穷远的仿射镜像仍可用 `Involution` 计算有限点像。恒等映射没有指定的对合中心；点对重合或四点失去一般位置时，标定可能不足或不相容。用 `ℓ·O≠0` 确认该构造给出有效的中心和轴，验收混合方向点、齐次代表缩放、两次作用返回原点及像跨越无穷远。[调和同调及其对角点构造](https://www.voutsadakis.com/TEACH/LECTURES/PROJECTIVE/Chapter5_6.pdf)
+`Involution` 直接计算 `Q=(ℓ·O)P−2(ℓ·P)O`。在轴上矩阵作用为乘 `ℓ·O`，在 O 的代表向量上乘 `−ℓ·O`，因此平方在射影意义下为恒等。用 `ℓ·O≠0` 确认标定有效。平面对合的有限中心可直接求 `AC∩BD`。[调和同调及其对角点构造](https://www.voutsadakis.com/TEACH/LECTURES/PROJECTIVE/Chapter5_6.pdf)
+
+### 直线上的变换
+
+直线版按共线输入计算，方向参数表示所在直线的无穷远点。对每条直线，取有限锚点 O 和方向 d，将齐次向量 `(v:w)` 写成线坐标 `(s:w)`，其中 `s=d·(v−wO)`。有限输出为 `O+d s/(w|d|²)`。
+
+- **CollineationL** 以三对标定点确定射影对应，源点与目标点可在不同的直线上。令 `[U,V]` 为线坐标的 2×2 行列式。在目标基底 D、E 中，输出系数为 `([P,B][A,C][F,E], [A,P][C,B][D,F])`。任一组三个标定点重合会失去唯一性。[三对点确定射影对应](https://www.voutsadakis.com/TEACH/LECTURES/PROJECTIVE/Chapter4.pdf)
+- **AffineL** 用 P 在 AB 上的有向分点参数求 CD 上的像。两对标定都需要有限点。无穷远对应到无穷远对任意仿射映射都成立，因此只剩一对有限点时无法确定比例。末参数为方向时，像也在无穷远。
+- **InvolutionL** 设矩阵为 `[[h,k],[j,−h]]`。交换对 `(s:w)↔(t:z)` 给出约束行 `(sz+wt,wz,−st)`。用 A↔C 和 B↔D 的两行叉积求 h、k、j，并要求 `h²+kj≠0`。四参数形式输出无穷远点的像，即直线对合中心。无穷远点固定时，该形式返回 undefined。
 
 ### PascalLine 与 PerspectiveAxis
 

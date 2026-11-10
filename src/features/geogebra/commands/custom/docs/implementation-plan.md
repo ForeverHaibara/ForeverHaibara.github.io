@@ -172,7 +172,7 @@
 | Implemented (P1) | `TrilinearPolar(A,B,C,P) → line` | Trilinear polar of P with respect to triangle ABC. | P 的重心为 `(p:q:r)`，线在重心变量 X,Y,Z 中为 `qr X+rp Y+pq Z=0`。名称虽含 trilinear，系数必须与当前坐标制一致；保留符号。 | S369 |
 | Implemented (P1) | `TrilinearPole(A,B,C,l) → point` | Trilinear pole of l with respect to triangle ABC. | 将 l 写成重心线系数 `(u:v:w)`，输出重心 `(vw:wu:uv)`；先化简再有限化。是上一行在一般位置的逆；非二次曲线的 Pole。 | S377 |
 | Implemented (P1) | `HarmonicConjugate(A,B,P) → point` | Point Q with complex cross-ratio (A,B;P,Q)=-1, including the collinear case. | 取局部复数 u=B−A、v=P−A，输出 `A+uv/(2v−u)`。显式 ToComplex 后乘除，再 ToPoint；非共线时四点共圆且交比 −1，共线时连续退化为有向调和共轭。2v=u 时结果在无穷远。 | S403 |
-| Implemented (P1) | `TransferRatio(A,B,C,D,P) → point` | Transfer the directed division parameter of P on AB to CD. | t=((P−A)·(B−A))/|B−A|²，输出 C+t(D−C)，要求 P∈AB；保留外分和反向。A=B 未定，C=D 可连续返回 C。 | S415 |
+| Implemented (P1) | `AffineL(A,B,C,D,P) → point` | Transfer the directed division parameter of P on AB to CD. | t=((P−A)·(B−A))/|B−A|²，输出 C+t(D−C)，要求 P∈AB；保留外分和反向。A=B 未定，C=D 可连续返回 C。 | S415 |
 | Implemented (P1) | `TrisectionPoint(A,B) → point` | Trisection point one third of the way from A to B. | `(2A+B)/3`；两点重合仍有效。另一点由交换输入得到。 | S106 |
 | Implemented (P1) | `GoldenSectionPoint(A,B) → point` | Internal golden-section point at parameter (sqrt(5)-1)/2 from A to B. | `A+((√5−1)/2)(B−A)`；描述明确取靠近 B 的分点，替代旧式正方形和圆交点。另一点交换 A、B。 | S436 |
 | Implemented (P1) | `DirectSimilarity(A,B,C,D) → point` | Image of D under the direct similarity fixing A and sending B to C. | 局部复数 `A+(C−A)(D−A)/(B−A)`；B≠A。C=A 时为常值映射，D=A 时该作用点返回 A。 | S455 |
@@ -747,7 +747,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 | S412 | Crosspoint | 1 / 1 | Implemented (P2): `Crosspoint(A,B,C,P,Q) → point` |
 | S413 | Crossconjugate | 1 / 1 | Implemented (P2): `CrossConjugate(A,B,C,X,P) → point` |
 | S414 | X_fixed isoconjugate | 1 / 1 | Implemented (P2): `Isoconjugate(A,B,C,X,P) → point`; Implemented (P2): `Isoconjugate(A,B,C,X,Y,P) → point` |
-| S415 | Ratio Point | 1 / 1 | Implemented (P1): `TransferRatio(A,B,C,D,P) → point` |
+| S415 | Ratio Point | 1 / 1 | Implemented (P1): `AffineL(A,B,C,D,P) → point` |
 | S416 | Pedian Affine Mapping | 1 / 1 | Implemented (P2): `PedalAffineMap(A,B,C,X,P) → point` |
 | S417 | Carnot Triangle | 1 / 1 | Implemented (P1): `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` |
 | S418 | Cyclocevian Conjugate | 1 / 1 | Implemented (P2): `CyclocevianConjugate(A,B,C,P) → point` |
