@@ -95,7 +95,10 @@ describe('new elementary observations and bounded search', () => {
     const expanded = discover(points, ['concyclic', 'equal-angles'], false);
     const compressed = discover(points, ['concyclic', 'equal-angles'], true);
     expect(expanded.relations.some((r) => r.derived)).toBe(true);
-    expect(compressed.relations.filter((r) => r.kind === 'equal-angles').length).toBeLessThan(expanded.relations.filter((r) => r.kind === 'equal-angles').length);
+    const angles = compressed.relations.filter((r) => r.kind === 'equal-angles');
+    expect(angles).toHaveLength(1);
+    expect(angles[0].derivedFrom).toContain(compressed.relations.find((r) => r.kind === 'concyclic')!.id);
+    expect(expanded.relations.filter((r) => r.kind === 'equal-angles').length).toBeGreaterThan(angles.length);
   });
   it('finds equal lengths and ordinary angles in an isosceles triangle', () => {
     const result = discover([point('A', 0, 2), point('B', -1, 0), point('C', 1, 0)], ['equal-lengths', 'equal-angles']);

@@ -1,5 +1,7 @@
 import type { GeometryRelationKind, RelationWitness, DirectionModel, LengthModel, RelationSupport, RelationFamily } from '../geometryTypes';
 
+export type RememberCompressedSeed = (kind: GeometryRelationKind, create: () => RelationSeed) => void;
+
 export interface RelationSeed {
   key: string;
   kind: GeometryRelationKind;

@@ -4,17 +4,47 @@ import type { DependencyGraph } from './graphTypes';
 import type { GeometryRelation, GeometryRelationKind, GeometryRelationResult, RelationWitness } from './geometryTypes';
 import { buildGeometryScene, buildTolerance, createCircle, linePointNames, lineFamilyNames } from './scene/geometryScene';
 import type { CircleCandidate } from './scene/geometryScene';
-import { DEFAULT_DISCOVERY_OPTIONS, DiscoveryBudget, LEGACY_RELATION_KINDS } from './relations/catalog';
+import { DEFAULT_DISCOVERY_OPTIONS, DiscoveryBudget, LEGACY_RELATION_KINDS, RELATION_CATALOG } from './relations/catalog';
 import type { DiscoveryOptions } from './relations/catalog';
 import { detectMetricRelations } from './relations/metricRelations';
 import type { RelationSeed } from './relations/relationSeed';
-import { compressRefinements } from './relations/refinements';
+import { annotateRefinements } from './relations/refinements';
 import { analyzeSharedComparisons } from './relations/conditionalComparisons';
 import { groupRoleFamilies } from './relations/roleFamilies';
 
 const RELATION_ORDER: GeometryRelationKind[] = ['direction-space', 'length-space', 'congruent-triangles', 'similar-triangles', 'concyclic', 'perpendicular', 'parallel', 'midpoint', 'directed-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles', 'equal-angles', 'length-multiple', 'equal-lengths', 'dot-products', 'cross-products', 'coincident-points', 'collinear'];
 const MAX_WITNESSES = 8;
 const MAX_CIRCLE_CANDIDATES = 8000;
+
+const retainRankedRelations = (ranked: GeometryRelation[], limit: number): GeometryRelation[] => {
+  if (ranked.length <= limit) return ranked;
+  const byKind = new Map<GeometryRelationKind, GeometryRelation[]>();
+  for (const relation of ranked) {
+    const bucket = byKind.get(relation.kind);
+    if (bucket) bucket.push(relation);
+    else byKind.set(relation.kind, [relation]);
+  }
+  // Cover populated groups before filling the rest of the budget by kind.
+  // Generator summaries keep priority so even one row can explain compression.
+  const summaryPriority = (relation: GeometryRelation) => Number(Boolean(relation.model || relation.lengthModel));
+  const buckets = [...byKind.values()].sort(([left], [right]) => summaryPriority(right) - summaryPriority(left));
+  const retained = new Set<GeometryRelation>();
+  const groups = new Set<string>();
+  for (const [relation] of buckets) {
+    if (retained.size >= limit) break;
+    const group = RELATION_CATALOG.find(({ kind }) => kind === relation.kind)!.group;
+    if (groups.has(group)) continue;
+    groups.add(group);
+    retained.add(relation);
+  }
+  for (let rank = 0; retained.size < limit; rank += 1) {
+    for (const bucket of buckets) {
+      if (bucket[rank]) retained.add(bucket[rank]);
+      if (retained.size >= limit) break;
+    }
+  }
+  return ranked.filter((relation) => retained.has(relation));
+};
 
 export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Date.now(), options: DiscoveryOptions = { ...DEFAULT_DISCOVERY_OPTIONS, enabledKinds: LEGACY_RELATION_KINDS }): GeometryRelationResult => {
   const diagnostics: string[] = [];
@@ -97,7 +127,7 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   const aliases = new Map(points.map((point) => [point.name, point.aliases]));
   const expandNames = (names: readonly string[]): string[] => names.flatMap((name) => aliases.get(name) ?? [name]);
   const analyzed = analyzeSharedComparisons(scene, relationSeeds);
-  groupRoleFamilies(compressRefinements(analyzed, options.compressConsequences), budget).forEach((seed) => {
+  groupRoleFamilies(annotateRefinements(analyzed), budget).forEach((seed) => {
     const pointNames = seed.expandAliases === false ? [...seed.scoringNames!].sort() : [...seed.points].flatMap((index) => points[index].aliases).sort();
     const id = seed.key;
     const representativeNames = [...new Set(seed.witness.points)].sort();
@@ -124,10 +154,6 @@ export const detectGeometryRelations = (graph: DependencyGraph, computedAt = Dat
   });
 
   const sortedRelations = [...relations.values()].sort((left, right) => right.nonTriviality - left.nonTriviality || right.confidence - left.confidence || RELATION_ORDER.indexOf(left.kind) - RELATION_ORDER.indexOf(right.kind) || left.id.localeCompare(right.id));
-  if (sortedRelations.length > options.maxRelations) diagnostics.push(`Relation display budget (${options.maxRelations}) reached; lower ranked groups omitted.`);
-  // Do not hide the generator summaries that explain compressed consequences
-  // just because many independent scalar observations have a larger raw score.
-  const retained = new Set(sortedRelations.filter((relation) => relation.model || relation.lengthModel).slice(0, options.maxRelations));
-  for (const relation of sortedRelations) { if (retained.size >= options.maxRelations) break; retained.add(relation); }
-  return { relations: sortedRelations.filter((relation) => retained.has(relation)), pointCount: points.reduce((count, point) => count + point.aliases.length, 0), tolerance: buildTolerance(scale), diagnostics, computedAt };
+  if (sortedRelations.length > options.maxRelations) diagnostics.push(`Relation display budget (${options.maxRelations}) reached; results are partial across relation types.`);
+  return { relations: retainRankedRelations(sortedRelations, options.maxRelations), pointCount: points.reduce((count, point) => count + point.aliases.length, 0), tolerance: buildTolerance(scale), diagnostics, computedAt };
 };

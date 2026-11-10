@@ -20,7 +20,7 @@ const CatalogFilterControls: React.FC<Props> = ({ filter, selectedNames, onChang
     </div>
     <details className="text-[10px] leading-4 text-slate-500"><summary className="cursor-pointer">Search notation and scope</summary>
       <p className="mt-1">AO CO, OA=OC and (A, O)=(C, O) find the same quantities. Endpoint order, case, punctuation and spacing are flexible. For angles the middle point is the vertex: ABC and CBA match. Separate point names with spaces to search by objects alone.</p>
-      <p className="mt-1">Search includes all stored group members and generator equations, even when their titles are shortened. Results contain the requested quantities; they do not certify the equation you typed. Words such as parallel, midpoint, 有向角 and 共圆 also work.</p>
+      <p className="mt-1">Search by type or group with terms like parallel, midpoint, Basic and 有向角. For incidence searches like 共线 ABC, ABC names three points. Search includes stored group members and generator equations, even when their titles are shortened.</p>
     </details>
     <details className="text-[11px]">
       <summary className="cursor-pointer font-semibold text-slate-600">List filters · {filter.kinds.length === ALL_RELATION_KINDS.length ? 'all types' : `${filter.kinds.length} types`} · value ≥ {filter.minimumValue}{filter.includeUnscored ? ' + unscored' : ''}{filter.selectedOnly ? ` · selected objects (${selectedNames.length})` : ''}</summary>

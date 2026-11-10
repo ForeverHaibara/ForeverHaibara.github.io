@@ -6,7 +6,7 @@ import type { PositiveLength } from '../quantities/lengths';
 import { orientedDoubleArea } from '../quantities/vector';
 import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
-import type { RelationSeed } from './relationSeed';
+import type { RelationSeed, RememberCompressedSeed } from './relationSeed';
 import type { LengthModel } from '../geometryTypes';
 import { balancedTriples } from '../quantities/candidates';
 import { affineClassResidual, groupScalarClasses } from '../algebra/scalarClasses';
@@ -25,7 +25,7 @@ const RATIOS = [
 ].map((entry) => ({ ...entry, ratio: entry.ratio as [number, number], value: Math.log(entry.ratio[0] / entry.ratio[1]), cost: Math.abs(entry.two) + Math.abs(entry.three) }));
 export const createLengthRelationSpace = () => new RationalRelationSpace(new Set(['@log2', '@log3']));
 
-export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOptions, budget: DiscoveryBudget, space: RationalRelationSpace): RelationSeed[] => {
+export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOptions, budget: DiscoveryBudget, space: RationalRelationSpace, rememberCompressed?: RememberCompressedSeed): RelationSeed[] => {
   const enabled = new Set(options.enabledKinds);
   if (!['equal-lengths', 'midpoint', 'length-multiple', 'length-space'].some((kind) => enabled.has(kind as RelationSeed['kind']))) return [];
   const quantities = positiveLengthPairs(scene).map((quantity) => ({ ...quantity,
@@ -77,9 +77,11 @@ export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOp
     const derived = keys.every((key) => key.key === keys[0].key && key.error <= EPSILON) && keys.some((key) => key.sources.length > 0);
     const segments = group.map(names); const points = new Set(group.flatMap((q) => [q.left, q.right]));
     const key = `equal-lengths:${segments.map((segment) => segment.join('|')).sort().join(';')}`;
-    if (!derived || !options.compressConsequences) seeds.push({ kind: 'equal-lengths', key, points, confidence: 0.98,
+    const createSeed = (): RelationSeed => ({ kind: 'equal-lengths', key, points, confidence: 0.98,
       witness: { points: [...points].map((i) => scene.points[i].name), segments }, derived,
       sourceIds: derived ? [...new Set(keys.flatMap((item) => item.sources))] : [] });
+    if (derived && options.compressConsequences) rememberCompressed?.('equal-lengths', createSeed);
+    else seeds.push(createSeed());
     // A bounded-diameter numerical group supplies a star, not an equality
     // inferred by transitively closing a near-equality chain.
     if (!derived) for (const q of group.slice(1)) space.insert({ [q.id]: 1, [group[0].id]: -1 }, key, Math.abs(q.value - group[0].value));
@@ -97,15 +99,18 @@ export const detectLengthRelations = (scene: GeometryScene, options: DiscoveryOp
       const assessment = assessClusterRelation([shortClass, longClass], row, residual + 1e-12, EPSILON, space);
       if (assessment.identity) continue;
       const { derived } = assessment;
-      if (derived && options.compressConsequences) continue;
-      if (count >= options.maxRelations) { budget.note(`Length ratio output limit (${options.maxRelations}) reached; results are partial.`); break outer; }
       const key = `length-multiple:${long.id}:${short.id}:${p}/${q}`;
-      const points = new Set([...shortClass.members, ...longClass.members].flatMap((member) => member.indexes));
       const quantity = (member: PositiveLength) => ({ kind: 'length' as const, points: names(member) });
-      seeds.push({ kind: 'length-multiple', key, points, confidence: 0.98, derived, sourceIds: derived ? assessment.sourceIds : [],
-        witness: { points: [...points].map((i) => scene.points[i].name), equation: { terms: [
-          classTerm(longClass, q, quantity), classTerm(shortClass, -p, quantity),
-        ] } } });
+      const createSeed = (): RelationSeed => {
+        const points = new Set([...shortClass.members, ...longClass.members].flatMap((member) => member.indexes));
+        return { kind: 'length-multiple', key, points, confidence: 0.98, derived, sourceIds: derived ? assessment.sourceIds : [],
+          witness: { points: [...points].map((i) => scene.points[i].name), equation: { terms: [
+            classTerm(longClass, q, quantity), classTerm(shortClass, -p, quantity),
+          ] } } };
+      };
+      if (derived && options.compressConsequences) { rememberCompressed?.('length-multiple', createSeed); continue; }
+      if (count >= options.maxRelations) { budget.note(`Length ratio output limit (${options.maxRelations}) reached; results are partial.`); break outer; }
+      seeds.push(createSeed());
       count += 1;
       if (!derived) assessment.register(key);
     }

@@ -4,8 +4,9 @@ import { RationalRelationSpace } from '../algebra/rationalSpace';
 import { cross, displacement, dot } from '../quantities/vector';
 import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
+import { RELATION_GROUPS } from './catalog';
 import { buildDirectionSpaces } from './directionSpaces';
-import type { RelationSeed } from './relationSeed';
+import type { RelationSeed, RememberCompressedSeed } from './relationSeed';
 import { detectTriangles } from './triangles';
 import { segmentId } from '../quantities/lengths';
 import { createLengthRelationSpace, detectLengthRelations } from './lengthRelations';
@@ -18,6 +19,10 @@ import { detectVectorProductRelations } from './vectorProductRelations';
 
 export const detectMetricRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions, budget: DiscoveryBudget): RelationSeed[] => {
   const seeds: RelationSeed[] = [];
+  const compressed = new Map<RelationSeed['kind'], RelationSeed>();
+  const rememberCompressed: RememberCompressedSeed = (kind, create) => {
+    if (!compressed.has(kind)) compressed.set(kind, create());
+  };
   const enabled = new Set(options.enabledKinds);
   seeds.push(...detectDirectedAngleRelations(scene, options, budget));
   const angleKinds = ['equal-angles', 'angle-multiple', 'complementary-angles', 'supplementary-angles'] as const;
@@ -28,10 +33,6 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
     ? buildDirectionSpaces(scene, [...existing, ...seeds], options, budget)
     : { seeds: [], space: new RationalRelationSpace(), bySegment: new Map<string, never>() };
   seeds.push(...directions.seeds);
-  const emit = (kind: RelationSeed['kind'], points: Set<number>, witness: RelationSeed['witness'], key: string, derived = false, sourceIds: string[] = [], scoringNames?: string[], support?: RelationSeed['support']) => {
-    if (derived && options.compressConsequences) return;
-    seeds.push({ kind, points, witness, key: `${kind}:${key}`, confidence: 0.98, derived, sourceIds: [...new Set(sourceIds)], scoringNames, support });
-  };
 
   if (enabled.has('coincident-points')) {
     const representatives = new Map(scene.points.flatMap((point, i) => point.aliases.map((name) => [name, i] as const)));
@@ -50,8 +51,8 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
     }
   }
 
-  seeds.push(...detectLengthRelations(scene, options, budget, lengths));
-  seeds.push(...detectVectorProductRelations(scene, [...existing, ...seeds], options, budget));
+  seeds.push(...detectLengthRelations(scene, options, budget, lengths, rememberCompressed));
+  seeds.push(...detectVectorProductRelations(scene, [...existing, ...seeds], options, budget, rememberCompressed));
 
   if (needsAngles) {
     interface Angle { value: number; names: [string, string, string]; indexes: number[]; aliases: [string[], string[]]; key: string; error: number; sources: string[]; row: Record<string, number>; representationError: number; }
@@ -93,13 +94,30 @@ export const detectMetricRelations = (scene: GeometryScene, existing: RelationSe
       // Keep its quantity available to comparisons with genuinely other angles.
       if (members.every((angle) => Object.keys(combineExpressions([[angle.row, 1], [members[0].row, -1]])).length === 0)) continue;
       const derived = members.every((angle) => angle.key === members[0].key && angle.error <= epsilon) && members.some((angle) => angle.sources.length > 0);
-      const points = new Set(members.flatMap((angle) => angle.indexes));
-      emit('equal-angles', points, { points: [...points].map((i) => scene.points[i].name), angles: members.map((angle) => angle.names),
-        angleAliases: members.filter((angle) => angle.aliases.some((names) => names.length > 1)).map((angle) => ({ angle: angle.names, endpoints: angle.aliases })) }, members.map((angle) => angle.names.join('|')).sort().join(';'), derived, derived ? members.flatMap((angle) => angle.sources) : [], [...new Set(members.flatMap((angle) => angle.names))], angleAliasSupport(members));
+      const createSeed = (): RelationSeed => {
+        const points = new Set(members.flatMap((angle) => angle.indexes));
+        return { kind: 'equal-angles', key: `equal-angles:${members.map((angle) => angle.names.join('|')).sort().join(';')}`,
+          points, confidence: 0.98, derived, sourceIds: derived ? [...new Set(members.flatMap((angle) => angle.sources))] : [],
+          scoringNames: [...new Set(members.flatMap((angle) => angle.names))], support: angleAliasSupport(members),
+          witness: { points: [...points].map((i) => scene.points[i].name), angles: members.map((angle) => angle.names),
+            angleAliases: members.filter((angle) => angle.aliases.some((names) => names.length > 1)).map((angle) => ({ angle: angle.names, endpoints: angle.aliases })) } };
+      };
+      if (derived && options.compressConsequences) rememberCompressed('equal-angles', createSeed);
+      else seeds.push(createSeed());
     }
     // Each numerically equal class contributes one representative to affine
     // searches. We never form every pair of angle expressions in a model.
-    seeds.push(...detectAngleRelations(scene, groups, options, budget, directions.space));
+    seeds.push(...detectAngleRelations(scene, groups, options, budget, directions.space, rememberCompressed));
+  }
+  // Keep verified representatives searchable when compression would hide a
+  // whole category. With ordinary entries present, its derived rows stay folded.
+  const observedKinds = new Set([...existing, ...seeds].map(({ kind }) => kind));
+  for (const { items } of RELATION_GROUPS) {
+    if (items.some(({ kind }) => observedKinds.has(kind))) continue;
+    for (const { kind } of items) {
+      const representative = compressed.get(kind);
+      if (representative) seeds.push(representative);
+    }
   }
   if (directions.space.limited || lengths.limited) budget.note('Relation-space reduction budget reached; some algebraic consequences were not compressed.');
   return seeds;

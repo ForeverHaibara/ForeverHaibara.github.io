@@ -46,11 +46,12 @@ describe('midpoints and fixed ratios on positive lengths', () => {
     expect(expanded.relations.filter((r) => r.derived).every((r) => r.derivedFrom?.some((id) => id.startsWith('midpoint:')))).toBe(true);
     expect(discover(midpoint, ['length-multiple']).relations.some((r) => !r.derived)).toBe(true);
   });
-  it('lets a midpoint cover its exact collinearity support but preserves a longer line', () => {
+  it('keeps midpoint-derived collinearity available with its source and preserves a longer line', () => {
     const kinds: GeometryRelationKind[] = ['midpoint', 'collinear'];
-    expect(discover(midpoint, kinds).relations.map((r) => r.kind)).toEqual(['midpoint']);
-    const expanded = discover(midpoint, kinds, { compressConsequences: false });
-    expect(expanded.relations.some((r) => r.kind === 'collinear' && r.derived && r.derivedFrom!.some((id) => id.startsWith('midpoint:')))).toBe(true);
+    const compressed = discover(midpoint, kinds);
+    expect(compressed.relations.some((r) => r.kind === 'midpoint')).toBe(true);
+    expect(compressed.relations.some((r) => r.kind === 'collinear' && r.derived && r.derivedFrom!.some((id) => id.startsWith('midpoint:')))).toBe(true);
+    expect(discover(midpoint, ['collinear']).relations[0].derived).toBeUndefined();
     expect(discover([...midpoint, point('Extra', 6.173, 0)], kinds).relations.some((r) => r.kind === 'collinear' && r.pointNames.length === 4)).toBe(true);
   });
   it.each([1.5, 2, 3])('finds the fixed ratio %s and validates equations in the length domain', (ratio) => {
@@ -72,6 +73,17 @@ describe('midpoints and fixed ratios on positive lengths', () => {
     expect(compressed.relations.some((r) => r.kind === 'similar-triangles')).toBe(true);
     expect(expanded.relations.filter((r) => r.kind === 'length-multiple').length).toBeGreaterThan(compressed.relations.filter((r) => r.kind === 'length-multiple').length);
     expect(expanded.relations.some((r) => r.kind === 'length-multiple' && r.derived && r.derivedFrom!.some((id) => id.startsWith('similar-triangles:')))).toBe(true);
+  });
+  it('keeps a length representative when congruence covers all the observed equal lengths', () => {
+    const first = [point('A', 0, 0), point('B', 3.183, 0), point('C', 0.619, 2.139)];
+    const copy = first.map(({ coordinates }, i) => {
+      const { x, y } = coordinates!;
+      return point(['D', 'E', 'F'][i], 20 + x * Math.cos(0.49) - y * Math.sin(0.49), 10 + x * Math.sin(0.49) + y * Math.cos(0.49));
+    });
+    const result = discover([...first, ...copy], ['congruent-triangles', 'equal-lengths']);
+    const lengths = result.relations.filter(({ kind }) => kind === 'equal-lengths');
+    expect(lengths).toHaveLength(1);
+    expect(lengths[0].derivedFrom).toContain(result.relations.find(({ kind }) => kind === 'congruent-triangles')!.id);
   });
 });
 

@@ -1,5 +1,5 @@
 import type { GeometryRelation, GeometryRelationKind, QuantityEquation, RelationCondition, RelationWitness } from '../../analysis/geometryTypes';
-import { RELATION_CATALOG } from '../../analysis/relations/catalog';
+import { RELATION_CATALOG, RELATION_GROUPS } from '../../analysis/relations/catalog';
 import { mapPredicatePoints, predicatePoints } from '../ir/types';
 import type { ConditionCandidate, GeometryPredicate, ReasoningProblem } from '../ir/types';
 
@@ -122,6 +122,7 @@ const ALIASES: Array<[RegExp, GeometryRelationKind[]]> = [
   [/中点|midpoints?/giu, ['midpoint']], [/等长|等距|equal\s*lengths?/giu, ['equal-lengths']],
   [/相似|similar(?:\s+triangles?)?/giu, ['similar-triangles']], [/全等|congruent(?:\s+triangles?)?/giu, ['congruent-triangles']],
   [/生成元|generators?/giu, ['direction-space', 'length-space']],
+  ...RELATION_GROUPS.map(({ label, items }): [RegExp, GeometryRelationKind[]] => [new RegExp(`\\b${label}\\b`, 'giu'), items.map(({ kind }) => kind)]),
 ];
 
 /** A known-name lexer avoids treating letters inside words as point labels.
@@ -130,6 +131,7 @@ export const parseRelationSearch = (query: string, objects: ReasoningProblem['ob
   let text = normalizeSearchText(query);
   const result: RelationSearchQuery = { points: [], quantities: [], words: [], kinds: [] };
   for (const [pattern, kinds] of ALIASES) text = text.replace(pattern, () => { result.kinds.push(kinds); return ' '; });
+  const searchIncidence = result.kinds.some((kinds) => kinds.includes('collinear') || kinds.includes('concyclic'));
   const names = [...new Set(objects.map((object) => normalizeSearchText(object.name)))].sort((a, b) => b.length - a.length);
   const splitNames = (value: string): string[] | null => {
     const memo = new Map<number, string[] | null>();
@@ -155,7 +157,7 @@ export const parseRelationSearch = (query: string, objects: ReasoningProblem['ob
     if (hint && points.length === 3) result.quantities.push({ kind: hint, points });
     else if (hint === 'angle' && points.length === 4) result.quantities.push({ kind: 'segment', points: points.slice(0, 2) }, { kind: 'segment', points: points.slice(2) });
     else if (points.length === 2) result.quantities.push({ kind: 'segment', points });
-    else if (points.length === 3 && (grouped || !/\s/.test(value.trim()))) result.quantities.push({ kind: 'angle', points });
+    else if (!searchIncidence && points.length === 3 && (grouped || !/\s/.test(value.trim()))) result.quantities.push({ kind: 'angle', points });
   };
   text = text.replace(/([∠∡△δ]?)\(([^()]*)\)/gu, (_, symbol: string, body: string) => {
     consume(body, symbol === '△' || symbol === 'δ' ? 'triangle' : symbol ? 'angle' : undefined, true); return ' ';

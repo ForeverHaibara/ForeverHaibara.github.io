@@ -13,6 +13,8 @@ import type { GeometryRelation } from '../../analysis/geometryTypes';
 import { formatProductEquation } from '../../geometry/vectorProducts';
 import GeometryStatement from '../reasoning/GeometryStatement';
 
+const PAGE_SIZE = 100;
+
 interface Props {
   state: GeometryRelationsState;
   objectLink: ObjectLink;
@@ -28,19 +30,26 @@ interface Props {
 const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, selection, aliases, relations, fresh, busy, onSelection }) => {
   const [view, setView] = useState<CatalogView>('all');
   const [filters, setFilters] = useState<Record<CatalogView, CatalogFilter>>(() => ({ all: defaultCatalogFilter(), accepted: defaultCatalogFilter(), goal: defaultCatalogFilter(), rejected: defaultCatalogFilter() }));
-  const [limit, setLimit] = useState(100);
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const { result } = state;
   const entries = useMemo(() => buildCatalogEntries(problem, relations, aliases), [problem, relations, aliases]);
   const matching = filterCatalogEntries(entries, problem, selection, { ...filters[view], view, selectedNames: objectLink.selectedNames });
-  const shown = matching.slice(0, limit);
+  // Surface the highest-ranked match of each type before paging a long list.
+  const representatives = new Map<GeometryRelation['kind'], typeof matching[number]>();
+  if (view === 'all' && matching.length > PAGE_SIZE) for (const entry of matching) {
+    if (entry.relation && !representatives.has(entry.relation.kind)) representatives.set(entry.relation.kind, entry);
+  }
+  const leading = new Set(representatives.values());
+  const ordered = leading.size ? [...leading, ...matching.filter((entry) => !leading.has(entry))] : matching;
+  const shown = ordered.slice(0, limit);
   const modes: Array<[CatalogView, string, number]> = [['all', 'All', entries.length], ['accepted', 'Accepted', selection.acceptedIds.length],
     ['goal', 'Goal', selection.goalId ? 1 : 0], ['rejected', 'Rejected', entries.filter(({ candidate }) => candidate.hypothesisEligible).length]];
   return <section aria-label="Relations catalog" className="space-y-2">
     <div className="flex flex-wrap gap-1" role="group" aria-label="Relation views">{modes.map(([mode, label, count]) => <button key={mode} type="button"
-      aria-pressed={view === mode} onClick={() => { setView(mode); setLimit(100); }}
+      aria-pressed={view === mode} onClick={() => { setView(mode); setLimit(PAGE_SIZE); }}
       className={`rounded-full px-2.5 py-1 text-[11px] ${view === mode ? 'bg-sky-700 font-semibold text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} ({count})</button>)}</div>
     {view === 'rejected' && selection.assumptionMode !== 'hypothetical' && <p className="text-[10px] leading-4 text-amber-800">To use a rejected observation, enable Explore hypotheses in “Reasoning options” above.</p>}
-    <CatalogFilterControls filter={filters[view]} selectedNames={objectLink.selectedNames} onChange={(filter) => { setFilters({ ...filters, [view]: filter }); setLimit(100); }} />
+    <CatalogFilterControls filter={filters[view]} selectedNames={objectLink.selectedNames} onChange={(filter) => { setFilters({ ...filters, [view]: filter }); setLimit(PAGE_SIZE); }} />
     <p role="status" aria-live="polite" className="text-[10px] leading-4 text-slate-500">
       {state.status === 'calculating' ? 'Computing observations… ' : state.stale ? 'Discovery is out of date · ' : ''}
       {shown.length} shown / {matching.length} matching · {modes.find(([mode]) => mode === view)?.[2]} in this view · {result?.pointCount ?? problem?.objects.filter((object) => object.coordinates).length ?? 0} points
@@ -77,7 +86,7 @@ const GeometryRelationsView: React.FC<Props> = ({ state, objectLink, problem, se
         {candidate.diagnostics.map((message) => <p key={message} className="mt-1 text-[10px] leading-4 text-amber-700">{message}</p>)}
       </article>;
     })}</div>
-    {shown.length < matching.length && <button type="button" className="w-full rounded-lg bg-slate-100 p-2 text-[11px] text-sky-700" onClick={() => setLimit(limit + 100)}>Show more ({matching.length - shown.length} remaining)</button>}
+    {shown.length < matching.length && <button type="button" className="w-full rounded-lg bg-slate-100 p-2 text-[11px] text-sky-700" onClick={() => setLimit(limit + PAGE_SIZE)}>Show more ({matching.length - shown.length} remaining)</button>}
     <p className="text-[10px] leading-4 text-slate-500">One catalog for observations, conditions and goals. Value measures construction novelty. Sample checks are evidence, not proof. Local suggestions have no global value score.</p>
   </section>;
 };

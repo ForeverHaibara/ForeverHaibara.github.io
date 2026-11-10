@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { vectorProblemB } from '../../reasoning/__fixtures__/vectorProducts';
 import { detectGeometryRelations } from '../geometryRelations';
+import { buildDependencyGraph } from '../constructionGraph';
 import { DEFAULT_DISCOVERY_OPTIONS, DiscoveryBudget } from './catalog';
 import { buildGeometryScene } from '../scene/geometryScene';
 import { detectVectorProductRelations } from './vectorProductRelations';
@@ -11,6 +12,19 @@ import { buildRelationSearchDocument, matchesRelationSearch, parseRelationSearch
 import { exportAg2Proof } from '../../reasoning/backends/ag2/exportProblem';
 
 describe('bounded signed product discovery and reasoning adapters', () => {
+  it('keeps a zero dot product searchable when the perpendicular observation would hide all vector results', () => {
+    const graph = buildDependencyGraph([
+      { name: 'A', coordinates: { x: 0, y: 0 } }, { name: 'B', coordinates: { x: 3.183, y: 0 } },
+      { name: 'C', coordinates: { x: 0, y: 2.139 } },
+    ].map((point) => ({ ...point, objectType: 'point', commandString: '' })));
+    const result = detectGeometryRelations(graph, graph.generatedAt, DEFAULT_DISCOVERY_OPTIONS);
+    const dot = result.relations.find(({ kind }) => kind === 'dot-products')!;
+    expect(dot?.derivedFrom).toContain(result.relations.find(({ kind }) => kind === 'perpendicular')!.id);
+    const problem = createDiscoveryProblem(graph, result);
+    const candidate = problem.candidates.find(({ id }) => id === dot.id)!;
+    const search = buildRelationSearchDocument(candidate, dot, problem.objects);
+    expect(matchesRelationSearch(search, parseRelationSearch('Vectors AB AC', problem.objects))).toBe(true);
+  });
   it('finds the two inverse-similarity product equations for the opaque E construction', () => {
     const { graph } = vectorProblemB();
     const allowed = new Set(['A', 'B', 'C', 'D', 'E']);

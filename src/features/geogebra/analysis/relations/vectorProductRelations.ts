@@ -5,11 +5,11 @@ import { evaluateProductEquation, productEquationKey, productPoints, productRow 
 import type { VectorProductEquation, VectorProductTerm } from '../../geometry/vectorProducts';
 import type { GeometryScene } from '../scene/geometryScene';
 import type { DiscoveryBudget, DiscoveryOptions } from './catalog';
-import type { RelationSeed } from './relationSeed';
+import type { RelationSeed, RememberCompressedSeed } from './relationSeed';
 
 /** Bounded scalar search over semantic products; position atoms are only an exact representation. */
 export const detectVectorProductRelations = (scene: GeometryScene, existing: RelationSeed[], options: DiscoveryOptions,
-  budget: DiscoveryBudget): RelationSeed[] => {
+  budget: DiscoveryBudget, rememberCompressed?: RememberCompressedSeed): RelationSeed[] => {
   const coordinates = new Map(scene.points.map((point) => [point.name, point.coordinates]));
   const indexes = new Map(scene.points.map((point, index) => [point.name, index]));
   const seeds: RelationSeed[] = [];
@@ -54,17 +54,19 @@ export const detectVectorProductRelations = (scene: GeometryScene, existing: Rel
     const emit = (equation: VectorProductEquation) => {
       if (outputCount >= outputLimit) { budget.note(`${kind} output limit reached; results are partial.`); return; }
       const row = productRow(equation); if (!Object.keys(row).length) return;
-      const key = productEquationKey(equation); if (seen.has(key)) return; seen.add(key);
+      const key = `${kind}:${productEquationKey(equation)}`; if (seen.has(key)) return; seen.add(key);
       const check = evaluateProductEquation(equation, coordinates);
       if (!check || check.residual > SCALAR_EPSILON) return;
       const reduction = space.reduce(row, Math.abs(check.value));
       const derived = reduction.redundant && reduction.error <= SCALAR_EPSILON * Math.max(1, check.magnitude);
-      if (derived && options.compressConsequences) return;
+      const createSeed = (): RelationSeed => {
+        const names = productPoints(equation);
+        return { kind, key, confidence: 0.98, points: new Set(names.map((name) => indexes.get(name)!)), derived,
+          sourceIds: derived ? reduction.sources : [], witness: { points: names, productEquation: equation } };
+      };
+      if (derived && options.compressConsequences) { rememberCompressed?.(kind, createSeed); return; }
       space.insert(row, key, Math.abs(check.value));
-      const names = productPoints(equation);
-      seeds.push({ kind, key: `${kind}:${key}`, confidence: 0.98, points: new Set(names.map((name) => indexes.get(name)!)), derived,
-        sourceIds: derived ? reduction.sources : [],
-        witness: { points: names, productEquation: equation } });
+      seeds.push(createSeed());
       outputCount += 1;
     };
 
@@ -91,8 +93,10 @@ export const detectVectorProductRelations = (scene: GeometryScene, existing: Rel
       const key = productEquationKey(equation); if (symbolic.has(key)) return true; symbolic.add(key);
       if (!Object.keys(productRow(equation)).length) return true;
       const check = evaluateProductEquation(equation, coordinates); if (!check) return true;
-      if (Math.abs(check.value) <= SCALAR_EPSILON * Math.max(1, check.magnitude)) {
-        if (!options.compressConsequences || !options.enabledKinds.includes(operation === 'dot' ? 'perpendicular' : 'parallel')) emit(equation);
+      if (check.residual <= SCALAR_EPSILON) {
+        // Test the angle between the factors so short nonzero vectors do not
+        // appear to have a zero product solely because of their lengths.
+        if (Math.abs(check.value) <= SCALAR_EPSILON * check.magnitude) emit(equation);
       } else observations.push({ value: Math.abs(check.value), magnitude: check.magnitude, key,
         term: { coefficient: check.value < 0 ? -1 : 1, left, right } });
       return true;
