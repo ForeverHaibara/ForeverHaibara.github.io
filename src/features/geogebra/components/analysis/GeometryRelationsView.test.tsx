@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import GeometryReasoningView from '../reasoning/GeometryReasoningView';
+import GeometryDiscoveryControls from './GeometryDiscoveryControls';
 import { midpointConstruction } from '../../reasoning/__fixtures__/problems';
 import { detectGeometryRelations } from '../../analysis/geometryRelations';
 import { buildDependencyGraph } from '../../analysis/constructionGraph';
@@ -13,6 +14,18 @@ import type { ObjectLink } from '../../interaction/useObjectLink';
 import type { GeoGebraEngine } from '../../types';
 
 describe('unified relations and reasoning UI', () => {
+  it('identifies groups skipped by a saved compute scope and offers to re-enable defaults', () => {
+    const preferences = defaultDiscoveryPreferences();
+    const state: GeometryRelationsState = { result: null, status: 'idle', error: null, preferences,
+      setPreferences() {}, run() {}, stop() {}, stale: false, storageUnavailable: false };
+    expect(renderToStaticMarkup(<GeometryDiscoveryControls state={state} />)).not.toContain('Enable default types and rerun');
+
+    preferences.options.enabledKinds = ['directed-angles', 'dot-products', 'cross-products'];
+    const html = renderToStaticMarkup(<GeometryDiscoveryControls state={state} />);
+    expect(html).toContain('Discovery skips Basic, Lengths, Triangles, Generators under the current settings.');
+    expect(html).toContain('Enable default types and rerun');
+  });
+
   it('keeps all six groups accessible under the default result budget and shows a low-ranked collinearity on the first page', () => {
     // Chords on the same circle generate enough directed angles to fill the
     // old global top 500 before reaching the constructed collinearity.
