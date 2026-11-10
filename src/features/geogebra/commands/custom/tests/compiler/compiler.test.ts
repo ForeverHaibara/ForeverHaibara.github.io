@@ -109,7 +109,16 @@ describe('custom command syntax and dispatch', () => {
     scope.objects.set('ellipse', 'conic');
     expect(compile('SecondIntersection(circle,A,B)')).toBe('Reflect((A),Intersect(Line((A),(B)),ConjugateDiameter(Line((A),(B)),(circle))))');
     expect(compile('SecondIntersection(ellipse,A,B)', scope)).toContain('ConjugateDiameter(Line((A),(B)),(ellipse))');
-    expect(studioTools.get('secondintersection')?.overloads).toHaveLength(2);
+    expect(compile('SecondIntersection(circle,circle,A)')).toBe('Reflect((A),Line(Center((circle)),Center((circle))))');
+  });
+
+  it('adds cubic osculation without shadowing the native conic and function forms', () => {
+    const scope = environment();
+    scope.objects.set('F', 'implicitCurve');
+    scope.objects.set('f', 'function');
+    expect(compile('OsculatingCircle(P,F)', scope)).toMatch(/^Conic\(/u);
+    expect(compile('OsculatingCircle(P,circle)', scope)).toBe('OsculatingCircle(P,circle)');
+    expect(compile('OsculatingCircle(P,f)', scope)).toBe('OsculatingCircle(P,f)');
   });
 
   it('extends segments and rays to supporting lines without creating named objects', () => {
@@ -257,7 +266,7 @@ describe('reusable tool definitions and P1 outputs', () => {
     scope.objects.set('curve', 'implicitCurve');
     for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
       if (['conic', 'conicBranch'].includes(overload.builder ?? '')) continue;
-      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', line: 'l', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', number: '1', catalogId: '12' };
+      const fixtures: Partial<Record<ToolOverload['params'][number]['type'], string>> = { point: 'A', line: 'l', circle: 'circle', conic: 'circle', implicitCurve: 'curve', lineLike: 's', pointOrLine: 'A', number: '1', catalogId: '12' };
       const arguments_ = overload.params.map((param) => fixtures[param.type]);
       expect(arguments_.every(Boolean), tool.name).toBe(true);
       const source = `${tool.name}(${arguments_.join(',')})`;

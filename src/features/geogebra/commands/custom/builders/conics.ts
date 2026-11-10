@@ -1,5 +1,5 @@
 import type { ExpressionBuilder } from '../types';
-import { bind, coefficientLine, independentOutputs } from '../algebra/homogeneous';
+import { add, barycentricConic, bind, coefficientLine, coefficientList, independentOutputs, squaredNorm } from '../algebra/homogeneous';
 
 export const scimemiCoordinates = ([a, b, h, d, e]: string[], [x, y]: string[], inverse: boolean): string[] => {
   const t = `(${a}+${b})`; const r = `(${b}-${a})`; const delta = `((${a}-${b})^2+(${h})^2)`;
@@ -29,4 +29,54 @@ const commonTangents: ExpressionBuilder = (args, allocate) => {
       }, 'number'), 'number'), ['point', 'point', 'number', 'number']);
 };
 
-export const CONIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = { commonTangents, scimemi: scimemi(false), inverseScimemi: scimemi(true) };
+const conicPencil: ExpressionBuilder = (args, allocate) => {
+  const [q1, q2, p] = args.map((arg) => arg.expression);
+  const coefficients = bind([`Coefficients(${q1})`, `Coefficients(${q2})`, `x(${p})`, `y(${p})`], allocate, ([a, b, x, y]) => {
+    const basis = [`${x}^2`, `${y}^2`, '1', `${x}*${y}`, x, y];
+    const evaluate = (q: string) => add(basis.map((term, i) => `Element(${q},${i + 1})*(${term})`));
+    return bind([evaluate(a), evaluate(b)], allocate, ([f, g]) =>
+      bind(basis.map((_, i) => `${g}*Element(${a},${i + 1})-${f}*Element(${b},${i + 1})`), allocate, (values) =>
+        `If(${squaredNorm(values)}!=0,${coefficientList(values)},{1,1,0/0,0,0,0})`, 'number'), 'number');
+  }, ['numberList', 'numberList', 'number', 'number']);
+  return `Conic(${coefficients})`;
+};
+
+const quasiperspectiveConic: ExpressionBuilder = (args, allocate) => {
+  const points = args.map((arg) => arg.expression);
+  const weights = [0, 1, 2].map((i) => {
+    const j = (i + 1) % 3;
+    const k = (i + 2) % 3;
+    const difference = (axis: string, from: number, to: number) => `(${axis}(${points[to]})-${axis}(${points[from]}))`;
+    return `${difference('x', j, k)}*${difference('y', k + 3, j + 3)}-${difference('y', j, k)}*${difference('x', k + 3, j + 3)}`;
+  });
+  const coefficients = bind(weights, allocate, ([a, b, c]) =>
+    `If(${squaredNorm([a, b, c])}!=0,{0,0,0,${c},${b},${a}},{1,1,0/0,0,0,0})`, 'number');
+  return barycentricConic(points.slice(0, 3), coefficients);
+};
+
+const coaxialLimitingPoints: ExpressionBuilder = (args, allocate) => {
+  const [c1, c2, index] = args.map((arg) => arg.expression);
+  return bind([`Center(${c1})`, `Center(${c2})`, `Radius(${c1})`, `Radius(${c2})`], allocate, ([o1, o2, r1, r2]) =>
+    bind([`Distance(${o1},${o2})`, `x(${o2})-x(${o1})`, `y(${o2})-y(${o1})`], allocate, ([distance, dx, dy]) =>
+      bind([`Max({${distance},${r1},${r2}})`], allocate, ([scale]) =>
+        bind([`${distance}/${scale}`, `${r1}/${scale}`, `${r2}/${scale}`], allocate, ([d, r, s]) =>
+          bind([`${d}^2+(${r}-${s})*(${r}+${s})`, `sqrt(((${distance}-(${r1}+${r2}))/${scale})*(${d}+${r}+${s})*((${distance}-abs(${r1}-${r2}))/${scale})*(${d}+abs(${r}-${s})))`], allocate, ([k, root]) =>
+            bind([`(abs(${k})+${root})/2`], allocate, ([m]) => {
+              // Choose the homogeneous root before dividing, so an infinite
+              // root does not contaminate the finite slot for concentric circles.
+              const output = (sign: number) => {
+                // A double root uses the same formula in both slots.
+                const large = `${root}>0&&${sign}*${k}>0`;
+                return bind([`If(${large},${m},${r}^2)`, `If(${large},${d}^2,${m})`], allocate, ([n, w]) => {
+                  const signed = `If(${k}>0,${n},-${n})`;
+                  return `(x(${o1})+${signed}*${dx}/${w},y(${o1})+${signed}*${dy}/${w})`;
+                }, 'number');
+              };
+              return independentOutputs([output(-1), output(1)], index);
+            }, 'number'), 'number'), 'number'), 'number'), 'number'), ['point', 'point', 'number', 'number']);
+};
+
+export const CONIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  commonTangents, scimemi: scimemi(false), inverseScimemi: scimemi(true),
+  conicPencil, quasiperspectiveConic, coaxialLimitingPoints,
+};

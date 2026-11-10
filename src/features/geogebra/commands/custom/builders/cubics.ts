@@ -1,5 +1,5 @@
 import type { BuiltExpression, ExpressionBuilder, TypedExpression } from '../types';
-import { add, adjugate, barycentricPoint, bind, coefficientLine, coefficientList, cross, homogeneous, matrix, mul, sub, independentOutputs, supportingLine } from '../algebra/homogeneous';
+import { add, adjugate, barycentricPoint, bind, coefficientLine, coefficientList, cross, homogeneous, matrix, mul, sub, independentOutputs, supportingLine, translatedConicCoefficients } from '../algebra/homogeneous';
 import type { Matrix } from '../algebra/homogeneous';
 import { monomial, polynomialDeterminant, polynomialProduct, polynomialSum, encodedPolynomialCoefficients } from '../algebra/polynomial';
 import type { Polynomial } from '../algebra/polynomial';
@@ -67,6 +67,22 @@ const cubicSecondPolarLine: ExpressionBuilder = (args, allocate) => {
 const cubicFirstPolarConic: ExpressionBuilder = (args, allocate) => {
   const [p, curve] = args.map((arg) => arg.expression);
   return `Conic(${withCubic(curve, allocate, (coefficients) => coefficientList(cubicPolarConic(coefficients, `x(${p})`, `y(${p})`)))})`;
+};
+
+const osculatingCircle: ExpressionBuilder = (args, allocate) => {
+  const [p, curve] = entries(args);
+  const coefficients = withCubic(curve, allocate, (c) =>
+    bind([value(p, 0), value(p, 1)], allocate, ([x, y]) => {
+      const [gx, gy] = cubicPolarLine(c, x, y);
+      // The restriction's quadratic term along J grad F is half the
+      // curvature numerator. Using it directly scales the entire equation.
+      return bind([gx, gy], allocate, ([u, v]) => {
+        const [, quadratic] = cubicRestriction(c, x, y, `-${v}`, u);
+        return bind([`${u}^2+${v}^2`, quadratic], allocate, ([s, k]) =>
+          `If(${s}>0,${coefficientList(translatedConicCoefficients([k, k, '0', '0', mul(s, u), mul(s, v)], p))},{1,1,0/0,0,0,0})`, 'number');
+      }, 'number');
+    }, 'number'));
+  return `Conic(${coefficients})`;
 };
 const thirdIntersection: ExpressionBuilder = (args, allocate) => {
   const [curve, p, q] = args.map((arg) => arg.expression);
@@ -538,5 +554,6 @@ const CUBIC_CONTACT_AND_INTERPOLATION_BUILDERS: Readonly<Record<string, Expressi
 };
 
 export const CUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  osculatingCircle,
   ...CUBIC_POLAR_AND_INTERSECTION_BUILDERS, ...CUBIC_PROJECTIVE_BUILDERS, ...CUBIC_CONTACT_AND_INTERPOLATION_BUILDERS,
 };

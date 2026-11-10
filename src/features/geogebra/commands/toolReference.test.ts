@@ -80,7 +80,7 @@ describe('Studio tool reference', () => {
     expect(mixedCompletion.signatures?.filter((signature) => signature === 'Conic(A: point, B: point, C: point, D: point, E: point)')).toHaveLength(1);
     expect(searchReferenceTools(tools, 'polygon', '').map(({ tool }) => tool.name)).toContain('Centroid');
     expect(findReferenceTool(tools, 'Polygon')?.paths).toContainEqual(['Quadri or poly geometry', 'Polygons']);
-    expect(findReferenceTool(tools, 'Ellipse')?.paths).toContainEqual(['Circles and conics', 'Constructions and transforms']);
+    expect(findReferenceTool(tools, 'Ellipse')?.paths).toContainEqual(['Circles and conics', 'General constructions']);
     const polygonCompletion = (await complete('Polygon')).find((item) => item.label === 'Polygon')!;
     expect(polygonCompletion.referenceName).toBe('Polygon');
     expect(polygonCompletion.signatures).toContain('Polygon(points: list)');

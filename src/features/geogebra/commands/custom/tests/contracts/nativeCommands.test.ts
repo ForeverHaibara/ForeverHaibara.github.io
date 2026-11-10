@@ -28,6 +28,9 @@ describe('native command compatibility', () => {
       // combinations, so a more specific overload cannot hide a builder branch.
       const signatures = overload.params.reduce<GeometryType[][]>((rows, param) => rows.flatMap((row) => variants(param.type).map((type) => [...row, type])), [[]]);
       for (const types of signatures) {
+        // A projective frame can contain at most two direction points.
+        if (tool.name === 'Collineation' && [types.slice(0, 4), types.slice(4, 8)]
+          .some((frame) => frame.filter((type) => type === 'line').length > 2)) continue;
         const environment: CommandEnvironment = { objects: new Map(), macros: new Set() };
         const args = types.map((type, i) => {
           if (overload.params[i].type === 'catalogId') return '12';

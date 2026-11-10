@@ -78,7 +78,7 @@
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|
-| `OsculatingCircleOfCubic(F,P) → circle` | Osculating circle of a cubic at a smooth real point. | 对 F 的一、二阶偏导计算隐式曲率和法向圆心；P 须在 F 上且梯度非零，曲率为零时有限圆不存在。先实测原生 `OsculatingCircle(P,F)` 对 implicitCurve 的支持；若已可靠支持，不新增同义工具。[手册](https://geogebra.github.io/docs/manual/en/commands/OsculatingCircle/) 明列 function、curve、conic，未明确 implicitCurve。 |
+| `OsculatingCircle(P,F) → conic` **已接入** | Osculating circle of the cubic level curve through P, with a tangent-line limit at zero curvature. | 现有原生重载照常分派，新增隐式三次重载。由一、二阶偏导直接生成六系数；梯度非零时，零曲率给出切线型 conic。详见[扩展计划](tool-expansion-plan.md)。 |
 | `TuckerNodalCubic(A,B,C) → implicitCurve` | Tucker nodal cubic K015. | SITP §8.3 的 `ConicoPivotalCubic(A,B,C,G,G)`，重心式 `Σ X(Y−Z)²=0`；G 为指定奇点。仅在原生编号不支持且专名值得保留时加入。 |
 | `PelletierStrophoid(A,B,C) → implicitCurve` | Pelletier strophoid K040. | SITP §4.3.2 给出根 X(650) 的 isogonal nK₀ 短式 `Σ a(b−c)(b+c−a)X(c²Y²+b²Z²)=0`；核对边长与重心坐标、奇点和目录 [K040](https://bernard-gibert.fr/ctc1.html)，再决定是否提供名字。不要与旧源 S481 的未定义一般 `Strophoid(A,B,C)` 合并。 |
 | `KiCubic(A,B,C) → implicitCurve` | Ki cubic K073, inverse of the Neuberg cubic in the circumcircle. | 目录 [K073](https://www.bernard-gibert.fr/Exemples/k073.html) 还给出 `pK(X50,X3)`；候选为 `PivotalCubic(A,B,C,TriangleCenter(A,B,C,50),Circumcenter(A,B,C))`，并独立核对反演像的可约因子。先检测原生编号 73 的实际支持；不通过简单坐标反演默认结果仍是三次。 |

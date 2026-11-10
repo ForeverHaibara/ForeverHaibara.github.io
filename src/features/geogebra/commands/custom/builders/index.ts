@@ -11,6 +11,7 @@ import { QUADRILATERAL_BUILDERS } from './quadrilateral';
 import { gibertCurve } from './relatedCurves';
 import { triangleCenter, geminiTriangle } from './triangleCenters';
 import { conjugate } from './conjugates';
+import { PROJECTIVE_BUILDERS } from './projective';
 
 const brocard: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
@@ -129,9 +130,16 @@ const conicBranch: ExpressionBuilder = (args, allocate) => {
   return `Element(${built.expression},(${index})+${built.outputOffset ?? 0})`;
 };
 
+const affine: ExpressionBuilder = (args, allocate) => {
+  const points = args.map((arg) => arg.expression);
+  return bind(triangleAreas([...points.slice(0, 3), points[6]]), allocate, (weights) =>
+    barycentricPoint(points.slice(3, 6), weights), 'number');
+};
+
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
   brocard, anticevian, trilinearPolar, trilinearPole,
+  affine, ...PROJECTIVE_BUILDERS,
   ...TRIANGLE_BUILDERS, ...CUBIC_BUILDERS, pivotal: pivotalIsogonalCubic, ...ISOCUBIC_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
   gibertCurve, triangleCenter, geminiTriangle,
 };

@@ -12,7 +12,7 @@ const nativeReturns: Record<string, GeometryType> = {
   point: 'point', midpoint: 'point', trianglecenter: 'point', intersect: 'point', centroid: 'point',
   closestpoint: 'point', center: 'point', barycenter: 'point', focus: 'point', trilinear: 'point', tocomplex: 'point', topoint: 'point',
   line: 'line', perpendicularline: 'line', parallel: 'line', polar: 'line',
-  segment: 'segment', ray: 'ray', vector: 'vector', circle: 'circle', incircle: 'circle',
+  segment: 'segment', ray: 'ray', vector: 'vector', circle: 'circle', incircle: 'circle', osculatingcircle: 'circle',
   ellipse: 'conic', hyperbola: 'conic', parabola: 'conic', conic: 'conic',
   implicitcurve: 'implicitCurve', cubic: 'implicitCurve', trianglecurve: 'implicitCurve',
   leftside: 'function', rightside: 'function', derivative: 'function',

@@ -37,7 +37,8 @@ export const toolGroups: ToolCategory = {
       [
        'OrthicTriangle', 'CevianTriangle', 'PedalTriangle', 'AnticevianTriangle',
         'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle'
-      ]
+      ],
+      'Correspondence': ['Perspector', 'OrthologyCenter', 'PascalLine', 'QuasiperspectiveConic'],
     },
     'Circles': {
       'Circles of the triangle': ['Incircle', 'Excircle', 'Excircles', 'NinePointCircle',  'ApolloniusCircle', 'ApolloniusCircles', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle', 'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles'],
@@ -54,11 +55,11 @@ export const toolGroups: ToolCategory = {
     'General constructions': [
       'Circle', 'Conic', 'Ellipse', 'Hyperbola', 'Parabola',
       'InconicWithFocus', 'InconicWithCenter',
-      'NinePointConic', 'TangentParabola'
+      'NinePointConic', 'TangentParabola', 'ConicPencil'
     ],
     'Components': ['Center', 'Axes', 'MajorAxis', 'MinorAxis', 'Focus', 'Directrix'],
     'Conical transformations': ['SecondIntersection', 'Pole', 'Polar', 'Tangent', 'ConjugateDiameter', 'CoTf3', 'CoTf3Inv', 'OsculatingCircle'],
-    'Interrelations': ['RadicalAxis', 'RadicalCenter', 'SimilarityCenter', 'CommonTangents'],
+    'Interrelations': ['RadicalAxis', 'RadicalCenter', 'SimilarityCenter', 'CommonTangents', 'CoaxialLimitingPoints'],
     'Measurements and coefficients': ['Coefficients', 'Radius', 'Circumference', 'Eccentricity', 'LinearEccentricity', 'SemiMajorAxisLength', 'SemiMinorAxisLength', 'Curvature', 'Parameter'],
     'Arcs and sectors': ['Arc', 'CircularArc', 'CircularSector', 'CircumcircularArc', 'CircumcircularSector', 'Sector', 'Semicircle'],
   },
@@ -76,7 +77,7 @@ export const toolGroups: ToolCategory = {
   'General constructions': {
     'Basics': ['Point', 'Midpoint', 'Intersect', 'Pedal',
       'Line', 'Ray', 'Segment', 'AngleBisector', 'PerpendicularBisector', 'PerpendicularLine'],
-    'Extended': ['HarmonicConjugate', 'TransferRatio', 'TrisectionPoint', 'GoldenSectionPoint'],
+    'Projective geometry': ['HarmonicConjugate', 'Collineation', 'Affine', 'Involution', 'InvolutionCenter', 'PascalLine', 'TransferRatio', 'TrisectionPoint', 'GoldenSectionPoint'],
     'Numerics': ['Type', 'Distance', 'Length', 'Angle', 'Slope', 'Direction', 'AffineRatio', 'CrossRatio'],
     'Loci and envelopes': ['Locus', 'Envelope'],
     'Similarities': ['DirectSimilarity', 'OppositeSimilarity'],
