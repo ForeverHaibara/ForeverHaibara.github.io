@@ -140,6 +140,8 @@
 
 ## 6. 研究队列
 
+ETC 的共轭、圆和派生三角形已另列 [ETC 工具扩展计划](etc-tools-roadmap.md)。
+
 | 方向 | 提升优先级的条件 |
 | --- | --- |
 | 派生三角形快捷命令 | `ExtouchTriangle` 暂作使用频率候选。A 槽已有短组合 `B+C−IntouchTriangle(A,B,C,1)`，ETC 也列为 Gemini 29 的补三角形。若加入菜单 `Triangle constructions → Triangles of the triangle`，可用 `B+((s−c)/a)(C−B)`（s 为半周长）及其循环式，避免构造近共线时很远的旁心。边长 a 趋零时结果趋向重合端点，可在零长度的结果边界补这个极限。[ETC extouch 条目](https://faculty.evansville.edu/ck6/encyclopedia/IndexOfTrianglesReferencedInETC.html#extouch) |
