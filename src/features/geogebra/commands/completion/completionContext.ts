@@ -40,7 +40,8 @@ export const getCompletionContext = (input: string, cursor: number, selectionEnd
   } else {
     if (!prefix && !explicit) return null;
     if (/^\s*=(?!=)/.test(input.slice(end))) return null;
-    if (start > 0 && /[\p{L}\p{N}_.']/u.test(input[start - 1])) return null;
+    if (start > 0 && /[\p{L}\p{N}_.']/u.test(input[start - 1])
+      && !/[([,]\s*\.\.\.$/u.test(input.slice(0, start))) return null;
   }
   return { input, cursor, prefix, range: { start, end }, mode: api ? 'api' : 'command', explicit };
 };

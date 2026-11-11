@@ -14,6 +14,21 @@ const circle: CompletionItem = { label: 'Circle', kind: 'command' };
 const signal = () => new AbortController().signal;
 
 describe('completion context and text edits', () => {
+  it('completes a command after an argument spread without replacing the dots', async () => {
+    const context = at('TriangleCenter(...IntouchTri|angle(A,B,C),3)');
+    const suggestions = await studioCompletionRegistry.complete(context, signal());
+    const item = suggestions.find(({ label }) => label === 'IntouchTriangle')!;
+    expect(item).toBeDefined();
+    const edit = applyCompletion(context, item);
+    expect(edit.value).toBe('TriangleCenter(...IntouchTriangle(A,B,C),3)');
+    expect(edit.value.slice(0, edit.cursor)).toBe('TriangleCenter(...IntouchTriangle(');
+    expect(at('Circle[...|]', true).prefix).toBe('');
+    expect(at('Affine(A,B,C, ... Intouch|)').prefix).toBe('Intouch');
+    for (const input of ['Circle(..Intouch', 'Circle(....Intouch', 'Circle(A...Intouch', 'Circle(.5Intouch']) {
+      expect(getCompletionContext(input, input.length)).toBeNull();
+    }
+  });
+
   it('replaces the whole token at the caret without changing surrounding lines', () => {
     const context = at('A = (0, 0)\nc = ci|rcLE(A, B)\nB = (1, 2)');
     expect(context.prefix).toBe('ci');
