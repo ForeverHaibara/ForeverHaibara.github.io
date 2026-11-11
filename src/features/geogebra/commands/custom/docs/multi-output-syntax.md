@@ -1,8 +1,8 @@
 # 多输出工具的参数展开与解包命名
 
-设计稿。适用于站内命令栏和工具库的 `compose` 定义。
+已接入站内命令栏和工具库的 `compose` 定义。原生 GeoGebra 引擎验收待运行。
 
-## 建议语法
+## 语法
 
 ```text
 O1 = TriangleCenter(...IntouchTriangle(A,B,C), 3)
@@ -58,7 +58,7 @@ SpiekerCircle  = Incircle(...MedialTriangle($A,$B,$C))
 MorleyCircle   = Circle(...MorleyTriangle($A,$B,$C,$k))
 ```
 
-上面是等价写法，可用于比较现有命令与展开式的编译长度、创建和拖动耗时。Morley 展开的是选定编号的三个顶点，原有额外顶点索引用于单点调用。MacBeath 和 YffCentral 已经有三角形与圆共享公式的 builder，适合作为性能对照。验证后按 圆工具精简计划 处理重复入口。
+上面是旧圆命令的迁移写法。Morley 展开的是选定编号的三个顶点，原有额外顶点索引用于单点调用。MacBeath 和 YffCentral 通过对应三角形 builder 提供共享公式，展开路径保留这些绑定。目录的完整迁移表见下方圆工具精简计划。
 
 ## 命名执行与验收
 
@@ -69,9 +69,9 @@ MorleyCircle   = Circle(...MorleyTriangle($A,$B,$C,$k))
 
 ## 圆工具精简计划
 
-以下替代式使用[拟议的多输出展开语法](multi-output-syntax.md)。待展开语法可用，再按一般位置和退化构形核对替代式。保留原有三角形命令和顶点编号。用户可以直接生成圆，也可以先解包三个顶点以便后续构造。
+以下替代式已通过编译检查。原有三角形命令和顶点编号继续可用。用户可以直接生成圆，也可以先解包三个顶点以便后续构造。
 
-### 建议移除
+### 已移除的命令及迁移写法
 
 | 圆命令 | 用户可输入的替代式 |
 | --- | --- |
@@ -91,13 +91,13 @@ MorleyCircle   = Circle(...MorleyTriangle($A,$B,$C,$k))
 | `InnerVectenCircle` | `Circle(...InnerVectenTriangle(A,B,C))` |
 | `OuterVectenCircle` | `Circle(...OuterVectenTriangle(A,B,C))` |
 | `OuterNapoleonCircle` | `Circle(...OuterNapoleonTriangle(A,B,C))` |
-| `InnerNapoleonCircle` | 和上面是对称的，一并移除。 |
+| `InnerNapoleonCircle` | `Circle(...InnerNapoleonTriangle(A,B,C))`。等边时若需要保留旧命令的零半径写法，可用 `Circle(Centroid(A,B,C),InnerNapoleonTriangle(A,B,C,1))`。 |
 | `IntangentsCircle` | `Circle(...IntangentsTriangle(A,B,C))` |
 | `ExtangentsCircle` | `Circle(...ExtangentsTriangle(A,B,C))` |
 | `YffCentralCircle` | `Circle(...YffCentralTriangle(A,B,C))` |
 | `MacBeathCircle` | `Circle(...MacBeathTriangle(A,B,C))` |
 
-YffCentral 和 MacBeath 的坐标计算由对应三角形提供。现有圆 builder 在一次构造中共享三槽中间量，移除前要确认展开式也能共享。外 Napoleon 圆目前用重心和一个顶点定圆，移除前比较其短式与三点式的拖动成本。第一、第二 Lemoine 圆各有独立定义，表中只涉及第三 Lemoine 圆。`YiuCircles` 输出的是用来定义 Yiu 三角形的三个圆，也继续保留。
+YffCentral 在 Medium／High 共享三槽数值，MacBeath 在 High 额外共享中心点。Napoleon 的三点写法与原重心短式的拖动成本待原生测量。第一、第二 Lemoine 圆各有独立定义，表中只涉及第三 Lemoine 圆。`YiuCircles` 输出的是用来定义 Yiu 三角形的三个圆，也继续保留。
 
 ### 建议保留的边界项
 
@@ -112,4 +112,4 @@ YffCentral 和 MacBeath 的坐标计算由对应三角形提供。现有圆 buil
 
 其余圆命令本轮保留。典型的有九点圆、Brocard 圆、Lester 圆等具名圆，极圆、根圆、正交视圆等保留退化的构造，以及 Conway、Adams、Tucker、ApolloniusProblem 和各相切圆族。它们没有表中那种由已有三点命令直接给出的替代。
 
-实施时先验证展开，再移除表中的目录项，并同步处理分类、补全、交叉引用和现有调用。旧命令名可在迁移说明中配对应的展开写法。退化行为或性能尚未核对的项留待核验。
+站内命令目录、分类、补全来源和交叉引用已同步更新。已保存的原生构造按现有依赖关系加载。回放使用旧命令名的输入时，可按表替换。原生退化表现和创建、拖动性能待实机核对。

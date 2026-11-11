@@ -3,17 +3,23 @@ import type { CompiledBindingPlan } from './bindingPlan';
 import { beginHelperGroup, isExpectedHelperType } from './internalHelpers';
 
 export const executeNamedPlan = async (engine: GeoGebraEngine, plan: CompiledBindingPlan,
-  existing: ReadonlySet<string>, assignmentName?: string): Promise<CommandResult> => {
+  existing: ReadonlySet<string>, assignmentName?: string, expectedLabels?: readonly string[]): Promise<CommandResult> => {
   const command = [...plan.helpers.map(({ name, expression }) => `${name}=${expression}`), plan.output].join('\n');
   const group = /^ggbaux([0-9a-f]{16})nv\d+$/u.exec(plan.helpers[0]?.name)?.[1];
-  if (!group) throw new Error('Invalid internal helper group.');
-  const release = beginHelperGroup(group);
+  if (!group && (!expectedLabels || plan.helpers.length)) throw new Error('Invalid internal helper group.');
+  const occupied = expectedLabels?.find((label) => existing.has(label));
+  if (occupied) throw new Error(`Unpacking requires a new output label: ${occupied}.`);
+  const release = group ? beginHelperGroup(group) : () => {};
   const helperNames = new Set(plan.helpers.map((helper) => helper.name));
   let resultLabels: string[] = [];
   const cleanup = async () => {
     const current = await engine.callApi('getAllObjectNames', []) as string[];
     const owned: string[] = [];
     for (const name of current.filter((name) => !existing.has(name))) {
+      if (expectedLabels) {
+        if (expectedLabels.includes(name) || helperNames.has(name)) owned.push(name);
+        continue;
+      }
       if (helperNames.has(name) || name === assignmentName || resultLabels.includes(name)) { owned.push(name); continue; }
       try {
         const definition = String(await engine.callApi('getDefinitionString', [name]));
@@ -30,10 +36,11 @@ export const executeNamedPlan = async (engine: GeoGebraEngine, plan: CompiledBin
     resultLabels = result.labels;
     const after = await engine.callApi('getAllObjectNames', []) as string[];
     const generatedOutputs = result.labels.filter((name) => !existing.has(name) && !helperNames.has(name) && after.includes(name));
-    const outputs = assignmentName ? after.includes(assignmentName)
+    const outputs = expectedLabels ? expectedLabels.filter((label) => after.includes(label))
+      : assignmentName ? after.includes(assignmentName)
       ? [assignmentName, ...generatedOutputs.filter((name) => name !== assignmentName)] : []
       : generatedOutputs;
-    if (!result.success || !outputs.length) {
+    if (!result.success || !outputs.length || expectedLabels && outputs.length !== expectedLabels.length) {
       await cleanup();
       return { success: false, command, labels: [],
         error: result.success ? 'GeoGebra did not create the requested output.' : result.error ?? 'GeoGebra rejected this command.', timestamp: Date.now() };

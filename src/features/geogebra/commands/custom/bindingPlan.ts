@@ -77,5 +77,12 @@ export const createBindingCapture = (allowLongTriangleCenter = false) => {
       return { output: anonymous(source), helpers: [], materialized: false };
     return { output, helpers, materialized: helpers.length > 0 };
   };
-  return { captureBinding, lower };
+  const rewriteSince = (checkpoint: number, rewrite: (source: string) => string) => {
+    for (let i = checkpoint + 1; i <= serial; i++) {
+      const node = nodes.get(`GGBBINDTOKEN${i}Z`)!;
+      node.body = rewrite(node.body);
+      node.values = node.values.map(rewrite);
+    }
+  };
+  return { captureBinding, lower, checkpoint: () => serial, rewriteSince };
 };

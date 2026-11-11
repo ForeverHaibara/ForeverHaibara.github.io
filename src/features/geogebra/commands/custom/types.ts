@@ -6,6 +6,8 @@ export type ParameterType = GeometryType | 'lineLike' | 'pointOrLine' | 'catalog
 export interface ToolOverload {
   params: Array<{ name: string; type: ParameterType }>;
   returns: GeometryType;
+  /** Fixed, ordered scalar outputs available for spread and unpacking. */
+  outputSlots?: number;
   /** Expression templates use $parameter and $local placeholders, never textual label replacement. */
   expression?: string;
   /** Explicit site-tool composition; arrays produce independent geometric outputs. */

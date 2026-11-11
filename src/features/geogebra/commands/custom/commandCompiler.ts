@@ -1,6 +1,7 @@
 import { requiresTriangleCenterRecipe } from './builders/triangleCenters';
 import { GEOGEBRA_COMMAND_NAMES } from '../completion/geogebraCommandNames';
-import { outerCalls, splitTopLevel } from './commandSyntax';
+import { completeCall, outerCalls, splitTopLevel, spreadOperand, unpackAssignment } from './commandSyntax';
+import { isInternalHelperName } from './internalHelpers';
 import { createBindingCapture, type CompiledBindingPlan } from './bindingPlan';
 import { expandTool, selectOverload, studioTools, toolSignature } from './toolLibrary';
 import type { CommandEnvironment, GeometryType, ToolDefinition, ToolOverload, TypedExpression } from './types';
@@ -68,11 +69,12 @@ const literalType = (expression: string, environment: CommandEnvironment): Geome
 
 export const containsStudioCall = (source: string, depth = 0): boolean => {
   if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
+  if (depth === 0 && unpackAssignment(source)) return true;
   return outerCalls(source).some((call) => !call.declaration && (
     (call.name.toLowerCase() === 'trianglecenter'
       ? call.args.length === 4 && extendedTriangleCenterId(call.args[3]) !== undefined
       : studioTools.has(call.name.toLowerCase()))
-    || call.args.some((arg) => containsStudioCall(arg, depth + 1))));
+    || call.args.some((arg) => spreadOperand(arg) !== undefined || containsStudioCall(arg, depth + 1))));
 };
 
 /** Collect only calls owned by the site; file tools retain priority. */
@@ -81,14 +83,21 @@ export const extendedTriangleCenterIds = (source: string, environment: CommandEn
   return outerCalls(source).flatMap((call) => {
     if (call.declaration) return [];
     const key = call.name.toLowerCase();
-    const id = key === 'trianglecenter' && call.args.length === 4
+    const id = key === 'trianglecenter' && (call.args.length === 4 || call.args.some((arg) => spreadOperand(arg) !== undefined))
       && !environment.macros.has(key) && !environment.objects.has(call.name)
-      ? extendedTriangleCenterId(call.args[3]) : undefined;
-    return [...(id === undefined ? [] : [id]), ...call.args.flatMap((arg) => extendedTriangleCenterIds(arg, environment, depth + 1))];
+      ? extendedTriangleCenterId(call.args.at(-1) ?? '') : undefined;
+    return [...(id === undefined ? [] : [id]), ...call.args.flatMap((arg) => extendedTriangleCenterIds(spreadOperand(arg) ?? arg, environment, depth + 1))];
   });
 };
 
-type Capture = ReturnType<typeof createBindingCapture> & { selected: Array<{ builder?: string; args: GeometryType[] }>; requiresNamed?: boolean };
+type Selection = { builder?: string; args: GeometryType[] };
+type Capture = ReturnType<typeof createBindingCapture> & {
+  selected: Selection[];
+  contributors?: Selection[];
+  multiSyntax?: boolean;
+  conditionalBindings?: boolean;
+  requiresNamed?: boolean;
+};
 
 export const compileStudioCommand = (source: string, environment: CommandEnvironment,
   tools: ReadonlyMap<string, ToolDefinition> = studioTools, capture?: Capture): string => {
@@ -107,8 +116,9 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
   const allocate: BindingAllocator = () => { let name: string; do { name = `v${++serial}`; } while (occupied.has(name)); occupied.add(name); return name; };
   if (capture) allocate.captureBinding = capture.captureBinding;
 
-  const compile = (input: string, scope = environment, depth = 0): TypedExpression => {
+  const compile = (input: string, scope = environment, depth = 0, retainSlots = false): TypedExpression => {
     if (depth > 64) throw new Error('Custom command nesting exceeds 64 levels.');
+    if (retainSlots && !completeCall(input)) throw new Error('Spread and unpacking require a direct fixed-output tool call.');
     const calls = outerCalls(input);
     let cursor = 0;
     let expression = '';
@@ -137,22 +147,39 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
       } else if (['sequence', 'curve', 'sum', 'product'].includes(key) && call.args.length >= 4) {
         localScope.objects.set(call.args[key === 'curve' ? call.args.length - 3 : 1].trim(), 'number');
       } else if (key === 'keepif' && call.args.length === 3) localScope.objects.set(call.args[1].trim(), listElementType(call.args[2]));
-      const args = call.args.map((arg, index) => compile(arg, index === 0 || key === 'curve' && index < call.args.length - 3 ? localScope : scope, depth + 1));
+      const argsCheckpoint = capture?.checkpoint();
+      const args = call.args.flatMap((arg, index): TypedExpression[] => {
+        const operand = spreadOperand(arg);
+        const argScope = index === 0 || key === 'curve' && index < call.args.length - 3 ? localScope : scope;
+        if (operand === undefined) return [compile(arg, argScope, depth + 1)];
+        if (capture) capture.multiSyntax = true;
+        if (['zip', 'keepif', 'sequence', 'curve', 'sum', 'product'].includes(key))
+          throw new Error(`Spread cannot change the argument positions of ${call.name}.`);
+        const result = compile(operand, argScope, depth + 1, true);
+        return result.outputExpressions!.map((expression) => ({ expression: `(${expression})`, type: result.type }));
+      });
+      if (capture && key === 'if' && argsCheckpoint !== capture.checkpoint()) capture.conditionalBindings = true;
       const native = `${input.slice(call.start, call.open + 1)}${args.map((arg) => arg.expression).join(',')}${input[call.end - 1]}`;
       let result: TypedExpression = { expression: native, type: nativeReturns[key] ?? 'unknown' };
       const fileDefined = scope.macros.has(key) || scope.objects.has(call.name);
       if (fileDefined) result.type = scope.macroTypes?.get(key) ?? (scope.objects.get(call.name) === 'function' ? 'number' : 'unknown');
-      const tool = key === 'trianglecenter' && (call.args.length !== 4 || extendedTriangleCenterId(call.args[3]) === undefined)
+      const centerId = key === 'trianglecenter' && args.length === 4
+        ? extendedTriangleCenterId(args[3].literal ?? args[3].expression) : undefined;
+      const tool = key === 'trianglecenter' && centerId === undefined
         ? undefined : tools.get(key);
+      let outputSlots: number | undefined;
       if (tool && !fileDefined) {
-        if (key === 'trianglecenter') args[3].literal = String(extendedTriangleCenterId(call.args[3]));
+        if (centerId !== undefined) args[3].literal = String(centerId);
         const overload = selectOverload(tool, args);
         if (overload) {
           if (overload.requiresNamed) {
             if (!capture) throw new Error(`${tool.name} requires Medium or High custom tool performance. Use a new output label; anonymous execution is too slow.`);
             capture.requiresNamed = true;
           }
-          if (depth === 0 || overload.requiresNamed) capture?.selected.push({ builder: overload.builder, args: args.map((arg) => arg.type) });
+          const selection = { builder: overload.builder, args: args.map((arg) => arg.type) };
+          if (depth === 0 || overload.requiresNamed) capture?.selected.push(selection);
+          outputSlots = overload.outputSlots;
+          const builderCheckpoint = capture?.checkpoint();
           const signature = toolSignature(tool, overload);
           if (dependencies.some((dependency) => dependency.overload === overload)) throw new Error(`Cyclic tool composition: ${[...dependencies.map((dependency) => dependency.signature), signature].join(' -> ')}`);
           dependencies.push({ overload, signature });
@@ -171,15 +198,24 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
                 return [name, token];
               }));
               const body = template.replace(/\$([\p{L}_][\p{L}\p{N}_]*)/gu, (_, name: string) => tokens.get(name)!);
+              const checkpoint = capture?.checkpoint();
               const compiled = compile(body, definitionScope, depth + 1);
-              compiled.expression = compiled.expression.replace(/"(?:\\.|[^"\\])*"|(?:\/\/|#)[^\n]*|[\p{L}_][\p{L}\p{N}_']*/gu,
+              const substitute = (source: string) => source.replace(/"(?:\\.|[^"\\])*"|(?:\/\/|#)[^\n]*|[\p{L}_][\p{L}\p{N}_']*/gu,
                 (token) => replacements.has(token) ? `(${replacements.get(token)})` : token);
+              compiled.expression = substitute(compiled.expression);
+              if (capture && checkpoint !== undefined) capture.rewriteSince(checkpoint, substitute);
               if (!allowLongTriangleCenter && compiled.expression.length > 500_000) throw new Error('Expanded command exceeds 500,000 characters.');
               return compiled;
             });
+            if (capture && overload.builder && builderCheckpoint !== capture.checkpoint()) capture.contributors?.push(selection);
           } finally { dependencies.pop(); }
         }
         else if (!nativeNames.has(key)) throw new Error(`No overload for ${tool.name}(${args.map((arg) => arg.type).join(', ')}). Expected: ${tool.overloads.map((overload) => toolSignature(tool, overload)).join(' or ')}. Use existing object labels or typed nested commands for unknown arguments.`);
+      }
+      if (retainSlots) {
+        if (!outputSlots || result.outputExpressions?.length !== outputSlots)
+          throw new Error(`${call.name} does not provide fixed outputs for spread or unpacking.`);
+        return result;
       }
       if (key === 'polar' && !fileDefined && ['line', 'segment', 'ray'].includes(args[0]?.type)) result.type = 'point';
       if (['reflect', 'rotate', 'translate', 'dilate', 'applymatrix'].includes(key) && !fileDefined) result.type = args[key === 'applymatrix' ? 1 : 0]?.type ?? 'unknown';
@@ -216,7 +252,17 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
     return { expression, type: entireType, ...(literal !== undefined ? { literal } : {}) };
   };
 
-  return compile(source).expression;
+  const unpack = unpackAssignment(source);
+  if (!unpack) return compile(source).expression;
+  for (const label of unpack.labels) {
+    if (environment.objects.has(label) || environment.macros.has(label.toLowerCase()) || isInternalHelperName(label))
+      throw new Error(`Unpacking requires a new output label: ${label}.`);
+  }
+  if (capture) capture.multiSyntax = true;
+  const result = compile(unpack.operand, environment, 0, true);
+  if (unpack.labels.length !== result.outputExpressions!.length)
+    throw new Error(`Unpacking requires ${result.outputExpressions!.length} output labels.`);
+  return unpack.labels.map((label, i) => `${label}=${result.outputExpressions![i]}`).join('\n');
 };
 
 type NamedOverloadCheck = (args: readonly GeometryType[]) => boolean;
@@ -257,12 +303,18 @@ const HIGH_KINDS: ReadonlySet<BindValueKind> = new Set(['number', 'numberList', 
 /** A conservative execution plan. Ineligible tools retain the exact anonymous expansion. */
 export const compileStudioPlan = (source: string, environment: CommandEnvironment,
   groupId: string, mode: 'medium' | 'high' = 'medium'): CompiledBindingPlan => {
-  const capture: Capture = { ...createBindingCapture(extendedTriangleCenterIds(source, environment).length > 0), selected: [] };
+  const contributors: Selection[] = [];
+  const capture: Capture = { ...createBindingCapture(extendedTriangleCenterIds(source, environment).length > 0), selected: [], contributors };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
-  const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
-  const builder = selected?.builder;
-  const eligible = Boolean(builder && selected && (NAMED_OVERLOADS[builder]?.(selected.args)
-    || (mode === 'high' && (GEOMETRIC_OVERLOADS[builder]?.(selected.args) || HIGH_COST_OVERLOADS[builder]?.(selected.args)))));
+  const supports = ({ builder, args }: Selection) => Boolean(builder && (NAMED_OVERLOADS[builder]?.(args)
+    || (mode === 'high' && (GEOMETRIC_OVERLOADS[builder]?.(args) || HIGH_COST_OVERLOADS[builder]?.(args)))));
+  const multiNumeric = new Set(['morleyTriangle', 'morleyAdjunctTriangle', 'yffCentralTriangle',
+    'innerNapoleonTriangle', 'outerNapoleonTriangle', 'innerVectenTriangle', 'outerVectenTriangle']);
+  const eligible = capture.multiSyntax
+    ? !capture.conditionalBindings && contributors.length > 0 && contributors.every((selection) =>
+      supports(selection) || multiNumeric.has(selection.builder ?? '')
+      || mode === 'high' && ['intouchTriangle', 'macBeathTriangle'].includes(selection.builder ?? ''))
+    : capture.selected.length === 1 && supports(capture.selected[0]);
   const plan = capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
   if (capture.requiresNamed) {
     if (!plan.materialized) throw new Error('This curve requires named numeric intermediates. Use a standalone call or a supported native wrapper in Medium or High mode.');

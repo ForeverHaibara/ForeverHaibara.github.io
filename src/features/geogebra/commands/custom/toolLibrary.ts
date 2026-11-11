@@ -23,6 +23,9 @@ export const validateToolLibrary = (value: unknown): ToolLibrary => {
     for (const overload of tool.overloads) {
       if (overload.requiresNamed !== undefined && (typeof overload.requiresNamed !== 'boolean' || !overload.builder)) throw new Error(`Invalid named execution requirement: ${tool.name}`);
       if (!Array.isArray(overload.params) || overload.variadic && overload.params.length === 0) throw new Error(`Invalid parameters: ${tool.name}`);
+      if (overload.outputSlots !== undefined && (!Number.isSafeInteger(overload.outputSlots) || overload.outputSlots < 2
+        || !overload.builder && (!Array.isArray(overload.compose) || overload.compose.length !== overload.outputSlots)))
+        throw new Error(`Invalid fixed output count: ${tool.name}`);
       const parameters = new Set(overload.params.map((param) => param.name));
       if (parameters.size !== overload.params.length || overload.params.some((param) => !parameterTypes.has(param.type) || !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(param.name)) || !resultTypes.has(overload.returns)) throw new Error(`Invalid signature: ${tool.name}`);
       if ([overload.expression, overload.builder, overload.compose].filter((implementation) => implementation !== undefined).length !== 1

@@ -649,7 +649,7 @@
       "name": "MedialTriangle",
       "description": "Midpoints of BC, CA and AB; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($B+$C)/2", "($C+$A)/2", "($A+$B)/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($B+$C)/2", "($C+$A)/2", "($A+$B)/2"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($B+$C)/2,($C+$A)/2,($A+$B)/2},$i))"}
       ],
       "reference": {
@@ -661,7 +661,7 @@
       "name": "OrthicTriangle",
       "description": "Feet of the altitudes from A, B and C; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($A+Reflect($A,Line($B,$C)))/2", "($B+Reflect($B,Line($C,$A)))/2", "($C+Reflect($C,Line($A,$B)))/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($A+Reflect($A,Line($B,$C)))/2", "($B+Reflect($B,Line($C,$A)))/2", "($C+Reflect($C,Line($A,$B)))/2"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($A+Reflect($A,Line($B,$C)))/2,($B+Reflect($B,Line($C,$A)))/2,($C+Reflect($C,Line($A,$B)))/2},$i))"}
       ],
       "reference": {
@@ -804,7 +804,7 @@
       "name": "AnticomplementaryTriangle",
       "description": "Anticomplements of A, B and C, in that order; optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Anticomplement($A,$B,$C,$A)","Anticomplement($A,$B,$C,$B)","Anticomplement($A,$B,$C,$C)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Anticomplement($A,$B,$C,$A)","Anticomplement($A,$B,$C,$B)","Anticomplement($A,$B,$C,$C)"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Anticomplement($A,$B,$C,$A),Anticomplement($A,$B,$C,$B),Anticomplement($A,$B,$C,$C)},$i))"}
       ],
       "reference": {"related":["Anticomplement","MedialTriangle"]}
@@ -813,7 +813,7 @@
       "name": "CocevianTriangle",
       "description": "Harmonic conjugates of the cevian traces of P on BC, CA and AB. The outputs are collinear; optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"cocevianTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"cocevianTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"cocevianTriangle"}
       ],
       "reference": {"related":["CevianTriangle","TrilinearPolar","HarmonicConjugate"]}
@@ -997,7 +997,7 @@
       "name": "ExtouchTriangle",
       "description": "Contacts of the three excircles with BC, CA and AB; optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","locals":[{"name":"p","expression":"TriangleCenter($A,$B,$C,8)"}],"compose":["CevianTriangle($A,$B,$C,$p,1)","CevianTriangle($A,$B,$C,$p,2)","CevianTriangle($A,$B,$C,$p,3)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","locals":[{"name":"p","expression":"TriangleCenter($A,$B,$C,8)"}],"compose":["CevianTriangle($A,$B,$C,$p,1)","CevianTriangle($A,$B,$C,$p,2)","CevianTriangle($A,$B,$C,$p,3)"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"CevianTriangle($A,$B,$C,TriangleCenter($A,$B,$C,8),$i)"}
       ],
       "reference": {"related":["CevianTriangle","NagelPoint","IntouchTriangle"]}
@@ -1006,7 +1006,7 @@
       "name": "InnerNapoleonTriangle",
       "description": "Centers of the internally erected equilateral triangles on BC, CA and AB; optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerNapoleonTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerNapoleonTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"innerNapoleonTriangle"}
       ],
       "reference": {"related":["OuterNapoleonTriangle"]}
@@ -1015,7 +1015,7 @@
       "name": "OuterNapoleonTriangle",
       "description": "Centers of the externally erected equilateral triangles on BC, CA and AB; optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerNapoleonTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerNapoleonTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"outerNapoleonTriangle"}
       ],
       "reference": {"related":["InnerNapoleonTriangle"]}
@@ -1024,7 +1024,7 @@
       "name": "InnerVectenTriangle",
       "description": "Centers of the internally erected squares on BC, CA and AB; optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerVectenTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerVectenTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"innerVectenTriangle"}
       ],
       "reference": {"related":["OuterVectenTriangle"]}
@@ -1033,7 +1033,7 @@
       "name": "OuterVectenTriangle",
       "description": "Centers of the externally erected squares on BC, CA and AB; optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerVectenTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerVectenTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"outerVectenTriangle"}
       ],
       "reference": {"related":["InnerVectenTriangle"]}
@@ -1042,8 +1042,8 @@
       "name": "MorleyTriangle",
       "description": "ETC Morley triangle. k=1, 2 or 3 selects the family member; defaults to 1. An additional i selects a vertex.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyTriangle"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyTriangle","outputSlots":3},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"},{"name":"i","type":"number"}],"returns":"point","builder":"morleyTriangle"}
       ],
       "reference": {"related":["MorleyAdjunctTriangle"]}
@@ -1052,8 +1052,8 @@
       "name": "MorleyAdjunctTriangle",
       "description": "ETC Morley adjunct triangle. k=1, 2 or 3 selects the family member; defaults to 1. An additional i selects a vertex.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyAdjunctTriangle"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyAdjunctTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyAdjunctTriangle","outputSlots":3},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyAdjunctTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"},{"name":"i","type":"number"}],"returns":"point","builder":"morleyAdjunctTriangle"}
       ],
       "reference": {"related":["MorleyTriangle"]}
@@ -1205,30 +1205,6 @@
       "reference": {"related":["Centroid"]}
     },
     {
-      "name": "SpiekerCircle",
-      "description": "Incircle of the medial triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Incircle(MedialTriangle($A,$B,$C,1),MedialTriangle($A,$B,$C,2),MedialTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["MedialTriangle","SpiekerCenter"]}
-    },
-    {
-      "name": "MandartCircle",
-      "description": "Circumcircle of the extouch triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ExtouchTriangle($A,$B,$C,1),ExtouchTriangle($A,$B,$C,2),ExtouchTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["ExtouchTriangle"]}
-    },
-    {
-      "name": "TangentialCircle",
-      "description": "Circumcircle of the tangential triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TangentialTriangle($A,$B,$C,1),TangentialTriangle($A,$B,$C,2),TangentialTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["TangentialTriangle"]}
-    },
-    {
       "name": "FirstSteinerCircle",
       "description": "Circle centered at the nine-point center with radius 3R/2.",
       "overloads": [
@@ -1304,7 +1280,7 @@
       "name": "MidheightTriangle",
       "description": "Midpoints of the three altitudes from the vertices. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Midpoint($A,OrthicTriangle($A,$B,$C,1))","Midpoint($B,OrthicTriangle($A,$B,$C,2))","Midpoint($C,OrthicTriangle($A,$B,$C,3))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Midpoint($A,OrthicTriangle($A,$B,$C,1))","Midpoint($B,OrthicTriangle($A,$B,$C,2))","Midpoint($C,OrthicTriangle($A,$B,$C,3))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Midpoint($A,OrthicTriangle($A,$B,$C,1)),Midpoint($B,OrthicTriangle($A,$B,$C,2)),Midpoint($C,OrthicTriangle($A,$B,$C,3))},$i))"}
       ],
       "reference": {"related":["OrthicTriangle"]}
@@ -1313,7 +1289,7 @@
       "name": "OrthocentroidalTriangle",
       "description": "Projections of the centroid onto the altitudes from A, B and C. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["($g+Reflect($g,PerpendicularLine($A,Line($B,$C))))/2","($g+Reflect($g,PerpendicularLine($B,Line($C,$A))))/2","($g+Reflect($g,PerpendicularLine($C,Line($A,$B))))/2"],"locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["($g+Reflect($g,PerpendicularLine($A,Line($B,$C))))/2","($g+Reflect($g,PerpendicularLine($B,Line($C,$A))))/2","($g+Reflect($g,PerpendicularLine($C,Line($A,$B))))/2"],"locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({($g+Reflect($g,PerpendicularLine($A,Line($B,$C))))/2,($g+Reflect($g,PerpendicularLine($B,Line($C,$A))))/2,($g+Reflect($g,PerpendicularLine($C,Line($A,$B))))/2},$i))","locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}]}
       ],
       "reference": {"related":["OrthocentroidalCircle"]}
@@ -1322,7 +1298,7 @@
       "name": "HexylTriangle",
       "description": "Intersections of the paired perpendiculars through the adjacent excenters. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect(PerpendicularLine(Excenter($B,$C,$A),Line($A,$B)),PerpendicularLine(Excenter($C,$A,$B),Line($A,$C)))","Intersect(PerpendicularLine(Excenter($C,$A,$B),Line($B,$C)),PerpendicularLine(Excenter($A,$B,$C),Line($B,$A)))","Intersect(PerpendicularLine(Excenter($A,$B,$C),Line($C,$A)),PerpendicularLine(Excenter($B,$C,$A),Line($C,$B)))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect(PerpendicularLine(Excenter($B,$C,$A),Line($A,$B)),PerpendicularLine(Excenter($C,$A,$B),Line($A,$C)))","Intersect(PerpendicularLine(Excenter($C,$A,$B),Line($B,$C)),PerpendicularLine(Excenter($A,$B,$C),Line($B,$A)))","Intersect(PerpendicularLine(Excenter($A,$B,$C),Line($C,$A)),PerpendicularLine(Excenter($B,$C,$A),Line($C,$B)))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(PerpendicularLine(Excenter($B,$C,$A),Line($A,$B)),PerpendicularLine(Excenter($C,$A,$B),Line($A,$C))),Intersect(PerpendicularLine(Excenter($C,$A,$B),Line($B,$C)),PerpendicularLine(Excenter($A,$B,$C),Line($B,$A))),Intersect(PerpendicularLine(Excenter($A,$B,$C),Line($C,$A)),PerpendicularLine(Excenter($B,$C,$A),Line($C,$B)))},$i))"}
       ],
       "reference": {"related":["Excenters"]}
@@ -1331,7 +1307,7 @@
       "name": "FuhrmannTriangle",
       "description": "Reflections of the far arc midpoints in their corresponding sidelines. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect(ArcMidpoint($A,$B,$C),Line($B,$C))","Reflect(ArcMidpoint($B,$C,$A),Line($C,$A))","Reflect(ArcMidpoint($C,$A,$B),Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect(ArcMidpoint($A,$B,$C),Line($B,$C))","Reflect(ArcMidpoint($B,$C,$A),Line($C,$A))","Reflect(ArcMidpoint($C,$A,$B),Line($A,$B))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect(ArcMidpoint($A,$B,$C),Line($B,$C)),Reflect(ArcMidpoint($B,$C,$A),Line($C,$A)),Reflect(ArcMidpoint($C,$A,$B),Line($A,$B))},$i))"}
       ],
       "reference": {"related":["FuhrmannCircle"]}
@@ -1340,7 +1316,7 @@
       "name": "IncentralTriangle",
       "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"Incenter($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"Incenter($A,$B,$C)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"Incenter($A,$B,$C)"}]}
       ],
       "reference": {"related":["CevianTriangle"]}
@@ -1349,7 +1325,7 @@
       "name": "SymmedialTriangle",
       "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"SymmedianPoint($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"SymmedianPoint($A,$B,$C)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"SymmedianPoint($A,$B,$C)"}]}
       ],
       "reference": {"related":["CevianTriangle"]}
@@ -1358,7 +1334,7 @@
       "name": "LemoineTriangle",
       "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,598)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,598)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,598)"}]}
       ],
       "reference": {"related":["CevianTriangle"]}
@@ -1367,7 +1343,7 @@
       "name": "YffContactTriangle",
       "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,190)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,190)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,190)"}]}
       ],
       "reference": {"related":["CevianTriangle"]}
@@ -1376,27 +1352,17 @@
       "name": "ReflectionTriangle",
       "description": "Reflections in BC, CA and AB of the opposite vertices or of a supplied point P. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect($A,Line($B,$C))","Reflect($B,Line($C,$A))","Reflect($C,Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect($A,Line($B,$C))","Reflect($B,Line($C,$A))","Reflect($C,Line($A,$B))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect($A,Line($B,$C)),Reflect($B,Line($C,$A)),Reflect($C,Line($A,$B))},$i))"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":["Reflect($P,Line($B,$C))","Reflect($P,Line($C,$A))","Reflect($P,Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":["Reflect($P,Line($B,$C))","Reflect($P,Line($C,$A))","Reflect($P,Line($A,$B))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect($P,Line($B,$C)),Reflect($P,Line($C,$A)),Reflect($P,Line($A,$B))},$i))"}
-      ],
-      "reference": {"related":["ReflectionCircle"]}
-    },
-    {
-      "name": "ReflectionCircle",
-      "description": "Circumcircle of the reflection triangle of ABC or of a supplied point P.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ReflectionTriangle($A,$B,$C,1),ReflectionTriangle($A,$B,$C,2),ReflectionTriangle($A,$B,$C,3))"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"circle","compose":"Circle(ReflectionTriangle($A,$B,$C,$P,1),ReflectionTriangle($A,$B,$C,$P,2),ReflectionTriangle($A,$B,$C,$P,3))"}
-      ],
-      "reference": {"related":["ReflectionTriangle"]}
+      ]
     },
     {
       "name": "TangentialMidArcTriangle",
       "description": "Triangle of the incircle tangents perpendicular to the internal bisectors at the points nearest A, B and C. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect($t2,$t3)","Intersect($t3,$t1)","Intersect($t1,$t2)"],"locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"r","expression":"Distance($center,Line($B,$C))"},{"name":"t1","expression":"PerpendicularLine($center+$r*($A-$center)/Distance($A,$center),Line($A,$center))"},{"name":"t2","expression":"PerpendicularLine($center+$r*($B-$center)/Distance($B,$center),Line($B,$center))"},{"name":"t3","expression":"PerpendicularLine($center+$r*($C-$center)/Distance($C,$center),Line($C,$center))"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect($t2,$t3)","Intersect($t3,$t1)","Intersect($t1,$t2)"],"locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"r","expression":"Distance($center,Line($B,$C))"},{"name":"t1","expression":"PerpendicularLine($center+$r*($A-$center)/Distance($A,$center),Line($A,$center))"},{"name":"t2","expression":"PerpendicularLine($center+$r*($B-$center)/Distance($B,$center),Line($B,$center))"},{"name":"t3","expression":"PerpendicularLine($center+$r*($C-$center)/Distance($C,$center),Line($C,$center))"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect($t2,$t3),Intersect($t3,$t1),Intersect($t1,$t2)},$i))","locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"r","expression":"Distance($center,Line($B,$C))"},{"name":"t1","expression":"PerpendicularLine($center+$r*($A-$center)/Distance($A,$center),Line($A,$center))"},{"name":"t2","expression":"PerpendicularLine($center+$r*($B-$center)/Distance($B,$center),Line($B,$center))"},{"name":"t3","expression":"PerpendicularLine($center+$r*($C-$center)/Distance($C,$center),Line($C,$center))"}]}
       ],
       "reference": {"related":["Incircle"]}
@@ -1413,183 +1379,42 @@
       "name": "YiuTriangle",
       "description": "Centers of the three Yiu circles. Optional 1-based index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Center(YiuCircles($A,$B,$C,1))","Center(YiuCircles($A,$B,$C,2))","Center(YiuCircles($A,$B,$C,3))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Center(YiuCircles($A,$B,$C,1))","Center(YiuCircles($A,$B,$C,2))","Center(YiuCircles($A,$B,$C,3))"],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Center(YiuCircles($A,$B,$C,1)),Center(YiuCircles($A,$B,$C,2)),Center(YiuCircles($A,$B,$C,3))},$i))"}
       ],
       "reference": {"related":["YiuCircles"]}
     },
     {
-      "name": "MidheightCircle",
-      "description": "Circumcircle of the midheight triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(MidheightTriangle($A,$B,$C,1),MidheightTriangle($A,$B,$C,2),MidheightTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["MidheightTriangle"]}
-    },
-    {
-      "name": "HexylCircle",
-      "description": "Circumcircle of the hexyl triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(HexylTriangle($A,$B,$C,1),HexylTriangle($A,$B,$C,2),HexylTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["HexylTriangle"]}
-    },
-    {
-      "name": "IncentralCircle",
-      "description": "Circumcircle of the incentral triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(IncentralTriangle($A,$B,$C,1),IncentralTriangle($A,$B,$C,2),IncentralTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["IncentralTriangle"]}
-    },
-    {
-      "name": "SymmedialCircle",
-      "description": "Circumcircle of the symmedial triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(SymmedialTriangle($A,$B,$C,1),SymmedialTriangle($A,$B,$C,2),SymmedialTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["SymmedialTriangle"]}
-    },
-    {
-      "name": "ThirdLemoineCircle",
-      "description": "Circumcircle of the lemoine triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(LemoineTriangle($A,$B,$C,1),LemoineTriangle($A,$B,$C,2),LemoineTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["LemoineTriangle"]}
-    },
-    {
-      "name": "YffContactCircle",
-      "description": "Circumcircle of the yff contact triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(YffContactTriangle($A,$B,$C,1),YffContactTriangle($A,$B,$C,2),YffContactTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["YffContactTriangle"]}
-    },
-    {
-      "name": "TangentialMidArcCircle",
-      "description": "Circumcircle of the tangential mid arc triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TangentialMidArcTriangle($A,$B,$C,1),TangentialMidArcTriangle($A,$B,$C,2),TangentialMidArcTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["TangentialMidArcTriangle"]}
-    },
-    {
-      "name": "YiuCircle",
-      "description": "Circumcircle of the yiu triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(YiuTriangle($A,$B,$C,1),YiuTriangle($A,$B,$C,2),YiuTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["YiuTriangle"]}
-    },
-    {
-      "name": "InnerVectenCircle",
-      "description": "Circumcircle of the inner vecten triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(InnerVectenTriangle($A,$B,$C,1),InnerVectenTriangle($A,$B,$C,2),InnerVectenTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["InnerVectenTriangle"]}
-    },
-    {
-      "name": "OuterVectenCircle",
-      "description": "Circumcircle of the outer vecten triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(OuterVectenTriangle($A,$B,$C,1),OuterVectenTriangle($A,$B,$C,2),OuterVectenTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["OuterVectenTriangle"]}
-    },
-    {
-      "name": "InnerNapoleonCircle",
-      "description": "Circumcircle of the inner Napoleon triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Centroid($A,$B,$C),InnerNapoleonTriangle($A,$B,$C,1))"}
-      ],
-      "reference": {"related":["InnerNapoleonTriangle"]}
-    },
-    {
-      "name": "OuterNapoleonCircle",
-      "description": "Circumcircle of the outer Napoleon triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Centroid($A,$B,$C),OuterNapoleonTriangle($A,$B,$C,1))"}
-      ],
-      "reference": {"related":["OuterNapoleonTriangle"]}
-    },
-    {
-      "name": "MorleyCircle",
-      "description": "Circumcircle of a Morley triangle. k=1, 2 or 3 selects the family member and defaults to 1.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(MorleyTriangle($A,$B,$C,1,1),MorleyTriangle($A,$B,$C,1,2),MorleyTriangle($A,$B,$C,1,3))"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"circle","compose":"Circle(MorleyTriangle($A,$B,$C,$k,1),MorleyTriangle($A,$B,$C,$k,2),MorleyTriangle($A,$B,$C,$k,3))"}
-      ],
-      "reference": {"related":["MorleyTriangle"]}
-    },
-    {
       "name": "IntangentsTriangle",
       "description": "Triangle bounded by the second interior common tangents of the incircle and the three excircles. Optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*(-$a+$b+$c))*$A+($b*($a-$c)*($a-$b+$c))*$B+($c*($a-$b)*($a+$b-$c))*$C)/((-$a^2*(-$a+$b+$c))+($b*($a-$c)*($a-$b+$c))+($c*($a-$b)*($a+$b-$c)))","((-$b^2*(-$b+$c+$a))*$B+($c*($b-$a)*($b-$c+$a))*$C+($a*($b-$c)*($b+$c-$a))*$A)/((-$b^2*(-$b+$c+$a))+($c*($b-$a)*($b-$c+$a))+($a*($b-$c)*($b+$c-$a)))","((-$c^2*(-$c+$a+$b))*$C+($a*($c-$b)*($c-$a+$b))*$A+($b*($c-$a)*($c+$a-$b))*$B)/((-$c^2*(-$c+$a+$b))+($a*($c-$b)*($c-$a+$b))+($b*($c-$a)*($c+$a-$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*(-$a+$b+$c))*$A+($b*($a-$c)*($a-$b+$c))*$B+($c*($a-$b)*($a+$b-$c))*$C)/((-$a^2*(-$a+$b+$c))+($b*($a-$c)*($a-$b+$c))+($c*($a-$b)*($a+$b-$c)))","((-$b^2*(-$b+$c+$a))*$B+($c*($b-$a)*($b-$c+$a))*$C+($a*($b-$c)*($b+$c-$a))*$A)/((-$b^2*(-$b+$c+$a))+($c*($b-$a)*($b-$c+$a))+($a*($b-$c)*($b+$c-$a)))","((-$c^2*(-$c+$a+$b))*$C+($a*($c-$b)*($c-$a+$b))*$A+($b*($c-$a)*($c+$a-$b))*$B)/((-$c^2*(-$c+$a+$b))+($a*($c-$b)*($c-$a+$b))+($b*($c-$a)*($c+$a-$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({((-$a^2*(-$a+$b+$c))*$A+($b*($a-$c)*($a-$b+$c))*$B+($c*($a-$b)*($a+$b-$c))*$C)/((-$a^2*(-$a+$b+$c))+($b*($a-$c)*($a-$b+$c))+($c*($a-$b)*($a+$b-$c))),((-$b^2*(-$b+$c+$a))*$B+($c*($b-$a)*($b-$c+$a))*$C+($a*($b-$c)*($b+$c-$a))*$A)/((-$b^2*(-$b+$c+$a))+($c*($b-$a)*($b-$c+$a))+($a*($b-$c)*($b+$c-$a))),((-$c^2*(-$c+$a+$b))*$C+($a*($c-$b)*($c-$a+$b))*$A+($b*($c-$a)*($c+$a-$b))*$B)/((-$c^2*(-$c+$a+$b))+($a*($c-$b)*($c-$a+$b))+($b*($c-$a)*($c+$a-$b)))},$i))","locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]}
-      ],
-      "reference": {"related":["IntangentsCircle"]}
-    },
-    {
-      "name": "IntangentsCircle",
-      "description": "Circumcircle of the Intangents triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(IntangentsTriangle($A,$B,$C,1),IntangentsTriangle($A,$B,$C,2),IntangentsTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["IntangentsTriangle"]}
+      ]
     },
     {
       "name": "ExtangentsTriangle",
       "description": "Triangle bounded by the three exterior common tangents opposite the reference sidelines. Optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*($a+$b+$c))*$A+($b*($a+$c)*($a+$b-$c))*$B+($c*($a+$b)*($a-$b+$c))*$C)/((-$a^2*($a+$b+$c))+($b*($a+$c)*($a+$b-$c))+($c*($a+$b)*($a-$b+$c)))","((-$b^2*($b+$c+$a))*$B+($c*($b+$a)*($b+$c-$a))*$C+($a*($b+$c)*($b-$c+$a))*$A)/((-$b^2*($b+$c+$a))+($c*($b+$a)*($b+$c-$a))+($a*($b+$c)*($b-$c+$a)))","((-$c^2*($c+$a+$b))*$C+($a*($c+$b)*($c+$a-$b))*$A+($b*($c+$a)*($c-$a+$b))*$B)/((-$c^2*($c+$a+$b))+($a*($c+$b)*($c+$a-$b))+($b*($c+$a)*($c-$a+$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*($a+$b+$c))*$A+($b*($a+$c)*($a+$b-$c))*$B+($c*($a+$b)*($a-$b+$c))*$C)/((-$a^2*($a+$b+$c))+($b*($a+$c)*($a+$b-$c))+($c*($a+$b)*($a-$b+$c)))","((-$b^2*($b+$c+$a))*$B+($c*($b+$a)*($b+$c-$a))*$C+($a*($b+$c)*($b-$c+$a))*$A)/((-$b^2*($b+$c+$a))+($c*($b+$a)*($b+$c-$a))+($a*($b+$c)*($b-$c+$a)))","((-$c^2*($c+$a+$b))*$C+($a*($c+$b)*($c+$a-$b))*$A+($b*($c+$a)*($c-$a+$b))*$B)/((-$c^2*($c+$a+$b))+($a*($c+$b)*($c+$a-$b))+($b*($c+$a)*($c-$a+$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}],"outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({((-$a^2*($a+$b+$c))*$A+($b*($a+$c)*($a+$b-$c))*$B+($c*($a+$b)*($a-$b+$c))*$C)/((-$a^2*($a+$b+$c))+($b*($a+$c)*($a+$b-$c))+($c*($a+$b)*($a-$b+$c))),((-$b^2*($b+$c+$a))*$B+($c*($b+$a)*($b+$c-$a))*$C+($a*($b+$c)*($b-$c+$a))*$A)/((-$b^2*($b+$c+$a))+($c*($b+$a)*($b+$c-$a))+($a*($b+$c)*($b-$c+$a))),((-$c^2*($c+$a+$b))*$C+($a*($c+$b)*($c+$a-$b))*$A+($b*($c+$a)*($c-$a+$b))*$B)/((-$c^2*($c+$a+$b))+($a*($c+$b)*($c+$a-$b))+($b*($c+$a)*($c-$a+$b)))},$i))","locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]}
-      ],
-      "reference": {"related":["ExtangentsCircle"]}
-    },
-    {
-      "name": "ExtangentsCircle",
-      "description": "Circumcircle of the Extangents triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ExtangentsTriangle($A,$B,$C,1),ExtangentsTriangle($A,$B,$C,2),ExtangentsTriangle($A,$B,$C,3))"}
-      ],
-      "reference": {"related":["ExtangentsTriangle"]}
+      ]
     },
     {
       "name": "YffCentralTriangle",
       "description": "Central triangle of the Yff dissection into four congruent triangles. Optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"yffCentralTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"yffCentralTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"yffCentralTriangle"}
-      ],
-      "reference": {"related":["YffCentralCircle"]}
-    },
-    {
-      "name": "YffCentralCircle",
-      "description": "Circumcircle of the Yff Central triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","builder":"yffCentralCircle"}
-      ],
-      "reference": {"related":["YffCentralTriangle"]}
+      ]
     },
     {
       "name": "MacBeathTriangle",
       "description": "Contact triangle of the MacBeath inconic. Optional 1-based vertex index.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"macBeathTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"macBeathTriangle","outputSlots":3},
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"macBeathTriangle"}
-      ],
-      "reference": {"related":["MacBeathCircle"]}
-    },
-    {
-      "name": "MacBeathCircle",
-      "description": "Circumcircle of the Mac Beath triangle.",
-      "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","builder":"macBeathCircle"}
-      ],
-      "reference": {"related":["MacBeathTriangle"]}
+      ]
     },
     {
       "name": "ExcosineCircles",
@@ -1672,7 +1497,7 @@
       "aliases": ["塞瓦三角形"],
       "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$P),Line($B,$C))", "Intersect(Line($B,$P),Line($C,$A))", "Intersect(Line($C,$P),Line($A,$B))"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$P),Line($B,$C))", "Intersect(Line($B,$P),Line($C,$A))", "Intersect(Line($C,$P),Line($A,$B))"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$P),Line($B,$C)),Intersect(Line($B,$P),Line($C,$A)),Intersect(Line($C,$P),Line($A,$B))},$i))"}
       ],
       "reference": {
@@ -1684,7 +1509,7 @@
       "aliases": ["垂足三角形"],
       "description": "Projections of P onto the supporting lines BC, CA and AB; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["($P+Reflect($P,Line($B,$C)))/2", "($P+Reflect($P,Line($C,$A)))/2", "($P+Reflect($P,Line($A,$B)))/2"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["($P+Reflect($P,Line($B,$C)))/2", "($P+Reflect($P,Line($C,$A)))/2", "($P+Reflect($P,Line($A,$B)))/2"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($P+Reflect($P,Line($B,$C)))/2,($P+Reflect($P,Line($C,$A)))/2,($P+Reflect($P,Line($A,$B)))/2},$i))"}
       ],
       "reference": {
@@ -1725,8 +1550,8 @@
       "name": "IntouchTriangle",
       "description": "Contact points of the incircle with BC, CA and AB; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["($center+Reflect($center,Line($B,$C)))/2", "($center+Reflect($center,Line($C,$A)))/2", "($center+Reflect($center,Line($A,$B)))/2"], "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({($center+Reflect($center,Line($B,$C)))/2,($center+Reflect($center,Line($C,$A)))/2,($center+Reflect($center,Line($A,$B)))/2},$i))", "locals": [{"name": "center", "expression": "Incenter($A,$B,$C)"}]}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"intouchTriangle","outputSlots":3},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"intouchTriangle"}
       ],
       "reference": {
         "keywords": "incenter",
@@ -1741,7 +1566,7 @@
       "aliases": ["反塞瓦三角形"],
       "description": "Anticevian vertices (-p:q:r), (p:-q:r), (p:q:-r) of P; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "anticevian"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "anticevian","outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "anticevian"}
       ]
     },
@@ -1756,7 +1581,7 @@
       "name": "CircumcevianTriangle",
       "description": "Second intersections of AP, BP and CP with the circumcircle; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["CircumcevianPoint($A,$B,$C,$P)", "CircumcevianPoint($B,$C,$A,$P)", "CircumcevianPoint($C,$A,$B,$P)"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["CircumcevianPoint($A,$B,$C,$P)", "CircumcevianPoint($B,$C,$A,$P)", "CircumcevianPoint($C,$A,$B,$P)"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({CircumcevianPoint($A,$B,$C,$P),CircumcevianPoint($B,$C,$A,$P),CircumcevianPoint($C,$A,$B,$P)},$i))"}
       ]
     },
@@ -1764,7 +1589,7 @@
       "name": "TangentialTriangle",
       "description": "Intersections of circumcircle tangents at B and C, C and A, A and B; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Polar(Line($B,$C),$circle)", "Polar(Line($C,$A),$circle)", "Polar(Line($A,$B),$circle)"], "locals": [{"name": "circle", "expression": "Circle($A,$B,$C)"}]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "point", "compose": ["Polar(Line($B,$C),$circle)", "Polar(Line($C,$A),$circle)", "Polar(Line($A,$B),$circle)"], "locals": [{"name": "circle", "expression": "Circle($A,$B,$C)"}],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Polar(Line($B,$C),$circle),Polar(Line($C,$A),$circle),Polar(Line($A,$B),$circle)},$i))", "locals": [{"name": "circle", "expression": "Circle($A,$B,$C)"}]}
       ]
     },
@@ -1773,7 +1598,7 @@
       "aliases": ["反垂足三角形"],
       "description": "Vertices opposite the lines through A, B and C perpendicular to PA, PB and PC; optional 1-based index.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C)))", "Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A)))", "Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))"]},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C)))", "Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A)))", "Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))"],"outputSlots":3},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(PerpendicularLine($B,Vector($P,$B)),PerpendicularLine($C,Vector($P,$C))),Intersect(PerpendicularLine($C,Vector($P,$C)),PerpendicularLine($A,Vector($P,$A))),Intersect(PerpendicularLine($A,Vector($P,$A)),PerpendicularLine($B,Vector($P,$B)))},$i))"}
       ]
     },

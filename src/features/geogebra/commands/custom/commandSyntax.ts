@@ -66,6 +66,9 @@ export const outerCalls = (source: string): CallSpan[] => {
       const c = source[end];
       if (quoted) { if (c === '\\') end += 1; else if (c === '"') quoted = false; }
       else if (c === '"') quoted = true;
+      else if (c === '#' || c === '/' && source[end + 1] === '/') {
+        while (end < source.length && source[end] !== '\n') end += 1;
+      }
       else if ('([{'.includes(c)) stack.push(c);
       else if (')]}'.includes(c) && stack.pop() !== ({ ')': '(', ']': '[', '}': '{' } as Record<string, string>)[c]) throw new Error('Unbalanced command brackets.');
     }
@@ -75,4 +78,28 @@ export const outerCalls = (source: string): CallSpan[] => {
     i = end;
   }
   return calls;
+};
+
+const leadingTrivia = /^(?:\s|(?:\/\/|#)[^\n]*(?:\n|$))*/u;
+const trailingTrivia = /^(?:\s|(?:\/\/|#)[^\n]*(?:\n|$))*$/u;
+
+export const spreadOperand = (source: string): string | undefined => {
+  const argument = source.replace(leadingTrivia, '');
+  return argument.startsWith('...') && argument[3] !== '.' ? argument.slice(3) : undefined;
+};
+
+export const completeCall = (source: string): CallSpan | undefined => {
+  const [call] = outerCalls(source);
+  return call && !call.declaration && trailingTrivia.test(source.slice(0, call.start))
+    && trailingTrivia.test(source.slice(call.end)) ? call : undefined;
+};
+
+export const unpackAssignment = (source: string): { labels: string[]; operand: string } | undefined => {
+  const match = /^\s*\(([^()]*,[^()]*)\)\s*=(?!=)([\s\S]*)$/u.exec(source);
+  if (!match) return undefined;
+  const labels = match[1].split(',').map((label) => label.trim());
+  if (!labels.every((label) => /^[\p{L}_][\p{L}\p{N}_'′]*(?:\{[\p{L}\p{N}_]+\}[\p{L}\p{N}_'′]*)*$/u.test(label)))
+    throw new Error('Unpacking requires valid output labels.');
+  if (new Set(labels).size !== labels.length) throw new Error('Unpacking requires distinct output labels.');
+  return { labels, operand: match[2] };
 };

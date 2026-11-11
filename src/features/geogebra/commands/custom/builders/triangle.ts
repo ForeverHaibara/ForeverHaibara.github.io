@@ -1,4 +1,5 @@
 import type { ExpressionBuilder } from '../types';
+import type { BindingAllocator } from '../algebra/homogeneous';
 import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
 
 type Weights = (coordinates: string[][], vertices: string[]) => string[];
@@ -130,10 +131,16 @@ const inconicCenter: ExpressionBuilder = (args, allocate) => {
 const steinerInellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['1', '1', '1', '-2', '-2', '-2']);
 const steinerCircumellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['0', '0', '0', '1', '1', '1']);
 
-const triangleOrCircle = (points: string[], circle: boolean, index?: string) =>
-  circle ? `Circle(${points.join(',')})` : independentOutputs(points, index);
+const intouchTriangle: ExpressionBuilder = (args, allocate: BindingAllocator) => {
+  const [a, b, c, index] = args.map((arg) => arg.expression);
+  const sides = [[b, c], [c, a], [a, b]];
+  const center = `TriangleCenter(${a},${b},${c},1)`;
+  const outputs = (incenter: string) =>
+    independentOutputs(sides.map(([u, v]) => `(${incenter}+Reflect(${incenter},Line(${u},${v})))/2`), index);
+  return allocate.captureBinding ? bind([center], allocate, ([name]) => outputs(name), 'point') : outputs(center);
+};
 
-const yffCentral = (circle: boolean): ExpressionBuilder => (args, allocate) => {
+const yffCentralTriangle: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   const lengths = vertices.map((_, i) => `Distance(${vertices[(i + 1) % 3]},${vertices[(i + 2) % 3]})`);
   return bind(lengths, allocate, (sides) => {
@@ -142,27 +149,27 @@ const yffCentral = (circle: boolean): ExpressionBuilder => (args, allocate) => {
       const c = sides[(i + 2) % 3];
       return `sqrt((${a}+${b}-${c})*(${a}+${c}-${b})/(${b}*${c}))/2`;
     });
-    return bind(halfSines, allocate, (sines) => triangleOrCircle(sides.map((a, i) => {
+    return bind(halfSines, allocate, (sines) => independentOutputs(sides.map((a, i) => {
       const j = (i + 1) % 3;
       const k = (i + 2) % 3;
       return barycentricPoint([vertices[i], vertices[j], vertices[k]], [
         mul('2', a, sines[i]), add([mul('2', a, sines[j]), a, sub(sides[j], sides[k])]),
         add([mul('2', a, sines[k]), a, sub(sides[k], sides[j])]),
       ]);
-    }), circle, args[3]?.expression), 'number');
+    }), args[3]?.expression), 'number');
   }, 'number');
 };
 
-const macBeath = (circle: boolean): ExpressionBuilder => (args, allocate) => {
+const macBeathTriangle: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
   return bind([`TriangleCenter(${vertices.join(',')},5)`], allocate, ([center]) =>
-    bind(triangleAreas([...vertices, center]), allocate, (p) => triangleOrCircle(p.map((a, i) => {
+    bind(triangleAreas([...vertices, center]), allocate, (p) => independentOutputs(p.map((a, i) => {
       const j = (i + 1) % 3;
       const k = (i + 2) % 3;
       // The centered inconic restricts to a perfect square on each side.
       return barycentricPoint([vertices[i], vertices[j], vertices[k]], ['0',
         add([a, sub(p[j], p[k])]), add([a, sub(p[k], p[j])])]);
-    }), circle, args[3]?.expression), 'number'), 'point');
+    }), args[3]?.expression), 'number'), 'point');
 };
 
 const apolloniusCircle: ExpressionBuilder = (args, allocate) => {
@@ -349,8 +356,7 @@ const morleyTriangle = (adjunct: boolean): ExpressionBuilder => (args, allocate)
 };
 
 export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
-  yffCentralTriangle: yffCentral(false), yffCentralCircle: yffCentral(true),
-  macBeathTriangle: macBeath(false), macBeathCircle: macBeath(true),
+  intouchTriangle, yffCentralTriangle, macBeathTriangle,
   crosssum: crossCombination(false), crossdifference: crossCombination(true),
   alephConjugate: etcConjugate(false), bethConjugate: etcConjugate(true),
   crossCevianTriangle, haimovTriangle,
