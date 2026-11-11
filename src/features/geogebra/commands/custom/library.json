@@ -1486,9 +1486,9 @@
     {
       "name": "Isoconjugate",
       "aliases": ["等度共轭点"],
-      "description": "Diagonal reciprocal isoconjugation fixing X (five points), or sending X to Y (six points).",
+      "description": "ETC P-isoconjugate of U (five points), or diagonal reciprocal isoconjugation of P sending X to Y (six points). Use X twice to fix X.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "U", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "Y", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"}
       ],
       "reference": {

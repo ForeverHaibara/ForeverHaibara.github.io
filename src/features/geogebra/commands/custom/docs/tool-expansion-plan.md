@@ -8,7 +8,7 @@
 | --- | --- |
 | 交比、中心、轴、配极 | 原生已有 `CrossRatio(A,B,C,D)`、`Center(q)`、`Axes(q)`、`Asymptote(q)`、`Polar(P,q)` 和 `Polar(l,q)`，站内还有 `Pole(l,q)`。见 [交比](https://geogebra.github.io/docs/manual/en/commands/CrossRatio/)、[中心](https://geogebra.github.io/docs/manual/en/commands/Center/)、[轴](https://geogebra.github.io/docs/manual/en/commands/Axes/)、[渐近线](https://geogebra.github.io/docs/manual/en/commands/Asymptote/)、[配极](https://geogebra.github.io/docs/manual/en/commands/Polar/)。 |
 | 射影与仿射变换 | 原生 `ApplyMatrix(M,P)` 已支持 3×3 齐次点变换。新工具直接由对应点确定变换，求仿射像、一般射影像或射影对合像。[ApplyMatrix 手册](https://geogebra.github.io/docs/manual/en/commands/ApplyMatrix/) |
-| 共轭与三角形族 | `Isoconjugate` 已有固定点和指定点像两种接口，等角／等截还已有支撑直线到 conic 的重载。`CevaConjugate`、`CrossConjugate`、`Crosspoint`、`Cevapoint` 是各自不同的构造。旁心组可直接用 `Excenters`；内心的塞瓦三角形可用 `CevianTriangle(A,B,C,Incenter(A,B,C))`。有编号配方的派生三角形优先走 `GeminiTriangle`。 |
+| 共轭与三角形族 | `Isoconjugate` 五点式遵循 ETC 定义，六点式可指定点像或重复输入以固定一点，等角／等截还已有支撑直线到 conic 的重载。`CevaConjugate`、`CrossConjugate`、`Crosspoint`、`Cevapoint` 是各自不同的构造。旁心组可直接用 `Excenters`；内心的塞瓦三角形可用 `CevianTriangle(A,B,C,Incenter(A,B,C))`。有编号配方的派生三角形优先走 `GeminiTriangle`。 |
 | 四点与四线 | `DiagonalPoints` 已返回完全四点形的三个对角点；`NewtonLine`、`MiquelPoint` 均有点版和线版，`MiquelCircle` 已是 `QLCi3` 的别名。保留现有 `Quadrangles` 和 `Quadrilaterals` 的输入语义。完全四点形的六条线、完全四线形的六个交点用原生构造即可。 |
 | 圆、相似和反演 | `RadicalAxis`、`RadicalCenter`、`CommonTangents`、圆间 `SimilarityCenter` 与两点定相似的 `DirectSimilarity`／`OppositeSimilarity` 均已覆盖；点、直线和圆的圆反演优先用原生 `Reflect(object,c)`。任意隐式多项式反演涉及基点和分量，作为独立研究项。[Reflect 手册](https://geogebra.github.io/docs/manual/en/commands/Reflect/) |
 | 三次曲线 | `ThirdIntersection`（含切线形式，`Tangential` 为别名）、`Pretangential`、`CubicInvolution`、`CubicPencil`、`CayleyBacharachPoint`、`HessianCubic`、`CircularPolarPoint`、`CubicAsymptotes` 均已存在。原生隐式曲线 `Asymptote(F)` 返回列表，与现有三次曲线独立直线槽用途不同。`GibertCurve` 在站内承载已收录的 Q 系列，K 编号仍应按当前引擎实际支持范围核对原生 `Cubic`。见 [相关曲线覆盖](related-curves.md) 和 [原生 Cubic](https://geogebra.github.io/docs/manual/en/commands/Cubic/)。 |
@@ -147,7 +147,7 @@ ETC 的共轭、圆和派生三角形已另列 [ETC 工具扩展计划](etc-tool
 | 派生三角形快捷命令 | `ExtouchTriangle` 暂作使用频率候选。A 槽已有短组合 `B+C−IntouchTriangle(A,B,C,1)`，ETC 也列为 Gemini 29 的补三角形。若加入菜单 `Triangle constructions → Triangles of the triangle`，可用 `B+((s−c)/a)(C−B)`（s 为半周长）及其循环式，避免构造近共线时很远的旁心。边长 a 趋零时结果趋向重合端点，可在零长度的结果边界补这个极限。[ETC extouch 条目](https://faculty.evansville.edu/ck6/encyclopedia/IndexOfTrianglesReferencedInETC.html#extouch) |
 | `CubicSingularPoints`、j 不变量、对偶曲线 | 低于拐点。奇点工具主要服务于已知会退化的曲线族，光滑三次没有奇点。需区分有限离散解与公共分量。j 的范围是光滑三次曲线。对偶曲线还需规范化消元结果。 |
 | `ResidualIntersection` | 首个可试边界是两个给定三次方程、无公共分量、已知八个简单公共点时求唯一有限剩余点。比较现有 `CayleyBacharachPoint` 能覆盖多少需求。存在相切、重根、复点、无穷远点或公共分量时，交点列表减法无法表达交数。稳定的重数和输出契约确定后再扩一般次数。 |
-| ETC 共轭、Gibert 类、通用双有理曲线像 | 每个候选先核对坐标制和参数语义。ETC 的 U-isoconjugate 约定与站内固定点接口不同；若确有用途，先确定独立名称和明确权重契约。曲线像要分清代数闭包与因清分母出现的基点分量。已实现的 Pivotal／Nonpivotal／ConicoPivotal 和目录入口优先复用；专名需有独立定义和可核验的特化。[ETC Glossary](https://faculty.evansville.edu/ck6/encyclopedia/Glossary.html)、[Gibert CTC](https://www.bernard-gibert.fr/ctc.html) |
+| ETC 共轭、Gibert 类、通用双有理曲线像 | 每个候选先核对坐标制和参数语义。五点 `Isoconjugate` 遵循 ETC 约定，固定点用六点式 `Isoconjugate(A,B,C,X,X,P)`。曲线像要分清代数闭包与因清分母出现的基点分量。已实现的 Pivotal／Nonpivotal／ConicoPivotal 和目录入口优先复用；专名需有独立定义和可核验的特化。[ETC Glossary](https://faculty.evansville.edu/ck6/encyclopedia/Glossary.html)、[Gibert CTC](https://www.bernard-gibert.fr/ctc.html) |
 | 参数化中心三角形、一般包络、Apollonius 三圆问题 | 中心三角形先通过明确的编号配方验证需求。一般包络优先使用原生支持的构造，扩大范围之前须有参数和消元语义。三圆公切圆与现有三角形 `ApolloniusCircle` 是不同问题，需先核对有向切触、实根、重合解与固定槽编号。 |
 
 ## 7. 实现阶段的验收

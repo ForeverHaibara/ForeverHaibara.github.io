@@ -27,7 +27,7 @@
 
 ## 再做：等共轭三次曲线族与其它
 
-此处 “isocubic” 严格指相对 ABC 的 circum-cubic，在一个指定的对角倒数型 isoconjugation 下不变。**现有** `Isoconjugate(A,B,C,X,P)` 的五点接口表示固定 X 的变换，不能误当成“极 Ω”接口；六点接口也有自己的定像语义。新曲线直接用 Ω 的重心系数 `p:q:r` 定义 `X*=(pYZ:qZX:rXY)`。在顶点、边线及不可定义的有理映射处保留清分母后的完整代数闭包。[SITP §§1.2–1.5、8.1](https://bernard-gibert.fr/files/Resources/SITP.pdf) 给出下列族的定义。本阶段五个名称、六个签名均已加入工具库；只以非零系数条件拦截恒零方程，不对特定顶点或边线另设 `MatrixRank`／分类判断。
+此处 “isocubic” 严格指相对 ABC 的 circum-cubic，在一个指定的对角倒数型 isoconjugation 下不变。五点 `Isoconjugate(A,B,C,P,U)` 使用 ETC 的三线定义。六点 `Isoconjugate(A,B,C,X,Y,P)` 指定 X 映到 Y，重复 X 可指定不动点。曲线接口直接使用极 Ω。新曲线直接用 Ω 的重心系数 `p:q:r` 定义 `X*=(pYZ:qZX:rXY)`。在顶点、边线及不可定义的有理映射处保留清分母后的完整代数闭包。[SITP §§1.2–1.5、8.1](https://bernard-gibert.fr/files/Resources/SITP.pdf) 给出下列族的定义。本阶段五个名称、六个签名均已加入工具库；只以非零系数条件拦截恒零方程，不对特定顶点或边线另设 `MatrixRank`／分类判断。
 
 | English name / signature → output | English description | 候选算法 |
 |---|---|---|

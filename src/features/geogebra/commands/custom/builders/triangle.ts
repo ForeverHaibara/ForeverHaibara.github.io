@@ -13,8 +13,18 @@ const barycentricMap = (weights: Weights): ExpressionBuilder => (args, allocate)
   });
 };
 
-export const isoconjugateWeights: Weights = (coordinates) => {
-  const [x, y, p] = coordinates.length === 2 ? [coordinates[0], coordinates[0], coordinates[1]] : coordinates;
+export const isoconjugateWeights: Weights = (coordinates, vertices) => {
+  if (coordinates.length === 2) {
+    const [p, u] = coordinates;
+    // ETC multiplies the complementary trilinears of both points.
+    // Converting back to barycentrics contributes a_i^3 up to a common factor.
+    return triangleSideSquares(vertices).map((side, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      return mul(`(${side})^(3/2)`, p[j], p[k], u[j], u[k]);
+    });
+  }
+  const [x, y, p] = coordinates;
   return [0, 1, 2].map((i) => mul(x[i], y[i], p[(i + 1) % 3], p[(i + 2) % 3]));
 };
 const isoconjugate = barycentricMap(isoconjugateWeights);

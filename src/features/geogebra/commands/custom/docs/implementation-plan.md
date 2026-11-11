@@ -181,8 +181,8 @@
 | Implemented (P1) | `OppositeSimilarity(A,B,C,D,E) → point` | Point F such that there is an opposite similarity sending A,B,C to D,E,F. | 输出 `D+(E−D) conjugate((C−A)/(B−A))`；四点版是固定 A 的特例。 | S456 |
 | Implemented (P2) | `CevianAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the cevian triangle of X. | 先求 X 的三个 cevian 顶点 D,E,F；P 的归一化重心为 α,β,γ，返回 αD+βE+γF。某个目标顶点在无穷远时不是仿射映射；不要用复杂交点链绕过此前提。 | S406 |
 | Implemented (P2) | `PedalAffineMap(A,B,C,X,P) → point` | Image of P under the affine map sending ABC to the pedal triangle of X. | 将上一行目标 D,E,F 换成 X 的三垂足；共线目标允许降秩仿射映射。纠正 Pedian 的含混命名及原参数说明。 | S416 |
-| Implemented (P2) | `Isoconjugate(A,B,C,X,P) → point` | Isoconjugate of P under the diagonal reciprocal map fixing X. | 设 X 重心 `(u:v:w)`，P 为 `(p:q:r)`，取 `(u²qr:v²rp:w²pq)`。这是 barycentric fixed-point convention；与某些文献用 P 命名的 isoconjugate 不同，描述必须保留 “fixing X”。需用源宏一般位置核对，而不是直接沿用 X_fixed 名称。 | S414 |
-| Implemented (P2) | `Isoconjugate(A,B,C,X,Y,P) → point` | Isoconjugate of P under the diagonal reciprocal map sending X to Y. | 重载。上一条是这一条的特例。 | S414 |
+| Implemented (P2) | `Isoconjugate(A,B,C,P,U) → point` | ETC P-isoconjugate of U. | 三线坐标第 i 项为 `pⱼpₖuⱼuₖ`。若输入以重心坐标表示，输出重心第 i 项为 `aᵢ³pⱼpₖuⱼuₖ`。P、U 可交换。 | S414 |
+| Implemented (P2) | `Isoconjugate(A,B,C,X,Y,P) → point` | Isoconjugate of P under the diagonal reciprocal map sending X to Y. | 若 X、Y、P 的重心分别为 x、y、p，第 i 项为 `xᵢyᵢpⱼpₖ`。写作 `Isoconjugate(A,B,C,X,X,P)` 即可固定 X，等价于旧版五点用法。 | S414 |
 | Implemented (P2) | `Crosspoint(A,B,C,P,Q) → point` | Intersection of the tangents at P and Q to the circumconic through ABCPQ. | P、Q 重心分别为 p、q；输出第 i 个齐次分量 `p_i q_i(p_j q_k+p_k q_j)`（循环 i,j,k）。直接约去拟合圆锥曲线／切线交点的公共因子，P=Q 且各分量非零时连续延拓为 P；基点全零仍未定。 | S412 |
 | Implemented (P2) | `Cevapoint(A,B,C,P,Q) → point` | Cevapoint of P and Q with respect to triangle ABC. | 作 Q 的反 cevian 三角形；按定义从 P 向其顶点连线取得 ABC 边上的迹，求所得三角形与 ABC 的透视中心。用齐次叉积和公共因子消除实现；最终核验三条透视线共点与 P/Q 对称性。 | S408 |
 | Implemented (P2) | `CevaConjugate(A,B,C,X,P) → point` | X-Ceva conjugate of P with respect to triangle ABC. | 取 X 的 cevian 三角形和 P 的 anticevian 三角形的对应顶点连线之透视中心；在齐次层实现。明确 X 是参数、P 是被作用点，验证一般位置为对合。 | S409 |
@@ -746,7 +746,7 @@ QLTf1 令 `S=M+sqrt(κ)`，反演圆为 Circle(M,S)，反射轴为 Line(M,S)。�
 | S411 | Anticomplementary | 1 / 1 | Implemented (P1): `Anticomplement(A,B,C,P) → point` |
 | S412 | Crosspoint | 1 / 1 | Implemented (P2): `Crosspoint(A,B,C,P,Q) → point` |
 | S413 | Crossconjugate | 1 / 1 | Implemented (P2): `CrossConjugate(A,B,C,X,P) → point` |
-| S414 | X_fixed isoconjugate | 1 / 1 | Implemented (P2): `Isoconjugate(A,B,C,X,P) → point`; Implemented (P2): `Isoconjugate(A,B,C,X,Y,P) → point` |
+| S414 | X_fixed isoconjugate | 1 / 1 | Implemented (P2): `Isoconjugate(A,B,C,X,X,P) → point` |
 | S415 | Ratio Point | 1 / 1 | Implemented (P1): `AffineL(A,B,C,D,P) → point` |
 | S416 | Pedian Affine Mapping | 1 / 1 | Implemented (P2): `PedalAffineMap(A,B,C,X,P) → point` |
 | S417 | Carnot Triangle | 1 / 1 | Implemented (P1): `CarnotTriangle(A,B,C,P[,i]) → point × 3 / point` |

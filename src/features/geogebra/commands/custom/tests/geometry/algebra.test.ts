@@ -19,9 +19,18 @@ describe('homogeneous triangle-map identities', () => {
   const x = normalized([-1, 3, 7]);
 
   it('fixes X, exchanges X and Y, and is involutory with exterior signed coordinates', () => {
-    close(map(isoconjugateWeights, x, x), x);
+    close(map(isoconjugateWeights, x, x, x), x);
+    close(map(isoconjugateWeights, x, x, p), normalized(x.map((value, i) => value ** 2 / p[i])));
     close(map(isoconjugateWeights, x, q, x), q);
     close(map(isoconjugateWeights, x, q, map(isoconjugateWeights, x, q, p)), p);
+  });
+
+  it('matches ETC isoconjugation, including its symmetry and named specializations', () => {
+    const sides = [Math.hypot(6, 4), 4, 6];
+    close(map(isoconjugateWeights, p, q), normalized(sides.map((side, i) => side ** 3 / (p[i] * q[i]))));
+    close(map(isoconjugateWeights, p, q), map(isoconjugateWeights, q, p));
+    close(map(isoconjugateWeights, sides, p), normalized(sides.map((side, i) => side ** 2 / p[i])));
+    close(map(isoconjugateWeights, sides.map((side) => side ** 3), p), normalized(p.map((value) => 1 / value)));
   });
 
   it('satisfies the defining relations of Ceva and cross conjugation', () => {

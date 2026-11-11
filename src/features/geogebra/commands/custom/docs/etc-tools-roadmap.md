@@ -7,7 +7,7 @@
 | ETC 对象 | 当前入口与本轮安排 |
 | --- | --- |
 | 等角、等截、Ceva、Cross、Cyclocevian 共轭 | Ceva／Cross 的乘积沿用 `Cevapoint`／`Crosspoint`，商沿用 `CevaConjugate`／`CrossConjugate`。新命令保留独立的 ETC 定义。[扩展词汇表](https://faculty.evansville.edu/ck6/encyclopedia/ext_glossary.html) |
-| ETC 的 P-isoconjugate | 当前五点重载以 P 为不动点，其权为重心坐标分量的平方。ETC 从三线定义换到重心坐标后，权为 `aᵢ³/Pᵢ`。本批采用各命令的原始定义，Polar conjugate 使用六点重载的显式配权。[ETC Glossary](https://faculty.evansville.edu/ck6/encyclopedia/Glossary.html) |
+| ETC 的 P-isoconjugate | 五点式 `Isoconjugate(A,B,C,P,U)` 使用 ETC 三线定义。换到重心坐标后，作为 U 的倒数变换时，权为 `aᵢ³/Pᵢ`。固定点用六点式 `Isoconjugate(A,B,C,X,X,P)`。[ETC Glossary](https://faculty.evansville.edu/ck6/encyclopedia/Glossary.html) |
 | Bevan circle、第二 Brocard 圆、cevian circle | 分别可用三个旁心的外接圆、以外心为心且过任一 Brocard 点的圆，以及三个塞瓦迹点的外接圆。优先用现有命令组合。[扩展词汇表](https://faculty.evansville.edu/ck6/encyclopedia/ext_glossary.html) |
 | 旁心三角形、反补三角形、Gemini 三角形 | 分别用 `Excenters`、逐点反补及 `GeminiTriangle`。Extouch 已有组合，保留为低成本快捷项。其余有编号或短组合的命名三角形先核对等价关系。[三角形索引](https://faculty.evansville.edu/ck6/encyclopedia/IndexOfTrianglesReferencedInETC.html)、[Gemini 表](https://faculty.evansville.edu/ck6/encyclopedia/gemini.html) |
 
@@ -76,7 +76,7 @@
 
 [ETC 主词汇表](https://faculty.evansville.edu/ck6/encyclopedia/Glossary.html)、[ETC 序言索引](https://faculty.evansville.edu/ck6/encyclopedia/Guide_to_preambles_in_ETC.html)、[Kimberling 的共轭论文](https://citeseerx.ist.psu.edu/document?doi=465ea75e812e59998fb577ed8424e78622ac2e6c&repid=rep1&type=pdf)
 
-**沿用现有命令。** Aleph、Beth、Anticevian、Complement、Anticomplement、Antigonal、Ceva 与 Cross 两组、Cyclocevian、Isogonal、Isotomic、TrilinearPolar、TrilinearPole、Perspector、Polar 均已有入口。Barycentric image 对应 `Affine`，similarity image 对应 `DirectSimilarity` 和 `OppositeSimilarity`。ETC 的 P-isoconjugate 可用 P 的等截共轭作 `ReciprocalConjugate` 的枢点，避免与现有五点同名签名的固定点约定冲突。
+**沿用现有命令。** Aleph、Beth、Anticevian、Complement、Anticomplement、Antigonal、Ceva 与 Cross 两组、Cyclocevian、Isogonal、Isotomic、TrilinearPolar、TrilinearPole、Perspector、Polar 均已有入口。Barycentric image 对应 `Affine`，similarity image 对应 `DirectSimilarity` 和 `OppositeSimilarity`。ETC 的 P-isoconjugate 直接用五点 `Isoconjugate`。
 
 **保留为几何概念。** Cevian 可直接取顶点与 P 的连线，cevian nest 可由两层 `CevianTriangle` 得到。Orthopoint 的结果是垂直方向的无穷远点，现有垂线工具可以表示该方向。Combo 是仿射点算式。Line、point、cubic、center、major center、polynomial center、transcendental center、central triangle 和 bicentric points 是对象或分类术语。Functional image 和 symbolic substitution 涉及侧长函数表达式，留待有符号函数输入时处理。
 
