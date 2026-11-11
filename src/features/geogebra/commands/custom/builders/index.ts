@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 
-import { add, mul, transpose, product, adjugate, determinant, cross, bind, homogeneous, triangleAreas, barycentricPoint, independentOutputs, coefficientList } from '../algebra/homogeneous';
+import { add, mul, transpose, product, adjugate, determinant, cross, bind, homogeneous, directionPoint, pointBarycentrics, triangleFrameDeterminant, sub, squaredNorm, triangleAreas, barycentricPoint, independentOutputs, coefficientList } from '../algebra/homogeneous';
 import type { Matrix } from '../algebra/homogeneous';
 import { TRIANGLE_BUILDERS } from './triangle';
 import { CUBIC_BUILDERS } from './cubics';
@@ -26,10 +26,34 @@ const brocard: ExpressionBuilder = (args, allocate) => {
 
 const anticevian: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
-  const areas = triangleAreas(args.map((arg) => arg.expression));
-  const outputs = [0, 1, 2].map((index) => bind(areas, allocate, (weights) =>
-    `If(${add(weights)}!=0,${barycentricPoint(vertices, weights.map((weight, i) => i === index ? `-(${weight})` : weight))})`));
-  return independentOutputs(outputs, args[4]?.expression);
+  return bind(pointBarycentrics(vertices, args[3]), allocate, (weights) => {
+    const area = args[3].type === 'point' ? add(weights) : triangleFrameDeterminant(vertices);
+    const outputs = weights.map((_, index) => {
+      const image = weights.map((weight, i) => i === index ? `-(${weight})` : weight);
+      return `If(${area}!=0,${barycentricPoint(vertices, image)})`;
+    });
+    return independentOutputs(outputs, args[4]?.expression);
+  }, 'number');
+};
+
+const cevianDirection: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const area = triangleFrameDeterminant(vertices);
+  return bind(pointBarycentrics(vertices, args[3]), allocate, (weights) => {
+    const outputs = weights.map((_, index) =>
+      `If(${area}!=0,${barycentricPoint(vertices, weights.map((weight, i) => i === index ? '0' : weight))})`);
+    return independentOutputs(outputs, args[4]?.expression);
+  }, 'number');
+};
+
+const circumcevianDirection: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c] = args.map((arg) => arg.expression);
+  const [dx, dy] = directionPoint(args[3]);
+  return bind([dx, dy, `Center(Circle(${a},${b},${c}))`],
+    allocate, ([dx, dy, center]) => bind([
+      `2*${add([mul(sub(`x(${center})`, `x(${a})`), dx), mul(sub(`y(${center})`, `y(${a})`), dy)])}/${squaredNorm([dx, dy])}`,
+    ], allocate, ([t]) => `(x(${a})+${t}*${dx},y(${a})+${t}*${dy})`, 'number'),
+    ['number', 'number', 'point']);
 };
 
 const trilinearPolar: ExpressionBuilder = (args, allocate) => {
@@ -141,7 +165,7 @@ const affine: ExpressionBuilder = (args, allocate) => {
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   apolloniusProblem,
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
-  brocard, anticevian, trilinearPolar, trilinearPole,
+  brocard, anticevian, cevianDirection, circumcevianDirection, trilinearPolar, trilinearPole,
   affine, ...PROJECTIVE_BUILDERS,
   ...TRIANGLE_BUILDERS, ...CUBIC_BUILDERS, pivotal: pivotalIsogonalCubic, ...ISOCUBIC_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
   gibertCurve, triangleCenter, geminiTriangle, ...GLOSSARY_BUILDERS,

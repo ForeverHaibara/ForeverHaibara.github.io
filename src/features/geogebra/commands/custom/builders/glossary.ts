@@ -1,6 +1,6 @@
 import type { BuiltExpression, ExpressionBuilder } from '../types';
 import type { BindingAllocator } from '../algebra/homogeneous';
-import { add, barycentricPoint, bind, coefficientLine, cross, homogeneous, independentOutputs, mul, sub, triangleAreas, triangleSideSquares } from '../algebra/homogeneous';
+import { add, barycentricPoint, bind, coefficientLine, cross, homogeneous, independentOutputs, mul, sub, pointBarycentrics, triangleFrameDeterminant, triangleAreas, triangleSideSquares } from '../algebra/homogeneous';
 import { antigonalWeights } from './triangle';
 
 const cycle = <T>(values: T[], i: number): [T, T, T] =>
@@ -166,14 +166,15 @@ const gimelConjugate: ExpressionBuilder = (args, allocate) => {
 };
 
 const cocevianTriangle: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, point, index] = args.map((arg) => arg.expression);
+  const [a, b, c, , index] = args.map((arg) => arg.expression);
   const vertices = [a, b, c];
-  return withCoordinates(vertices, [point], allocate, ([p]) => independentOutputs(p.map((_, i) => {
+  return bind(pointBarycentrics(vertices, args[3]), allocate, (p) => independentOutputs(p.map((_, i) => {
     const weights = [...p];
     weights[i] = '0';
     weights[(i + 2) % 3] = `-(${weights[(i + 2) % 3]})`;
-    return `If(${add(p)}!=0,${barycentricPoint(vertices, weights)})`;
-  }), index));
+    const area = args[3].type === 'point' ? add(p) : triangleFrameDeterminant(vertices);
+    return `If(${area}!=0,${barycentricPoint(vertices, weights)})`;
+  }), index), 'number');
 };
 
 type TriangleWeights = (u: string[], v: string[], sides: string[]) => string[];

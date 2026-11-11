@@ -5,6 +5,7 @@ import { compileStudioCommand } from '../../commandCompiler';
 import { expandTool, studioTools } from '../../toolLibrary';
 
 type Point = [number, number];
+type Line = [number, number, number];
 type Circle = { center: Point; radius: number };
 const distance = (p: Point, q: Point) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const circle = (a: Point, b: Point, c: Point): Circle => {
@@ -18,14 +19,16 @@ const circle = (a: Point, b: Point, c: Point): Circle => {
   return { center, radius: distance(a, center) };
 };
 
-function coefficients(name: string, type: 'point' | 'circle', inputs: Point[] | Circle[]) {
+function coefficients(name: string, type: 'point' | 'circle', inputs: (Point | Circle | Line)[]) {
   const capture = createBindingCapture();
   let serial = 0;
   const allocate: BindingAllocator = () => `v${++serial}`;
   allocate.captureBinding = capture.captureBinding;
   const labels = ['A', 'B', 'C', 'P'].slice(0, inputs.length);
   const tool = studioTools.get(name.toLowerCase())!;
-  const built = expandTool(tool.overloads[0], labels.map((expression) => ({ expression, type })), allocate);
+  const built = expandTool(tool.overloads[0], labels.map((expression, i) => ({
+    expression, type: Array.isArray(inputs[i]) && inputs[i].length === 3 ? 'line' : type,
+  })), allocate);
   return (built.outputExpressions ?? [built.expression]).map((output) => {
     const plan = capture.lower(output, '0123456789abcdef', true, new Set(['number', 'point', 'circle']));
     const scope: Record<string, unknown> = {
@@ -92,6 +95,14 @@ it('contains the cevian traces and keeps their finite join when one trace is ide
   const vertices: Point[] = [[1, 1], [5, 1], [1, 4]];
   const evaluate = ([a, b, c, m, d, e]: number[], [x, y]: Point) =>
     (a * x * x + b * y * y + c + m * x * y + d * x + e * y) / Math.hypot(a, b, c, m, d, e);
+  const [ideal] = coefficients('CevianCircle', 'point', [...vertices, [3, -4, 29]]);
+  for (const trace of [[3, 2.5], [1, -2], [-3, 1]] as Point[]) {
+    expect(evaluate(ideal, trace)).toBeCloseTo(0, 10);
+  }
+  const [parallel] = coefficients('CevianCircle', 'point', [...vertices, [3, 4, 7]]);
+  expect(Math.abs(parallel[0])).toBe(0);
+  expect(Math.hypot(parallel[4], parallel[5])).toBeGreaterThan(0);
+  for (const trace of vertices.slice(1)) expect(evaluate(parallel, trace)).toBeCloseTo(0, 10);
   const [ordinary] = coefficients('CevianCircle', 'point', [...vertices, [2, 2]]);
   for (const trace of [[19 / 7, 19 / 7], [1, 7 / 3], [2.5, 1]] as Point[]) {
     expect(evaluate(ordinary, trace)).toBeCloseTo(0, 10);

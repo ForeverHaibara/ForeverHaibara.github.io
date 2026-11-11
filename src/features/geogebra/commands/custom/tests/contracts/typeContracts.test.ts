@@ -50,6 +50,32 @@ describe('Geometry type dispatch and symbolic construction boundaries', () => {
     }
   });
 
+  it('accepts directions in construction and calibration slots', () => {
+    for (const source of [
+      '(D1,E1,F1)=CevianTriangle(A,B,C,EulerLine(A,B,C))',
+      'Circle(...CevianTriangle(A,B,C,r))',
+      'CevianTriangle(A,B,C,s,2)',
+      'Circle(...CrossCevianTriangle(A,B,C,l,P))',
+      'CircumcevianTriangle(A,B,C,r,2)',
+      'Isoconjugate(A,B,C,l,P)',
+      'Isoconjugate(A,B,C,l,Y,P)',
+      'Isoconjugate(A,B,C,X,r,P)',
+      'ReciprocalConjugate(A,B,C,s,P)',
+      'CevaConjugate(A,B,C,r,P)',
+      'CrossConjugate(A,B,C,l,P)',
+    ]) expect(compile(source), source).not.toMatch(/\.\.\.|CevianTriangle\(|Conjugate\(/u);
+    for (const source of [
+      'CevianTriangle(l,B,C,P)',
+      'CrossCevianTriangle(A,B,C,P,l)',
+      'Isoconjugate(A,B,C,P,l)',
+      'Isoconjugate(A,B,C,X,Y,l)',
+      'ReciprocalConjugate(A,B,C,P,l)',
+      'CevaConjugate(A,B,C,X,l)',
+      'CrossConjugate(A,B,C,X,l)',
+    ]) expect(() => compile(source), source).toThrow('No overload');
+    expect(compile('IsogonalConjugate(A,B,C,l)')).toContain('ApplyMatrix');
+  });
+
   it('uses univariate coefficient encoding for declared cubic inputs without CAS or sampled path points', () => {
     for (const source of ['Polar(P,f)', 'PolarConic(P,f)', 'ThirdIntersection(f,P)', 'ThirdIntersection(f,P,B)']) {
       const expression = compile(source);

@@ -4,20 +4,23 @@ import { createBindingCapture } from '../../bindingPlan';
 import { expandTool, studioTools } from '../../toolLibrary';
 
 type Point = [number, number];
+type Line = [number, number, number];
 const distance = (p: Point, q: Point) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 const subtract = (p: Point, q: Point): Point => [p[0] - q[0], p[1] - q[1]];
 const det = (p: Point, q: Point) => p[0] * q[1] - p[1] * q[0];
 const abc: [Point, Point, Point] = [[0, 0], [5, 0], [1, 3]];
 
-function evaluatePoints(name: string, points: Point[]) {
+function evaluatePoints(name: string, points: (Point | Line)[]) {
   const capture = createBindingCapture();
   let serial = 0;
   const allocate: BindingAllocator = () => `v${++serial}`;
   allocate.captureBinding = capture.captureBinding;
   const labels = points.map((_, i) => String.fromCharCode(65 + i));
   const tool = studioTools.get(name.toLowerCase())!;
-  const overload = tool.overloads.find(({ params }) => params.length === points.length)!;
-  const built = expandTool(overload, labels.map((expression) => ({ expression, type: 'point' })), allocate);
+  const args = labels.map((expression, i) => ({ expression, type: points[i].length === 2 ? 'point' as const : 'line' as const }));
+  const overload = tool.overloads.find(({ params }) => params.length === args.length
+    && params.every(({ type }, i) => type === args[i].type || type === 'pointOrLine' || (type === 'lineLike' && args[i].type === 'line')))!;
+  const built = expandTool(overload, args, allocate);
   return (built.outputExpressions ?? [built.expression]).map((output) => {
     const plan = capture.lower(output, '0123456789abcdef', true);
     const scope: Record<string, unknown> = {
@@ -30,7 +33,7 @@ function evaluatePoints(name: string, points: Point[]) {
     for (const { name: key, expression } of plan.helpers) scope[key] = evaluate(expression);
     // The output combines points affinely. Evaluate its two coordinates with
     // the already computed scalar bindings and the real triangle guard.
-    scope.AreCollinear = () => Math.abs(det(subtract(points[4], points[3]), subtract(points[5], points[3]))) < 1e-12;
+    scope.AreCollinear = () => Math.abs(det(subtract(points[4] as Point, points[3] as Point), subtract(points[5] as Point, points[3] as Point))) < 1e-12;
     const coordinate = (axis: 0 | 1) => evaluate(plan.output, {
       ...scope, ...Object.fromEntries(labels.map((label, i) => [label, points[i][axis]])),
     });
@@ -135,4 +138,31 @@ it('matches centroid-based Gibert Psi to inversion followed by reflection in a S
   // The inellipse shape matrix is [[14,-3],[-3,6]]/6. Its squared
   // focal distance is 5/3 and its major-axis reflection is [[.8,-.6],[-.6,-.8]].
   expect(distance(apply('GibertPsi', [...abc, centroid, [3, 2]]), [13 / 6, -1 / 6])).toBeLessThan(1e-9);
+});
+
+it('uses ideal directions in cevian traces and preserves the other slots at a parallel sideline', () => {
+  const vertices: Point[] = [[0, 0], [4, 0], [0, 3]];
+  const expected = [[2, 1.5], [0, -3], [-4, 0]];
+  expect(evaluatePoints('CevianTriangle', [...vertices, [3, -4, 0]])).toEqual(expected);
+  evaluatePoints('CevianTriangle', [...vertices, [-6, 8, 17]]).forEach((point, i) => {
+    expect(distance(point, expected[i] as Point)).toBe(0);
+  });
+  const parallel = evaluatePoints('CevianTriangle', [...vertices, [3, 4, 7]]);
+  expect(parallel[0].every((coordinate) => !Number.isFinite(coordinate))).toBe(true);
+  expect(distance(parallel[1], [0, 3])).toBe(0);
+  expect(distance(parallel[2], [4, 0])).toBe(0);
+  expect(evaluatePoints('CocevianTriangle', [...vertices, [3, 4, 7]])[0]).toEqual([2, 1.5]);
+});
+
+it('evaluates both isoconjugation formulas with ideal calibration or pivot weights', () => {
+  const vertices: Point[] = [[0, 0], [4, 0], [0, 3]];
+  const euler: Line = [3, -4, 0];
+  const operand: Point = [4 / 3, 4 / 3];
+  const five = evaluatePoints('Isoconjugate', [...vertices, euler, operand])[0];
+  expect(distance(five, [36 / (-25 / 4), 48 / (-25 / 4)])).toBeLessThan(1e-9);
+  const six = evaluatePoints('Isoconjugate', [...vertices, euler, [6, -8, 23], operand])[0];
+  expect(distance(six, [16 / 31, 9 / 31])).toBeLessThan(1e-9);
+  const calibration: Point = [1, 1];
+  const sentToInfinity = evaluatePoints('Isoconjugate', [...vertices, calibration, euler, calibration])[0];
+  expect(sentToInfinity.every((coordinate) => !Number.isFinite(coordinate))).toBe(true);
 });

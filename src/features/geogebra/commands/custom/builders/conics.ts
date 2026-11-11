@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 import { add, barycentricConic, bind, coefficientLine, coefficientList, cross, independentOutputs, mul, squaredNorm, sub,
-  translatedConicCoefficients, triangleAreas, triangleSideSquares } from '../algebra/homogeneous';
+  translatedConicCoefficients, pointBarycentrics, triangleFrameDeterminant, triangleSideSquares } from '../algebra/homogeneous';
 
 export const scimemiCoordinates = ([a, b, h, d, e]: string[], [x, y]: string[], inverse: boolean): string[] => {
   const t = `(${a}+${b})`; const r = `(${b}-${a})`; const delta = `((${a}-${b})^2+(${h})^2)`;
@@ -120,7 +120,7 @@ const cevianCircle: ExpressionBuilder = (args, allocate) => {
   const vertices = points.slice(0, 3);
   const [origin] = vertices;
   const local = vertices.map((p) => [sub(`x(${p})`, `x(${origin})`), sub(`y(${p})`, `y(${origin})`), '1']);
-  return bind(triangleAreas(points), allocate, (p) => {
+  return bind(pointBarycentrics(vertices, args[3]), allocate, (p) => {
     const pairs = p.map((_, i) => [p[(i + 1) % 3], p[(i + 2) % 3]]);
     const sums = pairs.map(add);
     const sides = triangleSideSquares(vertices);
@@ -133,7 +133,8 @@ const cevianCircle: ExpressionBuilder = (args, allocate) => {
         mul(d, squaredNorm([x, y]))));
       const rows = local.map((_, i) => cross(local[(i + 1) % 3], local[(i + 2) % 3]));
       const [lx, ly, constant] = [0, 1, 2].map((j) => add(rows.map((row, i) => mul(row[j], linear[i]))));
-      const quadratic = mul(d, add(p));
+      const area = args[3].type === 'point' ? add(p) : triangleFrameDeterminant(vertices);
+      const quadratic = mul(d, area);
       return `Conic(${coefficientList(translatedConicCoefficients([quadratic, quadratic, constant, '0', lx, ly], origin))})`;
     }, 'number');
   }, 'number');

@@ -1,17 +1,18 @@
 import type { ExpressionBuilder } from '../types';
 import type { BindingAllocator } from '../algebra/homogeneous';
-import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
+import { add, mul, sub, cross, bind, homogeneous, pointBarycentrics, triangleFrameDeterminant, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
 
 type Weights = (coordinates: string[][], vertices: string[]) => string[];
 
 /** Products of homogeneous coordinates, without intermediate affine poles. */
 const barycentricMap = (weights: Weights): ExpressionBuilder => (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
-  const coordinates = args.slice(3).map((arg) => triangleAreas([...vertices, arg.expression]));
+  const coordinates = args.slice(3).map((arg) => pointBarycentrics(vertices, arg));
   return bind(coordinates.flat(), allocate, (values) => {
     const points = coordinates.map((_, i) => values.slice(3 * i, 3 * i + 3));
-    return `If(${add(points[0])}!=0,${bind(weights(points, vertices), allocate, (result) => barycentricPoint(vertices, result))})`;
-  });
+    const area = args[3].type === 'point' ? add(points[0]) : triangleFrameDeterminant(vertices);
+    return `If(${area}!=0,${bind(weights(points, vertices), allocate, (result) => barycentricPoint(vertices, result), 'number')})`;
+  }, 'number');
 };
 
 export const isoconjugateWeights: Weights = (coordinates, vertices) => {
@@ -277,9 +278,9 @@ const etcConjugate = (beth: boolean): ExpressionBuilder => (args, allocate) => {
 };
 
 const crossCevianTriangle: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, p, q, index] = expressions(args);
+  const [a, b, c, , q, index] = expressions(args);
   const vertices = [a, b, c];
-  return bind([...triangleAreas([a, b, c, p]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
+  return bind([...pointBarycentrics(vertices, args[3]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
     const [u, v] = [values.slice(0, 3), values.slice(3)];
     const outputs = vertices.map((_, i) => {
       const j = (i + 1) % 3;
@@ -288,7 +289,8 @@ const crossCevianTriangle: ExpressionBuilder = (args, allocate) => {
       weights[i] = mul(u[i], add([mul(u[k], v[j]), mul(u[j], v[k])]));
       weights[j] = mul(u[j], u[k], v[j]);
       weights[k] = mul(u[j], u[k], v[k]);
-      return `If(${add(u)}!=0,${barycentricPoint(vertices, weights)})`;
+      const area = args[3].type === 'point' ? add(u) : triangleFrameDeterminant(vertices);
+      return `If(${area}!=0,${barycentricPoint(vertices, weights)})`;
     });
     return independentOutputs(outputs, index);
   }, 'number');

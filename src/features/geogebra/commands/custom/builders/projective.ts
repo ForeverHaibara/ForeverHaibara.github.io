@@ -1,11 +1,6 @@
 import type { ExpressionBuilder, TypedExpression } from '../types';
 import type { BindingAllocator } from '../algebra/homogeneous';
-import { add, adjugate, bind, coefficientLine, coordinatesToPoint, cross, determinant, homogeneous, mul, product, sub, transpose } from '../algebra/homogeneous';
-
-const directionPoint = (arg: TypedExpression): string[] => {
-  const [a, b, c] = homogeneous(arg);
-  return arg.type === 'point' ? [a, b, c] : [b, `-(${a})`, '0'];
-};
+import { add, adjugate, bind, coefficientLine, coordinatesToPoint, cross, determinant, directionPoint, homogeneous, mul, product, sub, transpose } from '../algebra/homogeneous';
 
 const multiply = (matrix: string[][], vector: string[]) => product(matrix, vector.map((entry) => [entry])).flat();
 const dot = (a: string[], b: string[]) => add(a.map((value, i) => mul(value, b[i])));

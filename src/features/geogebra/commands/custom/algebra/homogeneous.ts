@@ -62,6 +62,25 @@ export const triangleAreas = ([a, b, c, p]: string[]) => {
   const area = (u: string, v: string) => sub(mul(`x(${u})-x(${p})`, `y(${v})-y(${p})`), mul(`y(${u})-y(${p})`, `x(${v})-x(${p})`));
   return [area(b, c), area(c, a), area(a, b)];
 };
+/** In a point role, a line-like input represents its ideal direction. */
+export const directionPoint = (arg: TypedExpression): string[] => {
+  const [a, b, c] = homogeneous(arg);
+  return arg.type === 'point' ? [a, b, c] : [b, `-(${a})`, '0'];
+};
+
+export const triangleFrameDeterminant = (vertices: string[]) =>
+  triangleAreas([...vertices, vertices[0]])[0];
+
+export const pointBarycentrics = (vertices: string[], arg: TypedExpression): string[] => {
+  if (arg.type === 'point') return triangleAreas([...vertices, arg.expression]);
+  const [dx, dy] = directionPoint(arg);
+  return vertices.map((_, i) => {
+    const a = vertices[(i + 1) % 3];
+    const b = vertices[(i + 2) % 3];
+    return add([mul(sub(`y(${a})`, `y(${b})`), dx), mul(sub(`x(${b})`, `x(${a})`), dy)]);
+  });
+};
+
 export const barycentricPoint = ([a, b, c]: string[], [u, v, w]: string[]) => `((${u})*(${a})+(${v})*(${b})+(${w})*(${c}))/((${u})+(${v})+(${w}))`;
 export const independentOutputs = (outputs: string[], index?: string) => index
   ? `If(${index}==floor(${index})&&${index}>=1&&${index}<=${outputs.length},Element({${outputs.join(',')}},${index}))`

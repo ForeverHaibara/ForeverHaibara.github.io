@@ -695,9 +695,9 @@
     },
     {
       "name": "ReciprocalConjugate",
-      "description": "P-reciprocal conjugate of Q. In barycentrics it is the componentwise quotient of P by Q.",
+      "description": "P-reciprocal conjugate of Q. In barycentrics it is the componentwise quotient of P by Q. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"Isoconjugate($A,$B,$C,Centroid($A,$B,$C),$P,$Q)"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","compose":"Isoconjugate($A,$B,$C,Centroid($A,$B,$C),$P,$Q)"}
       ],
       "reference": {"related":["Isoconjugate","IsotomicConjugate"]}
     },
@@ -811,10 +811,10 @@
     },
     {
       "name": "CocevianTriangle",
-      "description": "Harmonic conjugates of the cevian traces of P on BC, CA and AB. The outputs are collinear; optional 1-based index.",
+      "description": "Harmonic conjugates of the cevian traces of P on BC, CA and AB. The outputs are collinear; optional 1-based index. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"cocevianTriangle","outputSlots":3},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"cocevianTriangle"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"}],"returns":"point","builder":"cocevianTriangle","outputSlots":3},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"i","type":"number"}],"returns":"point","builder":"cocevianTriangle"}
       ],
       "reference": {"related":["CevianTriangle","TrilinearPolar","HarmonicConjugate"]}
     },
@@ -977,10 +977,10 @@
     },
     {
       "name": "CrossCevianTriangle",
-      "description": "Intersections of the cevians of Q with the corresponding opposite sides of the cevian triangle of P; optional 1-based vertex index.",
+      "description": "Intersections of the cevians of Q with the corresponding opposite sides of the cevian triangle of P; optional 1-based vertex index. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"crossCevianTriangle"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"crossCevianTriangle"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"crossCevianTriangle","outputSlots":3},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"crossCevianTriangle"}
       ],
       "reference": {"related":["CevianTriangle","Crosspoint"]}
     },
@@ -1076,9 +1076,9 @@
     },
     {
       "name": "CevianCircle",
-      "description": "Circumcircle of the cevian triangle of P, with line limits when the traces become collinear or one is ideal.",
+      "description": "Circumcircle of the cevian triangle of P, with line limits when the traces become collinear or one is ideal. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"conic","builder":"cevianCircle"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"}],"returns":"conic","builder":"cevianCircle"}
       ],
       "reference": {"related":["CevianTriangle","PedalCircle"]}
     },
@@ -1495,10 +1495,12 @@
     {
       "name": "CevianTriangle",
       "aliases": ["塞瓦三角形"],
-      "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index.",
+      "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["Intersect(Line($A,$P),Line($B,$C))", "Intersect(Line($B,$P),Line($C,$A))", "Intersect(Line($C,$P),Line($A,$B))"],"outputSlots":3},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$P),Line($B,$C)),Intersect(Line($B,$P),Line($C,$A)),Intersect(Line($C,$P),Line($A,$B))},$i))"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(Line($A,$P),Line($B,$C)),Intersect(Line($B,$P),Line($C,$A)),Intersect(Line($C,$P),Line($A,$B))},$i))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}], "returns": "point", "builder": "cevianDirection","outputSlots":3},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "cevianDirection"}
       ],
       "reference": {
         "keywords": "ceva triangle"
@@ -1564,25 +1566,26 @@
     {
       "name": "AnticevianTriangle",
       "aliases": ["反塞瓦三角形"],
-      "description": "Anticevian vertices (-p:q:r), (p:-q:r), (p:q:-r) of P; optional 1-based index.",
+      "description": "Anticevian vertices (-p:q:r), (p:-q:r), (p:q:-r) of P; optional 1-based index. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "anticevian","outputSlots":3},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "anticevian"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "point", "builder": "anticevian","outputSlots":3},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}, {"name": "i", "type": "number"}], "returns": "point", "builder": "anticevian"}
       ]
     },
     {
       "name": "CircumcevianPoint",
-      "description": "Second intersection of AP with the circumcircle, given A on the circle.",
+      "description": "Second intersection of AP with the circumcircle, given A on the circle. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$P)"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": "SecondIntersection(Circle($A,$B,$C),$A,$P)"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}], "returns": "point", "builder": "circumcevianDirection"}
       ]
     },
     {
       "name": "CircumcevianTriangle",
-      "description": "Second intersections of AP, BP and CP with the circumcircle; optional 1-based index.",
+      "description": "Second intersections of AP, BP and CP with the circumcircle; optional 1-based index. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "compose": ["CircumcevianPoint($A,$B,$C,$P)", "CircumcevianPoint($B,$C,$A,$P)", "CircumcevianPoint($C,$A,$B,$P)"],"outputSlots":3},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({CircumcevianPoint($A,$B,$C,$P),CircumcevianPoint($B,$C,$A,$P),CircumcevianPoint($C,$A,$B,$P)},$i))"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "point", "compose": ["CircumcevianPoint($A,$B,$C,$P)", "CircumcevianPoint($B,$C,$A,$P)", "CircumcevianPoint($C,$A,$B,$P)"],"outputSlots":3},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}, {"name": "i", "type": "number"}], "returns": "point", "compose": "If($i==floor($i)&&$i>=1&&$i<=3,Element({CircumcevianPoint($A,$B,$C,$P),CircumcevianPoint($B,$C,$A,$P),CircumcevianPoint($C,$A,$B,$P)},$i))"}
       ]
     },
     {
@@ -1887,10 +1890,10 @@
     {
       "name": "Isoconjugate",
       "aliases": ["等度共轭点"],
-      "description": "ETC P-isoconjugate of U (five points), or diagonal reciprocal isoconjugation of P sending X to Y (six points). Use X twice to fix X.",
+      "description": "ETC P-isoconjugate of U (five points), or diagonal reciprocal isoconjugation of P sending X to Y (six points). Use X twice to fix X. P, X and Y can supply a line direction in their respective pivot or calibration slots; the final operand is a point.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}, {"name": "U", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "Y", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}, {"name": "U", "type": "point"}], "returns": "point", "builder": "isoconjugate"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "pointOrLine"}, {"name": "Y", "type": "pointOrLine"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "isoconjugate"}
       ],
       "reference": {
         "related": [
@@ -1921,9 +1924,9 @@
     },
     {
       "name": "CevaConjugate",
-      "description": "X-Ceva conjugate of P with respect to triangle ABC.",
+      "description": "X-Ceva conjugate of P with respect to triangle ABC. X may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cevaConjugate"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "pointOrLine"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "cevaConjugate"}
       ],
       "reference": {
         "keywords": "塞瓦巢 cevanest cevaquotient cevadiv"
@@ -1931,9 +1934,9 @@
     },
     {
       "name": "CrossConjugate",
-      "description": "X-cross conjugate of P with respect to triangle ABC.",
+      "description": "X-cross conjugate of P with respect to triangle ABC. X may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "point"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "crossConjugate"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "X", "type": "pointOrLine"}, {"name": "P", "type": "point"}], "returns": "point", "builder": "crossConjugate"}
       ],
       "reference": {
         "keywords": "塞瓦巢 cevanest crossquotient crossdiv"
