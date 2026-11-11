@@ -2887,7 +2887,7 @@
       "reference": {"related": ["Cubic", "PivotalIsogonalCubic"]}
     },
     {
-      "name": "NapoleanCubic",
+      "name": "NapoleonCubic",
       "description": "Locus of point P and its isogonal conjugate g(P) such that Pg(P)V is collinear and V is the nine-point center, K005, pK(X(6), X(5)).",
       "overloads": [
         {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}], "returns": "implicitCurve", "expression": "Cubic($A,$B,$C,5)"}

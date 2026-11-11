@@ -75,7 +75,7 @@ export const toolGroups: ToolCategory = {
       'Conics from a point': ['InconicWithFocus', 'InconicWithCenter', 'OrthopolarConic'],
     },
     'Cubics': {
-      'Cubics of the triangle': ['NeubergCubic', 'ThompsonCubic', 'McCayCubic', 'DarbouxCubic', 'NapoleonCubic', 'LucasCubic'],
+      'Cubics of the triangle': ['Cubic', 'NeubergCubic', 'ThompsonCubic', 'McCayCubic', 'DarbouxCubic', 'NapoleonCubic', 'LucasCubic'],
       'Cubics from a point': ['PivotalCubic', 'PivotalIsogonalCubic', 'PivotalIsotomicCubic', 'NonpivotalCubic', 'ConicoPivotalCubic', 'OrthopivotalCubic']
     },
     'Catalogue curves': ['GibertCurve', 'TriangleCurve'],
