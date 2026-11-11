@@ -84,7 +84,25 @@
 
 ## 暂缓
 
-- **PolarCircle** 可用 `|X−H|²−(H−A)·(H−B)=0` 连续覆盖实圆、点圆和无实点三种情况。先核定原生 conic 在急角配置的可用性。
+- 扩展词汇表的圆已转入下节。尚需核验的圆族与分支也记在该节。
+
+## ETC 扩展词汇表的圆
+
+本轮接入 50 个圆相关命令及 15 个配套三角形命令。派生三角形使用三个独立点或末尾的 1-based 顶点索引。圆族以 A、B、C 为顺序，Morley 圆的参数 k 选择原三角形族编号。Bevan 圆的顶点已由 `Excenters` 提供，Mandart 圆复用 `ExtouchTriangle`。Euler、Feuerbach 和 orthic 圆使用已有 `NinePointCircle`，第一 Brocard 圆使用已有 `BrocardCircle`。[扩展词汇表](https://faculty.evansville.edu/ck6/encyclopedia/ext_glossary.html)、[三角形索引](https://faculty.evansville.edu/ck6/encyclopedia/IndexOfTrianglesReferencedInETC.html)
+
+| 命令 | 构造 |
+| --- | --- |
+| `BevanCircle`、`SecondBrocardCircle`、`LesterCircle`、`ParryCircle`、`VanLamoenCircle` | 复用 ETC 圆心和定义中的过圆点。Van Lamoen 的过圆点只需取六个小三角形中的一个外心。 |
+| `CosineCircle`、`FirstLemoineCircle`、`GallatlyCircle`、`HalfMosesCircle`、`MosesCircle` | 以 `tan ω=4Δ/(a²+b²+c²)` 计算半径。圆心分别为 X(6)、X(182) 或 X(39)。 |
+| `DouCircle`、`JohnsonCircles`、`IncenterExcenterCircles`、`PowerCircles`、`VertexSoddyCircles`、`InnerSoddyCircle`、`OuterSoddyCircle` | Dou 圆心在 BC 上的投影为 F 时，半径平方是 `OF²+AF²`，由弦所对直角得到。Johnson 的 A 圆以 B+C−O 为心、外接圆半径为半径，直角时仍可计算。其余使用定义中的圆心和半径。 |
+| `PolarCircle`、`RadicalCircle`、`DeLongchampsCircle`、`SpiekerRadicalCircle`、`MixtilinearRadicalCircle` | 输出统一为 conic。极圆用以 H 为心的有符号半径平方。根圆在第一圆心为原点的坐标下解等幂线性方程，保留行列式作为二次项系数，因而无需先求有限根心。 |
+| `CevianCircle`、`CircleOfSimilitude`、`OrthopticCircle`、`ExcosineCircles` | 直接发二次系数，分别保留塞瓦迹点在无穷远、相似圆等半径、抛物线正交视轨迹、边为外接圆直径时的直线。Cevian 圆从三边限制式求系数，Orthoptic 取切线对的二次型迹。 |
+| `SpiekerCircle`、`MandartCircle`、`TangentialCircle`、`FirstSteinerCircle`、`OrthocentroidalCircle`、`MorleyCircle`、内外 Napoleon 与 Vecten 圆 | 优先复用已有三角形、圆心或半径定义。Napoleon 用参考三角形的重心作圆心，避免内 Napoleon 三个顶点重合时再用三点定圆。 |
+| Midheight、Hexyl、Incentral、Symmedial、YffContact、TangentialMidArc、Intangents、Extangents、YffCentral、MacBeath、Reflection、Yiu 的圆及三角形，另有 `ThirdLemoineCircle`、`LemoineTriangle`、`FuhrmannTriangle`、`OrthocentroidalTriangle` 和 `YiuCircles` | 能用投影、反射、塞瓦迹点或现有中心的直接复用。Intangents、Extangents 与 YffCentral 用索引的三线式。MacBeath 取九点中心内切二次曲线在各边上的二重根。Reflection 支持反射三个顶点或同一个 P。 |
+
+半径和圆心的补充依据见 [Yiu 的三角形几何讲义](https://citeseerx.ist.psu.edu/document?doi=1eac3675742e0a2409abbe1d5599bab63dad1a04&repid=rep1&type=pdf)、[Brocard 相关半径对照](https://ijgeometry.com/wp-content/uploads/2021/09/2.-18-31.pdf)及 [ETC X(1116) 和 X(1153)](https://faculty.evansville.edu/ck6/encyclopedia/ETCPart2.html)。
+
+待核验条目包括 EGS、GEOS、Jenkins、Johnson–Yff、Kenmotu、Lucas、Malfatti、McCay、Neuberg、sine-triple-angle、Stammler、第二 Steiner、Stevanovic 和 Yff 三圆族。圆的关系术语和 Descartes 曲率公式保留为概念。二次方程的实引擎表现，尤其是线、点和无实点的拖动与导出重开，仍待 GeoGebra 实机验证。
 
 ## 验收顺序
 

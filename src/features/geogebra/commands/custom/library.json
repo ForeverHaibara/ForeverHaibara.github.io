@@ -1059,6 +1059,548 @@
       "reference": {"related":["MorleyTriangle"]}
     },
     {
+      "name": "BevanCircle",
+      "description": "Circumcircle of the excentral triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TriangleCenter($A,$B,$C,40),2*$radius)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"}]}
+      ],
+      "reference": {"keywords":"excentral circle","related":["Excenters","BevanPoint"]}
+    },
+    {
+      "name": "SecondBrocardCircle",
+      "description": "Circle centered at the circumcenter through both Brocard points.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($o,BrocardPoints($A,$B,$C,1))","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["BrocardCircle","BrocardPoints"]}
+    },
+    {
+      "name": "CevianCircle",
+      "description": "Circumcircle of the cevian triangle of P, with line limits when the traces become collinear or one is ideal.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"conic","builder":"cevianCircle"}
+      ],
+      "reference": {"related":["CevianTriangle","PedalCircle"]}
+    },
+    {
+      "name": "CosineCircle",
+      "description": "Second Lemoine circle centered at the symmedian point.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($kpoint,$radius*$tau)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"kpoint","expression":"SymmedianPoint($A,$B,$C)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"tau","expression":"4*$delta/($a^2+$b^2+$c^2)"}]}
+      ],
+      "reference": {"keywords":"second Lemoine circle","related":["SymmedianPoint"]}
+    },
+    {
+      "name": "FirstLemoineCircle",
+      "description": "Circle of the six sideline intersections of the parallels through the symmedian point.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Midpoint($o,$kpoint),$radius*sqrt(1+$tau^2)/2)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"kpoint","expression":"SymmedianPoint($A,$B,$C)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"tau","expression":"4*$delta/($a^2+$b^2+$c^2)"}]}
+      ],
+      "reference": {"keywords":"triplicate ratio circle","related":["CosineCircle","TuckerCircle"]}
+    },
+    {
+      "name": "DouCircle",
+      "description": "Circle cutting each sideline in a chord that subtends a right angle at the opposite vertex.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($o,sqrt(Distance($o,$foot)^2+Distance($A,$foot)^2))","locals":[{"name":"o","expression":"TriangleCenter($A,$B,$C,155)"},{"name":"foot","expression":"($o+Reflect($o,Line($B,$C)))/2"}]}
+      ]
+    },
+    {
+      "name": "GallatlyCircle",
+      "description": "Circle through the six projections of the Brocard points on the sidelines.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($m,$radius*$omegaSin)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"tau","expression":"4*$delta/($a^2+$b^2+$c^2)"},{"name":"omegaSin","expression":"$tau/sqrt(1+$tau^2)"},{"name":"m","expression":"TriangleCenter($A,$B,$C,39)"}]}
+      ],
+      "reference": {"related":["BrocardPoints","NinePointCircle"]}
+    },
+    {
+      "name": "HalfMosesCircle",
+      "description": "Circle centered at the Brocard midpoint with radius R sin²(omega).",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($m,$radius*$omegaSin^2)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"tau","expression":"4*$delta/($a^2+$b^2+$c^2)"},{"name":"omegaSin","expression":"$tau/sqrt(1+$tau^2)"},{"name":"m","expression":"TriangleCenter($A,$B,$C,39)"}]}
+      ],
+      "reference": {"related":["BrocardPoints","NinePointCircle"]}
+    },
+    {
+      "name": "MosesCircle",
+      "description": "Circle centered at the Brocard midpoint and tangent to the nine-point circle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle($m,2*$radius*$omegaSin^2)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"tau","expression":"4*$delta/($a^2+$b^2+$c^2)"},{"name":"omegaSin","expression":"$tau/sqrt(1+$tau^2)"},{"name":"m","expression":"TriangleCenter($A,$B,$C,39)"}]}
+      ],
+      "reference": {"related":["BrocardPoints","NinePointCircle"]}
+    },
+    {
+      "name": "IncenterExcenterCircles",
+      "description": "Circles whose diameters join the incenter to the excenters opposite A, B and C. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":["Circle(Midpoint($center,Excenter($A,$B,$C)),Distance($center,Excenter($A,$B,$C))/2)","Circle(Midpoint($center,Excenter($B,$C,$A)),Distance($center,Excenter($B,$C,$A))/2)","Circle(Midpoint($center,Excenter($C,$A,$B)),Distance($center,Excenter($C,$A,$B))/2)"],"locals":[{"name":"center","expression":"Incenter($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Circle(Midpoint($center,Excenter($A,$B,$C)),Distance($center,Excenter($A,$B,$C))/2),Circle(Midpoint($center,Excenter($B,$C,$A)),Distance($center,Excenter($B,$C,$A))/2),Circle(Midpoint($center,Excenter($C,$A,$B)),Distance($center,Excenter($C,$A,$B))/2)},$i))","locals":[{"name":"center","expression":"Incenter($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["Excenters"]}
+    },
+    {
+      "name": "JohnsonCircles",
+      "description": "Circles through H and each opposite side pair in order BC, CA and AB. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":["Circle($B+$C-$o,$radius)","Circle($C+$A-$o,$radius)","Circle($A+$B-$o,$radius)"],"locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Circle($B+$C-$o,$radius),Circle($C+$A-$o,$radius),Circle($A+$B-$o,$radius)},$i))","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"}]}
+      ],
+      "reference": {"related":["Orthocenter"]}
+    },
+    {
+      "name": "PowerCircles",
+      "description": "Circles centered at the side midpoints through the opposite vertices. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":["Circle(Midpoint($B,$C),$A)","Circle(Midpoint($C,$A),$B)","Circle(Midpoint($A,$B),$C)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Circle(Midpoint($B,$C),$A),Circle(Midpoint($C,$A),$B),Circle(Midpoint($A,$B),$C)},$i))"}
+      ],
+      "reference": {"related":["MedialTriangle"]}
+    },
+    {
+      "name": "VertexSoddyCircles",
+      "description": "Circles centered at A, B and C that are pairwise externally tangent. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":["Circle($A,(Distance($A,$B)+Distance($A,$C)-Distance($B,$C))/2)","Circle($B,(Distance($B,$C)+Distance($B,$A)-Distance($C,$A))/2)","Circle($C,(Distance($C,$A)+Distance($C,$B)-Distance($A,$B))/2)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Circle($A,(Distance($A,$B)+Distance($A,$C)-Distance($B,$C))/2),Circle($B,(Distance($B,$C)+Distance($B,$A)-Distance($C,$A))/2),Circle($C,(Distance($C,$A)+Distance($C,$B)-Distance($A,$B))/2)},$i))"}
+      ]
+    },
+    {
+      "name": "InnerSoddyCircle",
+      "description": "The inner Soddy circle of the three vertex circles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(SoddyPoint($A,$B,$C,2),$delta/abs(4*$radius+$r+($a+$b+$c)))","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"r","expression":"Distance(Incenter($A,$B,$C),Line($B,$C))"}]}
+      ],
+      "reference": {"related":["SoddyPoint","VertexSoddyCircles"]}
+    },
+    {
+      "name": "OuterSoddyCircle",
+      "description": "The outer Soddy circle of the three vertex circles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(SoddyPoint($A,$B,$C,1),$delta/abs(4*$radius+$r-($a+$b+$c)))","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"},{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"},{"name":"delta","expression":"abs((x($B)-x($A))*(y($C)-y($A))-(y($B)-y($A))*(x($C)-x($A)))/2"},{"name":"r","expression":"Distance(Incenter($A,$B,$C),Line($B,$C))"}]}
+      ],
+      "reference": {"related":["SoddyPoint","VertexSoddyCircles"]}
+    },
+    {
+      "name": "LesterCircle",
+      "description": "Circle through the circumcenter, nine-point center and both Fermat points.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TriangleCenter($A,$B,$C,1116),$o)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["FermatPoint","NinePointCenter"]}
+    },
+    {
+      "name": "ParryCircle",
+      "description": "Circle through the centroid and the two isodynamic points.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TriangleCenter($A,$B,$C,351),Centroid($A,$B,$C))"}
+      ],
+      "reference": {"related":["IsodynamicPoint"]}
+    },
+    {
+      "name": "VanLamoenCircle",
+      "description": "Circle through the circumcenters of the six triangles cut out by the medians.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TriangleCenter($A,$B,$C,1153),Circumcenter($A,Midpoint($A,$B),$g))","locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["Centroid"]}
+    },
+    {
+      "name": "SpiekerCircle",
+      "description": "Incircle of the medial triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Incircle(MedialTriangle($A,$B,$C,1),MedialTriangle($A,$B,$C,2),MedialTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["MedialTriangle","SpiekerCenter"]}
+    },
+    {
+      "name": "MandartCircle",
+      "description": "Circumcircle of the extouch triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ExtouchTriangle($A,$B,$C,1),ExtouchTriangle($A,$B,$C,2),ExtouchTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["ExtouchTriangle"]}
+    },
+    {
+      "name": "TangentialCircle",
+      "description": "Circumcircle of the tangential triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TangentialTriangle($A,$B,$C,1),TangentialTriangle($A,$B,$C,2),TangentialTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["TangentialTriangle"]}
+    },
+    {
+      "name": "FirstSteinerCircle",
+      "description": "Circle centered at the nine-point center with radius 3R/2.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(NinePointCenter($A,$B,$C),3*$radius/2)","locals":[{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"radius","expression":"Distance($o,$A)"}]}
+      ],
+      "reference": {"related":["NinePointCircle"]}
+    },
+    {
+      "name": "OrthocentroidalCircle",
+      "description": "Circle with diameter joining the orthocenter and centroid.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Midpoint($h,$g),Distance($h,$g)/2)","locals":[{"name":"h","expression":"Orthocenter($A,$B,$C)"},{"name":"g","expression":"Centroid($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["OrthocentroidalTriangle"]}
+    },
+    {
+      "name": "PolarCircle",
+      "description": "Polar circle with signed squared radius. Its real locus is a circle for an obtuse triangle and a point for a right triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"conic","compose":"Conic({1,1,x($h)^2+y($h)^2-((x($h)-x($A))*(x($h)-x($B))+(y($h)-y($A))*(y($h)-y($B))),0,-2*x($h),-2*y($h)})","locals":[{"name":"h","expression":"Orthocenter($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["PolarConjugate"]}
+    },
+    {
+      "name": "RadicalCircle",
+      "description": "Circle orthogonal to three circles, represented as a conic with signed squared radius.",
+      "overloads": [
+        {"params":[{"name":"c1","type":"circle"},{"name":"c2","type":"circle"},{"name":"c3","type":"circle"}],"returns":"conic","builder":"radicalCircle"}
+      ],
+      "reference": {"related":["RadicalCenter"]}
+    },
+    {
+      "name": "DeLongchampsCircle",
+      "description": "Radical circle of the three power circles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"conic","compose":"RadicalCircle(PowerCircles($A,$B,$C,1),PowerCircles($A,$B,$C,2),PowerCircles($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["RadicalCircle","PowerCircles"]}
+    },
+    {
+      "name": "SpiekerRadicalCircle",
+      "description": "Radical circle of the three excircles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"conic","compose":"RadicalCircle(Excircles($A,$B,$C,1),Excircles($A,$B,$C,2),Excircles($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["RadicalCircle","Excircles"]}
+    },
+    {
+      "name": "MixtilinearRadicalCircle",
+      "description": "Radical circle of the three mixtilinear incircles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"conic","compose":"RadicalCircle(MixtilinearIncircles($A,$B,$C,1),MixtilinearIncircles($A,$B,$C,2),MixtilinearIncircles($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["RadicalCircle","MixtilinearIncircles"]}
+    },
+    {
+      "name": "CircleOfSimilitude",
+      "description": "Circle with the internal and external similarity centers as diameter endpoints, with a line limit for equal radii.",
+      "overloads": [
+        {"params":[{"name":"c1","type":"circle"},{"name":"c2","type":"circle"}],"returns":"conic","compose":"Conic({$a-$b,$a-$b,$a*(x($v)^2+y($v)^2)-$b*(x($u)^2+y($u)^2),0,2*($b*x($u)-$a*x($v)),2*($b*y($u)-$a*y($v))})","locals":[{"name":"u","expression":"Center($c1)"},{"name":"v","expression":"Center($c2)"},{"name":"a","expression":"Radius($c1)^2"},{"name":"b","expression":"Radius($c2)^2"}]}
+      ],
+      "reference": {"related":["SimilarityCenter","RadicalAxis"]}
+    },
+    {
+      "name": "OrthopticCircle",
+      "description": "Orthoptic conic of a conic. The parabola case gives its directrix.",
+      "overloads": [
+        {"params":[{"name":"q","type":"conic"}],"returns":"conic","compose":"Conic({$d,$d,$e^2+$f^2-4*$c*($a+$b),0,2*$m*$f-4*$b*$e,2*$m*$e-4*$a*$f})","locals":[{"name":"coeff","expression":"Coefficients($q)"},{"name":"a","expression":"Element($coeff,1)"},{"name":"b","expression":"Element($coeff,2)"},{"name":"c","expression":"Element($coeff,3)"},{"name":"m","expression":"Element($coeff,4)"},{"name":"e","expression":"Element($coeff,5)"},{"name":"f","expression":"Element($coeff,6)"},{"name":"d","expression":"$m^2-4*$a*$b"}]}
+      ],
+      "reference": {"related":["Directrix","Tangent"]}
+    },
+    {
+      "name": "MidheightTriangle",
+      "description": "Midpoints of the three altitudes from the vertices. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Midpoint($A,OrthicTriangle($A,$B,$C,1))","Midpoint($B,OrthicTriangle($A,$B,$C,2))","Midpoint($C,OrthicTriangle($A,$B,$C,3))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Midpoint($A,OrthicTriangle($A,$B,$C,1)),Midpoint($B,OrthicTriangle($A,$B,$C,2)),Midpoint($C,OrthicTriangle($A,$B,$C,3))},$i))"}
+      ],
+      "reference": {"related":["OrthicTriangle"]}
+    },
+    {
+      "name": "OrthocentroidalTriangle",
+      "description": "Projections of the centroid onto the altitudes from A, B and C. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["($g+Reflect($g,PerpendicularLine($A,Line($B,$C))))/2","($g+Reflect($g,PerpendicularLine($B,Line($C,$A))))/2","($g+Reflect($g,PerpendicularLine($C,Line($A,$B))))/2"],"locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({($g+Reflect($g,PerpendicularLine($A,Line($B,$C))))/2,($g+Reflect($g,PerpendicularLine($B,Line($C,$A))))/2,($g+Reflect($g,PerpendicularLine($C,Line($A,$B))))/2},$i))","locals":[{"name":"g","expression":"Centroid($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["OrthocentroidalCircle"]}
+    },
+    {
+      "name": "HexylTriangle",
+      "description": "Intersections of the paired perpendiculars through the adjacent excenters. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect(PerpendicularLine(Excenter($B,$C,$A),Line($A,$B)),PerpendicularLine(Excenter($C,$A,$B),Line($A,$C)))","Intersect(PerpendicularLine(Excenter($C,$A,$B),Line($B,$C)),PerpendicularLine(Excenter($A,$B,$C),Line($B,$A)))","Intersect(PerpendicularLine(Excenter($A,$B,$C),Line($C,$A)),PerpendicularLine(Excenter($B,$C,$A),Line($C,$B)))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect(PerpendicularLine(Excenter($B,$C,$A),Line($A,$B)),PerpendicularLine(Excenter($C,$A,$B),Line($A,$C))),Intersect(PerpendicularLine(Excenter($C,$A,$B),Line($B,$C)),PerpendicularLine(Excenter($A,$B,$C),Line($B,$A))),Intersect(PerpendicularLine(Excenter($A,$B,$C),Line($C,$A)),PerpendicularLine(Excenter($B,$C,$A),Line($C,$B)))},$i))"}
+      ],
+      "reference": {"related":["Excenters"]}
+    },
+    {
+      "name": "FuhrmannTriangle",
+      "description": "Reflections of the far arc midpoints in their corresponding sidelines. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect(ArcMidpoint($A,$B,$C),Line($B,$C))","Reflect(ArcMidpoint($B,$C,$A),Line($C,$A))","Reflect(ArcMidpoint($C,$A,$B),Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect(ArcMidpoint($A,$B,$C),Line($B,$C)),Reflect(ArcMidpoint($B,$C,$A),Line($C,$A)),Reflect(ArcMidpoint($C,$A,$B),Line($A,$B))},$i))"}
+      ],
+      "reference": {"related":["FuhrmannCircle"]}
+    },
+    {
+      "name": "IncentralTriangle",
+      "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"Incenter($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"Incenter($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["CevianTriangle"]}
+    },
+    {
+      "name": "SymmedialTriangle",
+      "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"SymmedianPoint($A,$B,$C)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"SymmedianPoint($A,$B,$C)"}]}
+      ],
+      "reference": {"related":["CevianTriangle"]}
+    },
+    {
+      "name": "LemoineTriangle",
+      "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,598)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,598)"}]}
+      ],
+      "reference": {"related":["CevianTriangle"]}
+    },
+    {
+      "name": "YffContactTriangle",
+      "description": "Cevian triangle of the corresponding center. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["CevianTriangle($A,$B,$C,$pivot,1)","CevianTriangle($A,$B,$C,$pivot,2)","CevianTriangle($A,$B,$C,$pivot,3)"],"locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,190)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({CevianTriangle($A,$B,$C,$pivot,1),CevianTriangle($A,$B,$C,$pivot,2),CevianTriangle($A,$B,$C,$pivot,3)},$i))","locals":[{"name":"pivot","expression":"TriangleCenter($A,$B,$C,190)"}]}
+      ],
+      "reference": {"related":["CevianTriangle"]}
+    },
+    {
+      "name": "ReflectionTriangle",
+      "description": "Reflections in BC, CA and AB of the opposite vertices or of a supplied point P. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Reflect($A,Line($B,$C))","Reflect($B,Line($C,$A))","Reflect($C,Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect($A,Line($B,$C)),Reflect($B,Line($C,$A)),Reflect($C,Line($A,$B))},$i))"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":["Reflect($P,Line($B,$C))","Reflect($P,Line($C,$A))","Reflect($P,Line($A,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Reflect($P,Line($B,$C)),Reflect($P,Line($C,$A)),Reflect($P,Line($A,$B))},$i))"}
+      ],
+      "reference": {"related":["ReflectionCircle"]}
+    },
+    {
+      "name": "ReflectionCircle",
+      "description": "Circumcircle of the reflection triangle of ABC or of a supplied point P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ReflectionTriangle($A,$B,$C,1),ReflectionTriangle($A,$B,$C,2),ReflectionTriangle($A,$B,$C,3))"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"circle","compose":"Circle(ReflectionTriangle($A,$B,$C,$P,1),ReflectionTriangle($A,$B,$C,$P,2),ReflectionTriangle($A,$B,$C,$P,3))"}
+      ],
+      "reference": {"related":["ReflectionTriangle"]}
+    },
+    {
+      "name": "TangentialMidArcTriangle",
+      "description": "Triangle of the incircle tangents perpendicular to the internal bisectors at the points nearest A, B and C. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Intersect($t2,$t3)","Intersect($t3,$t1)","Intersect($t1,$t2)"],"locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"r","expression":"Distance($center,Line($B,$C))"},{"name":"t1","expression":"PerpendicularLine($center+$r*($A-$center)/Distance($A,$center),Line($A,$center))"},{"name":"t2","expression":"PerpendicularLine($center+$r*($B-$center)/Distance($B,$center),Line($B,$center))"},{"name":"t3","expression":"PerpendicularLine($center+$r*($C-$center)/Distance($C,$center),Line($C,$center))"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Intersect($t2,$t3),Intersect($t3,$t1),Intersect($t1,$t2)},$i))","locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"r","expression":"Distance($center,Line($B,$C))"},{"name":"t1","expression":"PerpendicularLine($center+$r*($A-$center)/Distance($A,$center),Line($A,$center))"},{"name":"t2","expression":"PerpendicularLine($center+$r*($B-$center)/Distance($B,$center),Line($B,$center))"},{"name":"t3","expression":"PerpendicularLine($center+$r*($C-$center)/Distance($C,$center),Line($C,$center))"}]}
+      ],
+      "reference": {"related":["Incircle"]}
+    },
+    {
+      "name": "YiuCircles",
+      "description": "Circles through each vertex and the reflected adjacent vertices. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":["Circle($A,Reflect($B,Line($A,$C)),Reflect($C,Line($A,$B)))","Circle($B,Reflect($C,Line($B,$A)),Reflect($A,Line($B,$C)))","Circle($C,Reflect($A,Line($C,$B)),Reflect($B,Line($C,$A)))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Circle($A,Reflect($B,Line($A,$C)),Reflect($C,Line($A,$B))),Circle($B,Reflect($C,Line($B,$A)),Reflect($A,Line($B,$C))),Circle($C,Reflect($A,Line($C,$B)),Reflect($B,Line($C,$A)))},$i))"}
+      ]
+    },
+    {
+      "name": "YiuTriangle",
+      "description": "Centers of the three Yiu circles. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Center(YiuCircles($A,$B,$C,1))","Center(YiuCircles($A,$B,$C,2))","Center(YiuCircles($A,$B,$C,3))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Center(YiuCircles($A,$B,$C,1)),Center(YiuCircles($A,$B,$C,2)),Center(YiuCircles($A,$B,$C,3))},$i))"}
+      ],
+      "reference": {"related":["YiuCircles"]}
+    },
+    {
+      "name": "MidheightCircle",
+      "description": "Circumcircle of the midheight triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(MidheightTriangle($A,$B,$C,1),MidheightTriangle($A,$B,$C,2),MidheightTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["MidheightTriangle"]}
+    },
+    {
+      "name": "HexylCircle",
+      "description": "Circumcircle of the hexyl triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(HexylTriangle($A,$B,$C,1),HexylTriangle($A,$B,$C,2),HexylTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["HexylTriangle"]}
+    },
+    {
+      "name": "IncentralCircle",
+      "description": "Circumcircle of the incentral triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(IncentralTriangle($A,$B,$C,1),IncentralTriangle($A,$B,$C,2),IncentralTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["IncentralTriangle"]}
+    },
+    {
+      "name": "SymmedialCircle",
+      "description": "Circumcircle of the symmedial triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(SymmedialTriangle($A,$B,$C,1),SymmedialTriangle($A,$B,$C,2),SymmedialTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["SymmedialTriangle"]}
+    },
+    {
+      "name": "ThirdLemoineCircle",
+      "description": "Circumcircle of the lemoine triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(LemoineTriangle($A,$B,$C,1),LemoineTriangle($A,$B,$C,2),LemoineTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["LemoineTriangle"]}
+    },
+    {
+      "name": "YffContactCircle",
+      "description": "Circumcircle of the yff contact triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(YffContactTriangle($A,$B,$C,1),YffContactTriangle($A,$B,$C,2),YffContactTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["YffContactTriangle"]}
+    },
+    {
+      "name": "TangentialMidArcCircle",
+      "description": "Circumcircle of the tangential mid arc triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(TangentialMidArcTriangle($A,$B,$C,1),TangentialMidArcTriangle($A,$B,$C,2),TangentialMidArcTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["TangentialMidArcTriangle"]}
+    },
+    {
+      "name": "YiuCircle",
+      "description": "Circumcircle of the yiu triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(YiuTriangle($A,$B,$C,1),YiuTriangle($A,$B,$C,2),YiuTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["YiuTriangle"]}
+    },
+    {
+      "name": "InnerVectenCircle",
+      "description": "Circumcircle of the inner vecten triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(InnerVectenTriangle($A,$B,$C,1),InnerVectenTriangle($A,$B,$C,2),InnerVectenTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["InnerVectenTriangle"]}
+    },
+    {
+      "name": "OuterVectenCircle",
+      "description": "Circumcircle of the outer vecten triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(OuterVectenTriangle($A,$B,$C,1),OuterVectenTriangle($A,$B,$C,2),OuterVectenTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["OuterVectenTriangle"]}
+    },
+    {
+      "name": "InnerNapoleonCircle",
+      "description": "Circumcircle of the inner Napoleon triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Centroid($A,$B,$C),InnerNapoleonTriangle($A,$B,$C,1))"}
+      ],
+      "reference": {"related":["InnerNapoleonTriangle"]}
+    },
+    {
+      "name": "OuterNapoleonCircle",
+      "description": "Circumcircle of the outer Napoleon triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(Centroid($A,$B,$C),OuterNapoleonTriangle($A,$B,$C,1))"}
+      ],
+      "reference": {"related":["OuterNapoleonTriangle"]}
+    },
+    {
+      "name": "MorleyCircle",
+      "description": "Circumcircle of a Morley triangle. k=1, 2 or 3 selects the family member and defaults to 1.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(MorleyTriangle($A,$B,$C,1,1),MorleyTriangle($A,$B,$C,1,2),MorleyTriangle($A,$B,$C,1,3))"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"circle","compose":"Circle(MorleyTriangle($A,$B,$C,$k,1),MorleyTriangle($A,$B,$C,$k,2),MorleyTriangle($A,$B,$C,$k,3))"}
+      ],
+      "reference": {"related":["MorleyTriangle"]}
+    },
+    {
+      "name": "IntangentsTriangle",
+      "description": "Triangle bounded by the second interior common tangents of the incircle and the three excircles. Optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*(-$a+$b+$c))*$A+($b*($a-$c)*($a-$b+$c))*$B+($c*($a-$b)*($a+$b-$c))*$C)/((-$a^2*(-$a+$b+$c))+($b*($a-$c)*($a-$b+$c))+($c*($a-$b)*($a+$b-$c)))","((-$b^2*(-$b+$c+$a))*$B+($c*($b-$a)*($b-$c+$a))*$C+($a*($b-$c)*($b+$c-$a))*$A)/((-$b^2*(-$b+$c+$a))+($c*($b-$a)*($b-$c+$a))+($a*($b-$c)*($b+$c-$a)))","((-$c^2*(-$c+$a+$b))*$C+($a*($c-$b)*($c-$a+$b))*$A+($b*($c-$a)*($c+$a-$b))*$B)/((-$c^2*(-$c+$a+$b))+($a*($c-$b)*($c-$a+$b))+($b*($c-$a)*($c+$a-$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({((-$a^2*(-$a+$b+$c))*$A+($b*($a-$c)*($a-$b+$c))*$B+($c*($a-$b)*($a+$b-$c))*$C)/((-$a^2*(-$a+$b+$c))+($b*($a-$c)*($a-$b+$c))+($c*($a-$b)*($a+$b-$c))),((-$b^2*(-$b+$c+$a))*$B+($c*($b-$a)*($b-$c+$a))*$C+($a*($b-$c)*($b+$c-$a))*$A)/((-$b^2*(-$b+$c+$a))+($c*($b-$a)*($b-$c+$a))+($a*($b-$c)*($b+$c-$a))),((-$c^2*(-$c+$a+$b))*$C+($a*($c-$b)*($c-$a+$b))*$A+($b*($c-$a)*($c+$a-$b))*$B)/((-$c^2*(-$c+$a+$b))+($a*($c-$b)*($c-$a+$b))+($b*($c-$a)*($c+$a-$b)))},$i))","locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]}
+      ],
+      "reference": {"related":["IntangentsCircle"]}
+    },
+    {
+      "name": "IntangentsCircle",
+      "description": "Circumcircle of the Intangents triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(IntangentsTriangle($A,$B,$C,1),IntangentsTriangle($A,$B,$C,2),IntangentsTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["IntangentsTriangle"]}
+    },
+    {
+      "name": "ExtangentsTriangle",
+      "description": "Triangle bounded by the three exterior common tangents opposite the reference sidelines. Optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["((-$a^2*($a+$b+$c))*$A+($b*($a+$c)*($a+$b-$c))*$B+($c*($a+$b)*($a-$b+$c))*$C)/((-$a^2*($a+$b+$c))+($b*($a+$c)*($a+$b-$c))+($c*($a+$b)*($a-$b+$c)))","((-$b^2*($b+$c+$a))*$B+($c*($b+$a)*($b+$c-$a))*$C+($a*($b+$c)*($b-$c+$a))*$A)/((-$b^2*($b+$c+$a))+($c*($b+$a)*($b+$c-$a))+($a*($b+$c)*($b-$c+$a)))","((-$c^2*($c+$a+$b))*$C+($a*($c+$b)*($c+$a-$b))*$A+($b*($c+$a)*($c-$a+$b))*$B)/((-$c^2*($c+$a+$b))+($a*($c+$b)*($c+$a-$b))+($b*($c+$a)*($c-$a+$b)))"],"locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({((-$a^2*($a+$b+$c))*$A+($b*($a+$c)*($a+$b-$c))*$B+($c*($a+$b)*($a-$b+$c))*$C)/((-$a^2*($a+$b+$c))+($b*($a+$c)*($a+$b-$c))+($c*($a+$b)*($a-$b+$c))),((-$b^2*($b+$c+$a))*$B+($c*($b+$a)*($b+$c-$a))*$C+($a*($b+$c)*($b-$c+$a))*$A)/((-$b^2*($b+$c+$a))+($c*($b+$a)*($b+$c-$a))+($a*($b+$c)*($b-$c+$a))),((-$c^2*($c+$a+$b))*$C+($a*($c+$b)*($c+$a-$b))*$A+($b*($c+$a)*($c-$a+$b))*$B)/((-$c^2*($c+$a+$b))+($a*($c+$b)*($c+$a-$b))+($b*($c+$a)*($c-$a+$b)))},$i))","locals":[{"name":"a","expression":"Distance($B,$C)"},{"name":"b","expression":"Distance($C,$A)"},{"name":"c","expression":"Distance($A,$B)"}]}
+      ],
+      "reference": {"related":["ExtangentsCircle"]}
+    },
+    {
+      "name": "ExtangentsCircle",
+      "description": "Circumcircle of the Extangents triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","compose":"Circle(ExtangentsTriangle($A,$B,$C,1),ExtangentsTriangle($A,$B,$C,2),ExtangentsTriangle($A,$B,$C,3))"}
+      ],
+      "reference": {"related":["ExtangentsTriangle"]}
+    },
+    {
+      "name": "YffCentralTriangle",
+      "description": "Central triangle of the Yff dissection into four congruent triangles. Optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"yffCentralTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"yffCentralTriangle"}
+      ],
+      "reference": {"related":["YffCentralCircle"]}
+    },
+    {
+      "name": "YffCentralCircle",
+      "description": "Circumcircle of the Yff Central triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","builder":"yffCentralCircle"}
+      ],
+      "reference": {"related":["YffCentralTriangle"]}
+    },
+    {
+      "name": "MacBeathTriangle",
+      "description": "Contact triangle of the MacBeath inconic. Optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"macBeathTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"macBeathTriangle"}
+      ],
+      "reference": {"related":["MacBeathCircle"]}
+    },
+    {
+      "name": "MacBeathCircle",
+      "description": "Circumcircle of the Mac Beath triangle.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","builder":"macBeathCircle"}
+      ],
+      "reference": {"related":["MacBeathTriangle"]}
+    },
+    {
+      "name": "ExcosineCircles",
+      "description": "Circles centered at the poles of the sidelines and passing through their endpoints. A diameter sideline gives a line limit. Optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"conic","builder":"excosineCircles"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"conic","builder":"excosineCircles"}
+      ],
+      "reference": {"related":["CosineCircle"]}
+    },
+    {
       "name": "ConwayCircle",
       "description": "Conway circle through the six side extensions of ABC.",
       "overloads": [

@@ -130,6 +130,41 @@ const inconicCenter: ExpressionBuilder = (args, allocate) => {
 const steinerInellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['1', '1', '1', '-2', '-2', '-2']);
 const steinerCircumellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['0', '0', '0', '1', '1', '1']);
 
+const triangleOrCircle = (points: string[], circle: boolean, index?: string) =>
+  circle ? `Circle(${points.join(',')})` : independentOutputs(points, index);
+
+const yffCentral = (circle: boolean): ExpressionBuilder => (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const lengths = vertices.map((_, i) => `Distance(${vertices[(i + 1) % 3]},${vertices[(i + 2) % 3]})`);
+  return bind(lengths, allocate, (sides) => {
+    const halfSines = sides.map((a, i) => {
+      const b = sides[(i + 1) % 3];
+      const c = sides[(i + 2) % 3];
+      return `sqrt((${a}+${b}-${c})*(${a}+${c}-${b})/(${b}*${c}))/2`;
+    });
+    return bind(halfSines, allocate, (sines) => triangleOrCircle(sides.map((a, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      return barycentricPoint([vertices[i], vertices[j], vertices[k]], [
+        mul('2', a, sines[i]), add([mul('2', a, sines[j]), a, sub(sides[j], sides[k])]),
+        add([mul('2', a, sines[k]), a, sub(sides[k], sides[j])]),
+      ]);
+    }), circle, args[3]?.expression), 'number');
+  }, 'number');
+};
+
+const macBeath = (circle: boolean): ExpressionBuilder => (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  return bind([`TriangleCenter(${vertices.join(',')},5)`], allocate, ([center]) =>
+    bind(triangleAreas([...vertices, center]), allocate, (p) => triangleOrCircle(p.map((a, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      // The centered inconic restricts to a perfect square on each side.
+      return barycentricPoint([vertices[i], vertices[j], vertices[k]], ['0',
+        add([a, sub(p[j], p[k])]), add([a, sub(p[k], p[j])])]);
+    }), circle, args[3]?.expression), 'number'), 'point');
+};
+
 const apolloniusCircle: ExpressionBuilder = (args, allocate) => {
   const [a, b, c] = args.map((arg) => arg.expression);
   const coefficients = bind([`Distance(${c},${a})^2`, `Distance(${a},${b})^2`, `x(${c})-x(${b})`, `y(${c})-y(${b})`], allocate, ([u, v, dx, dy]) =>
@@ -314,6 +349,8 @@ const morleyTriangle = (adjunct: boolean): ExpressionBuilder => (args, allocate)
 };
 
 export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  yffCentralTriangle: yffCentral(false), yffCentralCircle: yffCentral(true),
+  macBeathTriangle: macBeath(false), macBeathCircle: macBeath(true),
   crosssum: crossCombination(false), crossdifference: crossCombination(true),
   alephConjugate: etcConjugate(false), bethConjugate: etcConjugate(true),
   crossCevianTriangle, haimovTriangle,

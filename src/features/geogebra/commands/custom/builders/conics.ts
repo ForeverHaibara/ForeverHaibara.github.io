@@ -1,5 +1,6 @@
 import type { ExpressionBuilder } from '../types';
-import { add, barycentricConic, bind, coefficientLine, coefficientList, independentOutputs, squaredNorm } from '../algebra/homogeneous';
+import { add, barycentricConic, bind, coefficientLine, coefficientList, cross, independentOutputs, mul, squaredNorm, sub,
+  translatedConicCoefficients, triangleAreas, triangleSideSquares } from '../algebra/homogeneous';
 
 export const scimemiCoordinates = ([a, b, h, d, e]: string[], [x, y]: string[], inverse: boolean): string[] => {
   const t = `(${a}+${b})`; const r = `(${b}-${a})`; const delta = `((${a}-${b})^2+(${h})^2)`;
@@ -76,7 +77,69 @@ const coaxialLimitingPoints: ExpressionBuilder = (args, allocate) => {
             }, 'number'), 'number'), 'number'), 'number'), 'number'), ['point', 'point', 'number', 'number']);
 };
 
+const radicalCircle: ExpressionBuilder = (args, allocate) =>
+  bind(args.map((arg) => arg.expression), allocate, ([first, second, third]) =>
+    bind([first, second, third].map((circle) => `Center(${circle})`), allocate, ([o, p, q]) =>
+      bind([`x(${p})-x(${o})`, `y(${p})-y(${o})`, `x(${q})-x(${o})`, `y(${q})-y(${o})`,
+        ...[first, second, third].map((circle) => `Radius(${circle})^2`)], allocate, ([ux, uy, vx, vy, r1, r2, r3]) => {
+        const u = sub(add([squaredNorm([ux, uy]), r1]), r2);
+        const v = sub(add([squaredNorm([vx, vy]), r1]), r3);
+        // In coordinates relative to the first center, the circle equation
+        // is d (|X|²+r1) - n·X = 0, without dividing by the center determinant.
+        return bind([sub(mul(ux, vy), mul(uy, vx)), sub(mul(u, vy), mul(uy, v)),
+          sub(mul(ux, v), mul(u, vx))], allocate, ([d, nx, ny]) => {
+          const x = `x(${o})`;
+          const y = `y(${o})`;
+          return `Conic(${coefficientList([d, d, add([mul(d, add([squaredNorm([x, y]), r1])), mul(nx, x), mul(ny, y)]),
+            '0', sub(`-(${nx})`, mul('2', d, x)), sub(`-(${ny})`, mul('2', d, y))])})`;
+        }, 'number');
+      }, 'number'), 'point'), 'circle');
+
+const excosineCircles: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const index = args[3]?.expression;
+  return bind([`Center(Circle(${vertices.join(',')}))`], allocate, ([center]) =>
+    independentOutputs(vertices.map((_, i) => {
+      const b = vertices[(i + 1) % 3];
+      const c = vertices[(i + 2) % 3];
+      return bind([`(x(${b})+x(${c}))/2`, `(y(${b})+y(${c}))/2`,
+        `y(${b})-y(${c})`, `x(${c})-x(${b})`], allocate, ([x, y, nx, ny]) => {
+        const sideSquared = squaredNorm([nx, ny]);
+        // Keep the signed distance factor so a diameter gives its sideline.
+        return bind([add([mul(nx, sub(`x(${center})`, x)), mul(ny, sub(`y(${center})`, y))]),
+          `${sideSquared}/2`], allocate, ([d, half]) =>
+          `Conic(${coefficientList([d, d, sub(mul(d, sub(squaredNorm([x, y]), `${half}/2`)),
+            mul(half, add([mul(nx, x), mul(ny, y)]))), '0',
+          sub(mul(half, nx), mul('2', d, x)), sub(mul(half, ny), mul('2', d, y))])})`, 'number');
+      }, 'number');
+    }), index), 'point');
+};
+
+const cevianCircle: ExpressionBuilder = (args, allocate) => {
+  const points = args.map((arg) => arg.expression);
+  const vertices = points.slice(0, 3);
+  const [origin] = vertices;
+  const local = vertices.map((p) => [sub(`x(${p})`, `x(${origin})`), sub(`y(${p})`, `y(${origin})`), '1']);
+  return bind(triangleAreas(points), allocate, (p) => {
+    const pairs = p.map((_, i) => [p[(i + 1) % 3], p[(i + 2) % 3]]);
+    const sums = pairs.map(add);
+    const sides = triangleSideSquares(vertices);
+    // On BC the circle equation is (l_B p_B + l_C p_C)(p_B+p_C)
+    // = d a² p_B p_C. Solve the three cyclic equations homogeneously.
+    const rhs = pairs.map((pair, i) => mul(sides[i], ...pair, sums[(i + 1) % 3], sums[(i + 2) % 3]));
+    return bind([...rhs, mul('2', ...p, ...sums)], allocate, ([u, v, w, d]) => {
+      const rhs = [u, v, w];
+      const linear = local.map(([x, y], i) => sub(mul(...pairs[i], sub(add([rhs[(i + 1) % 3], rhs[(i + 2) % 3]]), rhs[i])),
+        mul(d, squaredNorm([x, y]))));
+      const rows = local.map((_, i) => cross(local[(i + 1) % 3], local[(i + 2) % 3]));
+      const [lx, ly, constant] = [0, 1, 2].map((j) => add(rows.map((row, i) => mul(row[j], linear[i]))));
+      const quadratic = mul(d, add(p));
+      return `Conic(${coefficientList(translatedConicCoefficients([quadratic, quadratic, constant, '0', lx, ly], origin))})`;
+    }, 'number');
+  }, 'number');
+};
+
 export const CONIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   commonTangents, scimemi: scimemi(false), inverseScimemi: scimemi(true),
-  conicPencil, quasiperspectiveConic, coaxialLimitingPoints,
+  conicPencil, quasiperspectiveConic, coaxialLimitingPoints, radicalCircle, excosineCircles, cevianCircle,
 };
