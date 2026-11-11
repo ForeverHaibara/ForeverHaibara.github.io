@@ -79,7 +79,7 @@ export const toolGroups: ToolCategory = {
   },
   'Circles and conics': {
     'General constructions': [
-      'Circle', 'Conic', 'Ellipse', 'Hyperbola', 'Parabola',
+      'Circle', 'Conic', 'Ellipse', 'Hyperbola', 'Parabola', 'ApolloniusProblem',
       'InconicWithFocus', 'InconicWithCenter',
       'NinePointConic', 'TangentParabola', 'ConicPencil'
     ],

@@ -1601,6 +1601,40 @@
       "reference": {"related":["CosineCircle"]}
     },
     {
+      "name": "ApolloniusProblem",
+      "description": "Circles through the supplied points and tangent to the supplied supporting lines or circles. Accepts any mixture of three constraints and returns independent solution slots.",
+      "overloads": [
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"point"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"point"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"point"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"lineLike"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"lineLike"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"lineLike"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"circle"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"circle"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"point"},{"name":"b","type":"circle"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"point"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"point"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"point"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"lineLike"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"lineLike"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"lineLike"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"circle"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"circle"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"lineLike"},{"name":"b","type":"circle"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"point"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"point"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"point"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"lineLike"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"lineLike"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"lineLike"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"circle"},{"name":"c","type":"point"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"circle"},{"name":"c","type":"lineLike"}],"returns":"circle","builder":"apolloniusProblem"},
+        {"params":[{"name":"a","type":"circle"},{"name":"b","type":"circle"},{"name":"c","type":"circle"}],"returns":"circle","builder":"apolloniusProblem"}
+      ],
+      "reference": {"keywords":"Apollonian tangency three objects 阿波罗尼斯圆问题","related":["Circle","CommonTangents"]}
+    },
+    {
       "name": "ConwayCircle",
       "description": "Conway circle through the six side extensions of ABC.",
       "overloads": [

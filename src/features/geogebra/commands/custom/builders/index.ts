@@ -13,6 +13,7 @@ import { triangleCenter, geminiTriangle } from './triangleCenters';
 import { conjugate } from './conjugates';
 import { PROJECTIVE_BUILDERS } from './projective';
 import { GLOSSARY_BUILDERS } from './glossary';
+import { apolloniusProblem } from './apollonius';
 
 const brocard: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
@@ -138,6 +139,7 @@ const affine: ExpressionBuilder = (args, allocate) => {
 };
 
 export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  apolloniusProblem,
   isogonal: conjugate(true), isotomic: conjugate(false), conic, conicBranch,
   brocard, anticevian, trilinearPolar, trilinearPole,
   affine, ...PROJECTIVE_BUILDERS,
