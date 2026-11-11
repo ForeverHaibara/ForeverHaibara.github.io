@@ -221,8 +221,11 @@ export const compileStudioCommand = (source: string, environment: CommandEnviron
 
 type NamedOverloadCheck = (args: readonly GeometryType[]) => boolean;
 const anyOverload: NamedOverloadCheck = () => true;
-/** Admit only builder overloads verified against native GeoGebra execution. */
+const apolloniusPoints = (args: readonly GeometryType[]) => args.filter((type) => type === 'point').length;
+/** Numeric paths eligible for named execution. Native checks are tracked in the tool matrix. */
 const NAMED_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  apolloniusProblem: (args) => args.length === 3 && (args.every((type) => ['line', 'segment', 'ray'].includes(type))
+    || [1, 2].includes(apolloniusPoints(args))),
   gibertCurve: anyOverload,
   conic: (args) => args.length === 5 && args.every((type) => ['line', 'segment', 'ray'].includes(type)),
   pretangential: (args) => args.length === 3,
@@ -245,6 +248,7 @@ const GEOMETRIC_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
 };
 /** Numeric-only plans that need High because their object budget is substantial. */
 const HIGH_COST_OVERLOADS: Readonly<Record<string, NamedOverloadCheck>> = {
+  apolloniusProblem: (args) => args.length === 3 && apolloniusPoints(args) === 0,
   prehessianCubic: (args) => [1, 2].includes(args.length) && args[0] === 'implicitCurve'
     && (args.length === 1 || args[1] === 'number'),
 };
@@ -256,9 +260,9 @@ export const compileStudioPlan = (source: string, environment: CommandEnvironmen
   const capture: Capture = { ...createBindingCapture(extendedTriangleCenterIds(source, environment).length > 0), selected: [] };
   const expression = compileStudioCommand(source, environment, studioTools, capture);
   const selected = capture.selected.length === 1 ? capture.selected[0] : undefined;
-  const supports = selected?.builder ? (NAMED_OVERLOADS[selected.builder]
-    ?? (mode === 'high' ? GEOMETRIC_OVERLOADS[selected.builder] ?? HIGH_COST_OVERLOADS[selected.builder] : undefined)) : undefined;
-  const eligible = Boolean(selected && supports?.(selected.args));
+  const builder = selected?.builder;
+  const eligible = Boolean(builder && selected && (NAMED_OVERLOADS[builder]?.(selected.args)
+    || (mode === 'high' && (GEOMETRIC_OVERLOADS[builder]?.(selected.args) || HIGH_COST_OVERLOADS[builder]?.(selected.args)))));
   const plan = capture.lower(expression, groupId, eligible, mode === 'high' ? HIGH_KINDS : undefined);
   if (capture.requiresNamed) {
     if (!plan.materialized) throw new Error('This curve requires named numeric intermediates. Use a standalone call or a supported native wrapper in Medium or High mode.');

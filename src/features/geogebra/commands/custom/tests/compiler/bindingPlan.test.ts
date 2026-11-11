@@ -99,6 +99,41 @@ describe('one formula source with two binding lowerings', () => {
     }
   });
 
+  it.each([
+    ['ApolloniusProblem(A,B,l)', 2, true, 34, 14],
+    ['ApolloniusProblem(A,l,c1)', 4, true, 59, 28],
+    ['ApolloniusProblem(f,g,l)', 4, true, 25, 8],
+    ['ApolloniusProblem(c1,c2,l)', 8, false, 109, 56],
+    ['ApolloniusProblem(c1,c2,c3)', 8, false, 109, 56],
+  ])('shares scalar bindings across %s solution slots', (source, slots, inMedium, helpers, anonymousBindings) => {
+    const scope = environment();
+    scope.objects.set('c3', 'circle');
+    scope.objects.set('l', 'segment');
+    const command = `out=${source}`;
+    const low = compileStudioCommand(command, scope);
+    const medium = compileStudioPlan(command, scope, id, 'medium');
+    const high = compileStudioPlan(command, scope, id, 'high');
+    expect(low.match(/Element\(Zip\(/gu)).toHaveLength(anonymousBindings);
+    expect(medium.materialized).toBe(inMedium);
+    expect(medium.output).toBe(inMedium ? high.output : low);
+    expect(high.materialized).toBe(true);
+    expect(high.helpers).toHaveLength(helpers);
+    expect(high.helpers.every(({ kind }) => kind === 'number')).toBe(true);
+    const expanded = high.helpers.map(({ expression }) => expression).concat(high.output).join('\n');
+    expect(expanded).not.toMatch(/\b(?:Element|Zip)\(/u);
+    expect(high.output.split('\n')).toHaveLength(slots);
+    if (source.includes('c1')) {
+      expect(high.helpers.filter(({ expression }) => expression === 'Radius(c1)')).toHaveLength(1);
+    }
+  });
+
+  it('leaves the three-point Apollonius construction on its native path', () => {
+    const source = 'out=ApolloniusProblem(A,B,C)';
+    const plan = compileStudioPlan(source, environment(), id, 'high');
+    expect(plan.materialized).toBe(false);
+    expect(plan.output).toContain('Circle(A,B,C)');
+  });
+
   it('requires High for the vector and numeric QLQu3 binding chain', () => {
     const source = 'out=QLQu3(A,B,C,D)';
     expect(compileStudioPlan(source, environment(), id).materialized).toBe(false);

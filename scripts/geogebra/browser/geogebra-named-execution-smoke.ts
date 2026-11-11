@@ -30,6 +30,8 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     commonTangents: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1,1)', move: () => api('setValue', 'shift', 1) },
     commonTangentsMulti: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,1)', move: () => api('setValue', 'shift', 1) },
     commonTangentsCrossed: { setup: 'shift=0\nc1=Circle((0,0),1)\nc2=Circle((4+shift,1),1)', command: 'out=CommonTangents(c1,c2,-1)', move: () => api('setValue', 'shift', 1) },
+    apolloniusMixed: { setup: 'shift=0\nA=(-1,1)\nB=(1,2+shift)\nl:y=0', command: 'out=ApolloniusProblem(A,B,l)', move: () => api('setValue', 'shift', 0.1) },
+    apolloniusCircles: { setup: 'shift=0\nc1=Circle((3,0),1)\nc2=Circle((0,3+shift),1)\nc3=Circle((-3,0),1)', command: 'out=ApolloniusProblem(c1,c2,c3)', move: () => api('setValue', 'shift', 0.1) },
     qlQuartic: { setup: 'shift=0\nA=(0,0)\nB=(4,0)\nC=(3,3)\nD=(-1,2+shift)', command: 'out=QLQu3(A,B,C,D)', move: () => api('setValue', 'shift', 0.1) },
     cuspidalGeneral: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1)\nD=(2,1)\nE=(-1,2)\nF=(3,1+shift)', command: 'out=CuspidalCubic(A,B,C,D,E,F,1)', move: () => api('setValue', 'shift', 0.1) },
     cuspidalCircular: { setup: 'shift=0\nA=(0,0)\nB=(1,0)\nC=(0,1)\nD=(-1,2+shift)', command: 'out=CuspidalCubic(A,B,C,D,1)', move: () => api('setValue', 'shift', 0.1) },
@@ -53,7 +55,9 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
     const setup = await engine.executeCommand(selected.setup);
     if (!setup.success) throw new Error(`Setup failed: ${setup.error}`);
     const started = performance.now();
-    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed', 'qlQuartic', 'prehessian', 'prehessianMulti'].includes(tool) ? 'high' : 'medium' : 'low' });
+    const high = ['miquelCircle', 'commonTangents', 'commonTangentsMulti', 'commonTangentsCrossed',
+      'qlQuartic', 'prehessian', 'prehessianMulti', 'apolloniusCircles'].includes(tool);
+    const result = await executeCommandPipeline(engine, selected.command, { helperMode: named ? high ? 'high' : 'medium' : 'low' });
     const create = performance.now() - started;
     if (!result.success) throw new Error(`${named ? 'named' : 'anonymous'} failed: ${result.error}`);
     if (tool === 'commonTangentsMulti' && (result.labels.length !== 2 || !result.labels.includes('out')))
@@ -198,6 +202,16 @@ export const verifyNamedExecution = async (engine: GeoGebraEngine, report: (mess
   if (tool.startsWith('commonTangents') && (JSON.stringify(baseline.outputBefore) !== JSON.stringify(named.outputBefore)
     || JSON.stringify(baseline.outputAfter) !== JSON.stringify(named.outputAfter)))
     throw new Error('Common tangent output changed');
+  if (tool.startsWith('apollonius')) {
+    const slots = tool === 'apolloniusCircles' ? 8 : 2;
+    if (named.labels.length !== slots || named.outputBefore.some(({ type, defined }) => type !== 'circle' || !defined)
+      || JSON.stringify(baseline.outputBefore) !== JSON.stringify(named.outputBefore)
+      || JSON.stringify(baseline.outputAfter) !== JSON.stringify(named.outputAfter))
+      throw new Error('Apollonius output slots, definitions or updates differ');
+    await verifyHelpersAndReopen(named);
+    report(`PASS ${tool}`);
+    return;
+  }
   if (['orthicAxis', 'orthicAxisDegenerate', 'poloconic', 'poloconicDegenerate', 'poloconicSegment',
     'circularCubicDirection', 'circularCubicDirectionSegment', 'nodalCubic', 'nodalCubicSmall', 'miquelCircle'].includes(tool)
     && (baseline.before.value !== named.before.value || baseline.after.value !== named.after.value))

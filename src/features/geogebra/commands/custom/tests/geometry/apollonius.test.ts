@@ -29,7 +29,11 @@ function solve(inputs: Constraint[]) {
     };
     const evaluate = (source: string) => Function(...Object.keys(scope), `return ${source.replace(/\^/gu, '**')
       .replace(/Circle\(\(/gu, 'Circle(').replace(/\),abs\(/gu, ',abs(')}`)(...Object.values(scope));
-    for (const { name, expression } of plan.helpers) scope[name] = evaluate(expression);
+    for (const { name, expression } of plan.helpers) {
+      const value = evaluate(expression);
+      expect(Number.isFinite(value), expression).toBe(true);
+      scope[name] = value;
+    }
     const result = evaluate(plan.output) as Circle | undefined;
     return result ? [result] : [];
   });

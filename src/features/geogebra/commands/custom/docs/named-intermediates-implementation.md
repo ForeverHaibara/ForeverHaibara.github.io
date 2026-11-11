@@ -21,6 +21,7 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 | 五点／七点 `NodalCubic` | 非几何，Medium | 已启用 | 更新收益明显；五点创建收益受样本波动影响。其它重载未启用。 |
 | `QLCi3(A,B,C,D)`／`MiquelCircle` | 六个点，High | 已启用 | 样本创建约 56→11 ms；文件重开、依赖图与孤儿清理通过。 |
 | `CommonTangents(c1,c2,s[,i])` | 两个点加数值，High | 已启用 | 双输出共享 19 个辅助对象，样本创建约 38→19 ms；两个结果标签及文件生命周期通过。因圆心为点，不适用 Medium。 |
+| `ApolloniusProblem(a,b,c)` | 数值，两槽／四槽用 Medium，八槽用 High | 已接入，原生计时待验 | 三点式直接调用原生圆。三线的四槽共享线系数，仅用 25 个数值辅助对象。含点的两槽和四槽分别用 34 和 59 个，八槽用 109 个。命名计划的输出和辅助式均无 `Element/Zip`。 |
 | `QACu1Inv` | 非几何，Medium 候选 | 实验后回退 | 共享列表与逐层命名均无稳定收益。 |
 | `QACu1`、`OrthopivotalCubic` | 非几何，Medium 候选 | 实验后回退 | 逐层命名创建约 332→3132、255→2076 ms；已拆成独立 builder 入口以便以后选择性复用。 |
 | `PivotalCubic`、`NonpivotalCubic`、`CubicPencil` | 非几何，Medium 候选 | 实验后回退 | 朴素命名创建明显变慢。 |
@@ -43,6 +44,8 @@ Workspace settings → Behavior → Custom tool performance 使用 **Low / Mediu
 ## 验证与后续扩展
 
 真实引擎对普通、混合线型与平行线退化的五线 `Conic`，`Pretangential` 的四个编号，以及 `PolarConic`、`HessianCubic`、`MixedPolar`、`JacobianCubic` 比较了档位切换前后的类型、显示结果和输入变化后的更新。后续还比较了 `OrthicAxis(F)`、`Poloconic(l,F)`、方向约束 `CircularCubic`、五点及七点 `NodalCubic`、`QLCi3` 和 `CommonTangents`；测试脚本对这些新增路径核对创建前后及输入变化后的显示方程。还验证了部分执行失败的回滚、撤销／重做、`.ggb` 导出重开、用户引用保护与孤儿清理。单元测试覆盖默认匿名文本、白名单、重载限制、作用域回退、输出校验和语义图收缩。各阶段筛选数据统一见 [性能记录](benchmarks/named-intermediates-performance.md)。
+
+阿波罗尼斯工具用同一套公式降低到两条执行路径。命名路径跨槽共享输入系数、方向及二次求根中间量。秩不足的分支使用受保护的分母，负判别式分支的平方根也保持为数值。最终圆仍受原有的秩与实根条件约束。Low 与同名重定义继续使用匿名路径。浏览器验收入口为 `/scripts/geogebra/browser/verification.html?page=smoke&suite=named-execution&tool=apolloniusMixed` 或 `tool=apolloniusCircles`，报告创建及更新用时，并比较圆槽、导出重开和孤儿清理。当前环境无法连接 GeoGebra 部署脚本，尚无实机加速倍率。
 
 ## 架构边界与下一步
 
