@@ -16,15 +16,19 @@ export const toolGroups: ToolCategory = {
     'Point constructions and maps': [
       'IsogonalConjugate', 'IsotomicConjugate', 'Isoconjugate', 'Complement', 'Anticomplement', 'IsogonalComplement',
       'AntigonalConjugate', 'CyclocevianConjugate', 'TrilinearPole', 'AntiSteinerPoint',
+      'Orthopole', 'Orthocorrespondent',
       'Crosspoint', 'Cevapoint', 'CevaConjugate', 'CrossConjugate', 'CrossSum', 'CrossDifference',
-      'AlephConjugate', 'BethConjugate', 'PolarConjugate', 'CevianAffineMap', 'PedalAffineMap',
+      'HaggeInverse',
+      'PolarConjugate', 'CevianAffineMap', 'PedalAffineMap',
       'CircumperpConjugate', 'AntitomicConjugate', 'Syngonal', 'ReciprocalConjugate',
-      'ComplementaryConjugate', 'AnticomplementaryConjugate', 'GimelConjugate', 'DalethConjugate',
-      'HeConjugate', 'WawConjugate', 'ZayinConjugate', 'HirstInverse', 'LineConjugate', 'VertexConjugate',
-      'GST', 'GSC', 'CST', 'GibertPsi', 'OrionTransform', 'OrionPivot', 'OrionConjugate',
-      'HaggeInverse', 'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
+      'ComplementaryConjugate', 'AnticomplementaryConjugate',
+      'AlephConjugate', 'BethConjugate', 'DalethConjugate', 'GimelConjugate', 
+      'HeConjugate', 'OrionTransform', 'OrionPivot', 'OrionConjugate', 'Orthojoin',
+      'WawConjugate', 'ZayinConjugate', 'HirstInverse', 'LineConjugate', 'VertexConjugate',
+      'GST', 'GSC', 'CST', 'GibertPsi',
+      'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
       'CircumcevianPoint',
-      'Orthopole', 'Orthojoin', 'Orthocorrespondent', 'IsogonalPairWithMidpoint', 'Trilinear'
+      'IsogonalPairWithMidpoint', 'Trilinear'
     ],
   },
   'Triangle constructions': {
@@ -46,7 +50,7 @@ export const toolGroups: ToolCategory = {
       ],
       'Triangles from a point':
       [
-       'OrthicTriangle', 'CevianTriangle', 'PedalTriangle', 'AnticevianTriangle',
+        'OrthicTriangle', 'CevianTriangle', 'PedalTriangle', 'AnticevianTriangle',
         'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle', 'HaimovTriangle', 'CrossCevianTriangle', 'CocevianTriangle'
       ],
       'Correspondence': [
@@ -70,7 +74,10 @@ export const toolGroups: ToolCategory = {
       'Conics of the triangle': ['FeuerbachHyperbola', 'JerabekHyperbola', 'KiepertHyperbola', 'StammlerHyperbola', 'SteinerInellipse', 'SteinerCircumellipse'],
       'Conics from a point': ['InconicWithFocus', 'InconicWithCenter', 'OrthopolarConic'],
     },
-    'Cubics': ['PivotalCubic', 'PivotalIsogonalCubic', 'PivotalIsotomicCubic', 'NonpivotalCubic', 'ConicoPivotalCubic', 'OrthopivotalCubic'],
+    'Cubics': {
+      'Cubics of the triangle': ['NeubergCubic', 'ThompsonCubic', 'McCayCubic', 'DarbouxCubic', 'NapoleonCubic', 'LucasCubic'],
+      'Cubics from a point': ['PivotalCubic', 'PivotalIsogonalCubic', 'PivotalIsotomicCubic', 'NonpivotalCubic', 'ConicoPivotalCubic', 'OrthopivotalCubic']
+    },
     'Catalogue curves': ['GibertCurve', 'TriangleCurve'],
   },
   'Circles and conics': {
