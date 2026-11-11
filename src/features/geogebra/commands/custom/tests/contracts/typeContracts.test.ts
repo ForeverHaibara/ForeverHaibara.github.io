@@ -76,6 +76,30 @@ describe('Geometry type dispatch and symbolic construction boundaries', () => {
     expect(compile('IsogonalConjugate(A,B,C,l)')).toContain('ApplyMatrix');
   });
 
+  it('compiles second-batch directions without widening the reference triangle or operand', () => {
+    for (const name of [
+      'ComplementaryConjugate', 'AnticomplementaryConjugate', 'LineConjugate', 'HirstInverse',
+      'AlephConjugate', 'BethConjugate', 'GimelConjugate', 'DalethConjugate', 'HeConjugate',
+      'WawConjugate', 'ZayinConjugate', 'GibertPsi',
+    ]) {
+      expect(compile(`${name}(A,B,C,r,P)`)).not.toContain(`${name}(`);
+      expect(() => compile(`${name}(A,B,C,P,l)`)).toThrow('No overload');
+    }
+    for (const name of ['InconicWithCenter', 'InconicWithFocus', 'OrthopolarConic', 'HaggeCircle']) {
+      expect(compile(`${name}(A,B,C,s)`)).not.toContain(`${name}(`);
+      expect(() => compile(`${name}(l,B,C,P)`)).toThrow('No overload');
+    }
+    expect(compile('InconicWithFocus(A,B,C,l)')).toContain('ApplyMatrix');
+    expect(compile('OrthopolarConic(A,B,C,l)')).toContain('Conic(');
+    for (const source of [
+      'PivotalCubic(A,B,C,l,r)', 'PivotalIsogonalCubic(A,B,C,l)',
+      'PivotalIsotomicCubic(A,B,C,s)', 'NonpivotalCubic(A,B,C,l,r)',
+      'NonpivotalCubic(A,B,C,s,l,P)', 'ConicoPivotalCubic(A,B,C,r,s)',
+      'OrthopivotalCubic(A,B,C,l)',
+    ]) expect(compile(source), source).toContain('ImplicitCurve(');
+    expect(() => compile('NonpivotalCubic(A,B,C,X,Y,l)')).toThrow('No overload');
+  });
+
   it('uses univariate coefficient encoding for declared cubic inputs without CAS or sampled path points', () => {
     for (const source of ['Polar(P,f)', 'PolarConic(P,f)', 'ThirdIntersection(f,P)', 'ThirdIntersection(f,P,B)']) {
       const expression = compile(source);

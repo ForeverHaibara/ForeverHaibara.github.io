@@ -166,3 +166,29 @@ it('evaluates both isoconjugation formulas with ideal calibration or pivot weigh
   const sentToInfinity = evaluatePoints('Isoconjugate', [...vertices, calibration, euler, calibration])[0];
   expect(sentToInfinity.every((coordinate) => !Number.isFinite(coordinate))).toBe(true);
 });
+
+it.each([
+  'ComplementaryConjugate', 'AnticomplementaryConjugate', 'LineConjugate', 'HirstInverse',
+  'AlephConjugate', 'BethConjugate', 'GimelConjugate', 'DalethConjugate', 'HeConjugate',
+  'WawConjugate', 'ZayinConjugate', 'GibertPsi',
+])('%s agrees with the two-sided finite limit of its ideal pivot', (name) => {
+  const operand: Point = [2.05, 1.23];
+  const ideal = evaluatePoints(name, [...abc, [3, -4, 2], operand])[0];
+  const rescaled = evaluatePoints(name, [...abc, [-6, 8, 21], operand])[0];
+  expect(ideal.every(Number.isFinite)).toBe(true);
+  expect(distance(ideal, rescaled)).toBeLessThan(1e-9);
+  for (const t of [-1e7, 1e7]) {
+    const finite = apply(name, [...abc, [1 + 4 * t, 2 + 3 * t], operand]);
+    expect(distance(ideal, finite)).toBeLessThan(1e-5);
+  }
+});
+
+it('gives a finite central reflection for an ideal Gibert Psi pencil center', () => {
+  const direction: Line = [3, -4, 0];
+  const image = (p: Point) => evaluatePoints('GibertPsi', [...abc, direction, p])[0];
+  const p: Point = [1, 1];
+  const q: Point = [2, 3];
+  const displacement = subtract(q, p);
+  expect(distance(subtract(image(p), image(q)), displacement)).toBeLessThan(1e-9);
+  expect(distance(image(image(p)), p)).toBeLessThan(1e-9);
+});

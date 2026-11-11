@@ -703,75 +703,75 @@
     },
     {
       "name": "ComplementaryConjugate",
-      "description": "P-complementary conjugate of Q. Uses the incenter as pivot when P is omitted.",
+      "description": "P-complementary conjugate of Q. Uses the incenter as pivot when P is omitted. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"ComplementaryConjugate($A,$B,$C,Incenter($A,$B,$C),$Q)"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"complementaryConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"complementaryConjugate"}
       ],
       "reference": {"related":["Complement","AnticomplementaryConjugate"]}
     },
     {
       "name": "AnticomplementaryConjugate",
-      "description": "P-anticomplementary conjugate of Q. Uses the incenter as pivot when P is omitted.",
+      "description": "P-anticomplementary conjugate of Q. Uses the incenter as pivot when P is omitted. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"AnticomplementaryConjugate($A,$B,$C,Incenter($A,$B,$C),$Q)"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"anticomplementaryConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"anticomplementaryConjugate"}
       ],
       "reference": {"related":["Anticomplement","ComplementaryConjugate"]}
     },
     {
       "name": "GimelConjugate",
-      "description": "P-gimel conjugate of Q with respect to triangle ABC.",
+      "description": "P-gimel conjugate of Q with respect to triangle ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"gimelConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"gimelConjugate"}
       ],
       "reference": {"related":["AlephConjugate","BethConjugate"]}
     },
     {
       "name": "DalethConjugate",
-      "description": "P-daleth conjugate of Q with respect to triangle ABC.",
+      "description": "P-daleth conjugate of Q with respect to triangle ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"dalethConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"dalethConjugate"}
       ],
       "reference": {"related":["AlephConjugate","BethConjugate"]}
     },
     {
       "name": "HeConjugate",
-      "description": "P-he conjugate of Q with respect to triangle ABC.",
+      "description": "P-he conjugate of Q with respect to triangle ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"heConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"heConjugate"}
       ],
       "reference": {"related":["AlephConjugate","BethConjugate"]}
     },
     {
       "name": "WawConjugate",
-      "description": "P-waw conjugate of Q with respect to triangle ABC.",
+      "description": "P-waw conjugate of Q with respect to triangle ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"wawConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"wawConjugate"}
       ],
       "reference": {"related":["AlephConjugate","BethConjugate"]}
     },
     {
       "name": "ZayinConjugate",
-      "description": "P-zayin conjugate of Q with respect to triangle ABC.",
+      "description": "P-zayin conjugate of Q with respect to triangle ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"zayinConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"zayinConjugate"}
       ],
       "reference": {"related":["AlephConjugate","BethConjugate"]}
     },
     {
       "name": "HirstInverse",
-      "description": "Intersection of PQ with the polar of Q in the circumconic p yz + q zx + r xy = 0, where (p:q:r) are the trilinears of P.",
+      "description": "Intersection of PQ with the polar of Q in the circumconic p yz + q zx + r xy = 0, where (p:q:r) are the trilinears of P. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"hirstInverse"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"hirstInverse"}
       ],
       "reference": {"related":["Polar","TrilinearPole"]}
     },
     {
       "name": "LineConjugate",
-      "description": "Intersection of PQ with the trilinear polar of the isogonal conjugate of Q in ABC.",
+      "description": "Intersection of PQ with the trilinear polar of the isogonal conjugate of Q in ABC. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"lineConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"lineConjugate"}
       ],
       "reference": {"related":["Trilinear","ZayinConjugate"]}
     },
@@ -896,10 +896,10 @@
     },
     {
       "name": "GibertPsi",
-      "description": "Gibert's Psi involution of Q in the rectangular-hyperbola pencil centered at P. If P is omitted, use the centroid.",
+      "description": "Gibert's Psi involution of Q in the rectangular-hyperbola pencil centered at P. If P is omitted, use the centroid. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
         {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"GibertPsi($A,$B,$C,Centroid($A,$B,$C),$Q)"},
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"gibertPsi"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"gibertPsi"}
       ],
       "reference": {"related":["InconicWithCenter","SteinerInellipse","OrthopivotalCubic"]}
     },
@@ -953,17 +953,17 @@
     },
     {
       "name": "AlephConjugate",
-      "description": "P-aleph conjugate of Q with respect to ABC, using the ETC convention.",
+      "description": "P-aleph conjugate of Q with respect to ABC, using the ETC convention. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"alephConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"alephConjugate"}
       ],
       "reference": {"related":["BethConjugate"]}
     },
     {
       "name": "BethConjugate",
-      "description": "P-beth conjugate of Q with respect to ABC, using the ETC convention.",
+      "description": "P-beth conjugate of Q with respect to ABC, using the ETC convention. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"bethConjugate"}
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"pointOrLine"},{"name":"Q","type":"point"}],"returns":"point","builder":"bethConjugate"}
       ],
       "reference": {"related":["AlephConjugate"]}
     },
@@ -2030,9 +2030,10 @@
     },
     {
       "name": "HaggeCircle",
-      "description": "Hagge circle of P, through the orthocenter with center the reflection of its isogonal conjugate in the nine-point center.",
+      "description": "Hagge circle of P, through the orthocenter with center the reflection of its isogonal conjugate in the nine-point center. A line, ray or segment denotes an ideal point and gives a circle with the reference circumradius.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(Reflect(IsogonalConjugate($A,$B,$C,$P),NinePointCenter($A,$B,$C)),Orthocenter($A,$B,$C))"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "circle", "compose": "Circle(Reflect(IsogonalConjugate($A,$B,$C,$P),NinePointCenter($A,$B,$C)),Orthocenter($A,$B,$C))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}], "returns": "circle", "builder": "haggeDirection"}
       ],
       "reference": {
         "keywords": "哈格圆",
@@ -2148,16 +2149,17 @@
     },
     {
       "name": "InconicWithFocus",
-      "description": "Conic tangent to the three sidelines with P as a focus. Depending on P, it may be an ellipse, hyperbola or parabola.",
+      "description": "Conic tangent to the three sidelines with P as a focus. Depending on P, it may be an ellipse, hyperbola or parabola. A direction denotes the focus at infinity and selects the corresponding inscribed parabola or its degenerate limit.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "compose": "If(Distance($P,Circle($A,$B,$C))==0,Parabola($P,Line(Reflect($P,Line($A,$B)),Reflect($P,Line($A,$C)))),InconicWithCenter($A,$B,$C,Midpoint($P,IsogonalConjugate($A,$B,$C,$P))))"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "compose": "If(Distance($P,Circle($A,$B,$C))==0,Parabola($P,Line(Reflect($P,Line($A,$B)),Reflect($P,Line($A,$C)))),InconicWithCenter($A,$B,$C,Midpoint($P,IsogonalConjugate($A,$B,$C,$P))))"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}], "returns": "conic", "compose": "InconicWithCenter($A,$B,$C,$P)"}
       ]
     },
     {
       "name": "InconicWithCenter",
-      "description": "Conic tangent to the three sidelines with center P; may be elliptic, hyperbolic or degenerate.",
+      "description": "Conic tangent to the three sidelines with center P; may be elliptic, hyperbolic or degenerate. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "inconicCenter"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "conic", "builder": "inconicCenter"}
       ]
     },
     {
@@ -2279,9 +2281,9 @@
     {
       "name": "PivotalIsogonalCubic",
       "aliases": ["主等角三次曲线"],
-      "description": "Locus where a point, its isogonal conjugate and pivot P are collinear.",
+      "description": "Locus where a point, its isogonal conjugate and pivot P are collinear. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotal"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "pivotal"}
       ],
       "reference": {
         "related": [
@@ -2344,9 +2346,10 @@
     },
     {
       "name": "OrthopolarConic",
-      "description": "Algebraic conic of orthopoles of lines through P.",
+      "description": "Algebraic conic of orthopoles of lines through P. A line, ray or segment denotes a parallel pencil and gives its straight orthopole locus.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "orthopolar"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "conic", "builder": "orthopolar"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "lineLike"}], "returns": "conic", "builder": "orthopolarDirection"}
       ]
     },
     {
@@ -2632,9 +2635,9 @@
     },
     {
       "name": "OrthopivotalCubic",
-      "description": "Orthopivotal cubic with orthopivot P; decomposed limits are retained.",
+      "description": "Orthopivotal cubic with orthopivot P; decomposed limits are retained. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "orthopivotal"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "orthopivotal"}
       ]
     },
     {
@@ -2726,9 +2729,9 @@
     },
     {
       "name": "PivotalCubic",
-      "description": "Pivotal isocubic with conjugation pole Omega and pivot P.",
+      "description": "Pivotal isocubic with conjugation pole Omega and pivot P. Omega and P may each be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalCubic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "pivotalCubic"}
       ],
       "reference": {
         "related": [
@@ -2741,9 +2744,9 @@
     {
       "name": "PivotalIsotomicCubic",
       "aliases": ["主等截三次曲线"],
-      "description": "Pivotal isocubic for isotomic conjugation with pivot P.",
+      "description": "Pivotal isocubic for isotomic conjugation with pivot P. P may be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "pivotalIsotomicCubic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "pivotalIsotomicCubic"}
       ],
       "reference": {
         "related": [
@@ -2754,10 +2757,10 @@
     },
     {
       "name": "NonpivotalCubic",
-      "description": "Nonpivotal isocubic with conjugation pole Omega and root P; optionally choose its member through Q.",
+      "description": "Nonpivotal isocubic with conjugation pole Omega and root P; optionally choose its member through Q. Omega and P may each be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}, {"name": "Q", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"},
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}, {"name": "Q", "type": "point"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"},
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "Omega", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "nonpivotalCubic"}
       ],
       "reference": {
         "related": [
@@ -2779,9 +2782,9 @@
     },
     {
       "name": "ConicoPivotalCubic",
-      "description": "Conico-pivotal cubic with designated singular point N and root P.",
+      "description": "Conico-pivotal cubic with designated singular point N and root P. N and P may each be a line, ray or segment giving an ideal direction.",
       "overloads": [
-        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "N", "type": "point"}, {"name": "P", "type": "point"}], "returns": "implicitCurve", "builder": "conicoPivotalCubic"}
+        {"params": [{"name": "A", "type": "point"}, {"name": "B", "type": "point"}, {"name": "C", "type": "point"}, {"name": "N", "type": "pointOrLine"}, {"name": "P", "type": "pointOrLine"}], "returns": "implicitCurve", "builder": "conicoPivotalCubic"}
       ]
     },
     {

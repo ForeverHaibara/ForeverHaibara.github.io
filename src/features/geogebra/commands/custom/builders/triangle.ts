@@ -1,6 +1,6 @@
 import type { ExpressionBuilder } from '../types';
 import type { BindingAllocator } from '../algebra/homogeneous';
-import { add, mul, sub, cross, bind, homogeneous, pointBarycentrics, triangleFrameDeterminant, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
+import { add, mul, sub, cross, bind, homogeneous, directionPoint, pointBarycentrics, triangleFrameDeterminant, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
 
 type Weights = (coordinates: string[][], vertices: string[]) => string[];
 
@@ -124,9 +124,9 @@ const lineConjugate = (isogonal: boolean): ExpressionBuilder => (args, allocate)
 
 const inconicCenter: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
-  const coefficients = bind(triangleAreas(args.map((arg) => arg.expression)), allocate, ([p, q, r]) =>
+  const coefficients = bind(pointBarycentrics(vertices, args[3]), allocate, ([p, q, r]) =>
     bind([`${p}+${q}-${r}`, `${p}+${r}-${q}`, `${q}+${r}-${p}`], allocate, ([u, v, w]) =>
-      coefficientList([`-${w}^2`, `-${v}^2`, `-${u}^2`, mul('2', v, w), mul('2', u, w), mul('2', u, v)])));
+      coefficientList([`-(${w}^2)`, `-(${v}^2)`, `-(${u}^2)`, mul('2', v, w), mul('2', u, w), mul('2', u, v)]), 'number'), 'number');
   return barycentricConic(vertices, coefficients);
 };
 const steinerInellipse: ExpressionBuilder = (args) => barycentricConic(args.map((arg) => arg.expression), ['1', '1', '1', '-2', '-2', '-2']);
@@ -219,6 +219,33 @@ const cundyParry = (psi: boolean): ExpressionBuilder => (args, allocate) => {
       }));
   });
 };
+const orthopolarDirection: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c] = expressions(args);
+  return bind(directionPoint(args[3]).slice(0, 2), allocate, ([u, v]) => {
+    // Use the parallel line through A, so the first perpendicular starts at A.
+    const support = `Line(${a},Vector((${u},${v})))`;
+    const anchor = `Intersect(PerpendicularLine(${a},Line(${b},${c})),PerpendicularLine((${b}+Reflect(${b},${support}))/2,Line(${c},${a})))`;
+    return bind([anchor], allocate, ([point]) => {
+      const constant = `-${add([mul(u, `x(${point})`), mul(v, `y(${point})`)])}`;
+      return `Conic(${coefficientList(['0', '0', constant, '0', u, v])})`;
+    }, 'point');
+  }, 'number');
+};
+
+const haggeDirection: ExpressionBuilder = (args, allocate) => {
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  const [a, b, c] = vertices;
+  return bind(pointBarycentrics(vertices, args[3]), allocate, (p) => {
+    const image = triangleSideSquares(vertices).map((side, i) =>
+      mul(side, p[(i + 1) % 3], p[(i + 2) % 3]));
+    return bind(image, allocate, (weights) => {
+      const focus = barycentricPoint(vertices, weights);
+      const circumcircle = `Circle(${a},${b},${c})`;
+      return `Circle(Reflect(${focus},TriangleCenter(${a},${b},${c},5)),Radius(${circumcircle}))`;
+    }, 'number');
+  }, 'number');
+};
+
 const orthopolarConic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c, p] = expressions(args);
   const xy = (v: string) => [`x(${v})`, `y(${v})`];
@@ -246,10 +273,10 @@ const crossCombination = (difference: boolean) => barycentricMap(([p, q], vertic
   }));
 
 const etcConjugate = (beth: boolean): ExpressionBuilder => (args, allocate) => {
-  const [a, b, c, p, q] = expressions(args);
+  const [a, b, c, , q] = expressions(args);
   const vertices = [a, b, c];
   const sides = [`Distance(${b},${c})`, `Distance(${c},${a})`, `Distance(${a},${b})`];
-  return bind([...sides, ...triangleAreas([a, b, c, p]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
+  return bind([...sides, ...pointBarycentrics(vertices, args[3]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
     const lengths = values.slice(0, 3);
     const areas = values.slice(3, 6);
     const toTrilinear = (offset: number) => lengths.map((side, i) => `${values[offset + i]}/${side}`);
@@ -272,7 +299,8 @@ const etcConjugate = (beth: boolean): ExpressionBuilder => (args, allocate) => {
         output = bind(terms, allocate, (squares) =>
           finish(squares.map((v, i) => sub(add(other(squares, i)), v))), 'number');
       }
-      return `If(${add(areas)}!=0,${output})`;
+      const area = args[3].type === 'point' ? add(areas) : triangleFrameDeterminant(vertices);
+      return `If(${area}!=0,${output})`;
     }, 'number');
   }, 'number');
 };
@@ -369,5 +397,5 @@ export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   cevianAffine: affineMap(false), pedalAffine: affineMap(true), orthotransversal, orthocorrespondent,
   isogonalLine: lineConjugate(true), isotomicLine: lineConjugate(false),
   inconicCenter, steinerInellipse, steinerCircumellipse, apollonius: apolloniusCircle,
-  orthicAxis: triangleOrthicAxis, stammler: stammlerHyperbola, liangZelich: liangZelichPerspector, cundyPhi: cundyParry(false), cundyPsi: cundyParry(true), orthopolar: orthopolarConic,
+  orthicAxis: triangleOrthicAxis, stammler: stammlerHyperbola, liangZelich: liangZelichPerspector, cundyPhi: cundyParry(false), cundyPsi: cundyParry(true), orthopolar: orthopolarConic, orthopolarDirection, haggeDirection,
 };

@@ -1,5 +1,5 @@
 import type { ExpressionBuilder } from '../types';
-import { add, bind, coefficientList, mul, sub, triangleAreas, triangleSideSquares, barycentricVariables, squaredNorm } from '../algebra/homogeneous';
+import { add, bind, coefficientList, mul, sub, pointBarycentrics, triangleAreas, triangleSideSquares, barycentricVariables, squaredNorm } from '../algebra/homogeneous';
 import { monomial, polynomialProduct, polynomialScale, polynomialSum, polynomialCurve } from '../algebra/polynomial';
 import type { Polynomial } from '../algebra/polynomial';
 
@@ -9,7 +9,8 @@ const term = (...factors: string[]) => mul(...factors);
 // Check numeric coefficient sums outside the final curve, avoiding symbolic
 // comparison of a full function or an extra matrix-rank computation.
 const nonzero = (coefficients: string[]) => `${add(coefficients.map((c) => `(${c})^2`))}!=0`;
-const cubic = (equation: string, coefficients: string[]) => `If(${nonzero(coefficients)},ImplicitCurve(${equation}))`;
+const cubic = (vertices: string[], equation: string, coefficients: string[]) =>
+  `If(!AreCollinear(${vertices.join(',')})&&${nonzero(coefficients)},ImplicitCurve(${equation}))`;
 const pivotalCoefficients = ([p, q, r]: string[], [u, v, w]: string[]) =>
   [term(u, r), term(u, q), term(v, p), term(v, r), term(w, q), term(w, p)];
 const nonpivotalCoefficients = (pole: string[], root: string[], point: string[]) => {
@@ -66,39 +67,40 @@ export const conicoPivotalEquation = (xyz: string[], [f, g, h]: string[], root: 
 };
 
 const pivotalIsoconjugateCubic: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, pole, pivot] = expressions(args);
-  const xyz = barycentricVariables([a, b, c]);
-  const values = [...triangleAreas([a, b, c, pole]), ...triangleAreas([a, b, c, pivot])];
+  const vertices = expressions(args).slice(0, 3);
+  const xyz = barycentricVariables(vertices);
+  const values = [...pointBarycentrics(vertices, args[3]), ...pointBarycentrics(vertices, args[4])];
   const equation = bind(values, allocate, (v) => pivotalEquation(xyz, v.slice(0, 3), v.slice(3)));
-  return cubic(equation, pivotalCoefficients(values.slice(0, 3), values.slice(3)));
+  return cubic(vertices, equation, pivotalCoefficients(values.slice(0, 3), values.slice(3)));
 };
 
 const pivotalIsotomicCubic: ExpressionBuilder = (args) => {
-  const [a, b, c, pivot] = expressions(args);
-  const xyz = barycentricVariables([a, b, c]);
-  const root = triangleAreas([a, b, c, pivot]);
-  return cubic(pivotalEquation(xyz, ['1', '1', '1'], root), pivotalCoefficients(['1', '1', '1'], root));
+  const vertices = expressions(args).slice(0, 3);
+  const xyz = barycentricVariables(vertices);
+  const root = pointBarycentrics(vertices, args[3]);
+  return cubic(vertices, pivotalEquation(xyz, ['1', '1', '1'], root), pivotalCoefficients(['1', '1', '1'], root));
 };
 
 const nonpivotalIsoconjugateCubic: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, pole, root, point] = expressions(args);
-  const xyz = barycentricVariables([a, b, c]);
-  const quantities = [...triangleAreas([a, b, c, pole]), ...triangleAreas([a, b, c, root])];
-  if (point) quantities.push(...triangleAreas([a, b, c, point]));
+  const point = args[5]?.expression;
+  const vertices = expressions(args).slice(0, 3);
+  const xyz = barycentricVariables(vertices);
+  const quantities = [...pointBarycentrics(vertices, args[3]), ...pointBarycentrics(vertices, args[4])];
+  if (point) quantities.push(...pointBarycentrics(vertices, args[5]));
   const equation = bind(quantities, allocate, (values) => point
     ? nonpivotalEquation(xyz, values.slice(0, 3), values.slice(3, 6), values.slice(6))
     : apolarEquation(xyz, values.slice(0, 3), values.slice(3)));
-  return cubic(equation, point
+  return cubic(vertices, equation, point
     ? nonpivotalCoefficients(quantities.slice(0, 3), quantities.slice(3, 6), quantities.slice(6))
     : pivotalCoefficients(quantities.slice(0, 3), quantities.slice(3)));
 };
 
 const conicoPivotalCubic: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, singular, root] = expressions(args);
-  const xyz = barycentricVariables([a, b, c]);
-  const values = [...triangleAreas([a, b, c, singular]), ...triangleAreas([a, b, c, root])];
+  const vertices = expressions(args).slice(0, 3);
+  const xyz = barycentricVariables(vertices);
+  const values = [...pointBarycentrics(vertices, args[3]), ...pointBarycentrics(vertices, args[4])];
   const equation = bind(values, allocate, (v) => conicoPivotalEquation(xyz, v.slice(0, 3), v.slice(3)));
-  return cubic(equation, conicoCoefficients(values.slice(0, 3), values.slice(3)));
+  return cubic(vertices, equation, conicoCoefficients(values.slice(0, 3), values.slice(3)));
 };
 
 /** Evaluate QA-Cu1(A,B,C,D) at P while D=(x,y) varies. */
@@ -191,7 +193,7 @@ export const ISOCUBIC_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
 export const pivotalIsogonalCubic: ExpressionBuilder = (args, allocate) => {
   const [a, b, c] = args.map((arg) => arg.expression);
   const [u, v, w] = barycentricVariables([a, b, c]);
-  const polynomial = bind([...triangleAreas(args.map((arg) => arg.expression)), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
+  const polynomial = bind([...pointBarycentrics([a, b, c], args[3]), `Distance(${b},${c})^2`, `Distance(${c},${a})^2`, `Distance(${a},${b})^2`], allocate,
     ([p, q, r, aa, bb, cc]) => add([
       mul(r, bb, `${u}^2`, w), `-${mul(r, aa, `${v}^2`, w)}`, `-${mul(q, cc, `${u}^2`, v)}`,
       mul(q, aa, v, `${w}^2`), mul(p, cc, u, `${v}^2`), `-${mul(p, bb, u, `${w}^2`)}`,
@@ -227,7 +229,7 @@ const orthopivotalTerms = (cs: string[], xyz: string[]) => [0, 1, 2].flatMap((i)
 const triangleCubicFromData = (args: Parameters<ExpressionBuilder>[0], allocate: Parameters<ExpressionBuilder>[1],
   makeData: (s: string[], p: string[]) => string, terms: (cs: string[], xyz: string[]) => string): string => {
   const vertices = expressions(args).slice(0, 3);
-  const data = bind([...triangleSideSquares(vertices), ...triangleAreas(expressions(args))], allocate, (values) => {
+  const data = bind([...triangleSideSquares(vertices), ...pointBarycentrics(vertices, args[3])], allocate, (values) => {
     const s = values.slice(0, 3); const p = values.slice(3);
     return makeData(s, p);
   }, 'number');

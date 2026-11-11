@@ -1,11 +1,11 @@
 # 无穷远点输入计划
 
-首批已接入，第二批待逐项核验。只在几何角色明确的槽中用直线表示无穷远方向。以 Euler 线为例，`CevianTriangle(A,B,C,EulerLine(A,B,C))` 应生成平行于 Euler 线的三条塞瓦线在对边上的迹点。它对应 ETC 的 X(30)。等边三角形没有唯一的 Euler 线方向，应沿用输入线未定义的行为。[ETC X(30)](https://faculty.evansville.edu/ck6/encyclopedia/part1.html#X30)
+首批与第二批均已接入。只在几何角色明确的槽中用直线表示无穷远方向。以 Euler 线为例，`CevianTriangle(A,B,C,EulerLine(A,B,C))` 应生成平行于 Euler 线的三条塞瓦线在对边上的迹点。它对应 ETC 的 X(30)。等边三角形没有唯一的 Euler 线方向，应沿用输入线未定义的行为。[ETC X(30)](https://faculty.evansville.edu/ck6/encyclopedia/part1.html#X30)
 
 ## 接口约定
 
-- 表中的 † 标记可接收方向的槽。第二批的 † 代表候选。按角色逐槽决定。变换的**被映射点、被求共轭点或被反演点**继续用 `point`，因为同位置的线很容易被读作实线的像。优先审核负责定义变换的枢点、极和标定点，即使它们在参数中间。
-- 塞瓦三角形、塞瓦圆等构造中，末点负责确定一组连接线。这个角色有明确的方向延拓，可以保留在候选表中。参考三角形顶点继续用有限点，编号和比例仍为数值。例如 `CevianTriangle(A,B,C,l,2)` 仍取第二槽。
+- 表中的 † 标记可接收方向的槽。按角色逐槽决定。变换的**被映射点、被求共轭点或被反演点**继续用 `point`，因为同位置的线很容易被读作实线的像。优先审核负责定义变换的枢点、极和标定点，即使它们在参数中间。
+- 塞瓦三角形、塞瓦圆等构造中，末点负责确定一组连接线。这个角色有明确的方向延拓，已接入方向槽。参考三角形顶点继续用有限点，编号和比例仍为数值。例如 `CevianTriangle(A,B,C,l,2)` 仍取第二槽。
 - 直线、线段、射线均取支撑线方向，复用已有射影工具的约定。对支撑线 `ax+by+c=0` 取齐次点 `(b:−a:0)`。平移支撑线、反向输入或改变线段长度应得到同一构造。保留原有线重载的含义，详见暂缓表。
 - 返回类型和多输出顺序沿用现有契约。只有最终像有限时才生成有限点，只有最终线可在仿射平面中表示时才生成原生线。理想像、无唯一解或全零系数用 undefined 表示，已有的 conic 工具仍可表达可见的直线退化。逐槽处理，保持编号、参数展开和解包命名稳定。
 - 用户用线来提供方向。本期无需更改 `TriangleCenter` 的返回类型，也不依靠引擎对原生无穷远点标签的分类。已有 `CollineationL` 和 `InvolutionL` 的方向重载可作类型分派与交互对照。
@@ -25,17 +25,18 @@
 | `CevaConjugate(A,B,C,X†,P)`、`CrossConjugate(A,B,C,X†,P)` | X 定义共轭变换，P 是有限运算点。复用现有循环权式，单独核对理想枢点下的有限像与基点。 |
 | `CrossCevianTriangle(A,B,C,P†,Q[,i])` | P 定义内层塞瓦三角形，Q 仍是有限点。直接使用内层迹点的齐次权式，即使其中某槽为理想点也不先转成原生点。 |
 
-## 第二批候选
+## 已接入的第二批工具
 
 | 命令与拟开放的槽 | 算法及验证重点 |
 | --- | --- |
-| `ComplementaryConjugate`、`AnticomplementaryConjugate`、`LineConjugate`、`HirstInverse` | 审核 `(A,B,C,P†,Q)` 中定义变换或二次曲线的 P。Q 保持有限。互补两种的四点式继续使用内心作枢点。核对理想枢点下的齐次尺度和最终像。 |
-| `AlephConjugate`、`BethConjugate`、`GimelConjugate`、`DalethConjugate`、`HeConjugate`、`WawConjugate`、`ZayinConjugate` | 逐式审核第四槽枢点，末点 Q 保持有限。原有以枢点重心分量和判断退化的代码需改用参考标架。Gimel 还需独立计算参考三角形面积平方，保持对枢点齐次缩放不变。 |
-| `GibertPsi(A,B,C,P†,Q)` | 只研究双曲线束中心 P。P 理想时曲线束可能退化并有公共分量，需先验证共轭仍有唯一像。Q 及省略枢点的四参数重载保持有限。 |
-| `InconicWithCenter(A,B,C,P†)`、`InconicWithFocus(A,B,C,P†)` | 一般方向对应内切抛物线。中心式可从现有齐次切触系数推导。焦点式先由方向取得有限等角像 F，再以 F 及其 Steiner 线作抛物线。两种算法在同一方向应一致，并核对方向平行参考边时的退化。[内切抛物线的焦点和准线](https://bernard-gibert.fr/curves/q078.html) |
-| `OrthopolarConic(A,B,C,P†)` | 理想输入的线束是一族平行线。移动其中一条线时，各垂足沿同一法向等量平移，垂极点也同量平移。其轨迹是经过任一代表支撑线垂极点的法向直线，可继续按 conic 输出。用不同平行代表线核对结果不变。 |
-| `HaggeCircle(A,B,C,P†)` | P 定义圆。理想点的等角像 F 在外接圆上，关于九点中心反射后为 `O+H−F`，以该点为心、以外接半径作圆。优先验收方向平行边时 F 为顶点的情形。 |
-| `PivotalCubic`、`PivotalIsogonalCubic`、`PivotalIsotomicCubic`、`NonpivotalCubic`、`ConicoPivotalCubic`、`OrthopivotalCubic` | 曲线工具独立成批，按参数角色审核 pole、pivot、root。它们定义曲线而非接受被映射对象。六参数 `NonpivotalCubic` 的通过点 Q 保持有限，以免实线被理解为曲线应含的分量。各式须核对恒零、降次和基点。 |
+| `ComplementaryConjugate`、`AnticomplementaryConjugate`、`LineConjugate`、`HirstInverse` | `(A,B,C,P†,Q)` 中的 P 定义变换或二次曲线。互补两种的四点式以有限内心作枢点。 |
+| `AlephConjugate`、`BethConjugate`、`GimelConjugate`、`DalethConjugate`、`HeConjugate`、`WawConjugate`、`ZayinConjugate` | 第四槽 P 是枢点，末点 Q 有限。理想枢点的分量和为零，标架由参考三角形行列式验证。Gimel 的行列式平方同时用于配平两项，使两项对枢点均为三次。 |
+| `GibertPsi(A,B,C,P†,Q)` | 理想中心使双曲线束分解成无穷远线与一束有限直线。沿用两条极线的交点。两个仿射线性部独立，因此在有限平面上得到关于有限直线束中心的中心反射。省略 P 时仍用重心。 |
+| `InconicWithCenter(A,B,C,P†)`、`InconicWithFocus(A,B,C,P†)` | 同一理想方向给出同一内切抛物线，两命令共用齐次切触系数。方向平行参考边时，二次式退化为经过对顶点且平行于该边的重线。 |
+| `OrthopolarConic(A,B,C,P†)` | 理想输入给出平行线束。取过 A 的代表线并求其垂极点，所得轨迹是过该垂极点的法向直线，以 conic 返回。移动代表线时，各垂足及垂极点等量沿法向平移。 |
+| `HaggeCircle(A,B,C,P†)` | 直接求理想点的有限等角像 F。圆心为 F 关于九点中心的对称点，半径等于外接半径。方向平行边时 F 为该边的对顶点。 |
+| `PivotalCubic(A,B,C,Omega†,P†)`、`PivotalIsogonalCubic(A,B,C,P†)`、`PivotalIsotomicCubic(A,B,C,P†)` | 齐次 pole 和 pivot 进入同一共线行列式。保留降次情形和非零多项式。 |
+| `NonpivotalCubic(A,B,C,Omega†,P†[,Q])`、`ConicoPivotalCubic(A,B,C,N†,P†)`、`OrthopivotalCubic(A,B,C,P†)` | 开放 pole、root、奇点或正交枢点槽。六参数非枢三次曲线的通过点 Q 保持有限。
 
 ## 暂缓或保持现状
 

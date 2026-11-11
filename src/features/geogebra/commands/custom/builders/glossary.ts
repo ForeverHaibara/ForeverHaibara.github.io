@@ -1,4 +1,4 @@
-import type { BuiltExpression, ExpressionBuilder } from '../types';
+import type { BuiltExpression, ExpressionBuilder, TypedExpression } from '../types';
 import type { BindingAllocator } from '../algebra/homogeneous';
 import { add, barycentricPoint, bind, coefficientLine, cross, homogeneous, independentOutputs, mul, sub, pointBarycentrics, triangleFrameDeterminant, triangleAreas, triangleSideSquares } from '../algebra/homogeneous';
 import { antigonalWeights } from './triangle';
@@ -13,13 +13,20 @@ const withCoordinates = (vertices: string[], points: string[], allocate: Binding
   bind(points.flatMap((point) => triangleAreas([...vertices, point])), allocate,
     (values) => body(points.map((_, i) => values.slice(3 * i, 3 * i + 3))), 'number');
 
+const withPointRoles = (vertices: string[], points: readonly TypedExpression[], allocate: BindingAllocator,
+  body: (coordinates: string[][], frameArea: string) => string | BuiltExpression) =>
+  bind(points.flatMap((point) => pointBarycentrics(vertices, point)), allocate, (values) => {
+    const coordinates = points.map((_, i) => values.slice(3 * i, 3 * i + 3));
+    const frameArea = points[0].type === 'point' ? add(coordinates[0]) : triangleFrameDeterminant(vertices);
+    return body(coordinates, frameArea);
+  }, 'number');
+
 type WeightMap = (coordinates: string[][], vertices: string[]) => string[];
 const pointMap = (weights: WeightMap): ExpressionBuilder => (args, allocate) => {
-  const points = args.map((arg) => arg.expression);
-  const vertices = points.slice(0, 3);
-  return withCoordinates(vertices, points.slice(3), allocate, (coords) =>
+  const vertices = args.slice(0, 3).map((arg) => arg.expression);
+  return withPointRoles(vertices, args.slice(3), allocate, (coords, area) =>
     bind(weights(coords, vertices), allocate, (image) =>
-      `If(${add(coords[0])}!=0,${barycentricPoint(vertices, image)})`, 'number'));
+      `If(${area}!=0,${barycentricPoint(vertices, image)})`, 'number'));
 };
 
 const hirstInverse = pointMap(([pivot, point]) => {
@@ -65,19 +72,19 @@ const gst = pointMap(([p], vertices) => {
 });
 
 const lineConjugate: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, p, q] = args.map((arg) => arg.expression);
+  const [a, b, c] = args.map((arg) => arg.expression);
   const vertices = [a, b, c];
-  return withCoordinates(vertices, [p, q], allocate, ([pivot, point]) =>
+  return withPointRoles(vertices, args.slice(3), allocate, ([pivot, point], area) =>
     bind(triangleSideSquares(vertices), allocate, (sides) => {
       const norm = add(point.map((v, i) => `${square(v)}/${sides[i]}`));
       const dot = add(point.map((v, i) => `${mul(pivot[i], v)}/${sides[i]}`));
       return bind([norm, dot], allocate, ([h, k]) =>
-        `If(${add(pivot)}!=0,${barycentricPoint(vertices, pivot.map((v, i) => sub(mul(h, v), mul(k, point[i]))))})`, 'number');
+        `If(${area}!=0,${barycentricPoint(vertices, pivot.map((v, i) => sub(mul(h, v), mul(k, point[i]))))})`, 'number');
     }, 'number'));
 };
 
 const complementaryConjugate = (anti: boolean): ExpressionBuilder => (args, allocate) => {
-  const [a, b, c, p, q] = args.map((arg) => arg.expression);
+  const [a, b, c] = args.map((arg) => arg.expression);
   const vertices = [a, b, c];
   // Conjugate ETC's weighted reciprocal by complement or anticomplement.
   // Keep the intermediate point homogeneous, even if its image is ideal.
@@ -85,27 +92,27 @@ const complementaryConjugate = (anti: boolean): ExpressionBuilder => (args, allo
     const [x, y, z] = cycle(v, i);
     return isAnti ? sub(add([y, z]), x) : add([y, z]);
   });
-  return withCoordinates(vertices, [p, q], allocate, ([pivot, point]) =>
+  return withPointRoles(vertices, args.slice(3), allocate, ([pivot, point], area) =>
     bind(transform(point, !anti), allocate, (preimage) => {
       const weights = reciprocal(pivot);
       const inverse = reciprocal(preimage);
       const lengths = [`Distance(${b},${c})`, `Distance(${c},${a})`, `Distance(${a},${b})`];
       const image = lengths.map((length, i) => mul(`(${length})^3`, weights[i], inverse[i]));
       return bind(image, allocate, (values) =>
-        `If(${add(pivot)}!=0,${barycentricPoint(vertices, transform(values, anti))})`, 'number');
+        `If(${area}!=0,${barycentricPoint(vertices, transform(values, anti))})`, 'number');
     }, 'number'));
 };
 
 type TrilinearFormula = (pivot: string[], point: string[]) => string[];
 const trilinearConjugate = (formula: TrilinearFormula): ExpressionBuilder => (args, allocate) => {
-  const [a, b, c, p, q] = args.map((arg) => arg.expression);
+  const [a, b, c] = args.map((arg) => arg.expression);
   const vertices = [a, b, c];
-  return withCoordinates(vertices, [p, q], allocate, (coords) =>
+  return withPointRoles(vertices, args.slice(3), allocate, (coords, area) =>
     bind([`Distance(${b},${c})`, `Distance(${c},${a})`, `Distance(${a},${b})`], allocate, (lengths) =>
       bind(coords.flatMap((v) => v.map((value, i) => `${value}/${lengths[i]}`)), allocate, (values) => {
         const image = formula(values.slice(0, 3), values.slice(3));
         return bind(image.map((v, i) => mul(lengths[i], v)), allocate, (weights) =>
-          `If(${add(coords[0])}!=0,${barycentricPoint(vertices, weights)})`, 'number');
+          `If(${area}!=0,${barycentricPoint(vertices, weights)})`, 'number');
       }, 'number'), 'number'));
 };
 
@@ -138,9 +145,9 @@ const zayinConjugate = trilinearConjugate((pivot, point) => pivot.map((_, i) => 
 }));
 
 const gimelConjugate: ExpressionBuilder = (args, allocate) => {
-  const [a, b, c, p, q] = args.map((arg) => arg.expression);
+  const [a, b, c] = args.map((arg) => arg.expression);
   const vertices = [a, b, c];
-  return withCoordinates(vertices, [p, q], allocate, ([pivot, point]) =>
+  return withPointRoles(vertices, args.slice(3), allocate, ([pivot, point], area) =>
     bind([`Distance(${b},${c})`, `Distance(${c},${a})`, `Distance(${a},${b})`], allocate, (lengths) => {
       const cofactors = reciprocal(pivot);
       const reflectionCenter = lengths.map((_, i) => {
@@ -151,8 +158,9 @@ const gimelConjugate: ExpressionBuilder = (args, allocate) => {
         const [, u, w] = cycle(pivot, i);
         return `${mul(v, add([u, w]))}/${lengths[i]}`;
       }));
-      const area = add(pivot);
-      return bind([...reflectionCenter, reflectedScale, mul('4', square(area), ...pivot)], allocate, (values) => {
+      // The area is a frame factor. Both terms are cubic in the pivot.
+      const originalScale = mul('4', square(area), ...pivot);
+      return bind([...reflectionCenter, reflectedScale, originalScale], allocate, (values) => {
         const center = values.slice(0, 3);
         const [scale, original] = values.slice(3);
         const image = point.map((v, i) => {
@@ -261,6 +269,9 @@ const gibertPsi = pointMap(([p, q], vertices) => {
   const direction = q.map((value, i) => sub(mul(add(p), value), mul(add(q), p[i])));
   // The three rectangular hyperbolas in Gibert's pencil have a fixed
   // linear relation. The pole of Q is the intersection of two polars of Q.
+  // At an ideal center each hyperbola splits into an affine line and the
+  // line at infinity. Its polar then reflects Q across the affine line
+  // in the coordinate defined by that line's linear form.
   const polar = (i: number) => {
     const j = (i + 1) % 3;
     const k = (i + 2) % 3;

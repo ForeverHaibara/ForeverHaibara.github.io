@@ -36,6 +36,10 @@ function coefficients(name: string, type: 'point' | 'circle', inputs: (Point | C
       x: (point: Point) => point[0], y: (point: Point) => point[1],
       Distance: distance, Circle: circle, Center: (c: Circle) => c.center, Radius: (c: Circle) => c.radius,
       Conic: (data: number[]) => data,
+      // Return the conic's barycentric coefficients, before the native matrix transform.
+      ApplyMatrix: (_matrix: number[][], data: number[]) => data,
+      AreCollinear: () => false,
+      If: (condition: boolean, data: number[]) => condition ? data : [],
     };
     const evaluate = (source: string) => Function(...Object.keys(scope),
       `return ${source.replace(/\^/gu, '**').replace(/\{/gu, '[').replace(/\}/gu, ']')}`)(...Object.values(scope));
@@ -110,4 +114,21 @@ it('contains the cevian traces and keeps their finite join when one trace is ide
   const [limit] = coefficients('CevianCircle', 'point', [...vertices, [-1, 2.5]]);
   expect(limit[0]).toBeCloseTo(0, 10);
   for (const trace of [[1, 2], [-3, 1]] as Point[]) expect(evaluate(limit, trace)).toBeCloseTo(0, 10);
+});
+
+it('gives an inscribed parabola in an ideal direction and a double line in a sideline direction', () => {
+  const vertices: Point[] = [[0, 0], [4, 0], [0, 3]];
+  const [a, b, c, h, d, e] = coefficients('InconicWithCenter', 'point', [...vertices, [3, -4, 19]])[0];
+  // The three coordinate sidelines each cut a repeated root.
+  expect(h * h - 4 * a * b).toBe(0);
+  expect(d * d - 4 * a * c).toBe(0);
+  expect(e * e - 4 * b * c).toBe(0);
+  // Substitute barycentrics (1-v-w,v,w) in the quadratic part.
+  const vv = a + b - h;
+  const ww = a + c - d;
+  const vw = 2 * a - h - d + e;
+  expect(vv * ww).toBeGreaterThan(0);
+  expect(vw * vw - 4 * vv * ww).toBe(0);
+  const parallel = coefficients('InconicWithCenter', 'point', [...vertices, [3, 4, 0]])[0];
+  expect(parallel.map((value) => value / parallel[1] || 0)).toEqual([0, 1, 1, 0, 0, 2]);
 });
