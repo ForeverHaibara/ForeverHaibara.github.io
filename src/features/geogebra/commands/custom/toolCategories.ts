@@ -18,20 +18,24 @@ export const toolGroups: ToolCategory = {
       'AntigonalConjugate', 'CyclocevianConjugate', 'TrilinearPole', 'AntiSteinerPoint',
       'Crosspoint', 'Cevapoint', 'CevaConjugate', 'CrossConjugate', 'CrossSum', 'CrossDifference',
       'AlephConjugate', 'BethConjugate', 'PolarConjugate', 'CevianAffineMap', 'PedalAffineMap',
+      'CircumperpConjugate', 'AntitomicConjugate', 'Syngonal', 'ReciprocalConjugate',
+      'ComplementaryConjugate', 'AnticomplementaryConjugate', 'GimelConjugate', 'DalethConjugate',
+      'HeConjugate', 'WawConjugate', 'ZayinConjugate', 'HirstInverse', 'LineConjugate', 'VertexConjugate',
+      'GST', 'GSC', 'CST', 'GibertPsi', 'OrionTransform', 'OrionPivot', 'OrionConjugate',
       'HaggeInverse', 'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
       'CircumcevianPoint',
-      'Orthopole', 'Orthocorrespondent', 'IsogonalPairWithMidpoint', 'Trilinear'
+      'Orthopole', 'Orthojoin', 'Orthocorrespondent', 'IsogonalPairWithMidpoint', 'Trilinear'
     ],
   },
   'Triangle constructions': {
     'Lines': {
       'Lines of the triangle': ['EulerLine', 'BrocardAxis', 'LemoineAxis', 'OrthicAxis'],
-      'Lines from a point': ['TrilinearPolar', 'Orthotransversal', 'SimsonLine', 'SteinerLine'],
+      'Lines from a point': ['TrilinearPolar', 'Orthotransversal', 'SimsonLine', 'SteinerLine', 'Isoscelizer'],
     },
     'Triangles': {
       'Triangles of the triangle':
       [
-        'MedialTriangle', 'IntouchTriangle', 'ExtouchTriangle', 'TangentialTriangle',
+        'MedialTriangle', 'AnticomplementaryTriangle', 'IntouchTriangle', 'ExtouchTriangle', 'TangentialTriangle',
         'OuterNapoleonTriangle', 'InnerNapoleonTriangle', 'OuterVectenTriangle', 'InnerVectenTriangle',
         'MorleyTriangle', 'MorleyAdjunctTriangle',
         'GeminiTriangle',
@@ -39,9 +43,12 @@ export const toolGroups: ToolCategory = {
       'Triangles from a point':
       [
        'OrthicTriangle', 'CevianTriangle', 'PedalTriangle', 'AnticevianTriangle',
-        'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle', 'HaimovTriangle', 'CrossCevianTriangle'
+        'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle', 'HaimovTriangle', 'CrossCevianTriangle', 'CocevianTriangle'
       ],
-      'Correspondence': ['Perspector', 'OrthologyCenter', 'PascalLine', 'QuasiperspectiveConic'],
+      'Correspondence': [
+        'Perspector', 'OrthologyCenter', 'PascalLine', 'QuasiperspectiveConic', 'DualTriangle',
+        'LinePolarTriangle', 'PointPolarTriangle', 'UnaryCofactorTriangle', 'Eigencenter', 'TrilinearImage',
+      ],
     },
     'Circles': {
       'Circles of the triangle': ['Incircle', 'Excircle', 'Excircles', 'NinePointCircle',  'ApolloniusCircle', 'ApolloniusCircles', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle', 'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles',
@@ -63,7 +70,7 @@ export const toolGroups: ToolCategory = {
     ],
     'Components': ['Center', 'Axes', 'MajorAxis', 'MinorAxis', 'Focus', 'Directrix'],
     'Conical transformations': ['SecondIntersection', 'Pole', 'Polar', 'Tangent', 'ConjugateDiameter', 'CoTf3', 'CoTf3Inv', 'OsculatingCircle'],
-    'Interrelations': ['RadicalAxis', 'RadicalCenter', 'SimilarityCenter', 'CommonTangents', 'CoaxialLimitingPoints'],
+    'Interrelations': ['RadicalAxis', 'RadicalTrace', 'RadicalCenter', 'SimilarityCenter', 'CommonTangents', 'CoaxialLimitingPoints'],
     'Measurements and coefficients': ['Coefficients', 'Radius', 'Circumference', 'Eccentricity', 'LinearEccentricity', 'SemiMajorAxisLength', 'SemiMinorAxisLength', 'Curvature', 'Parameter'],
     'Arcs and sectors': ['Arc', 'CircularArc', 'CircularSector', 'CircumcircularArc', 'CircumcircularSector', 'Sector', 'Semicircle'],
   },

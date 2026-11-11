@@ -12,6 +12,7 @@ import { gibertCurve } from './relatedCurves';
 import { triangleCenter, geminiTriangle } from './triangleCenters';
 import { conjugate } from './conjugates';
 import { PROJECTIVE_BUILDERS } from './projective';
+import { GLOSSARY_BUILDERS } from './glossary';
 
 const brocard: ExpressionBuilder = (args, allocate) => {
   const vertices = args.slice(0, 3).map((arg) => arg.expression);
@@ -141,7 +142,7 @@ export const GEOMETRY_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
   brocard, anticevian, trilinearPolar, trilinearPole,
   affine, ...PROJECTIVE_BUILDERS,
   ...TRIANGLE_BUILDERS, ...CUBIC_BUILDERS, pivotal: pivotalIsogonalCubic, ...ISOCUBIC_BUILDERS, ...CONIC_BUILDERS, ...QUADRANGLE_BUILDERS, ...TRIANGLE_CURVE_BUILDERS, ...QUADRILATERAL_BUILDERS,
-  gibertCurve, triangleCenter, geminiTriangle,
+  gibertCurve, triangleCenter, geminiTriangle, ...GLOSSARY_BUILDERS,
 };
 
 

@@ -22,8 +22,8 @@ const variants = (type: ParameterType): GeometryType[] => type === 'catalogId' ?
     : type === 'conic' ? ['conic', 'circle'] : [type];
 
 describe('native command compatibility', () => {
-  it('emits only indexed commands, scalar functions and allocated local calls for every catalog overload', () => {
-    for (const tool of studioToolLibrary.tools) for (const overload of tool.overloads) {
+  it.each(studioToolLibrary.tools)('$name emits only indexed commands, scalar functions and allocated local calls', (tool) => {
+    for (const overload of tool.overloads) {
       // Exercise family members independently, plus all mixed Conic point/line
       // combinations, so a more specific overload cannot hide a builder branch.
       const signatures = overload.params.reduce<GeometryType[][]>((rows, param) => rows.flatMap((row) => variants(param.type).map((type) => [...row, type])), [[]]);

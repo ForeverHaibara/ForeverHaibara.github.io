@@ -670,6 +670,272 @@
       }
     },
     {
+      "name": "CircumperpConjugate",
+      "description": "Antipode of the inverse of P in the circumcircle of ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":"Reflect(Reflect($P,Circle($A,$B,$C)),Circumcenter($A,$B,$C))"}
+      ],
+      "reference": {"related":["Circumcenter","Antipode"]}
+    },
+    {
+      "name": "AntitomicConjugate",
+      "description": "Isotomic conjugate of the Steiner circumellipse inverse of the isotomic conjugate of P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"antitomicConjugate"}
+      ],
+      "reference": {"related":["IsotomicConjugate","SteinerCircumellipse"]}
+    },
+    {
+      "name": "Syngonal",
+      "description": "Antigonal image of the anticomplement of P with respect to ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"syngonal"}
+      ],
+      "reference": {"keywords":"symgonal syngonal image","related":["AntigonalConjugate","Anticomplement"]}
+    },
+    {
+      "name": "ReciprocalConjugate",
+      "description": "P-reciprocal conjugate of Q. In barycentrics it is the componentwise quotient of P by Q.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"Isoconjugate($A,$B,$C,Centroid($A,$B,$C),$P,$Q)"}
+      ],
+      "reference": {"related":["Isoconjugate","IsotomicConjugate"]}
+    },
+    {
+      "name": "ComplementaryConjugate",
+      "description": "P-complementary conjugate of Q. Uses the incenter as pivot when P is omitted.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"ComplementaryConjugate($A,$B,$C,Incenter($A,$B,$C),$Q)"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"complementaryConjugate"}
+      ],
+      "reference": {"related":["Complement","AnticomplementaryConjugate"]}
+    },
+    {
+      "name": "AnticomplementaryConjugate",
+      "description": "P-anticomplementary conjugate of Q. Uses the incenter as pivot when P is omitted.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"AnticomplementaryConjugate($A,$B,$C,Incenter($A,$B,$C),$Q)"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"anticomplementaryConjugate"}
+      ],
+      "reference": {"related":["Anticomplement","ComplementaryConjugate"]}
+    },
+    {
+      "name": "GimelConjugate",
+      "description": "P-gimel conjugate of Q with respect to triangle ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"gimelConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate","BethConjugate"]}
+    },
+    {
+      "name": "DalethConjugate",
+      "description": "P-daleth conjugate of Q with respect to triangle ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"dalethConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate","BethConjugate"]}
+    },
+    {
+      "name": "HeConjugate",
+      "description": "P-he conjugate of Q with respect to triangle ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"heConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate","BethConjugate"]}
+    },
+    {
+      "name": "WawConjugate",
+      "description": "P-waw conjugate of Q with respect to triangle ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"wawConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate","BethConjugate"]}
+    },
+    {
+      "name": "ZayinConjugate",
+      "description": "P-zayin conjugate of Q with respect to triangle ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"zayinConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate","BethConjugate"]}
+    },
+    {
+      "name": "HirstInverse",
+      "description": "Intersection of PQ with the polar of Q in the circumconic p yz + q zx + r xy = 0, where (p:q:r) are the trilinears of P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"hirstInverse"}
+      ],
+      "reference": {"related":["Polar","TrilinearPole"]}
+    },
+    {
+      "name": "LineConjugate",
+      "description": "Intersection of PQ with the trilinear polar of the isogonal conjugate of Q in ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"lineConjugate"}
+      ],
+      "reference": {"related":["Trilinear","ZayinConjugate"]}
+    },
+    {
+      "name": "VertexConjugate",
+      "description": "Vertex conjugate of P and Q, given by the perspector of ABC and the triangle bounded by the joins of corresponding circumcevian vertices.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"vertexConjugate"}
+      ],
+      "reference": {"related":["CircumcevianTriangle","Perspector"]}
+    },
+    {
+      "name": "Orthojoin",
+      "description": "Orthopole of the trilinear polar of the isogonal conjugate of P, with the finite extension at ideal intermediate points.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"orthojoin"}
+      ],
+      "reference": {"related":["Orthopole","TrilinearPolar","IsogonalConjugate"]}
+    },
+    {
+      "name": "Isoscelizer",
+      "description": "Lines through P perpendicular to the internal angle bisectors at A, B and C; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"line","compose":["PerpendicularLine($P,AngleBisector($B,$A,$C))","PerpendicularLine($P,AngleBisector($C,$B,$A))","PerpendicularLine($P,AngleBisector($A,$C,$B))"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"line","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({PerpendicularLine($P,AngleBisector($B,$A,$C)),PerpendicularLine($P,AngleBisector($C,$B,$A)),PerpendicularLine($P,AngleBisector($A,$C,$B))},$i))"}
+      ],
+      "reference": {"related":["Orthotransversal"]}
+    },
+    {
+      "name": "AnticomplementaryTriangle",
+      "description": "Anticomplements of A, B and C, in that order; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","compose":["Anticomplement($A,$B,$C,$A)","Anticomplement($A,$B,$C,$B)","Anticomplement($A,$B,$C,$C)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"If($i==floor($i)&&$i>=1&&$i<=3,Element({Anticomplement($A,$B,$C,$A),Anticomplement($A,$B,$C,$B),Anticomplement($A,$B,$C,$C)},$i))"}
+      ],
+      "reference": {"related":["Anticomplement","MedialTriangle"]}
+    },
+    {
+      "name": "CocevianTriangle",
+      "description": "Harmonic conjugates of the cevian traces of P on BC, CA and AB. The outputs are collinear; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"cocevianTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"cocevianTriangle"}
+      ],
+      "reference": {"related":["CevianTriangle","TrilinearPolar","HarmonicConjugate"]}
+    },
+    {
+      "name": "DualTriangle",
+      "description": "Isogonal images in ABC of the directions of EF, FD and DE, on the circumcircle of ABC; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"point","builder":"dualTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"dualTriangle"}
+      ],
+      "reference": {"related":["IsogonalConjugate","CircumcevianTriangle"]}
+    },
+    {
+      "name": "LinePolarTriangle",
+      "description": "Trilinear poles in ABC of the sidelines EF, FD and DE; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"point","builder":"linePolarTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"linePolarTriangle"}
+      ],
+      "reference": {"related":["TrilinearPole","UnaryCofactorTriangle"]}
+    },
+    {
+      "name": "PointPolarTriangle",
+      "description": "Pairwise intersections in EF, FD, DE order of the trilinear polars of D, E and F in ABC; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"point","builder":"pointPolarTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"pointPolarTriangle"}
+      ],
+      "reference": {"related":["TrilinearPolar","LinePolarTriangle"]}
+    },
+    {
+      "name": "UnaryCofactorTriangle",
+      "description": "Isogonal images in ABC of the vertices of the line-polar triangle of DEF; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"point","builder":"unaryCofactorTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"unaryCofactorTriangle"}
+      ],
+      "reference": {"related":["LinePolarTriangle","Eigencenter"]}
+    },
+    {
+      "name": "Eigencenter",
+      "description": "Perspector of DEF and its unary cofactor triangle in ABC, extended by the centroid of the three pairwise join intersections.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"}],"returns":"point","builder":"eigencenter"}
+      ],
+      "reference": {"related":["UnaryCofactorTriangle","Perspector"]}
+    },
+    {
+      "name": "TrilinearImage",
+      "description": "Point in the DEF frame with the same signed trilinear coordinates as P in the ABC frame.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"D","type":"point"},{"name":"E","type":"point"},{"name":"F","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"trilinearImage"}
+      ],
+      "reference": {"related":["Trilinear","Affine","Collineation"]}
+    },
+    {
+      "name": "RadicalTrace",
+      "description": "Point where the radical axis of two nonconcentric circles meets their line of centers.",
+      "overloads": [
+        {"params":[{"name":"c1","type":"circle"},{"name":"c2","type":"circle"}],"returns":"point","compose":"Intersect(RadicalAxis($c1,$c2),Line(Center($c1),Center($c2)))"}
+      ],
+      "reference": {"related":["RadicalAxis","RadicalCenter"]}
+    },
+    {
+      "name": "GST",
+      "description": "Gibert Simson transformation of P with respect to ABC. Maps the circumcircle to the Simson cubic.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"gst"}
+      ],
+      "reference": {"keywords":"Gibert Simson transformation","related":["GSC","SimsonLine"]}
+    },
+    {
+      "name": "GSC",
+      "description": "Gibert Simson conjugate of P with respect to ABC. Both points have the same GST image.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":"CrossConjugate($A,$B,$C,Circumcenter($A,$B,$C),$P)"}
+      ],
+      "reference": {"related":["GST","CrossConjugate"]}
+    },
+    {
+      "name": "GibertPsi",
+      "description": "Gibert's Psi involution of Q in the rectangular-hyperbola pencil centered at P. If P is omitted, use the centroid.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"Q","type":"point"}],"returns":"point","compose":"GibertPsi($A,$B,$C,Centroid($A,$B,$C),$Q)"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"gibertPsi"}
+      ],
+      "reference": {"related":["InconicWithCenter","SteinerInellipse","OrthopivotalCubic"]}
+    },
+    {
+      "name": "CST",
+      "description": "Cevian Simson transformation of P with respect to ABC. On the McCay cubic it gives the concurrence point of the Simson lines parallel to the three cevians of P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"cst"}
+      ],
+      "reference": {"keywords":"Cevian Simson transformation","related":["GST","SimsonLine"]}
+    },
+    {
+      "name": "OrionTransform",
+      "description": "Orion transform of P with respect to ABC. Every point on the join of P and its image determines an Orion cubic through P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"orionTransform"}
+      ],
+      "reference": {"keywords":"OT","related":["OrionPivot","OrionConjugate"]}
+    },
+    {
+      "name": "OrionPivot",
+      "description": "Orion pivot of P. The affine map sends each vertex to its reflection in the perpendicular bisector of the opposite side.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":"Affine($A,$B,$C,Reflect($A,PerpendicularBisector($B,$C)),Reflect($B,PerpendicularBisector($C,$A)),Reflect($C,PerpendicularBisector($A,$B)),$P)"}
+      ],
+      "reference": {"keywords":"OP","related":["Affine","OrionTransform","OrionConjugate"]}
+    },
+    {
+      "name": "OrionConjugate",
+      "description": "Orion conjugate of P. It is the tangential of P on the Orion cubic associated with P.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"orionConjugate"}
+      ],
+      "reference": {"keywords":"OC","related":["OrionTransform","OrionPivot"]}
+    },
+    {
       "name": "CrossSum",
       "description": "CrossSum of P and Q with respect to ABC.",
       "overloads": [
