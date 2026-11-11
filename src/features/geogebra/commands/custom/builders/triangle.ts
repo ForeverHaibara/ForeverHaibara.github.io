@@ -1,5 +1,5 @@
 import type { ExpressionBuilder } from '../types';
-import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients } from '../algebra/homogeneous';
+import { add, mul, sub, cross, bind, homogeneous, triangleAreas, barycentricPoint, barycentricConic, coefficientLine, triangleSideSquares, coordinatesToPoint, coefficientList, translatedConicCoefficients, independentOutputs, squaredNorm } from '../algebra/homogeneous';
 
 type Weights = (coordinates: string[][], vertices: string[]) => string[];
 
@@ -183,7 +183,133 @@ const orthopolarConic: ExpressionBuilder = (args, allocate) => {
   return `Conic(${coefficients})`;
 };
 
+const crossCombination = (difference: boolean) => barycentricMap(([p, q], vertices) =>
+  triangleSideSquares(vertices).map((side, i) => {
+    const j = (i + 1) % 3;
+    const k = (i + 2) % 3;
+    const first = mul(p[j], q[k]);
+    const second = mul(p[k], q[j]);
+    return mul(side, difference ? sub(first, second) : add([first, second]));
+  }));
+
+const etcConjugate = (beth: boolean): ExpressionBuilder => (args, allocate) => {
+  const [a, b, c, p, q] = expressions(args);
+  const vertices = [a, b, c];
+  const sides = [`Distance(${b},${c})`, `Distance(${c},${a})`, `Distance(${a},${b})`];
+  return bind([...sides, ...triangleAreas([a, b, c, p]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
+    const lengths = values.slice(0, 3);
+    const areas = values.slice(3, 6);
+    const toTrilinear = (offset: number) => lengths.map((side, i) => `${values[offset + i]}/${side}`);
+    return bind([...toTrilinear(3), ...toTrilinear(6)], allocate, (coords) => {
+      const pivot = coords.slice(0, 3);
+      const input = coords.slice(3);
+      const other = (v: string[], i: number) => [v[(i + 1) % 3], v[(i + 2) % 3]];
+      const finish = (trilinears: string[]) => barycentricPoint(vertices, trilinears.map((v, i) => mul(v, lengths[i])));
+      let output: string;
+      if (beth) {
+        // Circumcenter trilinears, with the common 2abc cleared.
+        const circumcenter = lengths.map((side, i) => mul(side, sub(squaredNorm(other(lengths, i)), `${side}^2`)));
+        const terms = pivot.map((_, i) => mul(input[i], ...other(pivot, i), sub(add(other(lengths, i)), lengths[i])));
+        output = bind([add(terms), add(circumcenter.map((v, i) => mul(v, lengths[i])))], allocate, ([axisValue, centerScale]) =>
+          finish(pivot.map((v, i) => sub(mul(v, add(other(circumcenter, i)), axisValue),
+            mul(centerScale, ...pivot, input[i])))), 'number');
+      } else {
+        const terms = pivot.map((_, i) => mul(...other(pivot, i).map((v) => `${v}^2`),
+          ...other(input, i).map((v) => add([input[i], v]))));
+        output = bind(terms, allocate, (squares) =>
+          finish(squares.map((v, i) => sub(add(other(squares, i)), v))), 'number');
+      }
+      return `If(${add(areas)}!=0,${output})`;
+    }, 'number');
+  }, 'number');
+};
+
+const crossCevianTriangle: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c, p, q, index] = expressions(args);
+  const vertices = [a, b, c];
+  return bind([...triangleAreas([a, b, c, p]), ...triangleAreas([a, b, c, q])], allocate, (values) => {
+    const [u, v] = [values.slice(0, 3), values.slice(3)];
+    const outputs = vertices.map((_, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      const weights: string[] = [];
+      weights[i] = mul(u[i], add([mul(u[k], v[j]), mul(u[j], v[k])]));
+      weights[j] = mul(u[j], u[k], v[j]);
+      weights[k] = mul(u[j], u[k], v[k]);
+      return `If(${add(u)}!=0,${barycentricPoint(vertices, weights)})`;
+    });
+    return independentOutputs(outputs, index);
+  }, 'number');
+};
+
+const haimovTriangle: ExpressionBuilder = (args, allocate) => {
+  const [a, b, c, p, index] = expressions(args);
+  const vertices = [a, b, c];
+  return bind([...triangleAreas([a, b, c, p]), ...triangleSideSquares(vertices)], allocate, (values) => {
+    const weights = values.slice(0, 3);
+    const sides = values.slice(3);
+    const outputs = vertices.map((vertex, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      // Remove the shared p_i from the two cevian circles' power difference.
+      const direction = ['x', 'y'].map((axis) => add([
+        mul(sides[j], add([weights[i], weights[j]]), sub(`${axis}(${vertices[j]})`, `${axis}(${vertex})`)),
+        mul(sides[k], add([weights[i], weights[k]]), sub(`${axis}(${vertices[k]})`, `${axis}(${vertex})`)),
+      ]));
+      const numerator = mul(sides[j], sides[k], add(weights));
+      return bind(direction, allocate, ([dx, dy]) =>
+        `If(${add(weights)}!=0,(x(${vertex})+${numerator}*${dx}/(${dx}^2+${dy}^2),y(${vertex})+${numerator}*${dy}/(${dx}^2+${dy}^2)))`, 'number');
+    });
+    return independentOutputs(outputs, index);
+  }, 'number');
+};
+
+const sideCenterTriangle = (offset: string): ExpressionBuilder => (args, allocate) => {
+  const [a, b, c, index] = expressions(args);
+  const vertices = [a, b, c];
+  return bind([triangleAreas([a, b, c, a])[0]], allocate, ([area]) =>
+    bind([`If(${area}>0,${offset},If(${area}<0,-(${offset})))`], allocate, ([scale]) =>
+      independentOutputs(vertices.map((_, i) => {
+        const u = vertices[(i + 1) % 3];
+        const v = vertices[(i + 2) % 3];
+        return `((x(${u})+x(${v}))/2-${scale}*(y(${v})-y(${u})),(y(${u})+y(${v}))/2+${scale}*(x(${v})-x(${u})))`;
+      }), index), 'number'), 'number');
+};
+
+const morleyTriangle = (adjunct: boolean): ExpressionBuilder => (args, allocate) => {
+  const [a, b, c, kind = '1', index] = expressions(args);
+  const vertices = [a, b, c];
+  const lengths = vertices.map((_, i) => `Distance(${vertices[(i + 1) % 3]},${vertices[(i + 2) % 3]})`);
+  return bind([...lengths, `If((${kind})==1,0,If((${kind})==2,π/3,If((${kind})==3,-π/3)))`], allocate, (values) => {
+    const sides = values.slice(0, 3);
+    const shift = values[3];
+    const cosines = sides.map((side, i) => {
+      const j = sides[(i + 1) % 3];
+      const k = sides[(i + 2) % 3];
+      return `2*cos(acos(Max(-1,Min(1,(${j}^2+${k}^2-${side}^2)/(2*${j}*${k}))))/3+${shift})`;
+    });
+    return bind(cosines, allocate, (angles) => independentOutputs(vertices.map((_, i) => {
+      const j = (i + 1) % 3;
+      const k = (i + 2) % 3;
+      const trilinears: string[] = [];
+      trilinears[i] = `If((${kind})==1,1,-1)`;
+      trilinears[j] = angles[k];
+      trilinears[k] = angles[j];
+      const weights = sides.map((side, n) => mul(side, ...(adjunct
+        ? [trilinears[(n + 1) % 3], trilinears[(n + 2) % 3]]
+        : [trilinears[n]])));
+      return `If(!AreCollinear(${vertices.join(',')}),${barycentricPoint(vertices, weights)})`;
+    }), index), 'number');
+  }, 'number');
+};
+
 export const TRIANGLE_BUILDERS: Readonly<Record<string, ExpressionBuilder>> = {
+  crosssum: crossCombination(false), crossdifference: crossCombination(true),
+  alephConjugate: etcConjugate(false), bethConjugate: etcConjugate(true),
+  crossCevianTriangle, haimovTriangle,
+  innerNapoleonTriangle: sideCenterTriangle('sqrt(3)/6'), outerNapoleonTriangle: sideCenterTriangle('-sqrt(3)/6'),
+  innerVectenTriangle: sideCenterTriangle('1/2'), outerVectenTriangle: sideCenterTriangle('-1/2'),
+  morleyTriangle: morleyTriangle(false), morleyAdjunctTriangle: morleyTriangle(true),
   isoconjugate, crosspoint, cevapoint, cevaConjugate, crossConjugate, cyclocevian, antigonal,
   cevianAffine: affineMap(false), pedalAffine: affineMap(true), orthotransversal, orthocorrespondent,
   isogonalLine: lineConjugate(true), isotomicLine: lineConjugate(false),

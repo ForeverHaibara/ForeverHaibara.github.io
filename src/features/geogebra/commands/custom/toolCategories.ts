@@ -16,7 +16,8 @@ export const toolGroups: ToolCategory = {
     'Point constructions and maps': [
       'IsogonalConjugate', 'IsotomicConjugate', 'Isoconjugate', 'Complement', 'Anticomplement', 'IsogonalComplement',
       'AntigonalConjugate', 'CyclocevianConjugate', 'TrilinearPole', 'AntiSteinerPoint',
-      'Crosspoint', 'Cevapoint', 'CevaConjugate', 'CrossConjugate', 'CevianAffineMap', 'PedalAffineMap', 
+      'Crosspoint', 'Cevapoint', 'CevaConjugate', 'CrossConjugate', 'CrossSum', 'CrossDifference',
+      'AlephConjugate', 'BethConjugate', 'PolarConjugate', 'CevianAffineMap', 'PedalAffineMap',
       'HaggeInverse', 'CundyParryPhi', 'CundyParryPsi', 'LiangZelichPerspector',
       'CircumcevianPoint',
       'Orthopole', 'Orthocorrespondent', 'IsogonalPairWithMidpoint', 'Trilinear'
@@ -30,18 +31,21 @@ export const toolGroups: ToolCategory = {
     'Triangles': {
       'Triangles of the triangle':
       [
-        'MedialTriangle', 'IntouchTriangle', 'TangentialTriangle',
+        'MedialTriangle', 'IntouchTriangle', 'ExtouchTriangle', 'TangentialTriangle',
+        'OuterNapoleonTriangle', 'InnerNapoleonTriangle', 'OuterVectenTriangle', 'InnerVectenTriangle',
+        'MorleyTriangle', 'MorleyAdjunctTriangle',
         'GeminiTriangle',
       ],
       'Triangles from a point':
       [
        'OrthicTriangle', 'CevianTriangle', 'PedalTriangle', 'AnticevianTriangle',
-        'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle'
+        'CircumcevianTriangle',  'AntipedalTriangle', 'CarnotTriangle', 'HaimovTriangle', 'CrossCevianTriangle'
       ],
       'Correspondence': ['Perspector', 'OrthologyCenter', 'PascalLine', 'QuasiperspectiveConic'],
     },
     'Circles': {
-      'Circles of the triangle': ['Incircle', 'Excircle', 'Excircles', 'NinePointCircle',  'ApolloniusCircle', 'ApolloniusCircles', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle', 'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles'],
+      'Circles of the triangle': ['Incircle', 'Excircle', 'Excircles', 'NinePointCircle',  'ApolloniusCircle', 'ApolloniusCircles', 'FuhrmannCircle', 'BrocardCircle', 'TaylorCircle', 'MixtilinearIncircle', 'MixtilinearIncircles', 'MixtilinearExcircle', 'MixtilinearExcircles',
+        'ConwayCircle', 'AdamsCircle', 'DrozFarnyCircles', 'TuckerCircle'],
       'Circles from a point': ['HaggeCircle', 'PedalCircle'],
     },
     'Conics': {

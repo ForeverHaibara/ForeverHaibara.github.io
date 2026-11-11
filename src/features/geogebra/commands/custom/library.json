@@ -670,6 +670,162 @@
       }
     },
     {
+      "name": "CrossSum",
+      "description": "CrossSum of P and Q with respect to ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"crosssum"}
+      ],
+      "reference": {"related":["Crosspoint","IsogonalConjugate","CrossDifference"]}
+    },
+    {
+      "name": "CrossDifference",
+      "description": "CrossDifference of P and Q with respect to ABC. It depends only on the line PQ.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"crossdifference"}
+      ],
+      "reference": {"related":["CrossSum","TrilinearPole"]}
+    },
+    {
+      "name": "AlephConjugate",
+      "description": "P-aleph conjugate of Q with respect to ABC, using the ETC convention.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"alephConjugate"}
+      ],
+      "reference": {"related":["BethConjugate"]}
+    },
+    {
+      "name": "BethConjugate",
+      "description": "P-beth conjugate of Q with respect to ABC, using the ETC convention.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"bethConjugate"}
+      ],
+      "reference": {"related":["AlephConjugate"]}
+    },
+    {
+      "name": "PolarConjugate",
+      "description": "Conjugate of P from the triangle polar circle and the trilinear polar. Also defined for acute triangles.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","compose":"Isoconjugate($A,$B,$C,Centroid($A,$B,$C),Orthocenter($A,$B,$C),$P)"}
+      ],
+      "reference": {"related":["TrilinearPolar","Isoconjugate"]}
+    },
+    {
+      "name": "CrossCevianTriangle",
+      "description": "Intersections of the cevians of Q with the corresponding opposite sides of the cevian triangle of P; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"}],"returns":"point","builder":"crossCevianTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"Q","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"crossCevianTriangle"}
+      ],
+      "reference": {"related":["CevianTriangle","Crosspoint"]}
+    },
+    {
+      "name": "HaimovTriangle",
+      "description": "Haimov triangle of P, from the residual intersections of the paired cevian circles; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"}],"returns":"point","builder":"haimovTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"P","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"haimovTriangle"}
+      ],
+      "reference": {"related":["CevianTriangle","SecondIntersection"]}
+    },
+    {
+      "name": "ExtouchTriangle",
+      "description": "Contacts of the three excircles with BC, CA and AB; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","locals":[{"name":"p","expression":"TriangleCenter($A,$B,$C,8)"}],"compose":["CevianTriangle($A,$B,$C,$p,1)","CevianTriangle($A,$B,$C,$p,2)","CevianTriangle($A,$B,$C,$p,3)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","compose":"CevianTriangle($A,$B,$C,TriangleCenter($A,$B,$C,8),$i)"}
+      ],
+      "reference": {"related":["CevianTriangle","NagelPoint","IntouchTriangle"]}
+    },
+    {
+      "name": "InnerNapoleonTriangle",
+      "description": "Centers of the internally erected equilateral triangles on BC, CA and AB; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerNapoleonTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"innerNapoleonTriangle"}
+      ],
+      "reference": {"related":["OuterNapoleonTriangle"]}
+    },
+    {
+      "name": "OuterNapoleonTriangle",
+      "description": "Centers of the externally erected equilateral triangles on BC, CA and AB; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerNapoleonTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"outerNapoleonTriangle"}
+      ],
+      "reference": {"related":["InnerNapoleonTriangle"]}
+    },
+    {
+      "name": "InnerVectenTriangle",
+      "description": "Centers of the internally erected squares on BC, CA and AB; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"innerVectenTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"innerVectenTriangle"}
+      ],
+      "reference": {"related":["OuterVectenTriangle"]}
+    },
+    {
+      "name": "OuterVectenTriangle",
+      "description": "Centers of the externally erected squares on BC, CA and AB; optional 1-based vertex index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"outerVectenTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"point","builder":"outerVectenTriangle"}
+      ],
+      "reference": {"related":["InnerVectenTriangle"]}
+    },
+    {
+      "name": "MorleyTriangle",
+      "description": "ETC Morley triangle. k=1, 2 or 3 selects the family member; defaults to 1. An additional i selects a vertex.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"},{"name":"i","type":"number"}],"returns":"point","builder":"morleyTriangle"}
+      ],
+      "reference": {"related":["MorleyAdjunctTriangle"]}
+    },
+    {
+      "name": "MorleyAdjunctTriangle",
+      "description": "ETC Morley adjunct triangle. k=1, 2 or 3 selects the family member; defaults to 1. An additional i selects a vertex.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"point","builder":"morleyAdjunctTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"}],"returns":"point","builder":"morleyAdjunctTriangle"},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"k","type":"number"},{"name":"i","type":"number"}],"returns":"point","builder":"morleyAdjunctTriangle"}
+      ],
+      "reference": {"related":["MorleyTriangle"]}
+    },
+    {
+      "name": "ConwayCircle",
+      "description": "Conway circle through the six side extensions of ABC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"s","expression":"(Distance($A,$B)+Distance($B,$C)+Distance($C,$A))/2"}],"compose":"Circle($center,sqrt(Distance($center,Line($B,$C))^2+$s^2))"}
+      ],
+      "reference": {"related":["Incircle"]}
+    },
+    {
+      "name": "AdamsCircle",
+      "description": "Adams circle from the intouch triangle and the Gergonne point.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","locals":[{"name":"center","expression":"Incenter($A,$B,$C)"},{"name":"g","expression":"GergonnePoint($A,$B,$C)"}],"compose":"Circle($center,Intersect(PerpendicularLine($g,Line($A,$center)),Line($A,$B)))"}
+      ],
+      "reference": {"related":["IntouchTriangle","GergonnePoint"]}
+    },
+    {
+      "name": "DrozFarnyCircles",
+      "description": "First and second Droz-Farny circles, centered at the orthocenter and circumcenter; optional 1-based index.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"}],"returns":"circle","locals":[{"name":"h","expression":"Orthocenter($A,$B,$C)"},{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"r","expression":"sqrt((Distance($h,$o)^2+Distance($o,$A)^2)/2)"}],"compose":["Circle($h,$r)","Circle($o,$r)"]},
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"i","type":"number"}],"returns":"circle","locals":[{"name":"h","expression":"Orthocenter($A,$B,$C)"},{"name":"o","expression":"Circumcenter($A,$B,$C)"},{"name":"r","expression":"sqrt((Distance($h,$o)^2+Distance($o,$A)^2)/2)"}],"compose":"If($i==1,Circle($h,$r),If($i==2,Circle($o,$r)))"}
+      ],
+      "reference": {"related":["Circumcenter","Orthocenter"]}
+    },
+    {
+      "name": "TuckerCircle",
+      "description": "Tucker circle starting at the directed affine parameter t on BC.",
+      "overloads": [
+        {"params":[{"name":"A","type":"point"},{"name":"B","type":"point"},{"name":"C","type":"point"},{"name":"t","type":"number"}],"returns":"circle","locals":[{"name":"u","expression":"$t*(Distance($C,$A)/Distance($A,$B))^2"},{"name":"v","expression":"$t*(Distance($B,$C)/Distance($A,$B))^2"},{"name":"start","expression":"$B+$t*($C-$B)"},{"name":"m","expression":"$B+($t+1-$u)*($C-$B)/2"},{"name":"n","expression":"$C+(1-$t+$v)*($A-$C)/2"},{"name":"center","expression":"Intersect(PerpendicularLine($m,Line($B,$C)),PerpendicularLine($n,Line($C,$A)))"}],"expression":"Circle($center,$start)"}
+      ],
+      "reference": {"related":["ConwayCircle","AdamsCircle"]}
+    },
+    {
       "name": "CevianTriangle",
       "aliases": ["塞瓦三角形"],
       "description": "Sideline traces AP on BC, BP on CA and CP on AB; optional 1-based index.",
