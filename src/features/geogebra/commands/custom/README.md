@@ -13,7 +13,7 @@ command; its input points need not be deleted. Deleting the input points also
 removes their dependent outputs, which can make redrawing appear to fix an old
 definition.
 
-The library is still unpublished and uses version **0.3.0**. Development
+The library is still unpublished and uses version **0.4.0**. Development
 milestones in the implementation notes are not release versions.
 
 ## Directory layout
