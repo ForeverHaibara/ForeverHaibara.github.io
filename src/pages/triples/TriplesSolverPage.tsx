@@ -618,12 +618,12 @@ const TriplesSolverPage: React.FC = () => {
         </div>
       </section>
       <section className="triples-release" aria-labelledby="release-heading">
-        <span className="release-version">v0.3.0</span>
+        <span className="release-version">v0.3.1</span>
         <div className="release-copy">
           <p className="eyebrow">RELEASE NOTE</p>
-          <h2 id="release-heading">Triples 0.3.0 is here.</h2>
+          <h2 id="release-heading">Triples 0.3.1 is here.</h2>
           <p>
-            Released on <time dateTime="2026-10-20">October 20, 2026</time>.
+            Released on <time dateTime="2026-11-17">November 17, 2026</time>.
           </p>
         </div>
         <Link className="design-text-link" to="https://github.com/ForeverHaibara/Triple-SOS/releases/tag/v0.3.0">
